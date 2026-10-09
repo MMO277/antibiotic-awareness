@@ -1,0 +1,148 @@
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { Lang } from './types';
+
+const D: Record<Lang, Record<string, string>> = {
+  ar: {
+    appName: 'الوعي بالمضادات الحيوية',
+    tagline: 'مشروع تخرج تمريض – تثقيف صحي',
+    navHome: 'الرئيسية', navMedicines: 'الأدوية', navArticles: 'المقالات', navQuiz: 'الاختبارات',
+    navScan: 'مسح QR', navResearch: 'استبيان البحث', navAdmin: 'الإدارة',
+    heroTitle: 'استخدام واعٍ للمضادات الحيوية يحمي الجميع',
+    heroSub: 'ابحث في معلومات تثقيفية عن المضادات الحيوية الشائعة بعد مراجعتها من مختص مؤهل. الموقع للتوعية فقط ولا يغني عن الطبيب أو الصيدلي.',
+    searchPh: 'ابحث بالاسم العلمي أو التجاري أو المادة الفعالة', search: 'بحث', scanBtn: 'مسح QR أو باركود',
+    articlesTitle: 'مقالات توعوية', quizTitle: 'اختبر معلوماتك', seeAll: 'عرض الكل', read: 'اقرأ المقال',
+    startQuiz: 'ابدأ الاختبار', quizIntro: 'اختبار قصير عن الاستخدام الآمن للمضادات الحيوية، مع شرح لكل إجابة.',
+    medsTitle: 'قاعدة بيانات المضادات الحيوية',
+    noApproved: 'لا توجد سجلات معتمدة بعد. لا تظهر السجلات هنا إلا بعد مراجعتها واعتمادها من مختص مؤهل.',
+    noResults: 'لا توجد نتائج مطابقة.',
+    loadError: 'تعذّر تحميل البيانات. تحقق من الاتصال ومن إعدادات Firebase.',
+    loading: 'جارٍ التحميل…', notFound: 'الصفحة أو السجل غير متاح.', back: 'رجوع',
+    brands: 'الأسماء التجارية الموثّقة', brandName: 'الاسم التجاري', manufacturer: 'الشركة المصنّعة', barcode: 'الباركود',
+    sources: 'المصادر', lastReviewed: 'آخر مراجعة', reviewedBy: 'راجعه', status: 'الحالة',
+    st_draft: 'مسودة', st_pending_review: 'بانتظار المراجعة', st_approved: 'معتمد', st_archived: 'مؤرشف',
+    previewWarn: 'هذا السجل غير معتمد وهو ظاهر للعاملين المصرّح لهم فقط. لا تعتمد عليه كمرجع.',
+    unverified: 'غير موثّق', notEntered: 'لم تُدخل بعد',
+    dosingNote: 'مرجع الجرعات للاطلاع فقط. لا يحدّد هذا الموقع جرعات شخصية؛ الجرعة يحددها الطبيب أو الصيدلي.',
+    qrTitle: 'رمز QR لهذه الصفحة', qrDownload: 'تنزيل PNG', qrPrint: 'طباعة',
+    disclaimerTitle: 'تنبيه مهم',
+    disclaimer: 'هذا الموقع تثقيفي فقط ولا يقدّم تشخيصًا أو وصفة علاجية ولا يحسب جرعات شخصية، ولا يحلّ محل الطبيب أو الصيدلي. لا تبدأ أي دواء أو توقفه دون استشارة مختص. في الحالات الطارئة اتصل بالإسعاف أو توجه لأقرب طوارئ.',
+    articlePending: 'محتوى توعوي عام بانتظار مراجعة مختص مؤهل قبل النشر الرسمي.',
+    scanTitle: 'مسح رمز QR أو الباركود', scanStart: 'تشغيل الكاميرا', scanStop: 'إيقاف الكاميرا',
+    scanHint: 'رمز QR يفتح صفحة الدواء. الباركود يُطابق فقط المنتجات الموثّقة في قاعدة البيانات.',
+    scanManual: 'أو اكتب رقم الباركود', scanGo: 'مطابقة',
+    scanNoMatch: 'لم يُعثر على منتج موثّق مطابق. هذا لا يعني أن المنتج غير آمن أو غير أصلي، فقط أنه غير موجود في قاعدة البيانات الموثّقة.',
+    cameraError: 'تعذّر تشغيل الكاميرا. اسمح بالوصول للكاميرا أو اكتب الرقم يدويًا.',
+    score: 'نتيجتك', of: 'من', correct: 'إجابة صحيحة', wrong: 'إجابة غير صحيحة', restart: 'إعادة الاختبار',
+    next: 'التالي', finish: 'إنهاء', question: 'سؤال',
+    resTitle: 'استبيان قبلي/بعدي للبحث (اختياري)',
+    resClosed: 'الاستبيان غير مفعّل حاليًا. يُفعَّل فقط بعد موافقة الجامعة ولجنة الأخلاقيات.',
+    resEthics: 'رقم/مرجع موافقة الأخلاقيات', resConsentTitle: 'الموافقة المستنيرة',
+    resConsentText: 'المشاركة اختيارية. لا نجمع اسمك أو بريدك أو أي بيانات تعريفية. تُحفظ إجاباتك مع رمز عشوائي لمطابقة الاختبار القبلي بالبعدي. يمكنك التوقف في أي وقت قبل الإرسال.',
+    resConsentCheck: 'أوافق على المشاركة طوعًا في هذا البحث', resPhase: 'المرحلة', pre: 'قبلي', post: 'بعدي',
+    resCode: 'رمزك العشوائي (احتفظ به لتستخدمه في الاختبار البعدي)', resGen: 'إنشاء رمز',
+    resSubmit: 'إرسال', resThanks: 'شكرًا لمشاركتك. تم حفظ إجاباتك دون أي بيانات تعريفية.',
+    resAnswerAll: 'أجب عن كل الأسئلة وأنشئ الرمز ووافق على المشاركة.', resFail: 'تعذّر الإرسال. حاول لاحقًا.',
+    adminTitle: 'لوحة الإدارة', email: 'البريد الإلكتروني', password: 'كلمة المرور', signIn: 'تسجيل الدخول', signOut: 'تسجيل الخروج',
+    signInFail: 'فشل تسجيل الدخول. تحقق من البيانات.',
+    noRole: 'حسابك مسجّل لكن بلا صلاحيات. اطلب من المسؤول منحك دور محرر أو مراجع.',
+    tabMeds: 'الأدوية', tabResearch: 'البحث', tabUsers: 'المستخدمون',
+    newMed: 'دواء جديد', starter: 'تحميل القائمة الأولية (مسودات)', starterDone: 'تم إنشاء مسودات:',
+    all: 'الكل', edit: 'تعديل', approve: 'اعتماد', submitReview: 'إرسال للمراجعة', archive: 'أرشفة',
+    restore: 'إعادة لمسودة', del: 'حذف', confirmDel: 'حذف نهائي؟', cannotApprove: 'لا يمكن الاعتماد. ينقص:',
+    actionFailed: 'فشلت العملية (قد لا تملك الصلاحية).', save: 'حفظ', cancel: 'إلغاء',
+    badId: 'المعرّف: أحرف إنجليزية صغيرة وأرقام وشرطات فقط (مثال: amoxicillin).',
+    idExists: 'هذا المعرّف مستخدم بالفعل.', editorStatus: 'المحرر يمكنه الحفظ كمسودة أو بانتظار المراجعة فقط.',
+    medId: 'المعرّف (يُستخدم في الرابط ورمز QR)', arabic: 'عربي', english: 'English',
+    addBrand: 'إضافة اسم تجاري', addSource: 'إضافة مصدر', verifiedBrand: 'موثّق من مصدر رسمي',
+    sourceTitle: 'عنوان المصدر', sourceUrl: 'رابط الصفحة (https)', internalNotes: 'ملاحظات داخلية',
+    editorBackToReview: 'تعديل سجل معتمد يعيده إلى حالة «بانتظار المراجعة».',
+    sourceHints: 'نقاط بداية للمراجع (ألصق رابط الصفحة الدقيقة وليس الصفحة الرئيسية):',
+    uid: 'معرّف المستخدم (UID)', role: 'الدور', grant: 'منح/تعديل', remove: 'إزالة',
+    usersHelp: 'أنشئ المستخدم أولًا من Firebase Authentication ثم انسخ الـ UID هنا.',
+    resEnable: 'تفعيل الاستبيان', resExport: 'تصدير CSV', resSaved: 'تم الحفظ.',
+    resAdminNote: 'فعّل الاستبيان فقط بعد موافقة الجامعة/لجنة الأخلاقيات وأدخل مرجع الموافقة.',
+  },
+  en: {
+    appName: 'Antibiotic Awareness',
+    tagline: 'Nursing graduation project – health education',
+    navHome: 'Home', navMedicines: 'Medicines', navArticles: 'Articles', navQuiz: 'Quizzes',
+    navScan: 'Scan QR', navResearch: 'Research survey', navAdmin: 'Admin',
+    heroTitle: 'Using antibiotics wisely protects everyone',
+    heroSub: 'Look up educational information about common antibiotics, shown only after review by a qualified professional. For education only; it does not replace a doctor or pharmacist.',
+    searchPh: 'Search by generic name, brand, or active ingredient', search: 'Search', scanBtn: 'Scan QR or barcode',
+    articlesTitle: 'Awareness articles', quizTitle: 'Test your knowledge', seeAll: 'See all', read: 'Read article',
+    startQuiz: 'Start quiz', quizIntro: 'A short quiz on safe antibiotic use, with an explanation for every answer.',
+    medsTitle: 'Antibiotic database',
+    noApproved: 'No approved records yet. Records appear here only after a qualified professional has reviewed and approved them.',
+    noResults: 'No matching results.',
+    loadError: 'Could not load data. Check your connection and Firebase settings.',
+    loading: 'Loading…', notFound: 'This page or record is not available.', back: 'Back',
+    brands: 'Verified brand names', brandName: 'Brand name', manufacturer: 'Manufacturer', barcode: 'Barcode',
+    sources: 'Sources', lastReviewed: 'Last reviewed', reviewedBy: 'Reviewed by', status: 'Status',
+    st_draft: 'Draft', st_pending_review: 'Pending review', st_approved: 'Approved', st_archived: 'Archived',
+    previewWarn: 'This record is not approved and is visible to authorised staff only. Do not rely on it.',
+    unverified: 'Unverified', notEntered: 'Not entered yet',
+    dosingNote: 'Dosing reference is for information only. This site does not calculate personal doses; the dose is decided by a doctor or pharmacist.',
+    qrTitle: 'QR code for this page', qrDownload: 'Download PNG', qrPrint: 'Print',
+    disclaimerTitle: 'Important notice',
+    disclaimer: 'This website is educational only. It does not diagnose, prescribe, or calculate personal doses, and it does not replace a doctor or pharmacist. Do not start or stop any medicine without professional advice. In an emergency, call your local emergency number or go to the nearest emergency department.',
+    articlePending: 'General educational content awaiting review by a qualified professional before official publication.',
+    scanTitle: 'Scan a QR code or barcode', scanStart: 'Start camera', scanStop: 'Stop camera',
+    scanHint: 'A QR code opens the medicine page. A barcode is matched only against verified products in the database.',
+    scanManual: 'Or type the barcode number', scanGo: 'Match',
+    scanNoMatch: 'No verified product matched. This does not mean the product is unsafe or fake, only that it is not in the verified database.',
+    cameraError: 'Could not start the camera. Allow camera access or type the number manually.',
+    score: 'Your score', of: 'of', correct: 'correct', wrong: 'incorrect', restart: 'Restart quiz',
+    next: 'Next', finish: 'Finish', question: 'Question',
+    resTitle: 'Pre-test / post-test research survey (optional)',
+    resClosed: 'The survey is currently switched off. It is enabled only after university and ethics approval.',
+    resEthics: 'Ethics approval reference', resConsentTitle: 'Informed consent',
+    resConsentText: 'Taking part is voluntary. We do not collect your name, email, or any identifying data. Your answers are saved with a random code so the pre-test can be matched with the post-test. You can stop at any time before submitting.',
+    resConsentCheck: 'I agree to take part in this research voluntarily', resPhase: 'Phase', pre: 'Pre-test', post: 'Post-test',
+    resCode: 'Your random code (keep it for the post-test)', resGen: 'Generate code',
+    resSubmit: 'Submit', resThanks: 'Thank you. Your answers were saved with no identifying data.',
+    resAnswerAll: 'Answer every question, generate a code, and give consent.', resFail: 'Could not submit. Please try again later.',
+    adminTitle: 'Admin dashboard', email: 'Email', password: 'Password', signIn: 'Sign in', signOut: 'Sign out',
+    signInFail: 'Sign-in failed. Check your details.',
+    noRole: 'Your account is signed in but has no role. Ask the admin to give you the editor or reviewer role.',
+    tabMeds: 'Medicines', tabResearch: 'Research', tabUsers: 'Users',
+    newMed: 'New medicine', starter: 'Load starter list (drafts)', starterDone: 'Drafts created:',
+    all: 'All', edit: 'Edit', approve: 'Approve', submitReview: 'Submit for review', archive: 'Archive',
+    restore: 'Back to draft', del: 'Delete', confirmDel: 'Delete permanently?', cannotApprove: 'Cannot approve. Missing:',
+    actionFailed: 'Action failed (you may not have permission).', save: 'Save', cancel: 'Cancel',
+    badId: 'ID: lowercase English letters, numbers and hyphens only (e.g. amoxicillin).',
+    idExists: 'This ID is already used.', editorStatus: 'Editors can only save Draft or Pending review.',
+    medId: 'ID (used in the URL and QR code)', arabic: 'Arabic', english: 'English',
+    addBrand: 'Add brand', addSource: 'Add source', verifiedBrand: 'Verified from an official source',
+    sourceTitle: 'Source title', sourceUrl: 'Exact page URL (https)', internalNotes: 'Internal notes',
+    editorBackToReview: 'Editing an approved record sends it back to “Pending review”.',
+    sourceHints: 'Starting points for reviewers (paste the exact page URL, not the homepage):',
+    uid: 'User ID (UID)', role: 'Role', grant: 'Grant / change', remove: 'Remove',
+    usersHelp: 'Create the user in Firebase Authentication first, then copy the UID here.',
+    resEnable: 'Enable survey', resExport: 'Export CSV', resSaved: 'Saved.',
+    resAdminNote: 'Enable the survey only after university/ethics approval, and enter the approval reference.',
+  },
+};
+
+interface Ctx {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (key: string) => string;
+}
+const LangCtx = createContext<Ctx>({ lang: 'ar', setLang: () => {}, t: (k) => k });
+export const useLang = () => useContext(LangCtx);
+
+export function LangProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>(() => (localStorage.getItem('lang') === 'en' ? 'en' : 'ar'));
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.title = D[lang].appName;
+  }, [lang]);
+  const setLang = (l: Lang) => {
+    localStorage.setItem('lang', l);
+    setLangState(l);
+  };
+  const t = (key: string) => D[lang][key] ?? key;
+  return <LangCtx.Provider value={{ lang, setLang, t }}>{children}</LangCtx.Provider>;
+}

@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function isSignedIn() { return request.auth != null; }
+
+    function roleDocPath() {
+      return /databases/$(database)/documents/roles/$(request.auth.uid);
+    }
+
+    // true only if the signed-in user has a roles/{uid} document whose role is in `list`
+    function hasRole(list) {
+      return isSignedIn() && exists(roleDocPath()) && get(roleDocPath()).data.role in list;
+    }
+
+    function isStaff() { return hasRole(['editor', 'reviewer', 'admin']); }
+    function isReviewer() { return hasRole(['reviewer', 'admin']); }
+
+    function validMedicine() {
+      let d = request.resource.data;
+      return d.status in ['draft', 'pending_review', 'approved', 'archived']
+        && d.sources is list
+        && d.brands is list
+        && d.barcodes is list
+        // approval needs at least one source, a review date and a reviewer name
+        && (d.status != 'approved' || (
+              d.sources.size() > 0
+              && d.lastReviewed is string && d.lastReviewed.size() > 0
+              && d.reviewedBy is string && d.reviewedBy.size() > 0));
+    }
+
+    // ---------- medicines ----------
+    match /medicines/{id} {
+      // The public can read ONLY approved records. Staff can read everything.
+      allow read: if (resource != null && resource.data.status == 'approved') || isStaff();
+
+      // Editors may only save Draft / Pending Review.
+      // Reviewers and admins may also approve and archive.
+      allow create, update: if isStaff()
+        && validMedicine()
+        && (request.resource.data.status in ['draft', 'pending_review'] || isReviewer());
+
+      allow delete: if hasRole(['admin']);
+    }
+
+    // ---------- roles (who is editor / reviewer / admin) ----------
+    // The FIRST admin is created by hand in the Firebase console (see README).
+    match /roles/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || hasRole(['admin']));
+      allow write: if hasRole(['admin']);
+    }
+
+    // ---------- optional research survey ----------
+    match /researchConfig/{doc} {
+      allow read: if true;
+      allow write: if hasRole(['admin']);
+    }
+
+    match /researchResponses/{id} {
+      // Anonymous create is allowed only while the admin has switched the survey ON.
+      allow create: if exists(/databases/$(database)/documents/researchConfig/main)
+        && get(/databases/$(database)/documents/researchConfig/main).data.enabled == true
+        && request.resource.data.keys().hasOnly(['phase', 'code', 'answers', 'consent', 'lang', 'createdAt'])
+        && request.resource.data.phase in ['pre', 'post']
+        && request.resource.data.consent == true
+        && request.resource.data.code is string
+        && request.resource.data.code.size() >= 4
+        && request.resource.data.code.size() <= 12
+        && request.resource.data.answers is list
+        && request.resource.data.answers.size() <= 30
+        && request.resource.data.lang in ['ar', 'en']
+        && request.resource.data.createdAt == request.time;
+      allow read: if hasRole(['admin']);
+      allow update: if false;
+      allow delete: if hasRole(['admin']);
+    }
+
+    // everything else is closed
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

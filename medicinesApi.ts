@@ -1,0 +1,117 @@
+import { useEffect, useState } from 'react';
+import {
+  collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where,
+} from 'firebase/firestore';
+import { db } from './firebase';
+import { emptyMedicine, FIELD_LABELS, Medicine, Status, TEXT_FIELDS } from './types';
+import { SEED } from './seedData';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function normalize(id: string, d: any): Medicine {
+  const m = emptyMedicine(id);
+  for (const f of TEXT_FIELDS) m[f] = { ar: d?.[f]?.ar ?? '', en: d?.[f]?.en ?? '' };
+  m.status = d?.status ?? 'draft';
+  m.brands = Array.isArray(d?.brands) ? d.brands : [];
+  m.barcodes = Array.isArray(d?.barcodes) ? d.barcodes : [];
+  m.sources = Array.isArray(d?.sources) ? d.sources : [];
+  m.lastReviewed = d?.lastReviewed ?? '';
+  m.reviewedBy = d?.reviewedBy ?? '';
+  m.notes = d?.notes ?? '';
+  return m;
+}
+
+/** Public: approved records only (the Firestore rules enforce this too). */
+export async function fetchApproved(): Promise<Medicine[]> {
+  const snap = await getDocs(query(collection(db, 'medicines'), where('status', '==', 'approved')));
+  return snap.docs.map((d) => normalize(d.id, d.data()));
+}
+
+/** Staff: every record. */
+export async function fetchAll(): Promise<Medicine[]> {
+  const snap = await getDocs(collection(db, 'medicines'));
+  return snap.docs.map((d) => normalize(d.id, d.data())).sort((a, b) => a.id.localeCompare(b.id));
+}
+
+/** Returns null if missing OR not allowed (the public cannot read non-approved records). */
+export async function fetchOne(id: string): Promise<Medicine | null> {
+  try {
+    const snap = await getDoc(doc(db, 'medicines', id));
+    return snap.exists() ? normalize(snap.id, snap.data()) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveMedicine(m: Medicine, uid: string): Promise<void> {
+  const { id, ...rest } = m;
+  // Only VERIFIED brands with a barcode can ever be matched by the scanner.
+  const barcodes = m.brands.filter((b) => b.verified && b.barcode.trim()).map((b) => b.barcode.trim());
+  await setDoc(doc(db, 'medicines', id), { ...rest, barcodes, updatedAt: serverTimestamp(), updatedBy: uid });
+}
+
+export async function setStatus(id: string, status: Status, uid: string): Promise<void> {
+  await updateDoc(doc(db, 'medicines', id), { status, updatedAt: serverTimestamp(), updatedBy: uid });
+}
+
+export async function removeMedicine(id: string): Promise<void> {
+  await deleteDoc(doc(db, 'medicines', id));
+}
+
+/** Creates the starter DRAFT records (name + class only). Never overwrites existing records. */
+export async function seedStarter(uid: string): Promise<number> {
+  let created = 0;
+  for (const s of SEED) {
+    const existing = await getDoc(doc(db, 'medicines', s.id));
+    if (existing.exists()) continue;
+    const m = emptyMedicine(s.id);
+    m.genericName = s.genericName;
+    m.activeIngredients = s.activeIngredients;
+    m.drugClass = s.drugClass;
+    m.notes =
+      'Starter record: only the name and drug class are pre-filled and they are UNVERIFIED. ' +
+      'Every other field must be entered from official sources and reviewed by a qualified clinician before approval.';
+    await saveMedicine(m, uid);
+    created++;
+  }
+  return created;
+}
+
+/** Problems that block approval. Empty array = OK. */
+export function validateForApproval(m: Medicine): string[] {
+  const p: string[] = [];
+  for (const f of TEXT_FIELDS) {
+    if (!m[f].ar.trim() || !m[f].en.trim()) p.push(`${FIELD_LABELS[f].ar} / ${FIELD_LABELS[f].en}`);
+  }
+  if (m.sources.length === 0) p.push('مصدر واحد على الأقل / At least one source');
+  for (const s of m.sources) {
+    if (!/^https:\/\/\S+$/i.test(s.url.trim()) || !s.title.trim()) {
+      p.push('كل مصدر يحتاج عنوانًا ورابط https / Each source needs a title and an https URL');
+      break;
+    }
+  }
+  if (!m.lastReviewed) p.push('تاريخ المراجعة / Review date');
+  if (!m.reviewedBy.trim()) p.push('اسم المراجع / Reviewer name');
+  for (const b of m.brands) {
+    if (b.verified && !/^https:\/\/\S+$/i.test(b.sourceUrl.trim())) {
+      p.push(`رابط مصدر للاسم التجاري الموثّق / Source URL for verified brand: ${b.name || '?'}`);
+    }
+  }
+  return p;
+}
+
+export const medicineUrl = (id: string) =>
+  `${window.location.origin}${window.location.pathname}#/medicine/${id}`;
+
+export function useApproved() {
+  const [items, setItems] = useState<Medicine[] | null>(null);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    fetchApproved()
+      .then(setItems)
+      .catch(() => {
+        setError(true);
+        setItems([]);
+      });
+  }, []);
+  return { items, error };
+}
