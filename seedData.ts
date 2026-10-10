@@ -1,4 +1,5 @@
 import { Bi, Brand, Source, TextField } from './types';
+import { MORE } from './seedMore';
 
 /**
  * Starter content. IMPORTANT:
@@ -225,13 +226,7 @@ Drug-by-drug interactions are not listed in this source.`,
 export const SEED: SeedItem[] = [
   AMOXICILLIN,
   AMOX_CLAV,
-  bare('azithromycin', 'Azithromycin', 'أزيثروميسين', 'Macrolide', 'ماكروليد'),
-  bare('doxycycline', 'Doxycycline', 'دوكسيسيكلين', 'Tetracycline', 'تتراسيكلين'),
-  bare('cephalexin', 'Cephalexin', 'سيفالكسين', 'Cephalosporin (1st generation)', 'سيفالوسبورين (الجيل الأول)'),
-  bare('cefuroxime', 'Cefuroxime', 'سيفوروكسيم', 'Cephalosporin (2nd generation)', 'سيفالوسبورين (الجيل الثاني)'),
-  bare('ceftriaxone', 'Ceftriaxone', 'سيفترياكسون', 'Cephalosporin (3rd generation)', 'سيفالوسبورين (الجيل الثالث)'),
-  bare('metronidazole', 'Metronidazole', 'ميترونيدازول', 'Nitroimidazole', 'نيتروإيميدازول'),
-  bare('nitrofurantoin', 'Nitrofurantoin', 'نيتروفورانتوين', 'Nitrofuran', 'نيتروفوران'),
+  ...MORE,
 ];
 
 /** Starting points for reviewers. Always paste the EXACT page URL of the monograph you used. */
