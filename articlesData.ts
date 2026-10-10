@@ -72,4 +72,101 @@ export const ARTICLES: Article[] = [
       en: 'Antibiotics can cause symptoms such as nausea, stomach upset, diarrhoea, or a skin rash. Tell a doctor or pharmacist about any new symptom after starting a medicine.\n\nGet urgent medical help for swelling of the face, lips, or throat, difficulty breathing, a severe or painful skin rash, or severe, persistent, or bloody diarrhoea.\n\nSuspected side effects can be reported to your doctor, your pharmacist, or your national pharmacovigilance centre.',
     },
   },
+
+  {
+    id: 'how-resistance-spreads',
+    title: { ar: 'كيف تنتشر البكتيريا المقاومة؟', en: 'How resistant bacteria spread' },
+    summary: {
+      ar: 'في المستشفيات والمجتمع: طرق الانتقال وكيف نحدّ منها.',
+      en: 'In hospitals and in the community: how they pass between people and how to limit it.',
+    },
+    body: {
+      ar: 'تنتشر البكتيريا المقاومة بالطرق نفسها التي تنتشر بها البكتيريا الأخرى: الاتصال المباشر بشخص مصاب، أو عبر الأيدي والأسطح والأدوات الملوثة، وأحيانًا عبر الطعام أو الماء الملوث.\n\nيمكن أن تنتشر في المجتمع وفي أماكن الرعاية الصحية مثل المستشفيات ودور الرعاية، حيث يوجد قرب بين أشخاص كثيرين لديهم مناعة ضعيفة. لذلك تُعدّ نظافة اليدين ونظافة الأدوات واتباع قواعد مكافحة العدوى أمرًا مهمًا جدًا هناك.\n\nيمكنك المساعدة بغسل اليدين جيدًا، وتغطية الجروح بضماد نظيف، والبقاء في المنزل عند الإصابة بعدوى قابلة للانتقال، واتباع نصائح التطعيم.',
+      en: 'Resistant bacteria spread in the same ways as other bacteria: through direct contact with an infected person, through contaminated hands, surfaces or equipment, and sometimes through contaminated food or water.\n\nThey can spread in the community and in healthcare settings such as hospitals and care homes, where many people with weakened defences are close together. Clean hands, clean equipment, and following infection-control rules are very important there.\n\nYou can help by washing your hands properly, covering wounds with a clean dressing, staying at home when you have an infection that can pass to others, and following vaccination advice.',
+    },
+  },
+  {
+    id: 'prevent-infections',
+    title: { ar: 'الوقاية من العدوى: اليدان واللقاحات والنظافة', en: 'Preventing infections: hands, vaccines and hygiene' },
+    summary: {
+      ar: 'أفضل مضاد حيوي هو الذي لا تحتاج إليه أصلًا.',
+      en: 'The best antibiotic is the one you never need.',
+    },
+    body: {
+      ar: 'الوقاية من العدوى تقلل الحاجة إلى المضادات الحيوية وتبطئ ظهور المقاومة.\n\nاغسل يديك بالماء والصابون: بعد استخدام المرحاض، وقبل تحضير الطعام أو تناوله، وبعد السعال أو العطاس، وبعد العناية بشخص مريض. وإذا لم يتوفر الماء والصابون فيمكن استخدام معقّم اليدين الكحولي إن لم تكن اليدان متسختين بشكل واضح.\n\nالتزم بالتطعيمات الموصى بها في برنامج الصحة الوطني في بلدك. وحضّر الطعام وخزّنه بطريقة آمنة، واشرب ماءً آمنًا، وحافظ على الجروح نظيفة ومغطاة.',
+      en: 'Preventing infection reduces the need for antibiotics and slows resistance.\n\nWash your hands with soap and water: after using the toilet, before preparing or eating food, after coughing or sneezing, and after caring for someone who is ill. When soap and water are not available, an alcohol-based hand rub can be used if your hands are not visibly dirty.\n\nKeep up with the vaccinations recommended by your national health programme. Prepare and store food safely, drink safe water, and keep cuts clean and covered.',
+    },
+  },
+  {
+    id: 'one-health',
+    title: { ar: 'نهج الصحة الواحدة: الإنسان والحيوان والبيئة', en: 'One Health: people, animals and the environment' },
+    summary: {
+      ar: 'لماذا تُعدّ المقاومة مشكلة مشتركة تتجاوز المستشفيات.',
+      en: 'Why resistance is a shared problem that goes beyond hospitals.',
+    },
+    body: {
+      ar: 'تُستخدم المضادات الحيوية للإنسان وللحيوان وأحيانًا في الزراعة. ويمكن للبكتيريا المقاومة أن تنتقل بين البشر والحيوانات والغذاء والبيئة، ولذلك فالمقاومة مشكلة مشتركة.\n\nنهج «الصحة الواحدة» يربط بين صحة الإنسان وصحة الحيوان والبيئة، ويشجّع على الاستخدام الحذر للمضادات الحيوية في كل هذه المجالات وليس في المستشفيات فقط.\n\nما يمكن للأفراد فعله: استخدام المضادات الحيوية كما وُصفت فقط، وتداول الطعام وطهيه بأمان، وغسل اليدين بعد ملامسة الحيوانات، ودعم الجهود الداعية إلى الاستخدام المسؤول للمضادات الحيوية لدى الحيوانات.',
+      en: 'Antibiotics are used for people, for animals, and sometimes in agriculture. Resistant bacteria can move between people, animals, food and the environment, so resistance is a shared problem.\n\nOne Health is an approach that links human health, animal health and the environment. It encourages careful antibiotic use in all of these areas, not only in hospitals.\n\nWhat individuals can do: use antibiotics only as prescribed, handle and cook food safely, wash hands after contact with animals, and support efforts for the responsible use of antibiotics in animals.',
+    },
+  },
+  {
+    id: 'questions-to-ask',
+    title: { ar: 'أسئلة تسألها لطبيبك أو صيدلانيك', en: 'Questions to ask your doctor or pharmacist' },
+    summary: {
+      ar: 'من حقك أن تسأل. إليك أسئلة تساعدك على فهم علاجك.',
+      en: 'It is your right to ask. These questions help you understand your treatment.',
+    },
+    body: {
+      ar: 'من حقك أن تسأل. من الأسئلة المفيدة: هل مرضي ناتج عن بكتيريا أم فيروس؟ هل أحتاج فعلًا إلى مضاد حيوي؟ ما اسم الدواء ولماذا يُوصف؟ كيف ومتى أتناوله، مع الطعام أو بدونه، ولكم من الوقت؟ ماذا أفعل إذا نسيت جرعة؟ ما الأعراض الجانبية التي أراقبها ومتى أطلب المساعدة؟ هل يمكن تناوله مع أدويتي الأخرى والمكملات؟\n\nأحضر معك في كل زيارة قائمة بأدويتك وبأي حساسية لديك.\n\nإذا لم يُوصف لك مضاد حيوي فاسأل عمّا يمكنك فعله لتشعر بتحسّن، ومتى تعود إذا ساءت الأعراض.',
+      en: 'It is your right to ask. Useful questions include: Is my illness caused by bacteria or a virus? Do I really need an antibiotic? What is the medicine called and what is it for? How and when should I take it, with or without food, and for how long? What should I do if I miss a dose? What side effects should I watch for, and when should I get help? Can I take it with my other medicines or supplements?\n\nBring a list of your medicines and allergies to every visit.\n\nIf you are not prescribed an antibiotic, ask what you can do to feel better and when to come back if symptoms get worse.',
+    },
+  },
+  {
+    id: 'storage-and-disposal',
+    title: { ar: 'تخزين الأدوية والتخلص من بقاياها', en: 'Storing and disposing of leftover medicines' },
+    summary: {
+      ar: 'لماذا لا نحتفظ ببقايا المضاد الحيوي، وكيف نتخلص منها بأمان.',
+      en: 'Why we do not keep leftover antibiotics, and how to dispose of them safely.',
+    },
+    body: {
+      ar: 'يُوصف المضاد الحيوي لمرض واحد ولشخص واحد. قد يبدو الاحتفاظ بالبقايا للمرة القادمة مغريًا لكنه غير آمن: فقد لا يناسب الدواء المرض الجديد، وقد تنتهي صلاحية الدواء القديم.\n\nخزّن الأدوية كما هو مكتوب على العبوة أو النشرة، وغالبًا في مكان بارد وجاف وبعيدًا عن متناول الأطفال ونظرهم. وتحقق من تاريخ انتهاء الصلاحية.\n\nلا ترمِ الأدوية في المغسلة أو المرحاض إلا إذا طُلب منك ذلك. اسأل الصيدلاني عن خدمة استرجاع الأدوية أو عن طريقة التخلص الآمن في منطقتك.',
+      en: 'Antibiotics are prescribed for one illness and one person. Keeping leftovers for later is tempting but not safe: the medicine may not suit the next illness, and old medicine may be out of date.\n\nStore medicines as written on the label or leaflet, usually in a cool, dry place and out of reach and sight of children. Check the expiry date.\n\nDo not throw medicines in the sink or toilet unless you are told to. Ask your pharmacist about a take-back service or about safe disposal in your area.',
+    },
+  },
+  {
+    id: 'nurse-role',
+    title: { ar: 'دور التمريض في الوعي بالمضادات الحيوية', en: 'The nurse’s role in antibiotic awareness' },
+    summary: {
+      ar: 'كيف يساهم الممرضون في الاستخدام الرشيد للمضادات الحيوية.',
+      en: 'How nurses help antibiotics to be used wisely.',
+    },
+    body: {
+      ar: 'يقضي الممرضون وقتًا مع المرضى أكثر من معظم المهنيين الآخرين، ما يجعلهم شركاء أساسيين في الاستخدام الرشيد للمضادات الحيوية.\n\nمن مساهماتهم المعتادة: شرح سبب الحاجة أو عدم الحاجة إلى المضاد الحيوي للمرضى وأسرهم، والتحقق من الحساسية والتفاعلات السابقة وتوثيقها، وإعطاء الأدوية في موعدها وكما هو مطلوب، ومراقبة الأعراض الجانبية والتفاعلات التحسسية والإبلاغ عنها، وتعزيز نظافة اليدين وإجراءات مكافحة العدوى، وتعليم المرضى كيف يتناولون دواءهم وماذا يفعلون عند نسيان جرعة.\n\nتختلف المسؤوليات الدقيقة باختلاف البلد ومكان العمل والسياسات المحلية.',
+      en: 'Nurses spend more time with patients than most other professionals, which makes them key partners in using antibiotics wisely.\n\nTypical contributions: explaining to patients and families why an antibiotic is or is not needed; checking and recording allergies and previous reactions; giving medicines on time and as ordered; watching for and reporting side effects and allergic reactions; promoting hand hygiene and infection-control measures; and teaching patients how to take their medicine and what to do if they miss a dose.\n\nThe exact responsibilities depend on the country, the workplace and local policy.',
+    },
+  },
+  {
+    id: 'antibiotic-allergy',
+    title: { ar: 'الحساسية من المضادات الحيوية', en: 'Allergy to antibiotics' },
+    summary: {
+      ar: 'الفرق بين الحساسية والأثر الجانبي، وماذا تقول للمختصين.',
+      en: 'The difference between an allergy and a side effect, and what to tell professionals.',
+    },
+    body: {
+      ar: 'يُصاب بعض الأشخاص بتفاعل تحسسي تجاه مضادات حيوية معينة. وقد تشمل العلامات طفحًا جلديًا، وحكة، وتورّم الوجه أو الشفتين أو الحلق، وأزيزًا، وصعوبة في التنفس. التفاعلات الشديدة تحتاج إلى مساعدة طارئة.\n\nأخبر كل طبيب وصيدلاني وممرض بأي تفاعل حدث لك مع دواء وماذا حدث بالضبط. لا تصنّف نفسك «حساسًا» بسبب اضطراب بسيط في المعدة: فالأثر الجانبي ليس هو الحساسية.\n\nإذا قيل لك إنك حساس لكنك غير متأكد فاسأل طبيبك إن كان إجراء فحص أو مراجعة مناسبًا. ولا تجرّب الدواء بنفسك في المنزل للتأكد.',
+      en: 'Some people have allergic reactions to certain antibiotics. Signs can include a skin rash, itching, swelling of the face, lips or throat, wheezing, or difficulty breathing. Severe reactions need emergency help.\n\nTell every doctor, pharmacist and nurse about any reaction you have had to a medicine and what exactly happened. Do not label yourself allergic because of a mild upset stomach: a side effect is not the same as an allergy.\n\nIf you have been told you are allergic but are not sure, ask your doctor whether testing or a review is appropriate. Do not test yourself by taking the medicine at home.',
+    },
+  },
+  {
+    id: 'antibiotic-diarrhoea',
+    title: { ar: 'الإسهال المرتبط بالمضادات الحيوية', en: 'Diarrhoea linked to antibiotics' },
+    summary: {
+      ar: 'متى يكون الإسهال بسيطًا ومتى يحتاج إلى استشارة طبية.',
+      en: 'When diarrhoea is mild and when it needs medical advice.',
+    },
+    body: {
+      ar: 'قد تُخلّ المضادات الحيوية بالتوازن الطبيعي للبكتيريا في الأمعاء وتسبب براز لينًا لدى بعض الأشخاص. وغالبًا ما يكون ذلك خفيفًا ويزول بعد انتهاء العلاج.\n\nالإسهال المائي الشديد أو الدموي، أو ألم البطن القوي، أو الحمّى، أو الإسهال الذي يستمر أيامًا أو يبدأ بعد أسابيع من العلاج يحتاج إلى استشارة طبية لأنه قد يدل على عدوى أكثر خطورة. اشرب السوائل لتجنب الجفاف.\n\nلا تتناول أدوية إيقاف الإسهال دون سؤال الصيدلاني أو الطبيب.',
+      en: 'Antibiotics can upset the normal balance of bacteria in the gut and cause loose stools in some people. This is often mild and settles after the course ends.\n\nSevere, watery or bloody diarrhoea, strong stomach pain, fever, or diarrhoea that lasts for days or starts weeks after treatment needs medical advice, because it can be a sign of a more serious infection. Drink fluids to avoid dehydration.\n\nDo not take anti-diarrhoea medicines without asking a pharmacist or doctor.',
+    },
+  },
 ];

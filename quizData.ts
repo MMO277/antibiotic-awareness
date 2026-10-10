@@ -143,4 +143,104 @@ export const QUESTIONS: Question[] = [
     answer: 1,
     why: o('قد يدل على مضاعفات تحتاج تقييمًا طبيًا.', 'It may signal a complication that needs medical assessment.'),
   },
+
+  {
+    q: o('شخص لديه رشح وسعال منذ ثلاثة أيام. هل تفيد المضادات الحيوية عادةً؟', 'A person has had a cold with a runny nose and cough for three days. Do antibiotics usually help?'),
+    options: [
+      o('نعم، دائمًا', 'Yes, always'),
+      o('لا، فنزلات البرد تسببها الفيروسات عادةً', 'No, colds are usually caused by viruses'),
+      o('نعم، إذا استمر السعال أكثر من يوم', 'Yes, if the cough lasts more than a day'),
+    ],
+    answer: 1,
+    why: o('المضادات الحيوية لا تعمل ضد الفيروسات.', 'Antibiotics do not work against viruses.'),
+  },
+  {
+    q: o('أحد أفراد أسرتك لديه أعراض مشابهة لأعراضك. هل تعطيه من مضادك الحيوي الموصوف لك؟', 'A family member has symptoms like yours. Should you give them some of your prescribed antibiotic?'),
+    options: [
+      o('نعم، فالأعراض متشابهة', 'Yes, the symptoms are similar'),
+      o('لا، يجب أن يراجع هو الطبيب أو الصيدلي', 'No, they should see a doctor or pharmacist themselves'),
+      o('نعم، إذا كان وزنه قريبًا من وزني', 'Yes, if their weight is close to mine'),
+    ],
+    answer: 1,
+    why: o('الدواء وُصف لشخص محدد ولحالة محددة.', 'The medicine was prescribed for one person and one condition.'),
+  },
+  {
+    q: o('أي عبارة هي الأنسب بشأن شراء المضاد الحيوي؟', 'Which statement about getting an antibiotic is best?'),
+    options: [
+      o('أشتريه متى شعرت بأعراض', 'I buy one whenever I have symptoms'),
+      o('أستخدمه فقط عندما ينصح به مختص صحي', 'I use one only when a healthcare professional advises it'),
+      o('أطلب الاسم الذي استخدمه جاري', 'I ask for the one my neighbour used'),
+    ],
+    answer: 1,
+    why: o('اختيار المضاد الحيوي وتحديد الحاجة إليه قرار مختص.', 'Deciding whether an antibiotic is needed, and which one, is a professional decision.'),
+  },
+  {
+    q: o('قال الطبيب إن مرضك فيروسي ولا يحتاج إلى مضاد حيوي. ما الأنسب؟', 'The doctor says your illness is viral and does not need an antibiotic. What is best?'),
+    options: [
+      o('أطلب مضادًا حيويًا على أي حال', 'Ask for an antibiotic anyway'),
+      o('أسأل عمّا يخفف الأعراض ومتى أعود إن ساءت', 'Ask how to ease the symptoms and when to return if they get worse'),
+      o('أذهب إلى طبيب آخر لأحصل على واحد', 'Go to another doctor to get one'),
+    ],
+    answer: 1,
+    why: o('المضاد الحيوي لن يفيد في عدوى فيروسية وقد يضر.', 'An antibiotic will not help a viral infection and may cause harm.'),
+  },
+  {
+    q: o('استخدام المضادات الحيوية لدى الحيوانات قد يساهم أيضًا في ظهور المقاومة.', 'Antibiotic use in animals can also contribute to resistance.'),
+    options: [
+      o('صحيح', 'True'),
+      o('خطأ', 'False'),
+      o('لا علاقة له بصحة الإنسان إطلاقًا', 'It has nothing to do with human health at all'),
+    ],
+    answer: 0,
+    why: o('يمكن للبكتيريا المقاومة أن تنتقل بين الحيوان والإنسان والغذاء والبيئة.', 'Resistant bacteria can move between animals, people, food and the environment.'),
+  },
+  {
+    q: o('البكتيريا المقاومة توجد في المستشفيات فقط.', 'Resistant bacteria are found only in hospitals.'),
+    options: [
+      o('صحيح', 'True'),
+      o('خطأ', 'False'),
+    ],
+    answer: 1,
+    why: o('قد توجد في المجتمع وفي أماكن الرعاية الصحية على حد سواء.', 'They can be found in the community as well as in healthcare settings.'),
+  },
+  {
+    q: o('بقيت لديك أقراص بعد انتهاء العلاج. ما الأنسب؟', 'You have some tablets left after the treatment ended. What is best?'),
+    options: [
+      o('أحتفظ بها للمرة القادمة', 'Keep them for next time'),
+      o('أعطيها لصديق', 'Give them to a friend'),
+      o('أسأل الصيدلاني عن التخلص الآمن منها', 'Ask the pharmacist how to dispose of them safely'),
+    ],
+    answer: 2,
+    why: o('لا يُحتفظ ببقايا المضاد الحيوي ولا تُشارك مع الآخرين.', 'Leftover antibiotics should not be kept or shared.'),
+  },
+  {
+    q: o('شعرت باضطراب بسيط في المعدة بعد بدء المضاد الحيوي. ما الخطوة الأولى الأنسب؟', 'You feel a mild upset stomach after starting an antibiotic. What is a good first step?'),
+    options: [
+      o('أتوقف فورًا ولا أتناوله مجددًا', 'Stop at once and never take it again'),
+      o('أسأل الصيدلاني أو من وصف الدواء', 'Ask the pharmacist or the prescriber'),
+      o('أضاعف الجرعة لأتخلص من العرض', 'Double the dose to get rid of it'),
+    ],
+    answer: 1,
+    why: o('يستطيع المختص إرشادك، وقد يكون العرض شائعًا وبسيطًا.', 'A professional can advise you; the symptom may be common and mild.'),
+  },
+  {
+    q: o('من يمكن أن يُصاب بعدوى بكتيريا مقاومة؟', 'Who can get an infection with resistant bacteria?'),
+    options: [
+      o('كبار السن فقط', 'Only older people'),
+      o('أي شخص', 'Anyone'),
+      o('من تناولوا مضادات حيوية فقط', 'Only people who have taken antibiotics'),
+    ],
+    answer: 1,
+    why: o('يمكن لأي شخص أن يُصاب، وإن كان بعض الأشخاص أكثر عرضة من غيرهم.', 'Anyone can be infected, although some people are at higher risk than others.'),
+  },
+  {
+    q: o('لماذا يسأل الطبيب أو الصيدلاني عن الحمل والرضاعة وأمراض الكلى والكبد؟', 'Why does a doctor or pharmacist ask about pregnancy, breastfeeding, and kidney or liver disease?'),
+    options: [
+      o('هذه أسئلة روتينية بلا فائدة', 'These are routine questions with no purpose'),
+      o('لأن بعض المضادات الحيوية قد لا تناسب هذه الحالات أو تحتاج إلى تعديل', 'Because some antibiotics may not suit these situations or may need adjusting'),
+      o('لتحديد سعر الدواء', 'To decide the price of the medicine'),
+    ],
+    answer: 1,
+    why: o('هذه المعلومات تساعد على اختيار دواء آمن ومناسب.', 'This information helps choose a safe and suitable medicine.'),
+  },
 ];
