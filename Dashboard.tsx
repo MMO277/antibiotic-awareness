@@ -135,6 +135,11 @@ export default function Dashboard() {
     return (
       <main className="wrap narrow stack">
         <p className="alert">{t('noRole')}</p>
+        <div className="card">
+          <p className="small">{t('yourUid')}</p>
+          <p dir="ltr" className="uidbox">{user.uid}</p>
+          <p className="small muted" dir="ltr">{user.email}</p>
+        </div>
         <button className="btn ghost" onClick={logout}>{t('signOut')}</button>
       </main>
     );

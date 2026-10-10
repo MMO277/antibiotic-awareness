@@ -153,3 +153,11 @@ legend { font-weight: 600; padding-inline: 6px; }
 @media print {
   .top, .foot, .btn { display: none !important; }
 }
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { font: inherit; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--white); color: var(--ink); cursor: pointer; }
+.chip.on { background: var(--teal); border-color: var(--teal); color: var(--white); font-weight: 600; }
+.quick { font-size: 1.02rem; }
+.urgent { font-size: .95rem; }
+.uidbox { font-family: ui-monospace, Menlo, monospace; word-break: break-all; background: var(--tint); padding: 8px 10px; border-radius: 8px; user-select: all; }
+.srclist { padding-inline-start: 1.1rem; margin: 0; }

@@ -10,19 +10,24 @@ export const norm = (s: string) =>
     .replace(/ة/g, 'ه')
     .trim();
 
-export function searchMeds(list: Medicine[], q: string): Medicine[] {
+export type SearchMode = 'all' | 'name' | 'ingredient' | 'maker';
+
+/** Search in Arabic or English. mode narrows WHAT is searched; cls filters by drug class text. */
+export function searchMeds(list: Medicine[], q: string, mode: SearchMode = 'all', cls = ''): Medicine[] {
   const tokens = norm(q).split(/\s+/).filter(Boolean);
-  if (!tokens.length) return list;
   return list.filter((m) => {
-    const hay = norm(
-      [
-        m.genericName.ar, m.genericName.en,
-        m.activeIngredients.ar, m.activeIngredients.en,
-        m.drugClass.ar, m.drugClass.en,
-        m.strengths.en, m.strengths.ar,
-        ...m.brands.filter((b) => b.verified).map((b) => b.name),
-      ].join(' '),
-    );
+    if (cls && m.drugClass.en !== cls && m.drugClass.ar !== cls) return false;
+    if (!tokens.length) return true;
+    const brands = m.brands.filter((b) => b.verified);
+    const name = [m.genericName.ar, m.genericName.en, ...brands.map((b) => b.name)];
+    const ingredient = [m.activeIngredients.ar, m.activeIngredients.en];
+    const maker = brands.map((b) => b.manufacturer);
+    const fields =
+      mode === 'name' ? name
+      : mode === 'ingredient' ? ingredient
+      : mode === 'maker' ? maker
+      : [...name, ...ingredient, ...maker, m.drugClass.ar, m.drugClass.en, m.approvedUses.ar, m.approvedUses.en];
+    const hay = norm(fields.join(' '));
     return tokens.every((t) => hay.includes(t));
   });
 }

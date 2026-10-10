@@ -47,6 +47,9 @@ export interface Brand {
 export interface Source {
   title: string;
   url: string;
+  publisher?: string; // organisation that published the page
+  updated?: string; // YYYY-MM-DD, last update date shown on the source (if any)
+  accessed?: string; // YYYY-MM-DD, the day a person actually read the page
 }
 
 export type Medicine = Record<TextField, Bi> & {

@@ -2,10 +2,25 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useLang } from './i18n';
 import { fetchOne } from './medicinesApi';
-import { FIELD_LABELS, Medicine, pick, TEXT_FIELDS } from './types';
+import { FIELD_LABELS, Medicine, pick, TextField } from './types';
 import StatusBadge from './StatusBadge';
 import QRBlock from './QRBlock';
 import Disclaimer from './Disclaimer';
+
+// patient-friendly order: what it is for, how often, side effects, guidance, then the details
+const ORDER: TextField[] = [
+  'approvedUses',
+  'dosingReference',
+  'sideEffects',
+  'patientEducation',
+  'contraindications',
+  'interactions',
+  'pregnancyBreastfeeding',
+  'renalHepatic',
+  'ageRestrictions',
+  'strengths',
+  'activeIngredients',
+];
 
 export default function MedicinePage() {
   const { id = '' } = useParams();
@@ -29,12 +44,14 @@ export default function MedicinePage() {
   const approved = m.status === 'approved';
   const brands = approved ? m.brands.filter((b) => b.verified) : m.brands;
   const name = pick(m.genericName, lang);
+  const uses = pick(m.approvedUses, lang).split('\n')[0];
 
   return (
     <main className="wrap stack">
       <Link to="/medicines">← {t('navMedicines')}</Link>
       <header className="med-head">
         <h1>{name}</h1>
+        <p className="muted">{pick(m.drugClass, lang)}</p>
         <div className="meta">
           <StatusBadge status={m.status} />
           <span>
@@ -49,11 +66,22 @@ export default function MedicinePage() {
       </header>
 
       {!approved && <p className="alert">{t('previewWarn')}</p>}
-      <Disclaimer />
+
+      {uses && (
+        <section className="notice quick">
+          <strong>{t('quickSummary')}: </strong>
+          {uses}
+        </section>
+      )}
+
+      <section className="alert urgent">
+        <strong>{t('urgentTitle')} </strong>
+        {t('urgentText')}
+      </section>
 
       <div className="med-grid">
         <div className="stack">
-          {TEXT_FIELDS.filter((f) => f !== 'genericName').map((f) => {
+          {ORDER.map((f) => {
             const v = pick(m[f], lang);
             return (
               <section key={f} className="card">
@@ -84,8 +112,8 @@ export default function MedicinePage() {
                         <td>
                           {b.name} {!b.verified && <span className="badge draft">{t('unverified')}</span>}
                         </td>
-                        <td>{b.manufacturer}</td>
-                        <td dir="ltr">{b.barcode}</td>
+                        <td>{b.manufacturer || '—'}</td>
+                        <td dir="ltr">{b.barcode || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -99,17 +127,23 @@ export default function MedicinePage() {
             {m.sources.length === 0 ? (
               <p className="muted">{t('notEntered')}</p>
             ) : (
-              <ul>
+              <ul className="srclist">
                 {m.sources.map((s, i) => (
                   <li key={i}>
                     <a href={s.url} target="_blank" rel="noopener noreferrer">
                       {s.title}
                     </a>
+                    <div className="small muted">
+                      {[s.publisher, s.updated && `${t('updated')}: ${s.updated}`, s.accessed && `${t('accessed')}: ${s.accessed}`]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
           </section>
+          <Disclaimer />
         </div>
 
         <aside>

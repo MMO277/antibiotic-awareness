@@ -109,6 +109,9 @@ export default function Editor() {
           <div key={i} className="subcard">
             <input placeholder={t('sourceTitle')} value={s.title} onChange={(e) => upd({ sources: m.sources.map((x, k) => (k === i ? { ...x, title: e.target.value } : x)) })} />
             <input dir="ltr" placeholder={t('sourceUrl')} value={s.url} onChange={(e) => upd({ sources: m.sources.map((x, k) => (k === i ? { ...x, url: e.target.value } : x)) })} />
+            <input placeholder={t('publisher')} value={s.publisher ?? ''} onChange={(e) => upd({ sources: m.sources.map((x, k) => (k === i ? { ...x, publisher: e.target.value } : x)) })} />
+            <input type="date" title={t('updated')} aria-label={t('updated')} value={s.updated ?? ''} onChange={(e) => upd({ sources: m.sources.map((x, k) => (k === i ? { ...x, updated: e.target.value } : x)) })} />
+            <input type="date" title={t('accessed')} aria-label={t('accessed')} value={s.accessed ?? ''} onChange={(e) => upd({ sources: m.sources.map((x, k) => (k === i ? { ...x, accessed: e.target.value } : x)) })} />
             <button className="btn small danger" onClick={() => upd({ sources: m.sources.filter((_, k) => k !== i) })}>{t('remove')}</button>
           </div>
         ))}

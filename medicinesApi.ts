@@ -57,23 +57,31 @@ export async function removeMedicine(id: string): Promise<void> {
   await deleteDoc(doc(db, 'medicines', id));
 }
 
-/** Creates the starter DRAFT records (name + class only). Never overwrites existing records. */
+/**
+ * Creates the starter DRAFT records. It never overwrites a record that a person has worked on:
+ * an existing record is only upgraded when it is still a bare starter (draft, no sources, starter note).
+ */
 export async function seedStarter(uid: string): Promise<number> {
-  let created = 0;
+  let written = 0;
   for (const s of SEED) {
     const existing = await getDoc(doc(db, 'medicines', s.id));
-    if (existing.exists()) continue;
+    if (existing.exists()) {
+      const ex = normalize(s.id, existing.data());
+      const bareStarter = ex.status === 'draft' && ex.sources.length === 0 && /^(Starter record|\[STARTER\])/.test(ex.notes);
+      if (!bareStarter) continue;
+    }
     const m = emptyMedicine(s.id);
-    m.genericName = s.genericName;
-    m.activeIngredients = s.activeIngredients;
-    m.drugClass = s.drugClass;
-    m.notes =
-      'Starter record: only the name and drug class are pre-filled and they are UNVERIFIED. ' +
-      'Every other field must be entered from official sources and reviewed by a qualified clinician before approval.';
+    for (const f of TEXT_FIELDS) {
+      const v = s.fields[f];
+      if (v) m[f] = v;
+    }
+    m.brands = s.brands;
+    m.sources = s.sources;
+    m.notes = s.notes;
     await saveMedicine(m, uid);
-    created++;
+    written++;
   }
-  return created;
+  return written;
 }
 
 /** Problems that block approval. Empty array = OK. */
