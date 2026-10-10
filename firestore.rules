@@ -81,12 +81,16 @@ service cloud.firestore {
       // Anonymous create is allowed only while the admin has switched the survey ON.
       allow create: if exists(/databases/$(database)/documents/researchConfig/main)
         && get(/databases/$(database)/documents/researchConfig/main).data.enabled == true
-        && request.resource.data.keys().hasOnly(['phase', 'code', 'answers', 'consent', 'lang', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['phase', 'name', 'age', 'answers', 'consent', 'lang', 'createdAt'])
+        && request.resource.data.keys().hasAll(['phase', 'name', 'age', 'answers', 'consent', 'lang', 'createdAt'])
         && request.resource.data.phase in ['pre', 'post']
         && request.resource.data.consent == true
-        && request.resource.data.code is string
-        && request.resource.data.code.size() >= 4
-        && request.resource.data.code.size() <= 12
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.age is int
+        && request.resource.data.age >= 1
+        && request.resource.data.age <= 120
         && request.resource.data.answers is list
         && request.resource.data.answers.size() <= 30
         && request.resource.data.lang in ['ar', 'en']

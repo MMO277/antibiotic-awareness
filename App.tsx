@@ -9,6 +9,7 @@ import Articles, { ArticlePage } from './Articles';
 import Quiz from './Quiz';
 import Scan from './Scan';
 import Learn from './Learn';
+import Assistant from './Assistant';
 import MythFact from './MythFact';
 import Methodology from './Methodology';
 import Research from './Research';
@@ -53,6 +54,7 @@ export default function App() {
         <Route path="/quiz" element={<Quiz />} />
         <Route path="/scan" element={<Scan />} />
         <Route path="/learn" element={<Learn />} />
+        <Route path="/assistant" element={<Assistant />} />
         <Route path="/myth" element={<MythFact />} />
         <Route path="/methodology" element={<Methodology />} />
         <Route path="/research" element={<Research />} />

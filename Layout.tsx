@@ -8,6 +8,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const links: [string, string][] = [
     ['/', 'navHome'],
     ['/medicines', 'navMedicines'],
+    ['/assistant', 'navAssistant'],
     ['/learn', 'navLearn'],
     ['/myth', 'navMyth'],
     ['/quiz', 'navQuiz'],

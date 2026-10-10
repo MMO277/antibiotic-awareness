@@ -43,16 +43,16 @@ export default function Methodology() {
       <h2>{ar ? 'الذكاء الاصطناعي' : 'Artificial intelligence'}</h2>
       <p>
         {ar
-          ? 'لا يحتوي الموقع حاليًا على مساعد دردشة. استُخدم الذكاء الاصطناعي في المساعدة على التلخيص والترجمة فقط، وقد يخطئ، ولذلك تُعرض المصادر الأصلية.'
-          : 'The site currently has no chat assistant. AI was used only to help summarise and translate, and it can make mistakes, which is why the original sources are linked.'}
+          ? 'يحتوي الموقع على مساعد تعليمي يجيب من محتوى الموقع نفسه (المقالات وخرافة أم حقيقة وسجلات الأدوية) ويعرض مصدر كل إجابة، ولا يستخدم نموذج ذكاء اصطناعي ولا بحثًا مباشرًا في الإنترنت حاليًا. استُخدم الذكاء الاصطناعي في المساعدة على التلخيص والترجمة فقط، وقد يخطئ، ولذلك تُعرض المصادر الأصلية.'
+          : 'The site has a learning assistant that answers from the site’s own content (articles, myth or fact, and medicine records) and shows the source of each answer. It does not use an AI model or live web search at the moment. AI was used only to help summarise and translate, and it can make mistakes, which is why the original sources are linked.'}
       </p>
 
       <h2>{ar ? 'الخصوصية' : 'Privacy'}</h2>
       <ul>
-        <li>{ar ? 'لا حسابات للزوار، ولا نجمع أسماء أو أرقام هواتف أو بيانات تعريفية.' : 'Visitors have no accounts, and we do not collect names, phone numbers, or other identifiers.'}</li>
+        <li>{ar ? 'لا حسابات للزوار، ولا نجمع أي بيانات شخصية إلا في الاستبيان البحثي الاختياري (انظر أدناه).' : 'Visitors have no accounts, and we collect no personal data except in the optional research survey (see below).'}</li>
         <li>{ar ? 'تقدّم رحلة التعلم يُحفظ على جهازك فقط (مساحة تخزين المتصفح).' : 'Learning-journey progress is stored only on your device (browser storage).'}</li>
         <li>{ar ? 'تُحمَّل الخطوط من Google Fonts، وقد يرى مزوّد الخط عنوان IP الخاص بك.' : 'Fonts are loaded from Google Fonts, so the font provider may see your IP address.'}</li>
-        <li>{ar ? 'الاستبيان البحثي (إن فُعّل) بلا اسم أو بريد، ويحفظ رمزًا عشوائيًا وإجاباتك ولغتك ووقت الإرسال فقط. لا يُفعَّل إلا بعد موافقة الجامعة ولجنة الأخلاقيات. مدة الاحتفاظ بالبيانات تحددها الجامعة ولم تُحدَّد بعد.' : 'The research survey (if enabled) has no name or email and stores only a random code, your answers, language, and submission time. It is enabled only after university and ethics approval. The retention period is set by the university and has not been decided yet.'}</li>
+        <li>{ar ? 'الاستبيان البحثي (إن فُعّل) يحفظ اسمك وعمرك وإجاباتك ولغتك ووقت الإرسال، ولا يراها إلا مسؤول الموقع، ولا تُنشر الأسماء. المشاركة طوعية، ويلزم موافقة ولي الأمر لمن هم دون 18 عامًا. لا يُفعَّل إلا بعد موافقة الجامعة ولجنة الأخلاقيات. مدة الاحتفاظ بالبيانات تحددها الجامعة ولم تُحدَّد بعد. المحادثة مع المساعد لا تُحفظ.' : 'The research survey (if enabled) stores your name, age, answers, language and submission time. Only the site administrator can see them and names are not published. Taking part is voluntary, and under-18s need a parent or guardian’s permission. It is enabled only after university and ethics approval. The retention period is set by the university and has not been decided yet. Chats with the assistant are not saved.'}</li>
       </ul>
 
       <h2>{ar ? 'حدود المشروع' : 'Limits'}</h2>
