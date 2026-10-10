@@ -10,6 +10,7 @@ import Disclaimer from './Disclaimer';
 // patient-friendly order: what it is for, how often, side effects, guidance, then the details
 const ORDER: TextField[] = [
   'approvedUses',
+  'mechanism',
   'dosingReference',
   'sideEffects',
   'patientEducation',
@@ -65,8 +66,6 @@ export default function MedicinePage() {
           )}
         </div>
       </header>
-
-      {!approved && <p className="alert">{t('previewWarn')}</p>}
 
       {uses && (
         <section className="notice quick">

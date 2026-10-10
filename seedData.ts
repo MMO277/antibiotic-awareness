@@ -1,5 +1,6 @@
 import { Bi, Brand, Source, TextField } from './types';
 import { MORE } from './seedMore';
+import { EXTRA } from './seedExtra';
 
 /**
  * Starter content. IMPORTANT:
@@ -223,11 +224,41 @@ Drug-by-drug interactions are not listed in this source.`,
   notes: NOTE_FILLED + ' Brand name listed is the US name shown on the source page; add local brands, manufacturers and barcodes only from an official local source.',
 };
 
+/**
+ * Mechanism of action (update 6). For the records created before this field existed, the text states ONLY what the
+ * source patient page already says about how the medicine works (it is the same wording as the drug-class line).
+ * The detailed molecular mechanism is not in those pages: it must be added from the official label by a reviewer.
+ */
+const mech = (en: string, ar: string): Bi => ({
+  en: `As stated by the source: ${en}. The detailed molecular mechanism is not described in this patient-information source: add it from the official drug label.`,
+  ar: `كما يذكر المصدر: ${ar}. لا تُشرح الآلية الجزيئية التفصيلية في هذا المصدر الموجّه للمرضى: تُضاف من النشرة الرسمية للدواء.`,
+});
+const MECHANISM: Record<string, Bi> = {
+  amoxicillin: mech('it works by stopping bacteria from growing', 'يعمل عن طريق إيقاف نمو البكتيريا'),
+  'amoxicillin-clavulanic-acid': mech(
+    'amoxicillin works against the bacteria, and clavulanic acid stops bacteria from breaking down the amoxicillin',
+    'يعمل الأموكسيسيلين ضد البكتيريا، بينما يمنع حمض الكلافولانيك البكتيريا من تكسير الأموكسيسيلين',
+  ),
+  azithromycin: mech('it works by stopping bacteria from growing', 'يعمل عن طريق إيقاف نمو البكتيريا'),
+  doxycycline: mech('it works by stopping bacteria from growing and spreading', 'يعمل عن طريق إيقاف نمو البكتيريا وانتشارها'),
+  cephalexin: mech('it works by killing bacteria', 'يعمل عن طريق قتل البكتيريا'),
+  cefuroxime: mech('it works by stopping bacteria from growing', 'يعمل عن طريق إيقاف نمو البكتيريا'),
+  ceftriaxone: mech('it works by killing bacteria', 'يعمل عن طريق قتل البكتيريا'),
+  metronidazole: mech('it works by stopping bacteria from growing', 'يعمل عن طريق إيقاف نمو البكتيريا'),
+  nitrofurantoin: mech('it works by killing the bacteria that cause the infection', 'يعمل عن طريق قتل البكتيريا المسببة للعدوى'),
+  ciprofloxacin: mech('it works by killing bacteria', 'يعمل عن طريق قتل البكتيريا'),
+  clindamycin: mech('it works by slowing or stopping the growth of bacteria', 'يعمل عن طريق إبطاء نمو البكتيريا أو إيقافه'),
+  'co-trimoxazole': mech('it works by stopping bacteria from growing', 'يعمل عن طريق إيقاف نمو البكتيريا'),
+};
+const withMechanism = (s: SeedItem): SeedItem =>
+  MECHANISM[s.id] && !s.fields.mechanism ? { ...s, fields: { ...s.fields, mechanism: MECHANISM[s.id] } } : s;
+
 export const SEED: SeedItem[] = [
   AMOXICILLIN,
   AMOX_CLAV,
   ...MORE,
-];
+  ...EXTRA,
+].map(withMechanism);
 
 /** Starting points for reviewers. Always paste the EXACT page URL of the monograph you used. */
 export const SOURCE_HINTS: { name: string; url: string }[] = [

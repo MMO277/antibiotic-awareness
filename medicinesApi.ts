@@ -96,7 +96,19 @@ export async function seedStarter(uid: string): Promise<number> {
     if (existing.exists()) {
       const ex = normalize(s.id, existing.data());
       const bareStarter = ex.status === 'draft' && ex.sources.length === 0 && /^(Starter record|\[STARTER\])/.test(ex.notes);
-      if (!bareStarter) continue;
+      if (!bareStarter) {
+        // Additive only: if the new "mechanism" field is still empty, fill JUST that field. Nothing else is touched.
+        const mech = s.fields.mechanism;
+        if (mech && !ex.mechanism.ar.trim() && !ex.mechanism.en.trim()) {
+          try {
+            await updateDoc(doc(db, 'medicines', s.id), { mechanism: mech });
+            written++;
+          } catch {
+            /* e.g. an approved record that this role may not edit: leave it as it is */
+          }
+        }
+        continue;
+      }
     }
     const m = emptyMedicine(s.id);
     for (const f of TEXT_FIELDS) {
