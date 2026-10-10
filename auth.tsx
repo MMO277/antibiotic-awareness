@@ -9,6 +9,7 @@ export const ROLES: Role[] = ['editor', 'reviewer', 'admin'];
 interface Ctx {
   user: User | null;
   role: Role | null;
+  roleStatus: string; // 'ok' | 'missing' | 'invalid:<value>' | 'error:<code>' (for troubleshooting)
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -17,6 +18,7 @@ interface Ctx {
 const AuthCtx = createContext<Ctx>({
   user: null,
   role: null,
+  roleStatus: '',
   loading: true,
   login: async () => {},
   logout: async () => {},
@@ -27,6 +29,7 @@ export const useAuth = () => useContext(AuthCtx);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
+  const [roleStatus, setRoleStatus] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,13 +40,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // The role lives in Firestore (roles/{uid}); the rules protect it,
           // so a user cannot give themselves a role from the browser.
           const snap = await getDoc(doc(db, 'roles', u.uid));
-          const r = snap.exists() ? (snap.data().role as Role) : null;
-          setRole(r && ROLES.includes(r) ? r : null);
-        } catch {
+          if (!snap.exists()) {
+            setRole(null);
+            setRoleStatus('missing');
+          } else {
+            const raw = snap.data().role;
+            const r = typeof raw === 'string' ? (raw.trim() as Role) : null;
+            if (r && ROLES.includes(r)) {
+              setRole(r);
+              setRoleStatus('ok');
+            } else {
+              setRole(null);
+              setRoleStatus(`invalid:${String(raw)}`);
+            }
+          }
+        } catch (e) {
           setRole(null);
+          setRoleStatus(`error:${(e as { code?: string }).code ?? 'unknown'}`);
         }
       } else {
         setRole(null);
+        setRoleStatus('');
       }
       setLoading(false);
     });
@@ -56,5 +73,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
   };
 
-  return <AuthCtx.Provider value={{ user, role, loading, login, logout }}>{children}</AuthCtx.Provider>;
+  return <AuthCtx.Provider value={{ user, role, roleStatus, loading, login, logout }}>{children}</AuthCtx.Provider>;
 }

@@ -37,7 +37,7 @@ export default function Scan() {
       return;
     }
     // 2) barcodes: match ONLY verified products of approved records
-    const hit = items?.find((x) => x.barcodes.includes(clean));
+    const hit = items?.find((x) => x.status === 'approved' && x.barcodes.includes(clean));
     if (hit) {
       stop();
       nav(`/medicine/${hit.id}`);

@@ -1,5 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from './firebase';
 import { Role, useAuth } from './auth';
 import { useLang } from './i18n';
 import { fetchAll, removeMedicine, seedStarter, setStatus, validateForApproval } from './medicinesApi';
@@ -7,6 +9,14 @@ import { Medicine, pick, Status, STATUSES } from './types';
 import StatusBadge from './StatusBadge';
 import UsersTab from './UsersTab';
 import ResearchTab from './ResearchTab';
+
+function diagText(status: string, t: (k: string) => string): string {
+  if (status === 'missing') return t('diagMissing');
+  if (status.startsWith('invalid:')) return t('diagInvalid');
+  if (status === 'error:permission-denied') return t('diagRules');
+  if (status.startsWith('error:')) return t('diagOther');
+  return '';
+}
 
 function Login() {
   const { t } = useLang();
@@ -47,6 +57,23 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
   const [filter, setFilter] = useState<Status | 'all'>('all');
   const [err, setErr] = useState('');
   const reviewer = role === 'reviewer' || role === 'admin';
+  const [showUn, setShowUn] = useState(true);
+  useEffect(() => {
+    getDoc(doc(db, 'settings', 'public'))
+      .then((s) => {
+        if (s.exists()) setShowUn(s.data().showUnreviewed !== false);
+      })
+      .catch(() => {});
+  }, []);
+  async function saveShowUn(v: boolean) {
+    setShowUn(v);
+    try {
+      await setDoc(doc(db, 'settings', 'public'), { showUnreviewed: v });
+    } catch {
+      setShowUn(!v);
+      alert(t('actionFailed'));
+    }
+  }
 
   const load = () =>
     fetchAll().then(setItems).catch(() => setErr(t('loadError')));
@@ -64,7 +91,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
       }
     }
     try {
-      await setStatus(m.id, status, uid);
+      await setStatus(m, status, uid);
       await load();
     } catch {
       alert(t('actionFailed'));
@@ -93,6 +120,15 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
 
   return (
     <div className="stack">
+      {role === 'admin' && (
+        <div className="card form">
+          <label className="check">
+            <input type="checkbox" checked={showUn} onChange={(e) => saveShowUn(e.target.checked)} />
+            {t('previewToggle')}
+          </label>
+          <p className="small muted">{t('previewToggleHelp')}</p>
+        </div>
+      )}
       <div className="row wrapRow">
         <Link to="/admin/new" className="btn">{t('newMed')}</Link>
         <button className="btn ghost" onClick={starter}>{t('starter')}</button>
@@ -126,7 +162,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
 
 export default function Dashboard() {
   const { t } = useLang();
-  const { user, role, loading, logout } = useAuth();
+  const { user, role, roleStatus, loading, logout } = useAuth();
   const [tab, setTab] = useState<'meds' | 'research' | 'users'>('meds');
 
   if (loading) return <main className="wrap"><p>{t('loading')}</p></main>;
@@ -139,6 +175,8 @@ export default function Dashboard() {
           <p className="small">{t('yourUid')}</p>
           <p dir="ltr" className="uidbox">{user.uid}</p>
           <p className="small muted" dir="ltr">{user.email}</p>
+          <p className="small"><b>{t('diagTitle')}</b> <span dir="ltr">({roleStatus})</span></p>
+          <p className="small">{diagText(roleStatus, t)}</p>
         </div>
         <button className="btn ghost" onClick={logout}>{t('signOut')}</button>
       </main>

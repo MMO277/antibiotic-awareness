@@ -53,6 +53,7 @@ export default function MedicinePage() {
         <h1>{name}</h1>
         <p className="muted">{pick(m.drugClass, lang)}</p>
         <div className="meta">
+          {!approved && <span className="badge pending_review">{t('unreviewed')}</span>}
           <StatusBadge status={m.status} />
           <span>
             {t('lastReviewed')}: <b>{m.lastReviewed || '—'}</b>

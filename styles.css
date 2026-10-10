@@ -161,3 +161,7 @@ legend { font-weight: 600; padding-inline: 6px; }
 .urgent { font-size: .95rem; }
 .uidbox { font-family: ui-monospace, Menlo, monospace; word-break: break-all; background: var(--tint); padding: 8px 10px; border-radius: 8px; user-select: all; }
 .srclist { padding-inline-start: 1.1rem; margin: 0; }
+
+.progress { height: 10px; background: var(--tint); border-radius: 999px; overflow: hidden; border: 1px solid var(--line); }
+.progress span { display: block; height: 100%; background: var(--teal); transition: width .3s; }
+.row .opt { flex: 1; text-align: center; font-weight: 600; }

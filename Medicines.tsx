@@ -58,6 +58,7 @@ export default function Medicines() {
           return (
             <Link key={m.id} to={`/medicine/${m.id}`} className="card link">
               <h3>{pick(m.genericName, lang)}</h3>
+              {m.status !== 'approved' && <span className="badge pending_review">{t('unreviewed')}</span>}
               <p className="muted small">{pick(m.drugClass, lang)}</p>
               {uses && <p className="small">{uses.length > 150 ? uses.slice(0, 150) + '…' : uses}</p>}
               {brands.length > 0 && <p className="small muted">{brands.join(' · ')}</p>}

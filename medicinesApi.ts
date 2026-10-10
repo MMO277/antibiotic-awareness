@@ -20,11 +20,28 @@ function normalize(id: string, d: any): Medicine {
   return m;
 }
 
-/** Public: approved records only (the Firestore rules enforce this too). */
+/**
+ * Public list: approved records, PLUS source-based records that are not clinically reviewed yet
+ * (previewPublic = true) while the admin keeps "show unreviewed records" switched on.
+ * The Firestore rules enforce both conditions.
+ */
 export async function fetchApproved(): Promise<Medicine[]> {
-  const snap = await getDocs(query(collection(db, 'medicines'), where('status', '==', 'approved')));
-  return snap.docs.map((d) => normalize(d.id, d.data()));
+  const col = collection(db, 'medicines');
+  const out = new Map<string, Medicine>();
+  const a = await getDocs(query(col, where('status', '==', 'approved')));
+  a.docs.forEach((d) => out.set(d.id, normalize(d.id, d.data())));
+  try {
+    const p = await getDocs(query(col, where('previewPublic', '==', true)));
+    p.docs.forEach((d) => out.set(d.id, normalize(d.id, d.data())));
+  } catch {
+    /* unreviewed preview is switched off: only approved records are shown */
+  }
+  return Array.from(out.values()).sort((x, y) => x.id.localeCompare(y.id));
 }
+
+/** A not-yet-approved record is shown publicly (with a warning) only if it has at least one source. */
+const isPreviewable = (status: Status, nSources: number) =>
+  (status === 'draft' || status === 'pending_review') && nSources > 0;
 
 /** Staff: every record. */
 export async function fetchAll(): Promise<Medicine[]> {
@@ -46,11 +63,22 @@ export async function saveMedicine(m: Medicine, uid: string): Promise<void> {
   const { id, ...rest } = m;
   // Only VERIFIED brands with a barcode can ever be matched by the scanner.
   const barcodes = m.brands.filter((b) => b.verified && b.barcode.trim()).map((b) => b.barcode.trim());
-  await setDoc(doc(db, 'medicines', id), { ...rest, barcodes, updatedAt: serverTimestamp(), updatedBy: uid });
+  await setDoc(doc(db, 'medicines', id), {
+    ...rest,
+    barcodes,
+    previewPublic: isPreviewable(m.status, m.sources.length),
+    updatedAt: serverTimestamp(),
+    updatedBy: uid,
+  });
 }
 
-export async function setStatus(id: string, status: Status, uid: string): Promise<void> {
-  await updateDoc(doc(db, 'medicines', id), { status, updatedAt: serverTimestamp(), updatedBy: uid });
+export async function setStatus(m: Medicine, status: Status, uid: string): Promise<void> {
+  await updateDoc(doc(db, 'medicines', m.id), {
+    status,
+    previewPublic: isPreviewable(status, m.sources.length),
+    updatedAt: serverTimestamp(),
+    updatedBy: uid,
+  });
 }
 
 export async function removeMedicine(id: string): Promise<void> {
@@ -80,6 +108,10 @@ export async function seedStarter(uid: string): Promise<number> {
     m.notes = s.notes;
     await saveMedicine(m, uid);
     written++;
+  }
+  // make sure older records also carry the visibility flag the new rules expect
+  for (const m of await fetchAll()) {
+    await updateDoc(doc(db, 'medicines', m.id), { previewPublic: isPreviewable(m.status, m.sources.length) });
   }
   return written;
 }

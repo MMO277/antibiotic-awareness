@@ -8,10 +8,13 @@ export default function Layout({ children }: { children: ReactNode }) {
   const links: [string, string][] = [
     ['/', 'navHome'],
     ['/medicines', 'navMedicines'],
-    ['/articles', 'navArticles'],
+    ['/learn', 'navLearn'],
+    ['/myth', 'navMyth'],
     ['/quiz', 'navQuiz'],
+    ['/articles', 'navArticles'],
     ['/scan', 'navScan'],
     ['/research', 'navResearch'],
+    ['/methodology', 'navMethod'],
   ];
   return (
     <div className="app">

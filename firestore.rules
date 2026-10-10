@@ -17,12 +17,22 @@ service cloud.firestore {
     function isStaff() { return hasRole(['editor', 'reviewer', 'admin']); }
     function isReviewer() { return hasRole(['reviewer', 'admin']); }
 
+    // Admin switch: show source-based records that are not clinically reviewed yet.
+    // If the settings document does not exist, the switch counts as ON.
+    function previewOn() {
+      let p = /databases/$(database)/documents/settings/public;
+      return !exists(p) || get(p).data.get('showUnreviewed', true) != false;
+    }
+
     function validMedicine() {
       let d = request.resource.data;
       return d.status in ['draft', 'pending_review', 'approved', 'archived']
         && d.sources is list
         && d.brands is list
         && d.barcodes is list
+        // previewPublic must be true only for draft/pending records that have a source
+        && d.previewPublic is bool
+        && d.previewPublic == ((d.status == 'draft' || d.status == 'pending_review') && d.sources.size() > 0)
         // approval needs at least one source, a review date and a reviewer name
         && (d.status != 'approved' || (
               d.sources.size() > 0
@@ -32,8 +42,12 @@ service cloud.firestore {
 
     // ---------- medicines ----------
     match /medicines/{id} {
-      // The public can read ONLY approved records. Staff can read everything.
-      allow read: if (resource != null && resource.data.status == 'approved') || isStaff();
+      // The public can read approved records, and (while the admin switch is ON)
+      // source-based records flagged previewPublic. Staff can read everything.
+      allow read: if (resource != null
+                      && (resource.data.status == 'approved'
+                          || (resource.data.previewPublic == true && previewOn())))
+                  || isStaff();
 
       // Editors may only save Draft / Pending Review.
       // Reviewers and admins may also approve and archive.
@@ -42,6 +56,12 @@ service cloud.firestore {
         && (request.resource.data.status in ['draft', 'pending_review'] || isReviewer());
 
       allow delete: if hasRole(['admin']);
+    }
+
+    // ---------- site settings ----------
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if hasRole(['admin']);
     }
 
     // ---------- roles (who is editor / reviewer / admin) ----------

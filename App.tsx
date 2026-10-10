@@ -8,6 +8,9 @@ import MedicinePage from './MedicinePage';
 import Articles, { ArticlePage } from './Articles';
 import Quiz from './Quiz';
 import Scan from './Scan';
+import Learn from './Learn';
+import MythFact from './MythFact';
+import Methodology from './Methodology';
 import Research from './Research';
 import Dashboard from './Dashboard';
 import Editor from './Editor';
@@ -49,6 +52,9 @@ export default function App() {
         <Route path="/articles/:id" element={<ArticlePage />} />
         <Route path="/quiz" element={<Quiz />} />
         <Route path="/scan" element={<Scan />} />
+        <Route path="/learn" element={<Learn />} />
+        <Route path="/myth" element={<MythFact />} />
+        <Route path="/methodology" element={<Methodology />} />
         <Route path="/research" element={<Research />} />
         <Route path="/admin" element={<Dashboard />} />
         <Route path="/admin/new" element={<Editor />} />
