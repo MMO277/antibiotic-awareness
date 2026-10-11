@@ -1,10 +1,12 @@
 import { ReactNode } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useLang } from './i18n';
 import Disclaimer from './Disclaimer';
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useLang();
+  const { pathname } = useLocation();
+  const isHome = pathname === '/' || pathname === '';
   const links: [string, string][] = [
     ['/', 'navHome'],
     ['/medicines', 'navMedicines'],
@@ -49,11 +51,14 @@ export default function Layout({ children }: { children: ReactNode }) {
         </nav>
       </header>
       {children}
-      <footer className="foot">
-        <div className="wrap">
-          <Disclaimer compact />
-        </div>
-      </footer>
+      {/* the short educational disclaimer is shown on the home page only */}
+      {isHome && (
+        <footer className="foot">
+          <div className="wrap">
+            <Disclaimer compact />
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
