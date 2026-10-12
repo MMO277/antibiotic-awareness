@@ -4,6 +4,8 @@ import { useLang } from './i18n';
 import { ARTICLES } from './articlesData';
 import { pick } from './types';
 import Disclaimer from './Disclaimer';
+import DidYouKnow from './DidYouKnow';
+import ResistanceCounter from './ResistanceCounter';
 
 export default function Home() {
   const { t, lang } = useLang();
@@ -32,6 +34,9 @@ export default function Home() {
       <div className="wrap stack">
         <Disclaimer />
 
+        {/* Did you know? — random fact each visit */}
+        <DidYouKnow />
+
         <section>
           <div className="head">
             <h2>{t('articlesTitle')}</h2>
@@ -47,6 +52,9 @@ export default function Home() {
             ))}
           </div>
         </section>
+
+        {/* Resistance counter — animated stats */}
+        <ResistanceCounter />
 
         <section className="card quizcta">
           <div>

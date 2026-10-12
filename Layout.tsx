@@ -1,12 +1,29 @@
-import { ReactNode, useRef, useEffect } from 'react';
+import { ReactNode, useRef, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useLang } from './i18n';
 import Disclaimer from './Disclaimer';
+
+// ── Dark mode helper ──
+function useDarkMode() {
+  const [dark, setDark] = useState<boolean>(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) return saved === 'dark';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }, [dark]);
+
+  return { dark, toggle: () => setDark((d) => !d) };
+}
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useLang();
   const { pathname } = useLocation();
   const isHome = pathname === '/' || pathname === '';
+  const { dark, toggle } = useDarkMode();
 
   // ── Page transition animation ──
   const pageRef = useRef<HTMLDivElement>(null);
@@ -14,7 +31,6 @@ export default function Layout({ children }: { children: ReactNode }) {
     const el = pageRef.current;
     if (!el) return;
     el.classList.remove('page-enter');
-    // Force the browser to register the removal before re-adding
     void el.offsetWidth;
     el.classList.add('page-enter');
   }, [pathname]);
@@ -31,6 +47,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     ['/research', 'navResearch'],
     ['/methodology', 'navMethod'],
   ];
+
   return (
     <div className="app">
       <header className="top">
@@ -47,10 +64,25 @@ export default function Layout({ children }: { children: ReactNode }) {
               <small>{t('tagline')}</small>
             </span>
           </Link>
-          <button className="lang" onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} aria-label="Language">
-            {lang === 'ar' ? 'English' : 'العربية'}
-          </button>
+
+          <div className="row" style={{ gap: '8px' }}>
+            {/* Dark mode toggle */}
+            <button
+              className="dark-toggle"
+              onClick={toggle}
+              aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={dark ? (lang === 'ar' ? 'الوضع الفاتح' : 'Light mode') : (lang === 'ar' ? 'الوضع الداكن' : 'Dark mode')}
+            >
+              {dark ? '☀️' : '🌙'}
+            </button>
+
+            {/* Language toggle */}
+            <button className="lang" onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')} aria-label="Language">
+              {lang === 'ar' ? 'English' : 'العربية'}
+            </button>
+          </div>
         </div>
+
         <nav className="wrap nav" aria-label="main">
           {links.map(([to, key]) => (
             <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'on' : '')}>
@@ -68,7 +100,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         {children}
       </div>
 
-      {/* the short educational disclaimer is shown on the home page only */}
+      {/* Educational disclaimer on home page only */}
       {isHome && (
         <footer className="foot">
           <div className="wrap">

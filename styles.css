@@ -191,17 +191,154 @@ legend { font-weight: 600; padding-inline: 6px; }
 .chatform { display: flex; gap: 8px; }
 .chatform input { flex: 1; min-width: 0; }
 
-/* ── Page transition animation (update 8) ── */
+/* ══════════════════════════════════════════
+   UPDATE 8 — Page transition animation
+   ══════════════════════════════════════════ */
 @keyframes pageEnter {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.page-enter {
-  animation: pageEnter 0.32s ease both;
+.page-enter { animation: pageEnter 0.32s ease both; }
+
+/* ══════════════════════════════════════════
+   UPDATE 9 — Dark mode
+   ══════════════════════════════════════════ */
+:root {
+  --navy: #0b3c5d;
+  --blue: #1565a8;
+  --teal: #0e9aa7;
+  --teal-dark: #0a7c87;
+  --tint: #eaf6f8;
+  --line: #d3e4ea;
+  --ink: #12303f;
+  --muted: #587282;
+  --white: #fff;
+  --warn-bg: #fff7e0;
+  --warn-line: #e2b33c;
+  --danger: #b3261e;
+  --ok: #0a7c5a;
+  --bg: #fff;
+  --card-bg: #fff;
+  --hero-bg: #0b3c5d;
 }
+
+[data-theme="dark"] {
+  --navy: #90cad8;
+  --blue: #7ab4f0;
+  --teal: #20c5d4;
+  --teal-dark: #17b8c4;
+  --tint: #1a2f38;
+  --line: #2a4050;
+  --ink: #d6eaf2;
+  --muted: #8ab4c4;
+  --white: #1a2f38;
+  --warn-bg: #2e2600;
+  --warn-line: #c49a20;
+  --danger: #f28b82;
+  --ok: #5ec99e;
+  --bg: #0f1e26;
+  --card-bg: #162530;
+  --hero-bg: #091820;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  transition: background 0.25s, color 0.25s;
+}
+.card { background: var(--card-bg); }
+.hero { background: var(--hero-bg); }
+
+/* dark mode toggle button */
+.dark-toggle {
+  background: transparent;
+  color: var(--white);
+  border: 1px solid rgba(255,255,255,.5);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font: inherit;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.dark-toggle:hover { background: rgba(255,255,255,.12); }
+
+/* ══════════════════════════════════════════
+   UPDATE 9 — Loading skeleton shimmer
+   ══════════════════════════════════════════ */
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+.skel-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+.skel-line {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--tint) 25%,
+    var(--line) 50%,
+    var(--tint) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.4s infinite linear;
+  height: 14px;
+}
+.skel-title  { height: 20px; width: 70%; }
+.skel-sub    { width: 55%; }
+.skel-short  { width: 35%; }
+
+/* ══════════════════════════════════════════
+   UPDATE 9 — Did you know card
+   ══════════════════════════════════════════ */
+.dyk-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--tint);
+  border: 1px solid var(--teal);
+  border-inline-start: 5px solid var(--teal);
+  border-radius: 12px;
+  padding: 16px;
+}
+.dyk-icon  { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
+.dyk-label { font-weight: 700; color: var(--teal-dark); margin: 0 0 4px; font-size: .92rem; }
+.dyk-text  { margin: 0; font-size: 1rem; line-height: 1.7; }
+
+/* ══════════════════════════════════════════
+   UPDATE 9 — Resistance counter
+   ══════════════════════════════════════════ */
+.rc-section {
+  background: var(--navy);
+  color: var(--white, #fff);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+}
+[data-theme="dark"] .rc-section { background: var(--hero-bg); border: 1px solid var(--line); }
+.rc-title  { color: #fff; margin: 0 0 6px; font-size: 1.15rem; }
+.rc-sub    { color: #b0d8e8; margin: 0 0 22px; font-size: .95rem; }
+.rc-grid   { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.rc-stat   {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 12px;
+  padding: 18px 14px;
+}
+.rc-number {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  font-weight: 700;
+  color: #17b8c4;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+.rc-unit   { font-size: 1rem; font-weight: 400; color: #90cad8; margin-inline-start: 4px; }
+.rc-label  { color: #d6eaf2; font-size: .9rem; line-height: 1.5; margin: 0 0 6px; }
+.rc-source { color: #7ab0c0; font-size: .78rem; margin: 0; }
