@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useRef, useEffect } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useLang } from './i18n';
 import Disclaimer from './Disclaimer';
@@ -7,6 +7,18 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useLang();
   const { pathname } = useLocation();
   const isHome = pathname === '/' || pathname === '';
+
+  // ── Page transition animation ──
+  const pageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = pageRef.current;
+    if (!el) return;
+    el.classList.remove('page-enter');
+    // Force the browser to register the removal before re-adding
+    void el.offsetWidth;
+    el.classList.add('page-enter');
+  }, [pathname]);
+
   const links: [string, string][] = [
     ['/', 'navHome'],
     ['/medicines', 'navMedicines'],
@@ -50,7 +62,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           </NavLink>
         </nav>
       </header>
-      {children}
+
+      {/* Animated page wrapper */}
+      <div ref={pageRef} className="page-enter">
+        {children}
+      </div>
+
       {/* the short educational disclaimer is shown on the home page only */}
       {isHome && (
         <footer className="foot">

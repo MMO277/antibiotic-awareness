@@ -190,3 +190,18 @@ legend { font-weight: 600; padding-inline: 6px; }
 .chip:hover { background: var(--tint); }
 .chatform { display: flex; gap: 8px; }
 .chatform input { flex: 1; min-width: 0; }
+
+/* ── Page transition animation (update 8) ── */
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-enter {
+  animation: pageEnter 0.32s ease both;
+}
