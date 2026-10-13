@@ -798,3 +798,12 @@ export const SEED: SeedItem[] = [
     notes: 'Approved verified record with Egyptian barcodes and pricing.',
   },
 ];
+
+
+export const SOURCE_HINTS: { name: string; url: string }[] = [
+  { name: 'هيئة الدواء المصرية (EDA)', url: 'https://edaegypt.gov.eg' },
+  { name: 'MedlinePlus (US National Library of Medicine)', url: 'https://medlineplus.gov/' },
+  { name: 'DailyMed (official US drug labels)', url: 'https://dailymed.nlm.nih.gov/' },
+  { name: 'European Medicines Agency (EMA)', url: 'https://www.ema.europa.eu/' },
+  { name: 'CDC – Antibiotic Prescribing and Use', url: 'https://www.cdc.gov/antibiotic-use/' },
+];
