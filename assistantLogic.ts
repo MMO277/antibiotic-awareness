@@ -96,7 +96,7 @@ const EXTRA_CLINICAL_PASSAGES: Passage[] = [
     text: {
       ar: 'يجب دائماً إكمال مدة علاج المضاد الحيوي المحددة بالكامل حتى آخر حبة، حتى لو اختفت الأعراض وشعرت بتحسن تام بعد يومين أو ثلاثة! الشعور بالتحسن يعني فقط أن أضعف البكتيريا قد ماتت، بينما تظل البكتيريا الأكثر شراسة ومقاومة حية. إذا توقفت مبكراً، ستتكاثر هذه البكتيريا الشرسة مجدداً وتطور مناعة كاملة ضد الدواء، مما يؤدي إلى انتكاسة المرض بشكل أعنف وفشل المضاد الحيوي في علاجه لاحقاً.',
       en: 'Always complete the full prescribed duration of antibiotics, even if symptoms vanish after a few days. Early discontinuation leaves the most resilient bacteria alive, allowing them to mutate and cause a resistant recurrence.',
-    ),
+    },
     link: '/articles/safe-use',
     refs: [{ title: 'CDC - Taking Antibiotics Safely', url: 'https://www.cdc.gov/antibiotic-use/q-and-a.html' }],
     hay: norm('اوقف الدواء تحسن وقفت خفيت اكمل الكورس مده العلاج اختفاء الاعراض'),
