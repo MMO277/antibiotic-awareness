@@ -110,7 +110,7 @@ export default function ChatWidget() {
             <div className="popup-title">
               <span className="head-avatar">🤖</span>
               <div>
-                <b>{lang === 'ar' ? 'المساعد الذكي للمضادات' : 'Antibiotic AI Assistant'}</b>
+                <b>{lang === 'ar' ? 'المساعد الذكي' : 'Antibiotic AI Assistant'}</b>
                 <div className="online-status">
                   <span className="status-dot"></span>
                   <small>{lang === 'ar' ? 'متصل وجاهز للرد' : 'Online & ready'}</small>
