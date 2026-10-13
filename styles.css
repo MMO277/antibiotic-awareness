@@ -1603,3 +1603,149 @@ body {
   padding-top: 12px;
   border-top: 1px solid var(--line);
 }
+
+/* ══════════════════════════════════════════
+   UPDATE 20 — Health Profile & Allergy Checker
+   ══════════════════════════════════════════ */
+.profile-banner {
+  border: 2px solid var(--teal);
+  background: var(--tint);
+  border-radius: 16px;
+  padding: 18px 24px;
+}
+.banner-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.card-head-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 12px;
+  background: var(--tint);
+  border-radius: 10px;
+  font-size: .92rem;
+}
+.empty-state-box {
+  text-align: center;
+  padding: 30px 16px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.empty-state-box span {
+  font-size: 2.2rem;
+}
+
+/* Allergy items */
+.allergy-cards-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.allergy-item-card {
+  border-radius: 14px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+[data-theme="dark"] .allergy-item-card {
+  background: var(--card-bg);
+}
+.allergy-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.allergy-drug-name {
+  margin: 0 0 4px;
+  color: #b91c1c;
+  font-size: 1.15rem;
+}
+.allergy-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.allergy-item-body {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: .92rem;
+}
+.symptom-line {
+  margin: 0;
+  color: var(--text);
+}
+.notes-line {
+  margin: 0;
+  font-size: .88rem;
+  color: var(--muted);
+}
+.evidence-tag {
+  color: var(--teal-dark);
+  font-weight: 600;
+}
+
+/* Meds items */
+.med-cards-stack {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+.med-record-card {
+  background: var(--tint);
+  border-radius: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+}
+.med-record-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.med-record-head h4 {
+  margin: 0 0 2px;
+  font-size: .95rem;
+}
+.med-record-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Footer actions */
+.profile-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 10px;
+}
+
+/* Simulation chips */
+.sim-chips-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}

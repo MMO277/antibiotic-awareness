@@ -1,3 +1,5 @@
+import HealthProfile from './HealthProfile';
+import AllergyChecker from './AllergyChecker';
 import ListenLearn from './ListenLearn';
 import Tracker from './Tracker';
 import SideEffectsGuide from './SideEffectsGuide';
@@ -56,6 +58,8 @@ export default function App() {
         <Route path="/tracker" element={<Tracker />} />
         <Route path="/side-effects" element={<SideEffectsGuide />} />
         <Route path="/listen" element={<ListenLearn />} />
+        <Route path="/health-profile" element={<HealthProfile />} />
+        <Route path="/allergy-checker" element={<AllergyChecker />} />
         <Route path="/medicine/:id" element={<MedicinePage />} />
         <Route path="/articles" element={<Articles />} />
         <Route path="/articles/:id" element={<ArticlePage />} />

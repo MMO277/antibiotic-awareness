@@ -53,6 +53,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     { to: '/tracker', key: 'navTracker', icon: '⏱️' },
     { to: '/side-effects', key: 'navSideEffects', icon: '🚨' },
     { to: '/listen', key: 'navListen', icon: '🎧' },
+    { to: '/health-profile', key: 'navHealthProfile', icon: '👤' },
+    { to: '/allergy-checker', key: 'navAllergyChecker', icon: '🛡️' },
     { to: '/assistant', key: 'navAssistant', icon: '🤖' },
     { to: '/learn', key: 'navLearn', icon: '📚' },
     { to: '/myth', key: 'navMyth', icon: '💡' },
