@@ -1,3 +1,4 @@
+import ListenLearn from './ListenLearn';
 import Tracker from './Tracker';
 import SideEffectsGuide from './SideEffectsGuide';
 import Interactions from './Interactions';
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="/interactions" element={<Interactions />} />
         <Route path="/tracker" element={<Tracker />} />
         <Route path="/side-effects" element={<SideEffectsGuide />} />
+        <Route path="/listen" element={<ListenLearn />} />
         <Route path="/medicine/:id" element={<MedicinePage />} />
         <Route path="/articles" element={<Articles />} />
         <Route path="/articles/:id" element={<ArticlePage />} />

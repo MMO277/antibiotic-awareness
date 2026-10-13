@@ -1376,3 +1376,230 @@ body {
   font-size: .9rem;
   line-height: 1.6;
 }
+
+/* ══════════════════════════════════════════
+   UPDATE 19 — Listen & Learn Audio Feature
+   ══════════════════════════════════════════ */
+.listen-topic-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+.listen-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--tint);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: start;
+  font: inherit;
+  color: var(--text);
+  transition: all .2s ease;
+}
+.listen-chip:hover {
+  border-color: var(--teal);
+  background: var(--card-bg, #fff);
+}
+.listen-chip.active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+  box-shadow: 0 4px 14px rgba(11, 60, 93, 0.25);
+}
+.listen-chip.active .chip-dur {
+  color: #17b8c4;
+}
+.chip-icon {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+.chip-text {
+  flex: 1;
+  font-weight: 600;
+  font-size: .9rem;
+}
+.chip-dur {
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+/* Audio Player Card */
+.audio-player-card {
+  border: 2px solid var(--teal);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05);
+}
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1.5px solid var(--line);
+}
+.topic-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.topic-icon {
+  font-size: 2.2rem;
+  background: var(--tint);
+  border-radius: 14px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+}
+.topic-badge-row h2 {
+  margin: 0 0 4px;
+  color: var(--teal-dark);
+  font-size: 1.3rem;
+}
+
+/* Player Controls Bar */
+.player-controls-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.main-audio-btns {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-listen-all {
+  background: linear-gradient(135deg, #17b8c4, #0b3c5d);
+  color: #fff;
+  padding: 10px 22px;
+  font-size: .95rem;
+  font-weight: 700;
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(23, 184, 196, 0.3);
+}
+.btn-listen-all:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(23, 184, 196, 0.4);
+}
+.btn-resume {
+  background: #10b981;
+  color: #fff;
+  border-radius: 999px;
+  padding: 10px 20px;
+}
+.player-settings-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.speed-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.speed-buttons {
+  display: flex;
+  background: var(--tint);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+}
+.speed-btn {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text);
+}
+.speed-btn.active {
+  background: var(--teal);
+  color: #fff;
+}
+
+/* Paragraphs Reading Highlight */
+.paragraphs-view {
+  margin-top: 14px;
+  gap: 12px;
+}
+.paragraphs-view h3 {
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+.paragraph-card {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: var(--tint);
+  border: 1.5px solid transparent;
+  transition: all .25s ease;
+}
+.paragraph-card.active-reading {
+  border-color: var(--teal);
+  background: #e6f9fa;
+  box-shadow: 0 4px 16px rgba(23, 184, 196, 0.18);
+  transform: translateX(-4px);
+}
+[dir="ltr"] .paragraph-card.active-reading {
+  transform: translateX(4px);
+}
+[data-theme="dark"] .paragraph-card.active-reading {
+  background: rgba(23, 184, 196, 0.15);
+  border-color: #17b8c4;
+}
+.p-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.p-number {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+.p-listen-btn {
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 600;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  color: var(--teal-dark);
+}
+.p-listen-btn:hover {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+[data-theme="dark"] .p-listen-btn {
+  background: var(--card-bg);
+}
+.p-text {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+.player-sources-footer {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
