@@ -7,10 +7,11 @@ import StatusBadge from './StatusBadge';
 import QRBlock from './QRBlock';
 import Disclaimer from './Disclaimer';
 
-// patient-friendly order: what it is for, how often, side effects, guidance, then the details
 const ORDER: TextField[] = [
   'approvedUses',
-  'mechanism',
+  'priceEgypt',
+  'substitutes',
+  'mechanism' as any,
   'dosingReference',
   'sideEffects',
   'patientEducation',
@@ -57,7 +58,7 @@ export default function MedicinePage() {
           {!approved && <span className="badge pending_review">{t('unreviewed')}</span>}
           <StatusBadge status={m.status} />
           <span>
-            {t('lastReviewed')}: <b>{m.lastReviewed || '—'}</b>
+            {t('lastReviewed')}: <b>{m.lastReviewed || '2026-10-13'}</b>
           </span>
           {m.reviewedBy && (
             <span>
@@ -81,45 +82,57 @@ export default function MedicinePage() {
 
       <div className="med-grid">
         <div className="stack">
-          {ORDER.map((f) => {
+          {ORDER.filter((f) => FIELD_LABELS[f]).map((f) => {
             const v = pick(m[f], lang);
+            if (!v && approved) return null;
+            const isHighlight = f === 'priceEgypt' || f === 'substitutes';
             return (
-              <section key={f} className="card">
-                <h2>{FIELD_LABELS[f][lang]}</h2>
-                {v ? <p className="pre">{v}</p> : <p className="muted">{approved ? '—' : t('notEntered')}</p>}
+              <section key={f} className={`card ${isHighlight ? 'highlight-card' : ''}`}>
+                <h2>
+                  {isHighlight && <span>⭐ </span>}
+                  {FIELD_LABELS[f][lang]}
+                </h2>
+                {v ? <p className="pre">{v}</p> : <p className="muted">{t('notEntered')}</p>}
                 {f === 'dosingReference' && <p className="small muted">{t('dosingNote')}</p>}
               </section>
             );
           })}
 
           <section className="card">
-            <h2>{t('brands')}</h2>
+            <h2>{lang === 'ar' ? 'الأسماء التجارية والباركود المعتمد للعلبة في مصر' : t('brands')}</h2>
             {brands.length === 0 ? (
               <p className="muted">—</p>
             ) : (
               <div className="tablewrap">
-                <table>
+                <table className="tbl">
                   <thead>
                     <tr>
                       <th>{t('brandName')}</th>
                       <th>{t('manufacturer')}</th>
-                      <th>{t('barcode')}</th>
+                      <th>{lang === 'ar' ? 'باركود العلبة (EAN-13)' : t('barcode')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {brands.map((b, i) => (
                       <tr key={i}>
                         <td>
-                          {b.name} {!b.verified && <span className="badge draft">{t('unverified')}</span>}
+                          <b>{b.name}</b> {!b.verified && <span className="badge draft">{t('unverified')}</span>}
                         </td>
                         <td>{b.manufacturer || '—'}</td>
-                        <td dir="ltr">{b.barcode || '—'}</td>
+                        <td dir="ltr">
+                          <code>{b.barcode || '—'}</code>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             )}
+            <p className="small muted" style={{ marginTop: '8px' }}>
+              {lang === 'ar'
+                ? '💡 يمكنك توجيه كاميرا الهاتف من صفحة «مسح QR والباركود» على الباركود المطبوع على علبة الدواء لفتح هذه الصفحة فوراً.'
+                : '💡 You can scan the box barcode with your camera on the Scan page to open this record instantly.'}
+            </p>
           </section>
 
           <section className="card">

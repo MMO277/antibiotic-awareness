@@ -344,120 +344,17 @@ body {
 .rc-source { color: #7ab0c0; font-size: .78rem; margin: 0; }
 
 /* ══════════════════════════════════════════
-   UPDATE 11 — Gemini AI Assistant Enhancements
+   UPDATE 12 — Egyptian Prices & Substitutes
    ══════════════════════════════════════════ */
-.asst-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.key-btn {
-  font: inherit;
-  font-size: .88rem;
-  font-weight: 600;
-  padding: 8px 14px;
-  border-radius: 999px;
-  border: 1px solid var(--teal);
-  background: var(--tint);
-  color: var(--teal-dark);
-  cursor: pointer;
-  transition: all .2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.key-btn:hover {
-  background: var(--teal);
-  color: #fff;
-}
-.key-btn.active {
-  background: #e6f9f0;
-  border-color: #10b981;
-  color: #065f46;
-}
-[data-theme="dark"] .key-btn.active {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-}
-.key-modal {
+.highlight-card {
   border: 1.5px solid var(--teal);
-  background: var(--card-bg, #fff);
-  padding: 16px 20px;
-  border-radius: 14px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-}
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.05rem;
-  color: var(--teal-dark);
-}
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: var(--muted);
-}
-.key-input-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-.key-input-row input {
-  flex: 1;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  font-size: .92rem;
-}
-.btn-secondary {
-  font: inherit;
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: transparent;
-  cursor: pointer;
-  color: var(--muted);
-}
-.btn-secondary:hover {
   background: var(--tint);
-  color: var(--text);
+  border-inline-start: 5px solid var(--teal);
 }
-.ai-badge {
-  display: inline-block;
-  font-size: .78rem;
-  font-weight: 700;
+.highlight-card h2 {
   color: var(--teal-dark);
-  background: rgba(13, 148, 136, 0.12);
-  padding: 2px 8px;
-  border-radius: 6px;
-  margin-bottom: 6px;
 }
-.ai-text {
+.highlight-card p.pre {
   white-space: pre-line;
-  line-height: 1.65;
-  font-size: .96rem;
-}
-.loading-msg {
-  color: var(--muted);
-  font-style: italic;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.dot-pulse {
-  letter-spacing: 2px;
-  color: var(--teal);
-  animation: pulse 1s infinite alternate;
-}
-@keyframes pulse {
-  0% { opacity: .3; }
-  100% { opacity: 1; }
+  line-height: 1.7;
 }
