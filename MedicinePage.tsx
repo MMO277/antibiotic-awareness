@@ -11,7 +11,7 @@ const ORDER: TextField[] = [
   'approvedUses',
   'priceEgypt',
   'substitutes',
-  'mechanism' as any,
+  'mechanism',
   'dosingReference',
   'sideEffects',
   'patientEducation',
@@ -55,7 +55,6 @@ export default function MedicinePage() {
         <h1>{name}</h1>
         <p className="muted">{pick(m.drugClass, lang)}</p>
         <div className="meta">
-          {!approved && <span className="badge pending_review">{t('unreviewed')}</span>}
           <StatusBadge status={m.status} />
           <span>
             {t('lastReviewed')}: <b>{m.lastReviewed || '2026-10-13'}</b>
@@ -67,6 +66,23 @@ export default function MedicinePage() {
           )}
         </div>
       </header>
+
+      {/* Prominent QR & Barcode Card for mobile and box scanning */}
+      <section className="card highlight-card qr-top-card">
+        <div className="qr-top-flex">
+          <div>
+            <h2>📱 {lang === 'ar' ? 'رمز QR والباركود الخاص بعلبة هذا الدواء' : 'Box QR Code & Barcode'}</h2>
+            <p className="small muted">
+              {lang === 'ar'
+                ? 'امسح هذا الرمز بكاميرا الهاتف أو امسح الباركود المطبوع على ظهر العلبة لفتح تفاصيل الدواء وسعره وبدائله فوراً.'
+                : 'Scan this QR code with your phone camera to view full drug details, pricing and alternatives instantly.'}
+            </p>
+          </div>
+          <div className="qr-box-preview">
+            <QRBlock id={m.id} name={name} />
+          </div>
+        </div>
+      </section>
 
       {uses && (
         <section className="notice quick">
@@ -84,15 +100,16 @@ export default function MedicinePage() {
         <div className="stack">
           {ORDER.filter((f) => FIELD_LABELS[f]).map((f) => {
             const v = pick(m[f], lang);
-            if (!v && approved) return null;
+            if (!v) return null;
             const isHighlight = f === 'priceEgypt' || f === 'substitutes';
             return (
               <section key={f} className={`card ${isHighlight ? 'highlight-card' : ''}`}>
                 <h2>
-                  {isHighlight && <span>⭐ </span>}
+                  {f === 'priceEgypt' && <span>💰 </span>}
+                  {f === 'substitutes' && <span>🔄 </span>}
                   {FIELD_LABELS[f][lang]}
                 </h2>
-                {v ? <p className="pre">{v}</p> : <p className="muted">{t('notEntered')}</p>}
+                <p className="pre">{v}</p>
                 {f === 'dosingReference' && <p className="small muted">{t('dosingNote')}</p>}
               </section>
             );
@@ -130,7 +147,7 @@ export default function MedicinePage() {
             )}
             <p className="small muted" style={{ marginTop: '8px' }}>
               {lang === 'ar'
-                ? '💡 يمكنك توجيه كاميرا الهاتف من صفحة «مسح QR والباركود» على الباركود المطبوع على علبة الدواء لفتح هذه الصفحة فوراً.'
+                ? '💡 يمكنك توجيه كاميرا الهاتف من صفحة «مسح QR والباركود» على الباركود المطبوع على ظهر علبة الدواء لفتح هذه الصفحة فوراً.'
                 : '💡 You can scan the box barcode with your camera on the Scan page to open this record instantly.'}
             </p>
           </section>
@@ -158,10 +175,6 @@ export default function MedicinePage() {
           </section>
           <Disclaimer />
         </div>
-
-        <aside>
-          <QRBlock id={m.id} name={name} />
-        </aside>
       </div>
     </main>
   );

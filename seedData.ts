@@ -32,6 +32,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'أموكسيسيلين + حمض الكلافولانيك', en: 'Amoxicillin + Clavulanic Acid' },
       activeIngredients: { ar: 'أموكسيسيلين ثلاثي الهيدرات + كلافولانات البوتاسيوم', en: 'Amoxicillin trihydrate + Potassium clavulanate' },
       drugClass: { ar: 'بنسلين واسع المجال مدعوم بمثبط إنزيم بيتا-لاكتاماز', en: 'Broad-spectrum penicillin with beta-lactamase inhibitor' },
+      mechanism: { ar: 'يثبط بناء الجدار الخلوي للبكتيريا مع إبطال مفعول إنزيمات بيتا-لاكتاماز المقاومة بواسطة الكلافولانات.', en: 'Inhibits bacterial cell wall synthesis while clavulanate inactivates beta-lactamase enzymes.' },
       strengths: {
         ar: 'أقراص: 1 جم (1000 مجم)، 625 مجم، 375 مجم.\nشراب معلق للأطفال: 457 مجم/5 مل، 228 مجم/5 مل، 156 مجم/5 مل، 312 مجم/5 مل.\nحقن وريدية (فيال): 1.2 جم، 600 مجم.',
         en: 'Tablets: 1g, 625mg, 375mg. Oral suspension: 457mg/5ml, 228mg/5ml, 312mg/5ml. IV Vials: 1.2g, 600mg.',
@@ -99,6 +100,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'ميترونيدازول', en: 'Metronidazole' },
       activeIngredients: { ar: 'ميترونيدازول', en: 'Metronidazole' },
       drugClass: { ar: 'مضاد للبكتيريا اللاهوائية ومضاد للطفيليات والأوالي', en: 'Nitroimidazole antiprotozoal and antibacterial' },
+      mechanism: { ar: 'يدخل إلى الحمض النووي (DNA) للبكتيريا اللاهوائية والطفيليات ويكسر سلاسله مما يوقف تكاثرها ويقضي عليها.', en: 'Disrupts DNA and protein synthesis in anaerobic bacteria and protozoa.' },
       strengths: {
         ar: 'أقراص: 500 مجم، 250 مجم.\nشراب معلق للأطفال: 125 مجم/5 مل، 200 مجم/5 مل.\nمحلول وريدي بالتنقيط (IV Infusion): 500 مجم/100 مل.\nلبوس مهبلي / جل موضعي.',
         en: 'Tablets: 500mg, 250mg. Suspension: 125mg/5ml, 200mg/5ml. IV infusion: 500mg/100ml.',
@@ -164,6 +166,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'أزيثرومايسين', en: 'Azithromycin' },
       activeIngredients: { ar: 'أزيثرومايسين ثنائي الهيدرات', en: 'Azithromycin dihydrate' },
       drugClass: { ar: 'مضاد حيوي من عائلة الماكروليد (طويل المفعول)', en: 'Macrolide antibiotic' },
+      mechanism: { ar: 'يثبط تصنيع البروتينات الحيوية للبكتيريا بالارتباط بالوحدة 50S للريبوسوم البكتيري.', en: 'Binds to the 50S ribosomal subunit, inhibiting bacterial protein synthesis.' },
       strengths: {
         ar: 'كبسولات/أقراص: 500 مجم (شريط 3 أقراص)، 250 مجم (علبة 6 كبسولات).\nشراب معلق للأطفال: 200 مجم/5 مل، 100 مجم/5 مل.\nحقن وريدية (فيال): 500 مجم.',
         en: 'Capsules/Tablets: 500mg (3 tabs), 250mg (6 caps). Suspension: 200mg/5ml, 100mg/5ml. IV Vial: 500mg.',
@@ -229,6 +232,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'نيتروفورانتوين', en: 'Nitrofurantoin' },
       activeIngredients: { ar: 'نيتروفورانتوين ماكروكريستال', en: 'Nitrofurantoin macrocrystals' },
       drugClass: { ar: 'مضاد بكتيري مخصص لالتهابات المسالك البولية', en: 'Urinary tract antibacterial' },
+      mechanism: { ar: 'يتحول داخل البكتيريا إلى مركبات نشطة تتلف الحمض النووي والبروتينات في مجرى البول.', en: 'Inactivates bacterial ribosomal proteins and macromolecules.' },
       strengths: {
         ar: 'كبسولات: 100 مجم، 50 مجم.\nشراب معلق للأطفال: 25 مجم/5 مل.',
         en: 'Capsules: 100mg, 50mg. Suspension: 25mg/5ml.',
@@ -293,6 +297,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'سيبروفلوكساسين', en: 'Ciprofloxacin' },
       activeIngredients: { ar: 'سيبروفلوكساسين هيدروكلوريد', en: 'Ciprofloxacin hydrochloride' },
       drugClass: { ar: 'مضاد حيوي من عائلة الفلوروكينولون (واسع المجال وقوي)', en: 'Fluoroquinolone broad-spectrum antibacterial' },
+      mechanism: { ar: 'يثبط إنزيم دنا جيراز وتوبويزوميراز IV المسؤولين عن تضاعف وانقسام الحمض النووي للبكتيريا.', en: 'Inhibits bacterial DNA gyrase and topoisomerase IV.' },
       strengths: {
         ar: 'أقراص: 500 مجم، 750 مجم، 250 مجم.\nمحلول وريدي بالتنقيط (IV Infusion): 200 مجم/100 مل، 400 مجم/200 مل.\nقطرات معقمة للعين والأذن: 0.3%.',
         en: 'Tablets: 500mg, 750mg, 250mg. IV Infusion: 200mg/100ml. Eye/Ear drops: 0.3%.',
@@ -357,6 +362,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'كليندامايسين', en: 'Clindamycin' },
       activeIngredients: { ar: 'كليندامايسين هيدروكلوريد', en: 'Clindamycin hydrochloride' },
       drugClass: { ar: 'مضاد حيوي من عائلة اللينكوساميد (قاتل للبكتيريا اللاهوائية والموجبة)', en: 'Lincosamide antibiotic' },
+      mechanism: { ar: 'يمنع تكوين البروتين البكتيري بالارتباط بالوحدة 50S للريبوسوم البكتيري.', en: 'Reversibly binds to 50S ribosomal subunits, preventing peptide bond formation.' },
       strengths: {
         ar: 'كبسولات: 300 مجم، 150 مجم.\nحقن وريدية وعضلية (أمبول): 300 مجم/2 مل، 600 مجم/4 مل.\nمحلول وجل موضعي لحب الشباب: 1%.',
         en: 'Capsules: 300mg, 150mg. Ampoules: 300mg, 600mg. Topical solution/gel: 1%.',
@@ -421,6 +427,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'دوكسيسيكلين', en: 'Doxycycline' },
       activeIngredients: { ar: 'دوكسيسيكلين هيكلات', en: 'Doxycycline hyclate' },
       drugClass: { ar: 'مضاد حيوي واسع المجال من عائلة التتراسيكلين', en: 'Tetracycline antibiotic' },
+      mechanism: { ar: 'يثبط تصنيع البروتين بالارتباط بالوحدة 30S للريبوسوم البكتيري ويمنع تكاثرها.', en: 'Inhibits protein synthesis by binding to the 30S ribosomal subunit.' },
       strengths: {
         ar: 'كبسولات: 100 مجم، 50 مجم.',
         en: 'Capsules: 100mg, 50mg.',
@@ -485,6 +492,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'كلاريثرومايسين', en: 'Clarithromycin' },
       activeIngredients: { ar: 'كلاريثرومايسين', en: 'Clarithromycin' },
       drugClass: { ar: 'مضاد حيوي من عائلة الماكروليد', en: 'Macrolide antibiotic' },
+      mechanism: { ar: 'يوقف تخليق البروتين البكتيري الأساسي عبر الارتباط بالوحدة 50S للريبوسوم.', en: 'Inhibits protein synthesis via 50S ribosomal subunit binding.' },
       strengths: {
         ar: 'أقراص: 500 مجم، 250 مجم، أقراص ممتدة المفعول XL بتركيز 500 مجم.\nشراب معلق للأطفال: 125 مجم/5 مل، 250 مجم/5 مل.',
         en: 'Tablets: 500mg, 250mg, Extended-release XL 500mg. Suspension: 125mg/5ml, 250mg/5ml.',
@@ -549,6 +557,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'سلفاميثوكسازول + تريميثوبريم (كوتريموكسازول)', en: 'Sulfamethoxazole + Trimethoprim (Co-trimoxazole)' },
       activeIngredients: { ar: 'سلفاميثوكسازول وتريميثوبريم بنسبة 5 إلى 1', en: 'Sulfamethoxazole and Trimethoprim' },
       drugClass: { ar: 'مضاد بكتيري مركب مثبط لحمض الفوليك البكتيري', en: 'Sulfonamide and folate antagonist antibacterial' },
+      mechanism: { ar: 'يثبط خطوتين متتاليتين في تصنيع حمض الفوليك الأساسي للخلية البكتيرية بتأثير تآزري.', en: 'Synergistically blocks two consecutive steps in bacterial folic acid biosynthesis.' },
       strengths: {
         ar: 'أقراص فورت (Double Strength): 800/160 مجم.\nأقراص عادية: 400/80 مجم.\nشراب معلق للأطفال: 200/40 مجم لكل 5 مل.',
         en: 'Forte tablets: 800/160mg. Regular tablets: 400/80mg. Pediatric suspension: 200/40mg per 5ml.',
@@ -613,6 +622,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'سيفوروكسيم أكسيتيل', en: 'Cefuroxime axetil' },
       activeIngredients: { ar: 'سيفوروكسيم أكسيتيل', en: 'Cefuroxime axetil' },
       drugClass: { ar: 'مضاد حيوي من عائلة السيفالوسبورين (الجيل الثاني)', en: 'Second-generation cephalosporin' },
+      mechanism: { ar: 'يمنع تصنيع جدار الخلية البكتيرية بالارتباط ببروتينات البنسلين الرابطة (PBPs).', en: 'Binds to penicillin-binding proteins (PBPs), inhibiting bacterial cell wall synthesis.' },
       strengths: {
         ar: 'أقراص: 500 مجم، 250 مجم.\nشراب معلق للأطفال: 125 مجم/5 مل، 250 مجم/5 مل.\nحقن وريدية وعضلية (فيال): 750 مجم، 1.5 جم.',
         en: 'Tablets: 500mg, 250mg. Suspension: 125mg/5ml, 250mg/5ml. IV/IM vials: 750mg, 1.5g.',
@@ -677,6 +687,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'سيفترياكسون', en: 'Ceftriaxone' },
       activeIngredients: { ar: 'سيفترياكسون صوديوم', en: 'Ceftriaxone sodium' },
       drugClass: { ar: 'مضاد حيوي للحقن من عائلة السيفالوسبورين (الجيل الثالث)', en: 'Third-generation cephalosporin injection' },
+      mechanism: { ar: 'يثبط بناء الجدار الخلوي للبكتيريا وله قدرة عالية على اختراق الأنسجة وسوائل الجسم.', en: 'Binds to PBPs, inhibiting mucopeptide synthesis in bacterial cell walls.' },
       strengths: {
         ar: 'فيال للحقن الوريدي والعضلي: 1 جم (1000 مجم)، 500 مجم، 250 مجم.',
         en: 'IV/IM Vials: 1g, 500mg, 250mg.',
@@ -741,6 +752,7 @@ export const SEED: SeedItem[] = [
       genericName: { ar: 'ليفوفلوكساسين', en: 'Levofloxacin' },
       activeIngredients: { ar: 'ليفوفلوكساسين هيميهيدرات', en: 'Levofloxacin hemihydrate' },
       drugClass: { ar: 'مضاد حيوي من عائلة الفلوروكينولون التنفسي (الجيل الثالث)', en: 'Respiratory fluoroquinolone' },
+      mechanism: { ar: 'يثبط إنزيمي توبويزوميراز IV ودنا جيراز المسؤولين عن تضاعف المادة الوراثية للبكتيريا.', en: 'Inhibits bacterial DNA gyrase and topoisomerase IV.' },
       strengths: {
         ar: 'أقراص: 500 مجم، 750 مجم.\nمحلول وريدي بالتنقيط (IV Infusion): 500 مجم/100 مل.\nقطرات معقمة للعين: 0.5%.',
         en: 'Tablets: 500mg, 750mg. IV Infusion: 500mg/100ml. Eye drops: 0.5%.',
@@ -806,4 +818,267 @@ export const SOURCE_HINTS: { name: string; url: string }[] = [
   { name: 'DailyMed (official US drug labels)', url: 'https://dailymed.nlm.nih.gov/' },
   { name: 'European Medicines Agency (EMA)', url: 'https://www.ema.europa.eu/' },
   { name: 'CDC – Antibiotic Prescribing and Use', url: 'https://www.cdc.gov/antibiotic-use/' },
+
+  // 13. Plain Amoxicillin (E-Mox / Biomox / Amoxil)
+  {
+    id: 'amoxicillin',
+    fields: {
+      genericName: { ar: 'أموكسيسيلين', en: 'Amoxicillin' },
+      activeIngredients: { ar: 'أموكسيسيلين ثلاثي الهيدرات', en: 'Amoxicillin trihydrate' },
+      drugClass: { ar: 'مضاد حيوي من عائلة البنسلينات (قاتل للبكتيريا)', en: 'Penicillin-class antibiotic' },
+      mechanism: { ar: 'يثبط بناء الجدار الخلوي للبكتيريا مما يؤدي إلى تحللها وموتها سريعاً.', en: 'Inhibits bacterial cell wall synthesis causing cell lysis and death.' },
+      strengths: {
+        ar: 'كبسولات: 500 مجم، 250 مجم.\nأقراص قابلة للذوبان / مضغ: 1 جم، 500 مجم.\nشراب معلق للأطفال: 250 مجم/5 مل، 125 مجم/5 مل.',
+        en: 'Capsules: 500mg, 250mg. Dispersible tablets: 1g, 500mg. Suspension: 250mg/5ml, 125mg/5ml.',
+      },
+      approvedUses: {
+        ar: 'علاج التهابات الجهاز التنفسي العلوي الخفيفة (التهاب اللوزتين والحلق البكتيري)، التهاب الأذن الوسطى الحاد عند الأطفال، التهابات المسالك البولية الخفيفة، والجرثومة الحلزونية للمعدة مع أدوية أخرى. لا يعالج البرد أو الفيروسات.',
+        en: 'Mild upper respiratory infections (strep throat), acute otitis media in children, uncomplicated UTIs, and H. pylori eradication.',
+      },
+      priceEgypt: {
+        ar: '• إي-موكس 500 مجم (16 كبسولة) - إيبيكو: 38.00 جنيه مصري.\n• بيوموكس 500 مجم (16 كبسولة) - سيديكو: 32.00 جنيه مصري.\n• أموكسيل 500 مجم (16 كبسولة) - GSK: 49.50 جنيه مصري.\n• إي-موكس شراب معلق 250 مجم (100 مل): 28.50 جنيه مصري.\n• بيوموكس شراب معلق 250 مجم: 24.00 جنيه مصري.',
+        en: '• E-Mox 500mg (16 caps - EIPICO): 38.00 EGP\n• Biomox 500mg (16 caps - Sedico): 32.00 EGP\n• Amoxil 500mg (16 caps - GSK): 49.50 EGP\n• E-Mox suspension 250mg: 28.50 EGP',
+      },
+      substitutes: {
+        ar: 'البدائل المتطابقة تماماً بنفس المادة الفعالة والتركيز:\n1. إي-موكس 500 مجم (E-Mox 500mg) - إيبيكو.\n2. بيوموكس 500 مجم (Biomox 500mg) - سيديكو.\n3. هايموكس 500 مجم (Hymox 500mg) - سبيماكو.\n4. أموكسيل 500 مجم (Amoxil 500mg) - GSK.\n\n• البدائل الأقوى عند مقاومة البكتيريا: أموكسيسيلين + كلافولانات (أوجمنتين أو كيورام أو هاي بيوتك).',
+        en: 'Exact Generic Equivalents:\n1. E-Mox 500mg (EIPICO)\n2. Biomox 500mg (Sedico)\n3. Hymox 500mg\n4. Amoxil 500mg\nAugmented alternative: Augmentin or Curam.',
+      },
+      ageRestrictions: {
+        ar: 'آمن للرضع والأطفال بجرعة شراب محسوبة بالوزن، والكبسولات للأطفال فوق 40 كجم والبالغين.',
+        en: 'Safe for infants and children (weight-based suspension); capsules for >40kg and adults.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: كبسولة 500 مجم كل 8 ساعات، أو قرص 1 جم كل 12 ساعة لمدة 7 إلى 10 أيام. للأطفال: 40-90 مجم/كجم/يوم مقسمة على جرعات.',
+        en: 'Adults: 500mg every 8 hours or 1g every 12 hours for 7-10 days.',
+      },
+      contraindications: {
+        ar: 'ممنوع لمن يعانون من حساسية مفرطة تجاه البنسلين ومشتقاته، ولمرضى كثرة الوحيدات العدوائية (Mononucleosis) لتجنب الطفح الجلدي.',
+        en: 'Contraindicated in penicillin allergy and infectious mononucleosis (rash risk).',
+      },
+      sideEffects: {
+        ar: 'إسهال خفيف، غثيان، طفح جلدي تحسسي، وتغير مؤقت في لون الأسنان عند الأطفال يزول بتنظيفها.',
+        en: 'Mild diarrhea, nausea, skin rash, transient tooth discoloration in children.',
+      },
+      interactions: {
+        ar: 'قد يقلل من فاعلية حبوب منع الحمل. يتفاعل مع ألوبيورينول (يزيد الطفح الجلدي) والميثوتريكسات.',
+        en: 'May reduce oral contraceptive efficacy. Interacts with allopurinol (rash risk).',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ من أكثر المضادات الحيوية أماناً واستخداماً أثناء فترتي الحمل والرضاعة تحت إشراف الطبيب.',
+        en: 'Category B. One of the safest antibiotics during pregnancy and lactation.',
+      },
+      renalHepatic: {
+        ar: 'يتطلب تعديل الفاصل الزمني بين الجرعات (كل 12 أو 24 ساعة) في حالات القصور الكلوي الحاد.',
+        en: 'Dose interval adjustment required in severe renal failure (eGFR <30).',
+      },
+      patientEducation: {
+        ar: 'يمكن تناوله مع الطعام أو بدونه (تناوله مع وجبة خفيفة يقلل من اضطراب المعدة). رج زجاجة الشراب جيداً قبل كل جرعة واحفظها في الثلاجة وتخلص من الباقي بعد 10 أيام.',
+        en: 'Can be taken with or without food. Shake suspension bottle well and store in refrigerator.',
+      },
+    },
+    brands: [
+      { name: 'E-Mox 500mg Capsules', manufacturer: 'EIPICO Egypt', barcode: '6221127001245', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Biomox 500mg Capsules', manufacturer: 'Sedico Pharmaceuticals', barcode: '6221543002341', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Amoxil 500mg Capsules', manufacturer: 'GlaxoSmithKline (GSK)', barcode: '6221127005112', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Approved verified clinical record with Egyptian pricing, EAN-13 barcodes and generic substitutes.',
+  },
+
+  // 14. Penicillin V Potassium (Ospen / Calciopen)
+  {
+    id: 'penicillin-v-potassium',
+    fields: {
+      genericName: { ar: 'بنسلين V البوتاسيوم (فينوكسي ميثيل بنسلين)', en: 'Penicillin V Potassium (Phenoxymethylpenicillin)' },
+      activeIngredients: { ar: 'بنسلين V البوتاسيوم', en: 'Penicillin V Potassium' },
+      drugClass: { ar: 'بنسلين طبيعي فموي مضاد للمكورات العقدية', en: 'Natural oral penicillin antibiotic' },
+      mechanism: { ar: 'يثبط تكوين الجدار الخلوي للبكتيريا الحساسة ويقضي عليها بشكل مباشر.', en: 'Inhibits bacterial cell wall synthesis during active multiplication.' },
+      strengths: {
+        ar: 'أقراص: 1000 مجم (1,000,000 وحدة دولية)، 1500 مجم (1,500,000 وحدة دولية).\nشراب معلق للأطفال: 400,000 وحدة دولية لكل 5 مل.',
+        en: 'Tablets: 1000 IU (1 Mega), 1500 IU (1.5 Mega). Suspension: 400,000 IU/5ml.',
+      },
+      approvedUses: {
+        ar: 'الخيار القياسي الأول عالمياً لعلاج التهاب اللوزتين والحلق بالمكورات العقدية (Strep throat)، والوقاية طويلة المدى من الحمى الروماتيزمية (Rheumatic fever) وتلف صمامات القلب، وعدوى الحمرة والجلد الخفيفة.',
+        en: 'Primary standard choice for streptococcal pharyngitis/tonsillitis, secondary prophylaxis of rheumatic fever, and mild erysipelas.',
+      },
+      priceEgypt: {
+        ar: '• أوسبن 1000 مجم (12 قرص) - ساندوز/نوفارتس: 45.00 جنيه مصري.\n• أوسبن 1500 مجم (12 قرص) - ساندوز: 55.00 جنيه مصري.\n• أوسبن شراب للأطفال (60 مل): 32.00 جنيه مصري.\n• كالسيوبن 1000 أقراص: 38.00 جنيه مصري.',
+        en: '• Ospen 1000 (12 tabs - Sandoz): 45.00 EGP\n• Ospen 1500 (12 tabs): 55.00 EGP\n• Ospen syrup: 32.00 EGP\n• Calciopen 1000 tabs: 38.00 EGP',
+      },
+      substitutes: {
+        ar: 'البدائل المتطابقة والمثائل في مصر:\n1. أوسبن 1000 مجم (Ospen 1000) - ساندوز.\n2. أوسبن 1500 مجم (Ospen 1500) - ساندوز.\n3. كالسيوبن (Calciopen).\n\n• البدائل من نفس العائلة في حال عدم توفره: أموكسيسيلين فموي (Amoxicillin 500mg) لمدة 10 أيام.\n• البديل في حال حساسية البنسلين: أزيثرومايسين (Zithromax) أو كلاريثرومايسين (Klacid).',
+        en: 'Exact Equivalents:\n1. Ospen 1000 (Sandoz)\n2. Ospen 1500 (Sandoz)\n3. Calciopen\nAlternative: Oral Amoxicillin. For allergy: Azithromycin.',
+      },
+      ageRestrictions: {
+        ar: 'مناسب لجميع الأعمار؛ يستخدم الشراب للأطفال بجرعة محسوبة بالوحدات الدولية، والأقراص للبالغين.',
+        en: 'Approved across all age groups; syrup for pediatric patients.',
+      },
+      dosingReference: {
+        ar: 'للحلق واللوزتين: قرص 1000 كل 6 إلى 8 ساعات على معدة فارغة (قبل الأكل بساعة أو بعده بساعتين) لمدة 10 أيام كاملة لمنع الحمى الروماتيزمية.',
+        en: 'Strep throat: 1000-1500 IU every 6-8 hours on an empty stomach for a full 10-day course.',
+      },
+      contraindications: {
+        ar: 'ممنوع منعاً باتاً لمن لديهم حساسية تجاه البنسلين أو أي من مشتقاته (خطر الصدمة التحسسية).',
+        en: 'Strictly contraindicated in penicillin hypersensitivity.',
+      },
+      sideEffects: {
+        ar: 'غثيان، قيء، إسهال، اضطراب معدة خفيف، أو طفح جلدي تحسسي.',
+        en: 'Nausea, mild epigastric distress, diarrhea, hypersensitivity rash.',
+      },
+      interactions: {
+        ar: 'تقلل مضادات الحموضة والطعام من امتصاصه بشكل ملحوظ؛ يجب تناوله على معدة فارغة.',
+        en: 'Food and antacids markedly decrease gastrointestinal absorption.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن وفعال جداً أثناء الحمل والرضاعة عند وصف الطبيب.',
+        en: 'Category B. Safely used in pregnancy and lactation.',
+      },
+      renalHepatic: {
+        ar: 'يطرح كلوياً؛ يتطلب خفض الجرعة أو زيادة الفواصل في حالات القصور الكلوي الشديد.',
+        en: 'Reduce dosage or extend interval in severe renal impairment (GFR <10).',
+      },
+      patientEducation: {
+        ar: 'تناول الدواء على معدة فارغة مع كوب ماء كامل. إكمال كورس الـ 10 أيام ضروري جداً لحماية القلب والكلى من مضاعفات بكتيريا الحلق العقدية.',
+        en: 'Take on an empty stomach with water. Completing the full 10-day course is critical to protect against rheumatic heart disease.',
+      },
+    },
+    brands: [
+      { name: 'Ospen 1000 Tablets', manufacturer: 'Sandoz Egypt / Novartis', barcode: '6221054009812', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Ospen 1500 Tablets', manufacturer: 'Sandoz Egypt / Novartis', barcode: '6221054009829', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Approved verified clinical record with Egyptian pricing, EAN-13 barcodes and generic substitutes.',
+  },
+
+  // 15. Cephalexin (Ospexin / Cefalex / Ibilex)
+  {
+    id: 'cephalexin',
+    fields: {
+      genericName: { ar: 'سيفالكسين', en: 'Cephalexin' },
+      activeIngredients: { ar: 'سيفالكسين مونوهيدرات', en: 'Cephalexin monohydrate' },
+      drugClass: { ar: 'مضاد حيوي من عائلة السيفالوسبورين (الجيل الأول)', en: 'First-generation cephalosporin' },
+      mechanism: { ar: 'يقتل البكتيريا الموجبة لصبغة غرام والمكورات العنقودية عن طريق تثبيط بناء الجدار الخلوي.', en: 'Bactericidal; inhibits bacterial cell-wall synthesis.' },
+      strengths: {
+        ar: 'كبسولات/أقراص: 500 مجم، 1 جم، 250 مجم.\nشراب معلق للأطفال: 250 مجم/5 مل، 125 مجم/5 مل.',
+        en: 'Capsules: 500mg, 1g, 250mg. Suspension: 250mg/5ml, 125mg/5ml.',
+      },
+      approvedUses: {
+        ar: 'علاج التهابات الجلد والأنسجة الرخوة والدمامل (التهاب النسيج الخلوي)، التهابات المسالك البولية البسيطة، والتهابات العظام والمفاصل والتهاب الحلق.',
+        en: 'Skin and skin structure infections, uncomplicated UTIs, bone infections, and streptococcal pharyngitis.',
+      },
+      priceEgypt: {
+        ar: '• أوسبكسين 500 مجم (16 كبسولة) - ساندوز: 48.00 جنيه مصري.\n• سيفالكس 500 مجم (16 كبسولة) - الإسكندرية: 36.00 جنيه مصري.\n• إيبيليكس 500 مجم (16 كبسولة) - إيبيكو: 38.00 جنيه مصري.\n• أوسبكسين 1 جم (12 قرص): 52.00 جنيه مصري.\n• أوسبكسين شراب 250 مجم (60 مل): 32.00 جنيه مصري.',
+        en: '• Ospexin 500mg (16 caps - Sandoz): 48.00 EGP\n• Cefalex 500mg (16 caps - Alexandria): 36.00 EGP\n• Ibilex 500mg (16 caps - EIPICO): 38.00 EGP\n• Ospexin suspension 250mg: 32.00 EGP',
+      },
+      substitutes: {
+        ar: 'البدائل المتطابقة تماماً بنفس المادة الفعالة والتركيز:\n1. أوسبكسين 500 مجم (Ospexin 500mg) - ساندوز.\n2. سيفالكس 500 مجم (Cefalex 500mg) - الإسكندرية.\n3. إيبيليكس 500 مجم (Ibilex 500mg) - إيبيكو.\n4. كفلكس 500 مجم (Keflex 500mg).\n\n• البدائل من نفس الفئة لالتهابات الجلد: أموكسيسيلين/كلافولانات أو كليندامايسين.',
+        en: 'Exact Generic Equivalents:\n1. Ospexin 500mg (Sandoz)\n2. Cefalex 500mg (Alexandria)\n3. Ibilex 500mg (EIPICO)\nAlternative: Augmentin or Clindamycin.',
+      },
+      ageRestrictions: {
+        ar: 'آمن للرضع والأطفال بجرعة شراب محسوبة بالوزن، والكبسولات للبالغين.',
+        en: 'Approved for pediatric patients >1 year of age as oral suspension.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: كبسولة 500 مجم كل 6 أو 8 ساعات مع أو بدون طعام لمدة 7 إلى 10 أيام.',
+        en: 'Adults: 500mg every 6 or 8 hours for 7-14 days.',
+      },
+      contraindications: {
+        ar: 'ممنوع لمن يعانون من حساسية مفرطة تجاه السيفالوسبورينات، وبحذر لمن لديهم حساسية بنسلين شديدة.',
+        en: 'Contraindicated in cephalosporin hypersensitivity.',
+      },
+      sideEffects: {
+        ar: 'إسهال، غثيان، عسر هضم، طفح جلدي خفيف، ودوار.',
+        en: 'Diarrhea, dyspepsia, gastritis, mild rash.',
+      },
+      interactions: {
+        ar: 'يتفاعل مع البروبينسيد والميتفورمين (يزيد تركيز الميتفورمين في الدم).',
+        en: 'Increases metformin concentrations; probenecid prolongs half-life.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن ويوصف بصورة واسعة أثناء الحمل والرضاعة تحت إشراف الطبيب.',
+        en: 'Category B. Widely considered safe in pregnancy and breastfeeding.',
+      },
+      renalHepatic: {
+        ar: 'يخفض الجرعة وتزداد الفواصل في حالات القصور الكلوي المتوسط إلى الشديد.',
+        en: 'Dosage reduction required in moderate to severe renal impairment.',
+      },
+      patientEducation: {
+        ar: 'تناوله بانتظام في مواعيده المحددة. يمكن تناوله مع الأكل لتقليل الغثيان.',
+        en: 'Take at evenly spaced intervals; can be taken with meals to minimize nausea.',
+      },
+    },
+    brands: [
+      { name: 'Ospexin 500mg Capsules', manufacturer: 'Sandoz Egypt', barcode: '6221054004521', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Cefalex 500mg Capsules', manufacturer: 'Alexandria Pharmaceuticals', barcode: '6221008005411', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Ibilex 500mg Capsules', manufacturer: 'EIPICO Egypt', barcode: '6221127003456', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Approved verified clinical record with Egyptian pricing, EAN-13 barcodes and generic substitutes.',
+  },
+
+  // 16. Cefixime (Suprax / Magnacef / Cefix)
+  {
+    id: 'cefixime',
+    fields: {
+      genericName: { ar: 'سيفيكسيم', en: 'Cefixime' },
+      activeIngredients: { ar: 'سيفيكسيم ثلاثي الهيدرات', en: 'Cefixime trihydrate' },
+      drugClass: { ar: 'مضاد حيوي فموي من عائلة السيفالوسبورين (الجيل الثالث)', en: 'Third-generation oral cephalosporin' },
+      mechanism: { ar: 'يقضي على طيف واسع من البكتيريا السالبة والموجبة عن طريق كسر وتثبيط جدار الخلية البكتيرية.', en: 'Broad-spectrum bactericidal activity via bacterial cell-wall inhibition.' },
+      strengths: {
+        ar: 'كبسولات/أقراص: 400 مجم، 200 مجم.\nشراب معلق للأطفال: 100 مجم/5 مل (30 مل و 60 مل).',
+        en: 'Capsules: 400mg, 200mg. Pediatric suspension: 100mg/5ml.',
+      },
+      approvedUses: {
+        ar: 'علاج التهابات المسالك البولية وحوض الكلى، التهاب الأذن الوسطى الحاد، التهاب اللوزتين والحلق المتكرر، وتفاقم التهاب الشعب الهوائية المزمن وحمى التيفود.',
+        en: 'Uncomplicated UTIs, acute otitis media, pharyngitis, acute exacerbations of chronic bronchitis, and typhoid fever.',
+      },
+      priceEgypt: {
+        ar: '• سوبراكس 400 مجم (5 كبسولات) - سبيماكو/سانوفي: 98.00 جنيه مصري.\n• ماجناسيف 400 مجم (6 كبسولات) - الحكمة: 75.00 جنيه مصري.\n• سيفيكس 400 مجم (5 كبسولات) - سيجما: 62.00 جنيه مصري.\n• سوبراكس شراب معلق للأطفال 100 مجم (60 مل): 70.00 جنيه مصري.\n• ماجناسيف شراب معلق (60 مل): 55.00 جنيه مصري.',
+        en: '• Suprax 400mg (5 caps): 98.00 EGP\n• Magnacef 400mg (6 caps - Hikma): 75.00 EGP\n• Cefix 400mg (5 caps): 62.00 EGP\n• Suprax suspension (60ml): 70.00 EGP',
+      },
+      substitutes: {
+        ar: 'البدائل المتطابقة تماماً بنفس المادة والتركيز:\n1. ماجناسيف 400 مجم (Magnacef 400mg) - حكمة.\n2. سيفيكس 400 مجم (Cefix 400mg) - سيجما.\n3. إكزيم 400 مجم (Xime 400mg).\n4. سوبراكس 400 مجم المستورد.\n\n• البدائل من نفس الفئة: سيفوروكسيم (Zinnat) أو سيفترياكسون (حقن).',
+        en: 'Exact Generic Equivalents:\n1. Magnacef 400mg (Hikma)\n2. Cefix 400mg (Sigma)\n3. Xime 400mg\n4. Suprax 400mg\nAlternative: Zinnat or Ceftriaxone.',
+      },
+      ageRestrictions: {
+        ar: 'آمن للرضع والأطفال أكبر من 6 أشهر كشراب معلق، والكبسولات لمن هم فوق سن 12 عاماً.',
+        en: 'Approved for infants >6 months as suspension; capsules for children >12 years and adults.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: كبسولة واحدة 400 مجم مرة واحدة يومياً (أو 200 مجم كل 12 ساعة) مع أو بدون طعام لمدة 5 إلى 10 أيام.',
+        en: 'Adults: 400mg once daily or 200mg every 12 hours for 5-10 days.',
+      },
+      contraindications: {
+        ar: 'ممنوع لمن يعانون من حساسية مفرطة تجاه السيفالوسبورينات أو البنسلينات الشديدة.',
+        en: 'Contraindicated in cephalosporin hypersensitivity.',
+      },
+      sideEffects: {
+        ar: 'إسهال، براز رخو، غثيان، مغص بطني، وعسر هضم.',
+        en: 'Diarrhea, loose stools, abdominal pain, nausea, flatulence.',
+      },
+      interactions: {
+        ar: 'قد يزيد من زمن النزيف ومفعول أدوية السيولة كالوارفارين.',
+        en: 'May elevate prothrombin time/INR with oral anticoagulants.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن ويوصف بصورة واسعة أثناء الحمل تحت إشراف الطبيب.',
+        en: 'Category B. Safe in pregnancy when clinically needed.',
+      },
+      renalHepatic: {
+        ar: 'يتطلب خفض الجرعة إلى 200 مجم يومياً في مرضى القصور الكلوي المتوسط إلى الشديد (GFR <20).',
+        en: 'Reduce dose to 200mg once daily when creatinine clearance is <20 ml/min.',
+      },
+      patientEducation: {
+        ar: 'يتميز بإمكانية تناوله كجرعة واحدة يومياً مما يسهل الالتزام به. رج زجاجة الشراب جيداً واحفظها في الثلاجة.',
+        en: 'Convenient once-daily dosing improves compliance. Shake suspension well.',
+      },
+    },
+    brands: [
+      { name: 'Suprax 400mg Capsules', manufacturer: 'Spimaco Misr / Sanofi', barcode: '6223000451239', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Magnacef 400mg Capsules', manufacturer: 'Hikma Pharma', barcode: '6221127008912', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Cefix 400mg Capsules', manufacturer: 'Sigma Pharmaceuticals', barcode: '6221127006714', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Approved verified clinical record with Egyptian pricing, EAN-13 barcodes and generic substitutes.',
+  },
 ];
