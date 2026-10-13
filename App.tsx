@@ -1,3 +1,4 @@
+import Interactions from './Interactions';
 import { Route, Routes, Link } from 'react-router-dom';
 import { configured } from './firebase';
 import { useLang } from './i18n';
@@ -48,6 +49,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/medicines" element={<Medicines />} />
+        <Route path="/interactions" element={<Interactions />} />
         <Route path="/medicine/:id" element={<MedicinePage />} />
         <Route path="/articles" element={<Articles />} />
         <Route path="/articles/:id" element={<ArticlePage />} />

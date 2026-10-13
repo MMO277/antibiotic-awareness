@@ -38,6 +38,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const links: [string, string][] = [
     ['/', 'navHome'],
     ['/medicines', 'navMedicines'],
+    ['/interactions', 'navInteractions'],
     ['/assistant', 'navAssistant'],
     ['/learn', 'navLearn'],
     ['/myth', 'navMyth'],
@@ -61,6 +62,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </svg>
             <span>
               <b>{t('appName')}</b>
+              <small>{t('tagline')}</small>
             </span>
           </Link>
 

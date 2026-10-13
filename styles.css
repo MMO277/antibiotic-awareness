@@ -389,3 +389,107 @@ body {
 [data-theme="dark"] .qr-box-preview {
   background: var(--card-bg);
 }
+
+/* ══════════════════════════════════════════
+   UPDATE 15 — Drug & Food Interaction Checker
+   ══════════════════════════════════════════ */
+.check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.select-input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  font: inherit;
+  font-size: .95rem;
+  background: var(--card-bg, #fff);
+  color: var(--text);
+  cursor: pointer;
+}
+.select-input:focus {
+  outline: none;
+  border-color: var(--teal);
+}
+.active-chip {
+  background: var(--teal) !important;
+  color: #fff !important;
+  font-weight: 700;
+}
+.result-card {
+  border-radius: 16px;
+  padding: 22px 24px;
+  border: 2px solid var(--line);
+  transition: all .2s ease;
+}
+.result-card.severe {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+[data-theme="dark"] .result-card.severe {
+  background: rgba(239, 68, 68, 0.12);
+}
+.result-card.moderate {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+[data-theme="dark"] .result-card.moderate {
+  background: rgba(245, 158, 11, 0.12);
+}
+.result-card.safe {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+[data-theme="dark"] .result-card.safe {
+  background: rgba(16, 185, 129, 0.12);
+}
+.sev-badge {
+  display: inline-block;
+  font-size: .88rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+.sev-badge.severe {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+.sev-badge.moderate {
+  background: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fcd34d;
+}
+.sev-badge.safe {
+  background: #d1fae5;
+  color: #047857;
+  border: 1px solid #6ee7b7;
+}
+.nursing-box {
+  background: rgba(13, 148, 136, 0.1);
+  border-inline-start: 4px solid var(--teal);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-top: 10px;
+}
+.nursing-box h4 {
+  margin: 0 0 6px;
+  color: var(--teal-dark);
+  font-size: .95rem;
+}
+.nursing-box p {
+  margin: 0;
+  font-size: .92rem;
+  line-height: 1.6;
+}
+.med-link-row {
+  margin-top: 14px;
+}
