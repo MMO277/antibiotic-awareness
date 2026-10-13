@@ -61,7 +61,6 @@ export default function Layout({ children }: { children: ReactNode }) {
             </svg>
             <span>
               <b>{t('appName')}</b>
-              <small>{t('tagline')}</small>
             </span>
           </Link>
 
