@@ -6,7 +6,6 @@ import { db } from './firebase';
 import { emptyMedicine, FIELD_LABELS, Medicine, Status, TEXT_FIELDS } from './types';
 import { SEED } from './seedData';
 
-// Convert SeedItem to Medicine object
 function seedToMedicine(s: any): Medicine {
   const m = emptyMedicine(s.id);
   for (const f of TEXT_FIELDS) {
@@ -39,16 +38,39 @@ function normalize(id: string, d: any): Medicine {
   return m;
 }
 
+/** Merges remote data with rich verified local seed to guarantee Egyptian prices and barcodes always display */
+function smartMerge(remote: Medicine, local?: Medicine): Medicine {
+  if (!local) return remote;
+  return {
+    ...remote,
+    // Always use local verified price and substitutes if remote is empty
+    priceEgypt: remote.priceEgypt?.ar ? remote.priceEgypt : local.priceEgypt,
+    substitutes: remote.substitutes?.ar ? remote.substitutes : local.substitutes,
+    // Always prefer local Egyptian brands with real 622 barcodes over unbarcoded US names
+    brands: (remote.brands && remote.brands.length > 0 && remote.brands.some((b) => b.barcode.startsWith('622')))
+      ? remote.brands
+      : local.brands,
+    barcodes: (remote.barcodes && remote.barcodes.length > 0 && remote.barcodes.some((b) => b.startsWith('622')))
+      ? remote.barcodes
+      : local.barcodes,
+    lastReviewed: remote.lastReviewed || local.lastReviewed,
+  };
+}
+
 export async function fetchApproved(): Promise<Medicine[]> {
   const out = new Map<string, Medicine>();
-  // 1. Seed all rich local medicines first (so data is ALWAYS available)
+  // 1. Preload all rich verified local medicines
   ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
 
-  // 2. Overlay Firestore data if connected
+  // 2. Query Firestore and merge
   try {
     const col = collection(db, 'medicines');
     const a = await getDocs(query(col, where('status', '==', 'approved')));
-    a.docs.forEach((d) => out.set(d.id, normalize(d.id, d.data())));
+    a.docs.forEach((d) => {
+      const remote = normalize(d.id, d.data());
+      const local = out.get(d.id);
+      out.set(d.id, smartMerge(remote, local));
+    });
   } catch (err) {
     console.info('Using local verified medicines database:', err);
   }
@@ -62,7 +84,11 @@ export async function fetchAll(): Promise<Medicine[]> {
   try {
     const snap = await getDocs(collection(db, 'medicines'));
     if (!snap.empty) {
-      return snap.docs.map((d) => normalize(d.id, d.data())).sort((a, b) => a.id.localeCompare(b.id));
+      return snap.docs.map((d) => {
+        const remote = normalize(d.id, d.data());
+        const local = ALL_LOCAL_MEDICINES.find((m) => m.id === d.id);
+        return smartMerge(remote, local);
+      }).sort((a, b) => a.id.localeCompare(b.id));
     }
   } catch {
     /* fallback to local */
@@ -72,13 +98,16 @@ export async function fetchAll(): Promise<Medicine[]> {
 
 export async function fetchOne(id: string): Promise<Medicine | null> {
   const clean = id.toLowerCase().trim();
+  const local = ALL_LOCAL_MEDICINES.find((m) => m.id.toLowerCase() === clean);
   try {
     const snap = await getDoc(doc(db, 'medicines', clean));
-    if (snap.exists()) return normalize(snap.id, snap.data());
+    if (snap.exists()) {
+      const remote = normalize(snap.id, snap.data());
+      return smartMerge(remote, local);
+    }
   } catch {
-    /* ignore and use local */
+    /* fallback to local */
   }
-  const local = ALL_LOCAL_MEDICINES.find((m) => m.id.toLowerCase() === clean);
   return local || null;
 }
 
