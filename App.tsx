@@ -1,3 +1,5 @@
+import Tracker from './Tracker';
+import SideEffectsGuide from './SideEffectsGuide';
 import Interactions from './Interactions';
 import { Route, Routes, Link } from 'react-router-dom';
 import { configured } from './firebase';
@@ -50,6 +52,8 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/medicines" element={<Medicines />} />
         <Route path="/interactions" element={<Interactions />} />
+        <Route path="/tracker" element={<Tracker />} />
+        <Route path="/side-effects" element={<SideEffectsGuide />} />
         <Route path="/medicine/:id" element={<MedicinePage />} />
         <Route path="/articles" element={<Articles />} />
         <Route path="/articles/:id" element={<ArticlePage />} />
