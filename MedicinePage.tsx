@@ -71,12 +71,19 @@ export default function MedicinePage() {
       <section className="card highlight-card qr-top-card">
         <div className="qr-top-flex">
           <div>
-            <h2>📱 {lang === 'ar' ? 'رمز QR والباركود الخاص بعلبة هذا الدواء' : 'Box QR Code & Barcode'}</h2>
+            <h2>📱 {lang === 'ar' ? 'رمز QR للمشاركة وباركود العلبة المعتمد' : 'Medicine QR & Official Barcode'}</h2>
             <p className="small muted">
               {lang === 'ar'
-                ? 'امسح هذا الرمز بكاميرا الهاتف أو امسح الباركود المطبوع على ظهر العلبة لفتح تفاصيل الدواء وسعره وبدائله فوراً.'
-                : 'Scan this QR code with your phone camera to view full drug details, pricing and alternatives instantly.'}
+                ? 'امسح رمز QR لفتح ومشاركة صفحة الدواء على هاتفك فوراً، أو استخدم صفحة «مسح QR والباركود» لمسح باركود العلبة المصري (سواء الباركود الخطي أو كود العلبة المربع GS1 DataMatrix).'
+                : 'Scan this QR code to view and share this medicine page, or use the Scan page to scan the official Egyptian box barcode (EAN-13 or GS1 DataMatrix).'}
             </p>
+            {brands.length > 0 && brands[0].barcode && (
+              <div style={{ marginTop: '8px' }}>
+                <span className="small muted">{lang === 'ar' ? 'باركود العلبة الأحدث: ' : 'Latest Carton Barcode: '}</span>
+                <code style={{ fontSize: '1.05rem', fontWeight: 600 }}>{brands[0].barcode}</code>
+                <span className="small muted"> ({brands[0].name})</span>
+              </div>
+            )}
           </div>
           <div className="qr-box-preview">
             <QRBlock id={m.id} name={name} />
@@ -147,8 +154,8 @@ export default function MedicinePage() {
             )}
             <p className="small muted" style={{ marginTop: '8px' }}>
               {lang === 'ar'
-                ? '💡 يمكنك توجيه كاميرا الهاتف من صفحة «مسح QR والباركود» على الباركود المطبوع على ظهر علبة الدواء لفتح هذه الصفحة فوراً.'
-                : '💡 You can scan the box barcode with your camera on the Scan page to open this record instantly.'}
+                ? '💡 يمكنك توجيه كاميرا الهاتف من صفحة «مسح QR والباركود» نحو الباركود الخطي (الخطوط الطولية على ظهر العلبة) لفتح هذه الصفحة وتفاصيل الدواء فوراً.'
+                : '💡 You can scan the linear box barcode (stripes on the back) with your camera on the Scan page to open this record instantly.'}
             </p>
           </section>
 

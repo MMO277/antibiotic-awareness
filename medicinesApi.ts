@@ -38,21 +38,39 @@ function normalize(id: string, d: any): Medicine {
   return m;
 }
 
-/** Merges remote data with rich verified local seed to guarantee Egyptian prices and barcodes always display */
+/** Merges remote data with rich verified local seed to guarantee Egyptian prices and all modern barcodes always display */
 function smartMerge(remote: Medicine, local?: Medicine): Medicine {
   if (!local) return remote;
+
+  // Combine brands by barcode so neither modern packaging codes nor previous batches are lost
+  const brandMap = new Map<string, Brand>();
+  (local.brands || []).forEach((b) => {
+    if (b.barcode) brandMap.set(b.barcode.trim(), b);
+    else brandMap.set(b.name, b);
+  });
+  (remote.brands || []).forEach((b) => {
+    if (b.barcode) {
+      if (!brandMap.has(b.barcode.trim())) brandMap.set(b.barcode.trim(), b);
+    } else if (!brandMap.has(b.name)) {
+      brandMap.set(b.name, b);
+    }
+  });
+  const mergedBrands = Array.from(brandMap.values());
+
+  const mergedBarcodes = Array.from(
+    new Set([
+      ...(local.barcodes || []),
+      ...(remote.barcodes || []),
+      ...mergedBrands.map((b) => b.barcode?.trim()).filter(Boolean),
+    ]),
+  );
+
   return {
     ...remote,
-    // Always use local verified price and substitutes if remote is empty
     priceEgypt: remote.priceEgypt?.ar ? remote.priceEgypt : local.priceEgypt,
     substitutes: remote.substitutes?.ar ? remote.substitutes : local.substitutes,
-    // Always prefer local Egyptian brands with real 622 barcodes over unbarcoded US names
-    brands: (remote.brands && remote.brands.length > 0 && remote.brands.some((b) => b.barcode.startsWith('622')))
-      ? remote.brands
-      : local.brands,
-    barcodes: (remote.barcodes && remote.barcodes.length > 0 && remote.barcodes.some((b) => b.startsWith('622')))
-      ? remote.barcodes
-      : local.barcodes,
+    brands: mergedBrands.length > 0 ? mergedBrands : local.brands,
+    barcodes: mergedBarcodes.length > 0 ? mergedBarcodes : local.barcodes,
     lastReviewed: remote.lastReviewed || local.lastReviewed,
   };
 }
