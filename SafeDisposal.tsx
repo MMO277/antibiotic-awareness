@@ -249,7 +249,7 @@ export default function SafeDisposal() {
             </h3>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               {isAr
-                ? 'شاهد كيف يحمي التزامك البسيط البيئة المائية في محافظة الدقهلية ومصر:'
+                ? 'شاهد كيف يحمي التزامك البسيط البيئة المائية ومصادر المياه العذبة في مصر:'
                 : 'Calculate the volume of freshwater ecosystems you protect from antimicrobial contamination:'}
             </p>
           </div>
@@ -304,7 +304,7 @@ export default function SafeDisposal() {
         </p>
         <p className="small muted">
           {isAr
-            ? '💡 اسأل صيدليتك المحلية أو المستشفى الجامعي بالمنصورة عن توفر صندوق استرجاع الأدوية المنتهية قبل التخلص المنزلي منها.'
+            ? '💡 اسأل صيدليتك المحلية أو المستشفيات الجامعية عن توفر صندوق استرجاع الأدوية المنتهية قبل التخلص المنزلي منها.'
             : '💡 Ask your local pharmacy or university hospital about active disposal drop-boxes before disposing at home.'}
         </p>
       </section>
