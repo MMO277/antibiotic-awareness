@@ -12,6 +12,12 @@ export interface CampaignPoster {
   accentColor: string;
 }
 
+export interface VideoScene {
+  icon: string;
+  bg: string;
+  caption: Bi;
+}
+
 export interface ShortVideoReel {
   id: string;
   duration: string;
@@ -20,7 +26,9 @@ export interface ShortVideoReel {
   summary: Bi;
   narrationScript: Bi;
   keyTakeaway: Bi;
-  youtubeSearchUrl: string;
+  youtubeId: string;
+  youtubeUrl: string;
+  scenes: VideoScene[];
 }
 
 export interface SocialCampaignPost {
@@ -176,15 +184,15 @@ export const CAMPAIGN_POSTERS: CampaignPoster[] = [
 export const SHORT_VIDEO_REELS: ShortVideoReel[] = [
   {
     id: 'reel-superbug-60s',
-    duration: '00:60',
+    duration: '02:15',
     icon: '🎬',
     title: {
-      ar: 'فيديو قصير (60 ثانية): كيف تتحول البكتيريا العادية إلى «سوبر بكتيريا»؟',
-      en: '60-Second Reel: How Do Ordinary Bacteria Mutate into Superbugs?',
+      ar: 'فيديو توعوي (إنفوجرافيك عربي): مقاومة المضادات الحيوية وكيف تتحول البكتيريا إلى «سوبر بكتيريا»',
+      en: 'Arabic Infographic Video: Antibiotic Resistance & Superbug Evolution',
     },
     summary: {
-      ar: 'شرح مبسط ومصور يوضح ما يحدث داخل جسمك عندما تتناول مضاداً حيوياً بدون داعٍ أو توقف الكورس قبل موعده.',
-      en: 'Visual explanation of how unnecessary or incomplete antibiotic courses select for resistant strains.',
+      ar: 'فيديو موشن جرافيك مبسط باللغة العربية يشرح كيف تنشأ مقاومة البكتيريا للمضادات الحيوية بسبب الاستخدام العشوائي أو عدم إكمال الكورس.',
+      en: 'Animated explainer showing how random antibiotic use and incomplete courses create resistant superbugs.',
     },
     narrationScript: {
       ar: 'تخيل أن المضاد الحيوي هو سلاح مخصص فقط لقتل البكتيريا الضارة. عندما تتناوله لعلاج دور برد فيروسي، أو عندما تتوقف عن تناوله بعد يومين فقط لأنك شعرت بتحسن، فإن البكتيريا القوية التي لم تمت تتعلم كيف تقاوم هذا الدواء، وتورث هذه المناعة لأجيال جديدة من البكتيريا تسمى السوبر بكتيريا. احمِ نفسك وأسرتك: لا تتناول مضاداً حيوياً إلا بوصفة طبيب، وأكمل الجرعة للنهاية!',
@@ -194,51 +202,148 @@ export const SHORT_VIDEO_REELS: ShortVideoReel[] = [
       ar: 'الالتزام بالوصفة الطبية يحمي قوة المضادات الحيوية لإنقاذ الأرواح.',
       en: 'Following prescriptions preserves life-saving antibiotics.',
     },
-    youtubeSearchUrl: 'https://www.who.int/campaigns/world-amr-awareness-week',
+    youtubeId: 'qj0JR5jKcUs',
+    youtubeUrl: 'https://www.youtube.com/watch?v=qj0JR5jKcUs',
+    scenes: [
+      {
+        icon: '💊 ➡️ 🦠',
+        bg: 'linear-gradient(135deg, #0f172a, #1e3a8a)',
+        caption: {
+          ar: 'المشهد 1: المضاد الحيوي سلاح دقيق مصمم للقضاء على البكتيريا فقط ولا يؤثر على الفيروسات.',
+          en: 'Scene 1: Antibiotics are precision weapons against bacteria, not viruses.',
+        },
+      },
+      {
+        icon: '⚠️ ⏱️ 🛑',
+        bg: 'linear-gradient(135deg, #7c2d12, #b45309)',
+        caption: {
+          ar: 'المشهد 2: عند إيقاف الدواء بعد يومين فقط من التحسن، تبقى البكتيريا الأقوى على قيد الحياة!',
+          en: 'Scene 2: Stopping after 2 days leaves the strongest bacteria alive!',
+        },
+      },
+      {
+        icon: '🧬 👾 💥',
+        bg: 'linear-gradient(135deg, #7f1d1d, #dc2626)',
+        caption: {
+          ar: 'المشهد 3: تتحور البكتيريا الناجية وتكوّن درعاً جينياً ضد الدواء لتتحول إلى «سوبر بكتيريا».',
+          en: 'Scene 3: Surviving bacteria mutate into drug-resistant Superbugs.',
+        },
+      },
+      {
+        icon: '🛡️ 👨‍👩‍👧‍👦 ✅',
+        bg: 'linear-gradient(135deg, #064e3b, #059669)',
+        caption: {
+          ar: 'المشهد 4: الحل في يدك: لا مضاد بدون روشتة، وأكمل الكورس للنهاية!',
+          en: 'Scene 4: The solution: No antibiotic without a prescription, and finish the full course!',
+        },
+      },
+    ],
   },
   {
-    id: 'reel-cold-shot-truth',
-    duration: '00:55',
-    icon: '🎥',
+    id: 'reel-who-egypt-tv',
+    duration: '03:10',
+    icon: '📺',
     title: {
-      ar: 'فيديو قصير (55 ثانية): الحقيقة الكاملة وراء «حقنة البرد الثلاثية»',
-      en: '55-Second Reel: The Truth Behind the 3-in-1 Cold Injection',
+      ar: 'تقرير التليفزيون المصري ومنظمة الصحة العالمية: تحذير عاجل من ارتفاع معدلات مقاومة المضادات الحيوية',
+      en: 'Egyptian TV & WHO Report: Urgent Warning on Rising Antimicrobial Resistance',
     },
     summary: {
-      ar: 'لماذا تحذر الجهات الصحية من خلط المضاد الحيوي مع الكورتيزون والمسكن في سرنجة واحدة لعلاج نزلات البرد؟',
-      en: 'Why health authorities warn against mixing antibiotics, steroids, and painkillers for colds.',
+      ar: 'تغطية خاصة توضح مخاطر الإفراط في تناول المضادات الحيوية وحقن البرد في مصر وتوصيات منظمة الصحة العالمية في شهر نوفمبر.',
+      en: 'Special broadcast report on the dangers of antibiotic overuse in Egypt and WHO November campaign recommendations.',
     },
     narrationScript: {
-      ar: 'هل فكرت يوماً ماذا يوجد داخل حقنة البرد الشعبية؟ إنها خليط من ثلاثة أدوية خطيرة: مضاد حيوي لا يعالج فيروس البرد أصلاً، وحقنة كورتيزون تضعف مناعتك وترفع السكر والضغط، ومسكن قوي قد يسبب قرحة في المعدة وفشلاً في الكلى، فضلاً عن خطر الصدمة التحسسية القاتلة. نزلة البرد تُعالج بالراحة والسوائل الدافئة وليس بحقنة البرد!',
-      en: 'What is really inside the popular cold injection? A dangerous mix of an antibiotic that cannot treat viruses, a steroid that suppresses immunity, and a potent painkiller that risks kidney injury and stomach ulcers. Treat colds safely with rest and fluids!',
+      ar: 'تحذر منظمة الصحة العالمية وهيئة الدواء المصرية من الخطر المتزايد لمقاومة المضادات الحيوية نتيجة صرفها بدون وصفة طبية أو استخدام ما يُعرف بحقنة البرد الثلاثية. الاستخدام العشوائي يفقد المضادات الحيوية قدرتها على علاج الالتهابات البكتيرية الحرجة. استشر طبيبك دائماً ولا تستخدم بواقي الأدوية.',
+      en: 'The World Health Organization and Egyptian Drug Authority warn against the rising threat of antimicrobial resistance driven by over-the-counter misuse and mixed cold shots.',
     },
     keyTakeaway: {
-      ar: 'ارفض حقنة البرد المخلوطة واستبدلها بالرعاية الذاتية الآمنة.',
-      en: 'Refuse mixed cold injections and choose safe self-care.',
+      ar: 'تجنب صرف المضادات الحيوية دون وصفة طبية أو أخذ حقن البرد المخلوطة.',
+      en: 'Avoid OTC antibiotic use and unprescribed cold shot mixtures.',
     },
-    youtubeSearchUrl: 'https://edaegypt.gov.eg',
+    youtubeId: 'epML-5yWhXQ',
+    youtubeUrl: 'https://www.youtube.com/watch?v=epML-5yWhXQ',
+    scenes: [
+      {
+        icon: '🌍 🏥 📢',
+        bg: 'linear-gradient(135deg, #0c4a6e, #0284c7)',
+        caption: {
+          ar: 'المشهد 1: تحذير عالمي ومصري من فقدان المضادات الحيوية لفعاليتها بسبب سوء الاستخدام.',
+          en: 'Scene 1: Global and national alert on declining antibiotic effectiveness.',
+        },
+      },
+      {
+        icon: '🚫 💉 🧪',
+        bg: 'linear-gradient(135deg, #7f1d1d, #b91c1c)',
+        caption: {
+          ar: 'المشهد 2: حقنة البرد الثلاثية (مضاد + كورتيزون + مسكن) خطر داهم على المناعة والكلى.',
+          en: 'Scene 2: The 3-in-1 cold shot mixture poses severe risks to kidneys and immunity.',
+        },
+      },
+      {
+        icon: '🌿 📋 👨‍⚕️',
+        bg: 'linear-gradient(135deg, #064e3b, #0d9488)',
+        caption: {
+          ar: 'المشهد 3: نزلات البرد الفيروسية تُعالج بالرعاية الذاتية الآمنة والراحة والسوائل الدافئة.',
+          en: 'Scene 3: Viral colds are safely managed with rest, fluids, and self-care.',
+        },
+      },
+      {
+        icon: '💙 🤝 🇪🇬',
+        bg: 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+        caption: {
+          ar: 'المشهد 4: معاً في الأسبوع العالمي للوعي بالمضادات الحيوية لحماية صحة أطفالنا.',
+          en: 'Scene 4: Together during World AMR Awareness Week to protect our future.',
+        },
+      },
+    ],
   },
   {
-    id: 'reel-mothers-syrup-guide',
-    duration: '01:10',
-    icon: '🎞️',
+    id: 'reel-how-bacteria-win',
+    duration: '04:12',
+    icon: '🔬',
     title: {
-      ar: 'فيديو قصير للأمهات (70 ثانية): 3 أخطاء شائعة عند إعطاء شراب المضاد الحيوي للأطفال',
-      en: '70-Second Reel for Mothers: 3 Common Mistakes with Pediatric Antibiotic Syrups',
+      ar: 'فيديو علمي مبسط بالعربية: كيف تهزم البكتيريا المضادات الحيوية؟ (Antimicrobial Resistance)',
+      en: 'Clinical Explainer in Arabic: How Bacteria Defeat Antibiotics (AMR)',
     },
     summary: {
-      ar: 'دليل عملي لكل أم حول طريقة حل البودرة بالماء المغلي المبرد، والقياس بالسرنجة المدرجة، ومدة صلاحية الزجاجة.',
-      en: 'Practical guide for parents on reconstituting suspensions, using oral syringes, and 14-day expiry.',
+      ar: 'شرح علمي شيق باللغة العربية لطلبة التمريض والطب والجمهور حول آليات مقاومة البكتيريا للمضادات الحيوية وكيف نوقف انتشارها.',
+      en: 'Engaging Arabic scientific explainer on bacterial resistance mechanisms and infection control.',
     },
     narrationScript: {
-      ar: 'ثلاثة أخطاء شائعة تفقد شراب المضاد الحيوي مفعوله عند الأطفال: أولاً، استخدام ملعقة الطعام العادية بدلاً من السرنجة المدرجة بالملليلتر. ثانياً، نسيان رجّ الزجاجة جيداً قبل كل جرعة فيترسب الدواء في القاع. ثالثاً، الاحتفاظ بباقي الزجاجة في الثلاجة لشهر قادم؛ فشراب المضاد بعد إضافة الماء تنتهي صلاحيته خلال سبعة إلى أربعة عشر يوماً فقط!',
-      en: 'Three mistakes that ruin pediatric antibiotic syrups: using household spoons instead of a calibrated oral syringe, forgetting to shake the bottle well before every dose, and keeping leftover reconstituted syrup past its strict 7-to-14-day expiry window!',
+      ar: 'كيف تستطيع خلية بكتيرية مجهرية أن تهزم أقوى المضادات الحيوية؟ تمتلك البكتيريا قدرة مذهلة على تطوير مضخات تطرد الدواء خارجها، أو إفراز إنزيمات مثل البيتا لاكتاماز لتكسير المضاد الحيوي، أو تغيير شكل جدارها الخلوي. كل مرة نستخدم فيها مضاداً حيوياً بلا حاجة، نحن ندرب هذه البكتيريا على هزيمة أدويتنا!',
+      en: 'How does a microscopic bacterial cell defeat our strongest antibiotics? By developing efflux pumps, beta-lactamase enzymes, and target modifications whenever antibiotics are misused.',
     },
     keyTakeaway: {
-      ar: 'قيسي بالسرنجة المدرجة، رجي الزجاجة، وتخلصي من الباقي بعد انتهاء الكورس.',
-      en: 'Measure with an oral syringe, shake well, and discard leftovers after the course.',
+      ar: 'ترشيد المضادات الحيوية ومكافحة العدوى هما خط الدفاع الأول.',
+      en: 'Antibiotic stewardship and infection control are our first line of defense.',
     },
-    youtubeSearchUrl: 'https://www.cdc.gov/antibiotic-use/',
+    youtubeId: '-JyciqkCxQk',
+    youtubeUrl: 'https://www.youtube.com/watch?v=-JyciqkCxQk',
+    scenes: [
+      {
+        icon: '🔬 🦠 🛡️',
+        bg: 'linear-gradient(135deg, #312e81, #4f46e5)',
+        caption: {
+          ar: 'المشهد 1: البكتيريا تطور إنزيمات ومضخات دفاعية لتكسير وطرد المضاد الحيوي.',
+          en: 'Scene 1: Bacteria evolve enzymes and efflux pumps to neutralize antibiotics.',
+        },
+      },
+      {
+        icon: '🔄 🧬 📈',
+        bg: 'linear-gradient(135deg, #831843, #db2777)',
+        caption: {
+          ar: 'المشهد 2: تنقل البكتيريا جينات المقاومة لبعضها البعض بسرعة مذهلة.',
+          en: 'Scene 2: Bacteria transfer resistance genes horizontally to other strains.',
+        },
+      },
+      {
+        icon: '🍼 📏 ❄️',
+        bg: 'linear-gradient(135deg, #065f46, #10b981)',
+        caption: {
+          ar: 'المشهد 3: ضبط الجرعة بالسرنجة المدرجة وإتمام المدة المقررة يقضي على البكتيريا تماماً.',
+          en: 'Scene 3: Accurate dosing and full course completion eradicate the infection.',
+        },
+      },
+    ],
   },
 ];
 
@@ -278,19 +383,14 @@ export const SOCIAL_CAMPAIGN_POSTS: SocialCampaignPost[] = [
   },
 ];
 
-/**
- * Calculates countdown to November 18-24 (World AMR Awareness Week)
- * and checks whether we are currently in November campaign month.
- */
 export function getNovemberCampaignStatus(now = new Date()) {
   const year = now.getFullYear();
-  const month = now.getMonth(); // 0-indexed, 10 = November
+  const month = now.getMonth();
   const date = now.getDate();
 
   const isNovember = month === 10;
   const isOfficialWeek = month === 10 && date >= 18 && date <= 24;
 
-  // Target is Nov 18 of current year (or next year if past Nov 24)
   let targetYear = year;
   if (month > 10 || (month === 10 && date > 24)) {
     targetYear = year + 1;

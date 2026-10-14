@@ -5,6 +5,7 @@ import {
   CAMPAIGN_POSTERS,
   getNovemberCampaignStatus,
   SHORT_VIDEO_REELS,
+  ShortVideoReel,
   SOCIAL_CAMPAIGN_POSTS,
 } from './awarenessWeekData';
 import { speakText, stopSpeech } from './speechService';
@@ -15,10 +16,12 @@ export default function AwarenessWeek() {
   const { lang } = useLang();
   const isAr = lang === 'ar';
 
-  const [activeTab, setActiveTab] = useState<CampaignTab>('posters');
+  const [activeTab, setActiveTab] = useState<CampaignTab>('videos');
   const [simulateNovemberLive, setSimulateNovemberLive] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string>('');
-  const [speakingReelId, setSpeakingReelId] = useState<string | null>(null);
+  const [playingReelId, setPlayingReelId] = useState<string | null>(null);
+  const [sceneIndex, setSceneIndex] = useState<number>(0);
+  const [progressPct, setProgressPct] = useState<number>(0);
   const [pledged, setPledged] = useState<boolean>(false);
   const [pledgeCount, setPledgeCount] = useState<number>(1428);
 
@@ -30,6 +33,36 @@ export default function AwarenessWeek() {
       stopSpeech();
     };
   }, []);
+
+  // Animate visual motion-graphics scenes & progress bar when a reel is playing
+  useEffect(() => {
+    if (!playingReelId) {
+      setProgressPct(0);
+      setSceneIndex(0);
+      return;
+    }
+    const currentReel = SHORT_VIDEO_REELS.find((r) => r.id === playingReelId);
+    const totalScenes = currentReel?.scenes.length || 4;
+    const startTime = Date.now();
+    const durationMs = 24000; // 24 seconds visual cycle
+
+    const timer = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const pct = Math.min(100, (elapsed / durationMs) * 100);
+      setProgressPct(pct);
+      const currentScene = Math.min(
+        totalScenes - 1,
+        Math.floor((pct / 100) * totalScenes)
+      );
+      setSceneIndex(currentScene);
+      if (pct >= 100) {
+        clearInterval(timer);
+        setPlayingReelId(null);
+      }
+    }, 150);
+
+    return () => clearInterval(timer);
+  }, [playingReelId]);
 
   const siteUrl = `${window.location.origin}${window.location.pathname}`;
 
@@ -44,14 +77,18 @@ export default function AwarenessWeek() {
     window.open(`https://wa.me/?text=${encodeURIComponent(full)}`, '_blank', 'noopener,noreferrer');
   }
 
-  function toggleReelAudio(reelId: string, scriptText: string) {
-    if (speakingReelId === reelId) {
+  function toggleInteractiveReel(reel: ShortVideoReel) {
+    if (playingReelId === reel.id) {
       stopSpeech();
-      setSpeakingReelId(null);
+      setPlayingReelId(null);
     } else {
       stopSpeech();
-      setSpeakingReelId(reelId);
-      speakText(scriptText, lang, 1.0, () => setSpeakingReelId(null));
+      setSceneIndex(0);
+      setProgressPct(0);
+      setPlayingReelId(reel.id);
+      speakText(reel.narrationScript[lang], lang, 1.0, () => {
+        setPlayingReelId(null);
+      });
     }
   }
 
@@ -125,8 +162,8 @@ export default function AwarenessWeek() {
             </h1>
             <p style={{ color: '#e0f2fe', margin: 0, lineHeight: 1.7 }}>
               {isAr
-                ? 'مركز الحملات التوعوية الجاهزة للنشر والتداول: بوسترات إنفوجرافيك مصممة، فيديوهات قصيرة وريلز مع تعليق صوتي، ومنشورات جاهزة للنسخ والمشاركة عبر واتساب والسوشيال ميديا لنشر ثقافة الاستخدام الواعي للمضادات الحيوية.'
-                : 'Ready-to-share awareness hub: visual infographic posters, 60-second short video scripts with audio narration, and one-click social media campaign kits.'}
+                ? 'مركز الحملات التوعوية الجاهزة للنشر والتداول: فيديوهات توعوية مدمجة، عروض موشن جرافيك تفاعلية بالصوت، بوسترات إنفوجرافيك مصممة، ومنشورات جاهزة للنسخ والمشاركة عبر واتساب والسوشيال ميديا.'
+                : 'Ready-to-share awareness hub: embedded educational videos, interactive animated reels with voiceover, visual infographic posters, and social media campaign kits.'}
             </p>
           </div>
 
@@ -149,7 +186,7 @@ export default function AwarenessWeek() {
                   {isAr ? 'حملة نوفمبر الزرقاء نشطة الآن!' : 'November Blue Campaign Active!'}
                 </b>
                 <small style={{ color: '#cbd5e1' }}>
-                  {isAr ? 'شارك البوسترات والرسائل مع عائلتك اليوم' : 'Share posters & messages today'}
+                  {isAr ? 'شاهد الفيديوهات وشارك البوسترات اليوم' : 'Watch videos & share posters today'}
                 </small>
               </div>
             ) : (
@@ -183,17 +220,17 @@ export default function AwarenessWeek() {
       <div className="row wrapRow no-print" style={{ gap: '8px', borderBottom: '2px solid var(--line)', paddingBottom: '12px' }}>
         <button
           type="button"
+          className={`btn ${activeTab === 'videos' ? '' : 'ghost'}`}
+          onClick={() => setActiveTab('videos')}
+        >
+          🎬 {isAr ? `الفيديوهات التوعوية والريلز (${SHORT_VIDEO_REELS.length})` : `Educational Videos & Reels (${SHORT_VIDEO_REELS.length})`}
+        </button>
+        <button
+          type="button"
           className={`btn ${activeTab === 'posters' ? '' : 'ghost'}`}
           onClick={() => setActiveTab('posters')}
         >
           🖼️ {isAr ? `بوسترات وصور الإنفوجرافيك (${CAMPAIGN_POSTERS.length})` : `Infographic Posters (${CAMPAIGN_POSTERS.length})`}
-        </button>
-        <button
-          type="button"
-          className={`btn ${activeTab === 'videos' ? '' : 'ghost'}`}
-          onClick={() => setActiveTab('videos')}
-        >
-          🎬 {isAr ? `الفيديوهات القصيرة والريلز (${SHORT_VIDEO_REELS.length})` : `Short Videos & Reels (${SHORT_VIDEO_REELS.length})`}
         </button>
         <button
           type="button"
@@ -211,7 +248,258 @@ export default function AwarenessWeek() {
         </button>
       </div>
 
-      {/* TAB 1: VISUAL INFOGRAPHIC POSTERS */}
+      {/* TAB 1: EMBEDDED YOUTUBE VIDEOS + INTERACTIVE MOTION-GRAPHICS PLAYER */}
+      {activeTab === 'videos' && (
+        <section className="stack">
+          <div>
+            <h2>🎬 {isAr ? 'مكتبة الفيديوهات التوعوية والعروض المرئية الناطقة' : 'Playable Educational Videos & Animated Motion Reels'}</h2>
+            <p className="small muted" style={{ margin: 0 }}>
+              {isAr
+                ? 'اضغط على زر التشغيل ▶️ داخل مشغل الفيديو لمشاهدة الفيديوهات التوعوية مباشرة، أو اضغط على «تشغيل العرض المتحرك الناطق» لمشاهدة الشرائح التفاعلية بالصوت:'
+                : 'Press Play ▶️ inside the embedded video player to watch directly, or launch the interactive animated voiceover reel:'}
+            </p>
+          </div>
+
+          <div className="stack" style={{ gap: '22px' }}>
+            {SHORT_VIDEO_REELS.map((reel) => {
+              const isPlaying = playingReelId === reel.id;
+              const activeScene = reel.scenes[isPlaying ? sceneIndex : 0] || reel.scenes[0];
+
+              return (
+                <article
+                  key={reel.id}
+                  className="card stack"
+                  style={{
+                    borderTop: '4px solid #0284c7',
+                    padding: '20px',
+                  }}
+                >
+                  <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="row" style={{ gap: '10px' }}>
+                      <span style={{ fontSize: '2rem' }}>{reel.icon}</span>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '1.15rem' }}>{reel.title[lang]}</h3>
+                        <small className="muted">{reel.summary[lang]}</small>
+                      </div>
+                    </div>
+                    <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}>
+                      ⏱️ {reel.duration}
+                    </span>
+                  </div>
+
+                  {/* Dual Video Grid: 1) Embedded YouTube Video Player  2) Built-in Animated Motion Player */}
+                  <div
+                    className="grid"
+                    style={{
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                      gap: '16px',
+                      marginTop: '6px',
+                    }}
+                  >
+                    {/* Player A: Real Embedded YouTube Video Iframe */}
+                    <div
+                      style={{
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        background: '#000',
+                        border: '1px solid var(--line)',
+                        aspectRatio: '16 / 9',
+                        position: 'relative',
+                      }}
+                    >
+                      <iframe
+                        src={`https://www.youtube.com/embed/${reel.youtubeId}?rel=0`}
+                        title={reel.title[lang]}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          border: 0,
+                        }}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
+                    </div>
+
+                    {/* Player B: Built-in Interactive Motion-Graphics & Voiceover Player */}
+                    <div
+                      style={{
+                        borderRadius: '12px',
+                        background: activeScene.bg,
+                        color: '#fff',
+                        padding: '20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        minHeight: '230px',
+                        position: 'relative',
+                        transition: 'background 0.5s ease',
+                        boxShadow: 'inset 0 0 40px rgba(0,0,0,0.25)',
+                      }}
+                    >
+                      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span
+                          className="badge"
+                          style={{
+                            background: isPlaying ? '#ef4444' : 'rgba(255,255,255,0.2)',
+                            color: '#fff',
+                            border: 'none',
+                          }}
+                        >
+                          {isPlaying
+                            ? isAr
+                              ? `🔴 يعمل الآن — مشهد ${sceneIndex + 1} من ${reel.scenes.length}`
+                              : `🔴 PLAYING — Scene ${sceneIndex + 1}/${reel.scenes.length}`
+                            : isAr
+                            ? '🎞️ عرض موشن جرافيك ناطق مدمج'
+                            : '🎞️ Built-in Animated Motion Reel'}
+                        </span>
+                        <div className="row" style={{ gap: '4px' }}>
+                          {reel.scenes.map((_, idx) => (
+                            <span
+                              key={idx}
+                              style={{
+                                width: '8px',
+                                height: '8px',
+                                borderRadius: '50%',
+                                background:
+                                  (isPlaying ? sceneIndex : 0) === idx
+                                    ? '#38bdf8'
+                                    : 'rgba(255,255,255,0.35)',
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'center', margin: '14px 0' }}>
+                        <div
+                          style={{
+                            fontSize: '2.8rem',
+                            marginBottom: '10px',
+                            transform: isPlaying ? 'scale(1.08)' : 'scale(1)',
+                            transition: 'transform 0.4s ease',
+                          }}
+                        >
+                          {activeScene.icon}
+                        </div>
+                        <p
+                          style={{
+                            margin: 0,
+                            fontSize: '1.02rem',
+                            fontWeight: 700,
+                            lineHeight: 1.6,
+                            color: '#fff',
+                            background: 'rgba(0,0,0,0.35)',
+                            padding: '10px 14px',
+                            borderRadius: '10px',
+                          }}
+                        >
+                          {activeScene.caption[lang]}
+                        </p>
+                      </div>
+
+                      {/* Progress Bar & Play Button inside Motion Screen */}
+                      <div>
+                        <div
+                          style={{
+                            height: '6px',
+                            background: 'rgba(255,255,255,0.25)',
+                            borderRadius: '999px',
+                            overflow: 'hidden',
+                            marginBottom: '10px',
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${isPlaying ? progressPct : 0}%`,
+                              height: '100%',
+                              background: '#38bdf8',
+                              transition: 'width 0.15s linear',
+                            }}
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn small"
+                          style={{
+                            width: '100%',
+                            background: isPlaying ? '#ef4444' : '#38bdf8',
+                            borderColor: isPlaying ? '#ef4444' : '#38bdf8',
+                            color: isPlaying ? '#fff' : '#0f172a',
+                            fontWeight: 800,
+                          }}
+                          onClick={() => toggleInteractiveReel(reel)}
+                        >
+                          {isPlaying
+                            ? isAr
+                              ? '⏹️ إيقاف العرض المتحرك الناطق'
+                              : '⏹️ Stop Animated Reel'
+                            : isAr
+                            ? '▶️ تشغيل العرض المتحرك بالصوت والشرائح'
+                            : '▶️ Play Animated Voiceover Reel'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Full Voiceover Script & Share Buttons */}
+                  <div
+                    className="card"
+                    style={{
+                      background: 'var(--bg-subtle, #f8fafc)',
+                      border: '1px solid var(--line)',
+                      padding: '12px 16px',
+                    }}
+                  >
+                    <div className="small muted" style={{ marginBottom: '4px', fontWeight: 700 }}>
+                      🎙️ {isAr ? 'ملخص وسيناريو الفيديو (للنشر كـ Reel أو قراءته):' : 'Video Script & Summary:'}
+                    </div>
+                    <p className="small" style={{ margin: 0, lineHeight: 1.75 }}>
+                      «{reel.narrationScript[lang]}»
+                    </p>
+                  </div>
+
+                  <div className="row wrapRow" style={{ gap: '10px' }}>
+                    <a
+                      href={reel.youtubeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn small"
+                    >
+                      📺 {isAr ? 'فتح الفيديو على تطبيق يوتيوب مباشرة ↗' : 'Watch on YouTube App ↗'}
+                    </a>
+
+                    <button
+                      type="button"
+                      className="btn ghost small"
+                      onClick={() => handleShareWhatsApp(`${reel.title[lang]}\n${reel.youtubeUrl}\n\n${reel.narrationScript[lang]}`)}
+                    >
+                      📲 {isAr ? 'مشاركة الفيديو عبر واتساب' : 'Share Video on WhatsApp'}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn ghost small"
+                      onClick={() => handleCopyText(reel.id, `${reel.title[lang]}\n${reel.youtubeUrl}\n\n${reel.narrationScript[lang]}`)}
+                    >
+                      {copiedId === reel.id
+                        ? isAr
+                          ? '✅ تم نسخ الرابط والسيناريو'
+                          : '✅ Copied'
+                        : isAr
+                        ? '📋 نسخ رابط ونص الفيديو'
+                        : '📋 Copy Video Link & Text'}
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* TAB 2: VISUAL INFOGRAPHIC POSTERS */}
       {activeTab === 'posters' && (
         <section className="stack">
           <div className="head">
@@ -244,7 +532,6 @@ export default function AwarenessWeek() {
                     justifyContent: 'space-between',
                   }}
                 >
-                  {/* Visual Poster Top Header */}
                   <div
                     style={{
                       background: poster.gradient,
@@ -270,7 +557,6 @@ export default function AwarenessWeek() {
                     </h3>
                   </div>
 
-                  {/* Poster Body */}
                   <div className="stack" style={{ padding: '18px', gap: '10px', flex: 1 }}>
                     <div
                       style={{
@@ -311,7 +597,6 @@ export default function AwarenessWeek() {
                     </div>
                   </div>
 
-                  {/* Poster Share Footer */}
                   <div
                     className="row wrapRow no-print"
                     style={{
@@ -341,100 +626,6 @@ export default function AwarenessWeek() {
                         : isAr
                         ? '📋 نسخ البوستر'
                         : '📋 Copy Text'}
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* TAB 2: SHORT VIDEOS & 60-SECOND REELS */}
-      {activeTab === 'videos' && (
-        <section className="stack">
-          <h2>🎬 {isAr ? 'مكتبة الفيديوهات التوعوية القصيرة والريلز (60 ثانية)' : 'Short Educational Videos & 60-Second Reels'}</h2>
-          <p className="small muted">
-            {isAr
-              ? 'مقاطع توعوية قصيرة مركزة مع إمكانية الاستماع الفوري للتعليق الصوتي باللغة العربية أو الإنجليزية أو نسخ السيناريو لنشره كـ Reel أو TikTok أو Shorts:'
-              : 'Short-form video scripts with built-in voice narration and one-click script copying for Reels/Shorts:'}
-          </p>
-
-          <div className="stack" style={{ gap: '16px' }}>
-            {SHORT_VIDEO_REELS.map((reel) => {
-              const isPlaying = speakingReelId === reel.id;
-              return (
-                <article
-                  key={reel.id}
-                  className="card stack"
-                  style={{ borderInlineStart: '5px solid #0284c7' }}
-                >
-                  <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="row" style={{ gap: '10px' }}>
-                      <span style={{ fontSize: '2rem' }}>{reel.icon}</span>
-                      <div>
-                        <h3 style={{ margin: 0 }}>{reel.title[lang]}</h3>
-                        <small className="muted">{reel.summary[lang]}</small>
-                      </div>
-                    </div>
-                    <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}>
-                      ⏱️ {reel.duration}
-                    </span>
-                  </div>
-
-                  {/* Visual Storyboard & Narration Script Box */}
-                  <div
-                    className="card"
-                    style={{
-                      background: 'var(--bg-subtle, #f8fafc)',
-                      border: '1px solid var(--line)',
-                      lineHeight: 1.8,
-                    }}
-                  >
-                    <div className="small muted" style={{ marginBottom: '4px', fontWeight: 700 }}>
-                      🎙️ {isAr ? 'النص الصوتي والسيناريو الكامل للفيديو:' : 'Full Voiceover & Reel Script:'}
-                    </div>
-                    <p style={{ margin: 0, fontSize: '1rem' }}>«{reel.narrationScript[lang]}»</p>
-                    <div style={{ marginTop: '8px', color: '#0d9488', fontWeight: 700, fontSize: '0.9rem' }}>
-                      🎯 {isAr ? 'الرسالة الأساسية:' : 'Key Takeaway:'} {reel.keyTakeaway[lang]}
-                    </div>
-                  </div>
-
-                  <div className="row wrapRow" style={{ gap: '10px' }}>
-                    <button
-                      type="button"
-                      className={`btn small ${isPlaying ? 'danger' : ''}`}
-                      onClick={() => toggleReelAudio(reel.id, reel.narrationScript[lang])}
-                    >
-                      {isPlaying
-                        ? isAr
-                          ? '⏹️ إيقاف التعليق الصوتي'
-                          : '⏹️ Stop Audio'
-                        : isAr
-                        ? '🔊 استمع للتعليق الصوتي للفيديو الآن'
-                        : '🔊 Listen to Voiceover Narration'}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn ghost small"
-                      onClick={() => handleCopyText(reel.id, `${reel.title[lang]}\n\n${reel.narrationScript[lang]}`)}
-                    >
-                      {copiedId === reel.id
-                        ? isAr
-                          ? '✅ تم نسخ السيناريو'
-                          : '✅ Script Copied'
-                        : isAr
-                        ? '📋 نسخ سيناريو الـ Reel'
-                        : '📋 Copy Reel Script'}
-                    </button>
-
-                    <button
-                      type="button"
-                      className="btn ghost small"
-                      onClick={() => handleShareWhatsApp(`${reel.title[lang]}\n\n${reel.narrationScript[lang]}`)}
-                    >
-                      📲 {isAr ? 'مشاركة على واتساب' : 'Share on WhatsApp'}
                     </button>
                   </div>
                 </article>
