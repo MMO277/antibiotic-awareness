@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useLang } from './i18n';
-import { fetchOne } from './medicinesApi';
+import { fetchOne, findLocalMedicine } from './medicinesApi';
 import { FIELD_LABELS, Medicine, pick, TextField } from './types';
 import StatusBadge from './StatusBadge';
 import QRBlock from './QRBlock';
 import Disclaimer from './Disclaimer';
+import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 
 const ORDER: TextField[] = [
   'approvedUses',
@@ -27,12 +28,37 @@ const ORDER: TextField[] = [
 export default function MedicinePage() {
   const { id = '' } = useParams();
   const { t, lang } = useLang();
-  const [m, setM] = useState<Medicine | null | undefined>(undefined);
+  const isAr = lang === 'ar';
+
+  // Initialize synchronously from local verified database so it opens in 0ms and never fails
+  const [m, setM] = useState<Medicine | null | undefined>(() => findLocalMedicine(id) ?? undefined);
 
   useEffect(() => {
-    setM(undefined);
-    fetchOne(id).then(setM);
+    const localMed = findLocalMedicine(id);
+    if (localMed) {
+      setM(localMed);
+    } else {
+      setM(undefined);
+    }
+    fetchOne(id)
+      .then((res) => {
+        if (res) setM(res);
+        else if (!localMed) setM(null);
+      })
+      .catch(() => {
+        if (!localMed) setM(null);
+      });
   }, [id]);
+
+  const commercialPackages = useMemo(
+    () => (m ? EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => p.activeIngredientId === m.id) : []),
+    [m]
+  );
+
+  const ingMeta = useMemo(
+    () => (m ? ACTIVE_INGREDIENTS.find((a) => a.id === m.id) : undefined),
+    [m]
+  );
 
   if (m === undefined) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (m === null)
@@ -50,14 +76,49 @@ export default function MedicinePage() {
 
   return (
     <main className="wrap stack">
-      <Link to="/medicines">← {t('navMedicines')}</Link>
+      <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <Link to="/medicines">← {t('navMedicines')}</Link>
+        <div className="row" style={{ gap: '8px' }}>
+          <Link to="/allergy-checker" className="btn ghost small">
+            🛡️ {isAr ? 'فحص الحساسية الدوائية' : 'Allergy Safety Check'}
+          </Link>
+          <Link to="/interactions" className="btn ghost small">
+            ⚡ {isAr ? 'فحص التفاعلات' : 'Interactions Check'}
+          </Link>
+        </div>
+      </div>
+
       <header className="med-head">
-        <h1>{name}</h1>
+        <div className="row wrapRow" style={{ alignItems: 'center', gap: '10px' }}>
+          <h1 style={{ margin: 0 }}>{name}</h1>
+          {ingMeta && (
+            <span
+              className="badge"
+              style={{
+                background:
+                  ingMeta.whoAccessGroup === 'Access'
+                    ? '#dcfce7'
+                    : ingMeta.whoAccessGroup === 'Reserve'
+                    ? '#fee2e2'
+                    : '#fef3c7',
+                color:
+                  ingMeta.whoAccessGroup === 'Access'
+                    ? '#166534'
+                    : ingMeta.whoAccessGroup === 'Reserve'
+                    ? '#991b1b'
+                    : '#92400e',
+                fontWeight: 700,
+              }}
+            >
+              WHO AWaRe: {ingMeta.whoAccessGroup} ({ingMeta.atcCode})
+            </span>
+          )}
+        </div>
         <p className="muted">{pick(m.drugClass, lang)}</p>
         <div className="meta">
           <StatusBadge status={m.status} />
           <span>
-            {t('lastReviewed')}: <b>{m.lastReviewed || '2026-10-13'}</b>
+            {t('lastReviewed')}: <b>{m.lastReviewed || '2026-10-14'}</b>
           </span>
           {m.reviewedBy && (
             <span>
@@ -71,15 +132,15 @@ export default function MedicinePage() {
       <section className="card highlight-card qr-top-card">
         <div className="qr-top-flex">
           <div>
-            <h2>📱 {lang === 'ar' ? 'رمز QR للمشاركة وباركود العلبة المعتمد' : 'Medicine QR & Official Barcode'}</h2>
+            <h2>📱 {isAr ? 'رمز QR للمشاركة وباركود العلبة المعتمد' : 'Medicine QR & Official Barcode'}</h2>
             <p className="small muted">
-              {lang === 'ar'
-                ? 'امسح رمز QR لفتح ومشاركة صفحة الدواء على هاتفك فوراً، أو استخدم صفحة «مسح QR والباركود» لمسح باركود العلبة المصري (سواء الباركود الخطي أو كود العلبة المربع GS1 DataMatrix).'
-                : 'Scan this QR code to view and share this medicine page, or use the Scan page to scan the official Egyptian box barcode (EAN-13 or GS1 DataMatrix).'}
+              {isAr
+                ? 'امسح رمز QR لفتح ومشاركة صفحة الدواء على هاتفك فوراً، أو استخدم صفحة «مسح QR والباركود» لمسح الباركود الخطي المطبوع على ظهر العلبة المصرية.'
+                : 'Scan this QR code to view and share this medicine page, or use the Scan page to scan the official Egyptian linear box barcode.'}
             </p>
             {brands.length > 0 && brands[0].barcode && (
               <div style={{ marginTop: '8px' }}>
-                <span className="small muted">{lang === 'ar' ? 'باركود العلبة الأحدث: ' : 'Latest Carton Barcode: '}</span>
+                <span className="small muted">{isAr ? 'باركود العلبة الأحدث: ' : 'Latest Carton Barcode: '}</span>
                 <code style={{ fontSize: '1.05rem', fontWeight: 600 }}>{brands[0].barcode}</code>
                 <span className="small muted"> ({brands[0].name})</span>
               </div>
@@ -105,6 +166,84 @@ export default function MedicinePage() {
 
       <div className="med-grid">
         <div className="stack">
+          {/* Commercial Packages & Alternatives Table in Egyptian Market */}
+          {commercialPackages.length > 0 && (
+            <section className="card highlight-card">
+              <h2>
+                🇪🇬{' '}
+                {isAr
+                  ? `جميع العبوات والمستحضرات والبدائل المسجلة في السوق المصري (${commercialPackages.length} عبوة)`
+                  : `Registered Commercial Packages & Alternatives in Egypt (${commercialPackages.length})`}
+              </h2>
+              <p className="small muted">
+                {isAr
+                  ? 'قائمة تفصيلية بجميع التركيزات والأشكال الصيدلانية والشركات المصنعة والأسعار الرسمية والباركود الخطي لكل عبوة:'
+                  : 'Detailed breakdown of all strengths, dosage forms, manufacturers, official EGP prices, and linear barcodes:'}
+              </p>
+              <div className="tablewrap" style={{ marginTop: '10px' }}>
+                <table className="tbl">
+                  <thead>
+                    <tr>
+                      <th>{isAr ? 'الاسم التجاري' : 'Trade Name'}</th>
+                      <th>{isAr ? 'التركيز والشكل' : 'Strength & Form'}</th>
+                      <th>{isAr ? 'العبوة والشركة' : 'Package & Maker'}</th>
+                      <th>{isAr ? 'السعر الرسمي' : 'Price (EGP)'}</th>
+                      <th>{isAr ? 'الباركود الخطي (EAN-13)' : 'Linear Barcode'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commercialPackages.map((pkg) => (
+                      <tr key={pkg.productId}>
+                        <td>
+                          <b>{isAr ? pkg.tradeNameAr : pkg.tradeNameEn}</b>
+                          <div className="small muted">{isAr ? pkg.tradeNameEn : pkg.tradeNameAr}</div>
+                        </td>
+                        <td>
+                          <span dir="ltr"><b>{pkg.strength}</b></span>
+                          <div className="small muted">{pkg.dosageFormLabel[lang]}</div>
+                        </td>
+                        <td>
+                          <div>{pkg.packDetails[lang]}</div>
+                          <div className="small muted">{pkg.manufacturer} ({pkg.countryOfOrigin})</div>
+                        </td>
+                        <td>
+                          <b style={{ color: '#15803d' }}>
+                            {pkg.priceEgp ? `${pkg.priceEgp.toFixed(2)} ${isAr ? 'ج.م' : 'EGP'}` : '—'}
+                          </b>
+                          <div className="small muted">{pkg.unitPriceNote[lang]}</div>
+                        </td>
+                        <td dir="ltr">
+                          {pkg.barcode ? (
+                            <code
+                              style={{
+                                background: '#f0fdf4',
+                                color: '#15803d',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {pkg.barcode}
+                            </code>
+                          ) : (
+                            <span className="small muted" dir="rtl">
+                              {isAr ? 'قيد التحقق الميداني' : 'Pending field check'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="small muted" style={{ marginTop: '8px' }}>
+                {isAr
+                  ? '💡 يمكنك توجيه كاميرا الهاتف من صفحة «مسح QR والباركود» نحو الباركود الخطي (الخطوط الطولية على ظهر العلبة) لفتح هذه الصفحة وتفاصيل الدواء فوراً.'
+                  : '💡 You can scan the linear box barcode (stripes on the back) with your camera on the Scan page to open this record instantly.'}
+              </p>
+            </section>
+          )}
+
           {ORDER.filter((f) => FIELD_LABELS[f]).map((f) => {
             const v = pick(m[f], lang);
             if (!v) return null;
@@ -121,43 +260,6 @@ export default function MedicinePage() {
               </section>
             );
           })}
-
-          <section className="card">
-            <h2>{lang === 'ar' ? 'الأسماء التجارية والباركود المعتمد للعلبة في مصر' : t('brands')}</h2>
-            {brands.length === 0 ? (
-              <p className="muted">—</p>
-            ) : (
-              <div className="tablewrap">
-                <table className="tbl">
-                  <thead>
-                    <tr>
-                      <th>{t('brandName')}</th>
-                      <th>{t('manufacturer')}</th>
-                      <th>{lang === 'ar' ? 'باركود العلبة (EAN-13)' : t('barcode')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {brands.map((b, i) => (
-                      <tr key={i}>
-                        <td>
-                          <b>{b.name}</b> {!b.verified && <span className="badge draft">{t('unverified')}</span>}
-                        </td>
-                        <td>{b.manufacturer || '—'}</td>
-                        <td dir="ltr">
-                          <code>{b.barcode || '—'}</code>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            <p className="small muted" style={{ marginTop: '8px' }}>
-              {lang === 'ar'
-                ? '💡 يمكنك توجيه كاميرا الهاتف من صفحة «مسح QR والباركود» نحو الباركود الخطي (الخطوط الطولية على ظهر العلبة) لفتح هذه الصفحة وتفاصيل الدواء فوراً.'
-                : '💡 You can scan the linear box barcode (stripes on the back) with your camera on the Scan page to open this record instantly.'}
-            </p>
-          </section>
 
           <section className="card">
             <h2>{t('sources')}</h2>

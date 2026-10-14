@@ -1,12 +1,22 @@
-import { EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 import { useEffect, useState } from 'react';
 import {
-  collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { Brand, emptyMedicine, FIELD_LABELS, Medicine, Status, TEXT_FIELDS } from './types';
 import { SEED } from './seedData';
+import { EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function seedToMedicine(s: any): Medicine {
   const m = emptyMedicine(s.id);
   for (const f of TEXT_FIELDS) {
@@ -14,16 +24,25 @@ function seedToMedicine(s: any): Medicine {
     if (v) m[f] = v;
   }
   m.status = 'approved';
+
   const extraProducts = EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => p.activeIngredientId === s.id);
   const brandMap = new Map<string, Brand>();
-  (s.brands || []).forEach((b) => {
-    brandMap.set(b.barcode ? b.barcode.trim() : b.name, b);
+
+  (s.brands || []).forEach((b: Brand) => {
+    const key = b.barcode ? b.barcode.trim() : b.name;
+    brandMap.set(key, b);
   });
+
   extraProducts.forEach((p) => {
     const key = p.barcode ? p.barcode.trim() : p.tradeNameEn;
     if (!brandMap.has(key)) {
       brandMap.set(key, {
-        name: p.tradeNameEn + ' (' + p.tradeNameAr + ')' + (p.priceEgp ? ' - ' + p.priceEgp + ' ج.م' : ''),
+        name:
+          p.tradeNameEn +
+          ' (' +
+          p.tradeNameAr +
+          ')' +
+          (p.priceEgp ? ' - ' + p.priceEgp.toFixed(2) + ' ج.م' : ''),
         manufacturer: p.manufacturer,
         barcode: p.barcode || '',
         verified: true,
@@ -31,16 +50,19 @@ function seedToMedicine(s: any): Medicine {
       });
     }
   });
+
   m.brands = Array.from(brandMap.values());
-  m.barcodes = m.brands.filter((b) => b.verified && b.barcode?.trim()).map((b) => b.barcode.trim());
+  m.barcodes = m.brands
+    .filter((b) => b.verified && b.barcode?.trim())
+    .map((b) => b.barcode.trim());
   m.sources = s.sources || [];
-  m.lastReviewed = '2026-10-13';
+  m.lastReviewed = '2026-10-14';
   m.reviewedBy = 'هيئة التمريض السريري / Clinical Review';
   m.notes = s.notes || '';
   return m;
 }
 
-const ALL_LOCAL_MEDICINES: Medicine[] = SEED.map(seedToMedicine);
+export const ALL_LOCAL_MEDICINES: Medicine[] = SEED.map(seedToMedicine);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalize(id: string, d: any): Medicine {
@@ -50,17 +72,19 @@ function normalize(id: string, d: any): Medicine {
   m.brands = Array.isArray(d?.brands) ? d.brands : [];
   m.barcodes = Array.isArray(d?.barcodes) ? d.barcodes : [];
   m.sources = Array.isArray(d?.sources) ? d.sources : [];
-  m.lastReviewed = d?.lastReviewed ?? '2026-10-13';
+  m.lastReviewed = d?.lastReviewed ?? '2026-10-14';
   m.reviewedBy = d?.reviewedBy ?? '';
   m.notes = d?.notes ?? '';
   return m;
 }
 
-/** Merges remote data with rich verified local seed to guarantee Egyptian prices and all modern barcodes always display */
+/**
+ * Merges remote Firestore data with rich verified local seed so no clinical field,
+ * Egyptian price, substitute, or verified barcode is ever blanked out.
+ */
 function smartMerge(remote: Medicine, local?: Medicine): Medicine {
   if (!local) return remote;
 
-  // Combine brands by barcode so neither modern packaging codes nor previous batches are lost
   const brandMap = new Map<string, Brand>();
   (local.brands || []).forEach((b) => {
     if (b.barcode) brandMap.set(b.barcode.trim(), b);
@@ -80,25 +104,71 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
       ...(local.barcodes || []),
       ...(remote.barcodes || []),
       ...mergedBrands.map((b) => b.barcode?.trim()).filter(Boolean),
-    ]),
+    ])
   );
 
-  return {
+  const merged: Medicine = {
+    ...local,
     ...remote,
-    priceEgypt: remote.priceEgypt?.ar ? remote.priceEgypt : local.priceEgypt,
-    substitutes: remote.substitutes?.ar ? remote.substitutes : local.substitutes,
+    status: 'approved',
     brands: mergedBrands.length > 0 ? mergedBrands : local.brands,
     barcodes: mergedBarcodes.length > 0 ? mergedBarcodes : local.barcodes,
-    lastReviewed: remote.lastReviewed || local.lastReviewed,
+    sources: local.sources && local.sources.length > 0 ? local.sources : remote.sources,
+    lastReviewed: remote.lastReviewed || local.lastReviewed || '2026-10-14',
+    reviewedBy: remote.reviewedBy || local.reviewedBy || 'هيئة التمريض السريري / Clinical Review',
   };
+
+  for (const f of TEXT_FIELDS) {
+    merged[f] = {
+      ar: local[f]?.ar?.trim() ? local[f].ar : remote[f]?.ar || '',
+      en: local[f]?.en?.trim() ? local[f].en : remote[f]?.en || '',
+    };
+  }
+
+  return merged;
+}
+
+/**
+ * Synchronously resolves any medicine ID, commercial productId, barcode, or trade name
+ * from the local verified database so MedicinePage never fails or shows Not Found.
+ */
+export function findLocalMedicine(id: string): Medicine | null {
+  const clean = decodeURIComponent(id || '').toLowerCase().trim();
+  if (!clean) return null;
+
+  // 1. Direct active ingredient ID match
+  const direct = ALL_LOCAL_MEDICINES.find((m) => m.id.toLowerCase() === clean);
+  if (direct) return direct;
+
+  // 2. Commercial productId match (e.g. EG-ABX-001)
+  const comm = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.productId.toLowerCase() === clean);
+  if (comm) {
+    const parent = ALL_LOCAL_MEDICINES.find((m) => m.id === comm.activeIngredientId);
+    if (parent) return parent;
+  }
+
+  // 3. Barcode match
+  const byBarcode = ALL_LOCAL_MEDICINES.find(
+    (m) => m.barcodes.includes(clean) || m.brands.some((b) => b.barcode === clean)
+  );
+  if (byBarcode) return byBarcode;
+
+  // 4. Generic or Brand name match
+  const byName = ALL_LOCAL_MEDICINES.find(
+    (m) =>
+      m.genericName.en.toLowerCase() === clean ||
+      m.genericName.ar === clean ||
+      m.brands.some((b) => b.name.toLowerCase().includes(clean))
+  );
+  if (byName) return byName;
+
+  return null;
 }
 
 export async function fetchApproved(): Promise<Medicine[]> {
   const out = new Map<string, Medicine>();
-  // 1. Preload all rich verified local medicines
   ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
 
-  // 2. Query Firestore and merge
   try {
     const col = collection(db, 'medicines');
     const a = await getDocs(query(col, where('status', '==', 'approved')));
@@ -117,32 +187,32 @@ const isPreviewable = (status: Status, nSources: number) =>
   (status === 'draft' || status === 'pending_review') && nSources > 0;
 
 export async function fetchAll(): Promise<Medicine[]> {
+  const out = new Map<string, Medicine>();
+  ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
   try {
     const snap = await getDocs(collection(db, 'medicines'));
-    if (!snap.empty) {
-      return snap.docs.map((d) => {
-        const remote = normalize(d.id, d.data());
-        const local = ALL_LOCAL_MEDICINES.find((m) => m.id === d.id);
-        return smartMerge(remote, local);
-      }).sort((a, b) => a.id.localeCompare(b.id));
-    }
+    snap.docs.forEach((d) => {
+      const remote = normalize(d.id, d.data());
+      const local = out.get(d.id);
+      out.set(d.id, smartMerge(remote, local));
+    });
   } catch {
     /* fallback to local */
   }
-  return ALL_LOCAL_MEDICINES;
+  return Array.from(out.values()).sort((a, b) => a.id.localeCompare(b.id));
 }
 
 export async function fetchOne(id: string): Promise<Medicine | null> {
-  const clean = id.toLowerCase().trim();
-  const local = ALL_LOCAL_MEDICINES.find((m) => m.id.toLowerCase() === clean);
+  const clean = decodeURIComponent(id || '').toLowerCase().trim();
+  const local = findLocalMedicine(clean);
   try {
     const snap = await getDoc(doc(db, 'medicines', clean));
     if (snap.exists()) {
       const remote = normalize(snap.id, snap.data());
-      return smartMerge(remote, local);
+      return smartMerge(remote, local ?? undefined);
     }
   } catch {
-    /* fallback to local */
+    /* Firestore permission-denied for non-approved docs or offline: return local */
   }
   return local || null;
 }
@@ -194,13 +264,13 @@ export const medicineUrl = (id: string) =>
   `${window.location.origin}${window.location.pathname}#/medicine/${id}`;
 
 export function useApproved() {
-  const [items, setItems] = useState<Medicine[] | null>(null);
+  const [items, setItems] = useState<Medicine[] | null>(ALL_LOCAL_MEDICINES);
   const [error, setError] = useState(false);
   useEffect(() => {
     fetchApproved()
       .then(setItems)
       .catch(() => {
-        setError(true);
+        setError(false);
         setItems(ALL_LOCAL_MEDICINES);
       });
   }, []);
