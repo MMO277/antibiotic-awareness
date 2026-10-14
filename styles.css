@@ -1749,3 +1749,260 @@ body {
   padding-top: 10px;
   border-top: 1px dashed var(--line);
 }
+
+/* ══════════════════════════════════════════
+   UPDATE 21 — Pediatric Dosing & Reconstitution
+   ══════════════════════════════════════════ */
+.calc-inputs-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: center;
+}
+.number-input {
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--card-bg, #fff);
+  color: var(--text);
+}
+.checkbox-group {
+  margin-top: 18px;
+}
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: .9rem;
+}
+.dose-result-box {
+  background: var(--tint);
+  border: 2px solid var(--teal);
+  border-radius: 16px;
+  padding: 20px;
+  margin-top: 14px;
+}
+.result-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.kpi-block {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+[data-theme="dark"] .kpi-block {
+  background: var(--card-bg);
+}
+.kpi-block.highlight {
+  border-color: var(--teal);
+  background: #f0fdfa;
+}
+[data-theme="dark"] .kpi-block.highlight {
+  background: rgba(23, 184, 196, 0.12);
+}
+.kpi-main {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--teal-dark);
+  line-height: 1;
+}
+.kpi-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.kpi-freq {
+  color: var(--teal);
+  font-weight: 700;
+  font-size: .9rem;
+}
+
+/* Oral Syringe Visualizer */
+.syringe-visualizer {
+  margin-top: 20px;
+  background: #fff;
+  border: 1.5px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+}
+[data-theme="dark"] .syringe-visualizer {
+  background: var(--card-bg);
+}
+.syringe-visualizer h4 {
+  margin: 0 0 14px;
+  color: var(--teal-dark);
+  text-align: center;
+}
+.syringe-graphic {
+  padding: 10px 0;
+}
+.syringe-barrel {
+  position: relative;
+  height: 42px;
+  background: rgba(0,0,0,0.06);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.08);
+}
+.syringe-fluid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #17b8c4, #10b981);
+  border-radius: 6px 0 0 6px;
+  transition: width 0.4s ease;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-inline-end: 10px;
+}
+[dir="rtl"] .syringe-fluid {
+  left: auto;
+  right: 0;
+  border-radius: 0 6px 6px 0;
+  padding-inline-end: 0;
+  padding-inline-start: 10px;
+  justify-content: flex-start;
+}
+.fluid-label {
+  color: #fff;
+  font-weight: 900;
+  font-size: .95rem;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.syringe-scale {
+  position: absolute;
+  bottom: 2px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: .72rem;
+  color: var(--muted);
+  font-weight: 700;
+  pointer-events: none;
+}
+.text-center { text-align: center; }
+
+.spoon-warning-alert {
+  margin-top: 18px;
+  margin-bottom: 0;
+}
+
+/* Shelf life tracker */
+.shelf-controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  align-items: center;
+}
+.storage-badge-box {
+  padding: 10px 0;
+}
+.storage-badge {
+  display: inline-block;
+  font-size: .9rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+}
+.storage-badge.fridge {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1.5px solid #7dd3fc;
+}
+.storage-badge.room {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1.5px solid #fcd34d;
+}
+.countdown-box {
+  border-radius: 14px;
+  padding: 18px 22px;
+  border: 2px solid var(--line);
+}
+.countdown-box.active-box {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+[data-theme="dark"] .countdown-box.active-box {
+  background: rgba(16, 185, 129, 0.12);
+}
+.countdown-box.expired-box {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+[data-theme="dark"] .countdown-box.expired-box {
+  background: rgba(239, 68, 68, 0.12);
+}
+.countdown-header h3 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+}
+.storage-instruction-text {
+  margin: 8px 0 0;
+  font-size: .92rem;
+  color: var(--teal-dark);
+}
+
+/* Step Cards Grid */
+.steps-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+.step-card {
+  border-radius: 14px;
+  padding: 18px;
+  background: var(--card-bg, #fff);
+  border: 1.5px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+.step-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.step-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+.step-num-pill {
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--tint);
+  color: var(--teal-dark);
+}
+.step-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--teal-dark);
+}
+.step-inst {
+  margin: 0;
+  font-size: .9rem;
+  line-height: 1.6;
+}
+.step-warning {
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  color: #b91c1c;
+}

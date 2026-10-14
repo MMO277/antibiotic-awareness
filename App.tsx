@@ -1,3 +1,4 @@
+import PediatricHelper from './PediatricHelper';
 import HealthProfile from './HealthProfile';
 import AllergyChecker from './AllergyChecker';
 import ListenLearn from './ListenLearn';
@@ -60,6 +61,7 @@ export default function App() {
         <Route path="/listen" element={<ListenLearn />} />
         <Route path="/health-profile" element={<HealthProfile />} />
         <Route path="/allergy-checker" element={<AllergyChecker />} />
+        <Route path="/pediatric-helper" element={<PediatricHelper />} />
         <Route path="/medicine/:id" element={<MedicinePage />} />
         <Route path="/articles" element={<Articles />} />
         <Route path="/articles/:id" element={<ArticlePage />} />
