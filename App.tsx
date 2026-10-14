@@ -1,3 +1,4 @@
+import SafeDisposal from './SafeDisposal';
 import PediatricHelper from './PediatricHelper';
 import HealthProfile from './HealthProfile';
 import AllergyChecker from './AllergyChecker';
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/medicines" element={<Medicines />} />
         <Route path="/interactions" element={<Interactions />} />
+        <Route path="/safe-disposal" element={<SafeDisposal />} />
         <Route path="/tracker" element={<Tracker />} />
         <Route path="/side-effects" element={<SideEffectsGuide />} />
         <Route path="/listen" element={<ListenLearn />} />

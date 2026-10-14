@@ -50,6 +50,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     { to: '/', key: 'navHome', icon: '🏠' },
     { to: '/medicines', key: 'navMedicines', icon: '💊' },
     { to: '/interactions', key: 'navInteractions', icon: '⚡' },
+    { to: '/safe-disposal', key: 'navSafeDisposal', icon: '♻️' },
     { to: '/tracker', key: 'navTracker', icon: '⏱️' },
     { to: '/side-effects', key: 'navSideEffects', icon: '🚨' },
     { to: '/listen', key: 'navListen', icon: '🎧' },
