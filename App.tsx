@@ -1,3 +1,4 @@
+import AwarenessWeek from './AwarenessWeek';
 import GreenPrescription from './GreenPrescription';
 import CompareDrugs from './CompareDrugs';
 import SafeDisposal from './SafeDisposal';
@@ -59,6 +60,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/medicines" element={<Medicines />} />
         <Route path="/green-prescription" element={<GreenPrescription />} />
+        <Route path="/awareness-week" element={<AwarenessWeek />} />
         <Route path="/compare" element={<CompareDrugs />} />
         <Route path="/interactions" element={<Interactions />} />
         <Route path="/safe-disposal" element={<SafeDisposal />} />

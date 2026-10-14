@@ -128,6 +128,16 @@ export default function Home() {
       color: '#059669',
     },
     {
+      to: '/awareness-week',
+      icon: '🌍',
+      badge: isAr ? 'حملة نوفمبر' : '18–24 Nov',
+      title: isAr ? 'الأسبوع العالمي للوعي بالمضادات الحيوية' : 'World AMR Awareness Week Hub',
+      desc: isAr
+        ? 'بوسترات إنفوجرافيك، فيديوهات قصيرة وريلز مع تعليق صوتي، وحملات جاهزة للنشر والتداول بضغطة واحدة.'
+        : 'Ready-to-share infographic posters, 60s video reels with voiceover, and social media campaign kits.',
+      color: '#1d4ed8',
+    },
+    {
       to: '/safe-disposal',
       icon: '♻️',
       badge: isAr ? 'تمريض أخضر' : 'Eco-Health',
