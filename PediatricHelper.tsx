@@ -14,8 +14,9 @@ export default function PediatricHelper() {
   const selectedMed: PediatricSuspension =
     PEDIATRIC_SUSPENSIONS.find((m) => m.id === selectedId) || PEDIATRIC_SUSPENSIONS[0];
 
-  // Weight calculator states
-  const [weightKg, setWeightKg] = useState<number>(12);
+  // Weight calculator states (stored as string so user can freely backspace all digits)
+  const [weightInput, setWeightInput] = useState<string>('12');
+  const weightKg = Math.max(0, parseFloat(weightInput) || 0);
   const [useHighDose, setUseHighDose] = useState<boolean>(false);
 
   // Shelf-life countdown states
@@ -96,13 +97,29 @@ export default function PediatricHelper() {
             <label><b>{lang === 'ar' ? 'وزن الطفل بالكيلوجرام (كجم):' : 'Child Weight (kg):'}</b></label>
             <input
               type="number"
-              min={2}
+              inputMode="decimal"
+              min={1}
               max={60}
               step={0.5}
-              value={weightKg}
-              onChange={(e) => setWeightKg(Math.max(1, Number(e.target.value)))}
+              placeholder={lang === 'ar' ? 'أدخل وزن الطفل بالكيلوجرام (مثلاً: 12)' : 'Enter child weight in kg (e.g. 12)'}
+              value={weightInput}
+              onChange={(e) => setWeightInput(e.target.value)}
               className="number-input"
             />
+            <div className="row wrapRow" style={{ gap: '6px', marginTop: '8px' }}>
+              <span className="small muted">{lang === 'ar' ? 'اختيار سريع:' : 'Quick pick:'}</span>
+              {[5, 8, 10, 12, 15, 20, 25].map((w) => (
+                <button
+                  key={w}
+                  type="button"
+                  className={'chip ' + (weightInput === String(w) ? 'on' : '')}
+                  style={{ padding: '2px 10px', fontSize: '0.8rem' }}
+                  onClick={() => setWeightInput(String(w))}
+                >
+                  {w} {lang === 'ar' ? 'كجم' : 'kg'}
+                </button>
+              ))}
+            </div>
           </div>
 
           {selectedMed.highDoseMgPerKgPerDay && (

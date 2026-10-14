@@ -7,8 +7,10 @@ type DosageForm = 'suspension' | 'tablets' | 'injections' | 'topicals';
 export default function SafeDisposal() {
   const { lang } = useLang();
   const [selectedForm, setSelectedForm] = useState<DosageForm>('suspension');
-  const [bottlesCount, setBottlesCount] = useState<number>(1);
-  const [blistersCount, setBlistersCount] = useState<number>(2);
+  const [bottlesInput, setBottlesInput] = useState<string>('1');
+  const [blistersInput, setBlistersInput] = useState<string>('2');
+  const bottlesCount = Math.max(0, parseInt(bottlesInput) || 0);
+  const blistersCount = Math.max(0, parseInt(blistersInput) || 0);
 
   const isAr = lang === 'ar';
 
@@ -264,8 +266,8 @@ export default function SafeDisposal() {
               type="number"
               min="0"
               max="50"
-              value={bottlesCount}
-              onChange={(e) => setBottlesCount(Math.max(0, parseInt(e.target.value) || 0))}
+              value={bottlesInput}
+              onChange={(e) => setBottlesInput(e.target.value)}
               style={{ width: '90px', padding: '6px 10px' }}
             />
           </div>
@@ -278,8 +280,8 @@ export default function SafeDisposal() {
               type="number"
               min="0"
               max="100"
-              value={blistersCount}
-              onChange={(e) => setBlistersCount(Math.max(0, parseInt(e.target.value) || 0))}
+              value={blistersInput}
+              onChange={(e) => setBlistersInput(e.target.value)}
               style={{ width: '90px', padding: '6px 10px' }}
             />
           </div>

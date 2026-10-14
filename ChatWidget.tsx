@@ -31,12 +31,14 @@ const WIDGET_CHIPS = {
 };
 
 export default function ChatWidget() {
-  const { t, lang } = useLang();
+  const { lang } = useLang();
+  const isAr = lang === 'ar';
   const { items } = useApproved();
   const meds = useMemo(() => items ?? [], [items]);
   const passages = useMemo(() => buildPassages(meds), [meds]);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [sosOpen, setSosOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,7 +53,7 @@ export default function ChatWidget() {
   async function ask(raw: string) {
     const text = raw.trim().slice(0, 300);
     if (!text || loading) return;
-    const date = new Date().toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-GB');
+    const date = new Date().toLocaleDateString(isAr ? 'ar-EG' : 'en-GB');
 
     setMsgs((m) => [...m, { who: 'me', text }]);
     setQ('');
@@ -88,19 +90,98 @@ export default function ChatWidget() {
   };
 
   return (
-    <aside className="chat-widget-root" aria-label="Smart Assistant Widget">
-      {/* Floating Action Bubble */}
-      {!isOpen && (
-        <button
-          type="button"
-          className="chat-fab"
-          onClick={() => setIsOpen(true)}
-          aria-label={lang === 'ar' ? 'افتح المساعد الذكي' : 'Open Smart Assistant'}
-        >
-          <span className="fab-icon">🤖</span>
-          <span className="fab-label">{lang === 'ar' ? 'المساعد الذكي' : 'AI Assistant'}</span>
-          <span className="fab-badge"></span>
-        </button>
+    <aside className="chat-widget-root" aria-label="Smart Assistant & Emergency Widget">
+      {/* Floating Stack: Emergency 123 Button right ABOVE the Smart Assistant Button */}
+      {!isOpen && !sosOpen && (
+        <div className="floating-fab-stack">
+          <button
+            type="button"
+            className="emergency-fab"
+            onClick={() => {
+              setSosOpen(true);
+              setIsOpen(false);
+            }}
+            aria-label={isAr ? 'طوارئ الحساسية والإسعاف 123' : 'Emergency SOS 123'}
+          >
+            <span className="fab-icon">🚨</span>
+            <span className="fab-label">{isAr ? 'طوارئ 123' : 'SOS 123'}</span>
+            <span className="sos-pulse-dot"></span>
+          </button>
+
+          <button
+            type="button"
+            className="chat-fab"
+            onClick={() => {
+              setIsOpen(true);
+              setSosOpen(false);
+            }}
+            aria-label={isAr ? 'افتح المساعد الذكي' : 'Open Smart Assistant'}
+          >
+            <span className="fab-icon">🤖</span>
+            <span className="fab-label">{isAr ? 'المساعد الذكي' : 'AI Assistant'}</span>
+            <span className="fab-badge"></span>
+          </button>
+        </div>
+      )}
+
+      {/* Emergency SOS Quick Modal */}
+      {sosOpen && (
+        <div className="chat-popup sos-popup" role="dialog" aria-modal="true">
+          <div className="popup-head sos-head">
+            <div className="popup-title">
+              <span className="head-avatar">🚨</span>
+              <div>
+                <b>{isAr ? 'طوارئ الحساسية الدوائية والإسعاف' : 'Drug Allergy & Emergency SOS'}</b>
+                <div className="online-status">
+                  <small>{isAr ? 'توجيهات الإسعاف العاجل' : 'Urgent Emergency Protocol'}</small>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="close-popup-btn"
+              onClick={() => setSosOpen(false)}
+              aria-label="Close SOS"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="popup-body stack" style={{ padding: '16px' }}>
+            <div className="alert urgent" style={{ margin: 0 }}>
+              <strong>⚠️ {isAr ? 'أعراض الصدمة التحسسية الطارئة (Anaphylaxis):' : 'Emergency Anaphylaxis Signs:'}</strong>
+              <ul style={{ margin: '6px 0 0', paddingInlineStart: '18px', fontSize: '0.9rem' }}>
+                <li>{isAr ? 'تورم مفاجئ في الوجه أو الشفتين أو اللسان أو الحلق.' : 'Sudden swelling of face, lips, tongue, or throat.'}</li>
+                <li>{isAr ? 'ضيق شديد في التنفس أو صفير بالصدر أو صعوبة البلع.' : 'Difficulty breathing, wheezing, or trouble swallowing.'}</li>
+                <li>{isAr ? 'دوخة شديدة أو هبوط حاد أو طفح جلدي منتشر.' : 'Severe dizziness, collapse, or widespread hives.'}</li>
+              </ul>
+            </div>
+
+            <a
+              href="tel:123"
+              className="btn danger"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                fontSize: '1.05rem',
+                padding: '12px',
+              }}
+            >
+              📞 {isAr ? 'اتصال فوري بالإسعاف المصري (123)' : 'Call Egypt Ambulance Now (123)'}
+            </a>
+
+            <Link
+              to="/side-effects"
+              className="btn ghost"
+              onClick={() => setSosOpen(false)}
+              style={{ textAlign: 'center' }}
+            >
+              📋 {isAr ? 'فتح دليل الآثار الجانبية وخطوات الإسعاف الكاملة' : 'Open Full Side Effects & First-Aid Guide'}
+            </Link>
+          </div>
+        </div>
       )}
 
       {/* Slide-up Chat Window */}
@@ -110,15 +191,15 @@ export default function ChatWidget() {
             <div className="popup-title">
               <span className="head-avatar">🤖</span>
               <div>
-                <b>{lang === 'ar' ? 'المساعد الذكي للمضادات' : 'Antibiotic AI Assistant'}</b>
+                <b>{isAr ? 'المساعد الذكي للمضادات' : 'Antibiotic AI Assistant'}</b>
                 <div className="online-status">
                   <span className="status-dot"></span>
-                  <small>{lang === 'ar' ? 'متصل وجاهز للرد' : 'Online & ready'}</small>
+                  <small>{isAr ? 'متصل وجاهز للرد' : 'Online & ready'}</small>
                 </div>
               </div>
             </div>
             <div className="popup-actions">
-              <Link to="/assistant" className="expand-btn" title={lang === 'ar' ? 'فتح في صفحة كاملة' : 'Full page'}>
+              <Link to="/assistant" className="expand-btn" title={isAr ? 'فتح في صفحة كاملة' : 'Full page'}>
                 ↗
               </Link>
               <button
@@ -135,7 +216,7 @@ export default function ChatWidget() {
           <div className="popup-body chat" aria-live="polite">
             {msgs.length === 0 && (
               <div className="msg bot">
-                {lang === 'ar'
+                {isAr
                   ? 'أهلاً بك! أنا المساعد الذكي، اسألني عن أي مضاد حيوي، أسعاره، بدائله، أو تداخلاته مع الأطعمة والأدوية.'
                   : 'Hello! I am your Smart Assistant. Ask me about any antibiotic, pricing, alternatives, or interactions.'}
               </div>
@@ -146,7 +227,7 @@ export default function ChatWidget() {
               if (m.isAi && m.text) {
                 return (
                   <div key={i} className="msg bot ai-reply">
-                    <div className="ai-badge">✨ {lang === 'ar' ? 'رد الذكاء الاصطناعي' : 'AI Response'}</div>
+                    <div className="ai-badge">✨ {isAr ? 'رد الذكاء الاصطناعي' : 'AI Response'}</div>
                     <div className="ai-text">{m.text}</div>
                     <div className="src">{m.date}</div>
                   </div>
@@ -193,7 +274,7 @@ export default function ChatWidget() {
             })}
             {loading && (
               <div className="msg bot loading-msg">
-                <span className="dot-pulse">● ● ●</span> {lang === 'ar' ? 'جاري كتابة الرد...' : 'Typing...'}
+                <span className="dot-pulse">● ● ●</span> {isAr ? 'جاري كتابة الرد...' : 'Typing...'}
               </div>
             )}
             <div ref={endRef} />
@@ -212,12 +293,12 @@ export default function ChatWidget() {
               value={q}
               maxLength={300}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={lang === 'ar' ? 'اكتب سؤالك هنا...' : 'Type your question...'}
+              placeholder={isAr ? 'اكتب سؤالك هنا...' : 'Type your question...'}
               aria-label="Ask assistant"
               disabled={loading}
             />
             <button className="btn" disabled={loading || !q.trim()}>
-              {loading ? '...' : (lang === 'ar' ? 'إرسال' : 'Send')}
+              {loading ? '...' : (isAr ? 'إرسال' : 'Send')}
             </button>
           </form>
         </div>

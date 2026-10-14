@@ -101,14 +101,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="header-actions">
-            {/* Emergency 123 Pill on Desktop */}
-            <a
-              href="tel:123"
-              className="emergency-header-pill"
-              title={isAr ? 'اتصال طوارئ الإسعاف المصري 123' : 'Call Egypt Ambulance 123'}
-            >
-              🚑 {isAr ? 'طوارئ 123' : 'SOS 123'}
-            </a>
+
 
             {/* Dark mode toggle */}
             <button
