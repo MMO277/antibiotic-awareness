@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { CSSProperties, FormEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLang } from './i18n';
 import { ARTICLES } from './articlesData';
@@ -293,7 +293,7 @@ export default function Home() {
                 key={tool.to}
                 to={tool.to}
                 className="pro-tool-card"
-                style={{ '--accent-color': tool.color } as React.CSSProperties}
+                style={{ '--accent-color': tool.color } as CSSProperties}
               >
                 <div className="pro-tool-top">
                   <span className="pro-tool-icon" style={{ background: `${tool.color}15`, color: tool.color }}>

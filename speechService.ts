@@ -133,3 +133,18 @@ export class SpeechPlayer {
     return true;
   }
 }
+
+const sharedPlayer = new SpeechPlayer();
+
+export function speakText(
+  text: string,
+  lang: 'ar' | 'en',
+  rate = 1.0,
+  onEnd?: () => void
+): Promise<boolean> {
+  return sharedPlayer.speakText(text, lang, rate, onEnd);
+}
+
+export function stopSpeech(): void {
+  sharedPlayer.stop();
+}
