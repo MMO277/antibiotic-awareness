@@ -2414,3 +2414,26 @@ body {
 .sos-head {
   background: linear-gradient(135deg, #dc2626, #991b1b) !important;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UPDATE 30 — GREEN PRESCRIPTION PRINT STYLESHEET & ACCESSIBILITY
+   ══════════════════════════════════════════════════════════════════════════ */
+@media print {
+  .no-print,
+  .floating-fab-stack,
+  .chat-widget-root,
+  .pro-footer,
+  .top,
+  .quick-ribbon-wrap {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .green-rx-printable-card {
+    border: 2px solid #15803d !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+}

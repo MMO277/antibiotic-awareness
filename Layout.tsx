@@ -49,6 +49,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const navItems: NavItem[] = [
     { to: '/', key: 'navHome', icon: '🏠' },
     { to: '/medicines', key: 'navMedicines', icon: '💊' },
+    { to: '/green-prescription', key: 'navGreenRx', icon: '🌿' },
     { to: '/compare', key: 'navCompare', icon: '⚖️' },
     { to: '/scan', key: 'navScan', icon: '📷' },
     { to: '/allergy-checker', key: 'navAllergyChecker', icon: '🛡️' },
@@ -71,6 +72,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const quickBarItems = [
     { to: '/', label: isAr ? 'الرئيسية' : 'Home', icon: '🏠' },
     { to: '/medicines', label: isAr ? 'السجل الدوائي (206)' : 'Registry (206)', icon: '💊' },
+    { to: '/green-prescription', label: isAr ? 'الروشتة الخضرا' : 'Green Rx', icon: '🌿' },
     { to: '/compare', label: isAr ? 'مقارنة دواءين' : 'Compare Drugs', icon: '⚖️' },
     { to: '/scan', label: isAr ? 'مسح الباركود' : 'Scan Barcode', icon: '📷' },
     { to: '/allergy-checker', label: isAr ? 'فاحص الحساسية' : 'Allergy Check', icon: '🛡️' },

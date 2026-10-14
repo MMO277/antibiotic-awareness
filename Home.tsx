@@ -38,6 +38,16 @@ export default function Home() {
 
   const clinicalTools = [
     {
+      to: '/green-prescription',
+      icon: '🌿',
+      badge: isAr ? 'رعاية ذاتية' : 'Green Rx',
+      title: isAr ? 'الروشتة الخضرا الذكية (بديل المضاد الحيوي)' : 'Green Prescription (Self-Care Plan)',
+      desc: isAr
+        ? 'تقييم آمن للأعراض البسيطة (برد، كحة، احتقان حلق، إسهال) وإصدار بطاقة رعاية ذاتية قابلة للطباعة بدون مضاد حيوي.'
+        : 'Safe symptom triage and printable non-antibiotic self-care plan for colds, cough, sore throat, and diarrhea.',
+      color: '#15803d',
+    },
+    {
       to: '/medicines',
       icon: '💊',
       badge: isAr ? '206 مستحضرات' : '206 Packages',
@@ -212,6 +222,9 @@ export default function Home() {
 
           {/* Hero Quick CTA Pills */}
           <div className="pro-hero-actions">
+            <Link to="/green-prescription" className="pro-cta-btn primary-cta" style={{ background: "#10b981", color: "#052e16" }}>
+              🌿 {isAr ? "الروشتة الخضرا الذكية" : "Green Prescription"}
+            </Link>
             <Link to="/scan" className="pro-cta-btn primary-cta">
               📷 {isAr ? 'مسح باركود العلبة بالكاميرا' : 'Scan Box Barcode'}
             </Link>
