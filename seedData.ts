@@ -151,7 +151,8 @@ export const SEED: SeedItem[] = [
       },
     },
     brands: [
-      { name: 'Flagyl 500mg Tablets', manufacturer: 'Sanofi Egypt', barcode: '6221008001012', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Flagyl 500mg Tablets (العلبة الحديثة)', manufacturer: 'Sanofi Egypt', barcode: '6223003990602', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Flagyl 500mg Tablets (تشغيلة سابقة)', manufacturer: 'Sanofi Egypt', barcode: '6221008001012', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
       { name: 'Amrizole 500mg Tablets', manufacturer: 'Amoun Pharmaceuticals', barcode: '6221543001229', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
       { name: 'Flagyl 125mg Suspension', manufacturer: 'Sanofi Egypt', barcode: '6221008001029', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
     ],
