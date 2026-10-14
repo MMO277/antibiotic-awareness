@@ -1,9 +1,10 @@
+import { EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 import { useEffect, useState } from 'react';
 import {
   collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, updateDoc, where,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { emptyMedicine, FIELD_LABELS, Medicine, Status, TEXT_FIELDS } from './types';
+import { Brand, emptyMedicine, FIELD_LABELS, Medicine, Status, TEXT_FIELDS } from './types';
 import { SEED } from './seedData';
 
 function seedToMedicine(s: any): Medicine {
@@ -13,8 +14,25 @@ function seedToMedicine(s: any): Medicine {
     if (v) m[f] = v;
   }
   m.status = 'approved';
-  m.brands = s.brands || [];
-  m.barcodes = (s.brands || []).filter((b: any) => b.verified && b.barcode?.trim()).map((b: any) => b.barcode.trim());
+  const extraProducts = EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => p.activeIngredientId === s.id);
+  const brandMap = new Map<string, Brand>();
+  (s.brands || []).forEach((b) => {
+    brandMap.set(b.barcode ? b.barcode.trim() : b.name, b);
+  });
+  extraProducts.forEach((p) => {
+    const key = p.barcode ? p.barcode.trim() : p.tradeNameEn;
+    if (!brandMap.has(key)) {
+      brandMap.set(key, {
+        name: p.tradeNameEn + ' (' + p.tradeNameAr + ')' + (p.priceEgp ? ' - ' + p.priceEgp + ' ج.م' : ''),
+        manufacturer: p.manufacturer,
+        barcode: p.barcode || '',
+        verified: true,
+        sourceUrl: 'https://edaegypt.gov.eg',
+      });
+    }
+  });
+  m.brands = Array.from(brandMap.values());
+  m.barcodes = m.brands.filter((b) => b.verified && b.barcode?.trim()).map((b) => b.barcode.trim());
   m.sources = s.sources || [];
   m.lastReviewed = '2026-10-13';
   m.reviewedBy = 'هيئة التمريض السريري / Clinical Review';

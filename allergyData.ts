@@ -145,6 +145,14 @@ export const DRUG_ALLERGEN_MAP: Record<string, { family: string; ingredients: st
   'cefoperazone-sulbactam': { family: 'cephalosporin', ingredients: ['cefoperazone', 'sulbactam'], nameAr: 'سيفوبيرازون + سولباكتام (سيلبيرازون)' },
   'linezolid': { family: 'oxazolidinone', ingredients: ['linezolid'], nameAr: 'لينيزوليد (أفيروزوليد)' },
   'vancomycin': { family: 'glycopeptide', ingredients: ['vancomycin'], nameAr: 'فانكومايسين (فانكوسين)' },
+  'meropenem': { family: 'carbapenem', ingredients: ['meropenem'], nameAr: 'ميروبينيم (ميرونيم)' },
+  'cefepime': { family: 'cephalosporin', ingredients: ['cefepime'], nameAr: 'سيفيبيم (ماكسيبيم)' },
+  'cefdinir': { family: 'cephalosporin', ingredients: ['cefdinir'], nameAr: 'سيفدينير (أومنيسيف / دينار)' },
+  'cefadroxil': { family: 'cephalosporin', ingredients: ['cefadroxil'], nameAr: 'سيفادروكسيل (ديوريسيف / بيودروكسيل)' },
+  'ampicillin-sulbactam': { family: 'penicillin', ingredients: ['ampicillin', 'sulbactam'], nameAr: 'أمبيسيلين + سولباكتام (يوناسين)' },
+  'erythromycin': { family: 'macrolide', ingredients: ['erythromycin'], nameAr: 'إريثرومايسين (إريثروسين)' },
+  'fusidic-acid': { family: 'fusidane', ingredients: ['fusidic_acid'], nameAr: 'حمض الفيوسيديك (فيوسيدين)' },
+  'rifaximin': { family: 'rifamycin', ingredients: ['rifaximin'], nameAr: 'ريفاكسيمين (تراسيد / جاستروبيوتك)' },
 };
 
 /** Evaluates allergy match level and cross-reactivity for a selected drug */

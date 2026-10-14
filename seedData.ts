@@ -1698,4 +1698,622 @@ export const SOURCE_HINTS: { name: string; url: string }[] = [
     sources: [EDA_SRC, MP_SRC],
     notes: 'Primary reserve parenteral glycopeptide for MRSA bacteremia and inpatient stewardship in Egypt.',
   },
+
+  // 25. Meropenem (Meronem)
+  {
+    id: 'meropenem',
+    fields: {
+      genericName: {
+        ar: 'ميروبينيم',
+        en: 'Meropenem',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي كاربابينيم (واسع المجال للحالات الحرجة والمستشفيات)',
+        en: 'Carbapenem Antibiotic (Broad-Spectrum Reserve)',
+      },
+      approvedUses: {
+        ar: 'علاج العدوى البكتيرية المعقدة والمهددة للحياة في المستشفيات والعناية المركزة: الالتهاب الرئوي المستشفوي، التهاب السحايا البكتيري، عدوى البطن المعقدة، تسمم الدم، وحمى نقص العدلات.',
+        en: 'Complicated intra-abdominal infections, complicated skin infections, bacterial meningitis, nosocomial pneumonia, and febrile neutropenia.',
+      },
+      mechanism: {
+        ar: 'قاتل للبكتيريا؛ يرتبط ببروتينات ربط البنسلين (PBPs) ويثبط بناء الجدار الخلوي البكتيري، ويتميز بمقاومة عالية لمعظم إنزيمات البيتا-لاكتاماز متضمنة ESBL.',
+        en: 'Bactericidal; inhibits cell-wall synthesis via PBPs with high stability against most beta-lactamases including ESBLs.',
+      },
+      priceEgypt: {
+        ar: 'ميرونيم 1 جم فيال (Pfizer / AstraZeneca): 265.00 جنيه مصري للفيال.\nميروبينيم 1 جم فيال (EIPICO / Hikma): 145.00 جنيه مصري للفيال.\nميرونيم 500 مجم فيال: 155.00 جنيه مصري للفيال.',
+        en: 'Meronem 1g Vial: 265.00 EGP\nMeropenem 1g Vial (Generic): 145.00 EGP\nMeronem 500mg Vial: 155.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة بنفس المادة الفعالة: ميرونيم (Meronem)، ميروبينيم إيبيكو (Meropenem EIPICO)، ميروكس (Merox).',
+        en: 'Available generics: Meronem, Meropenem EIPICO, Merox.',
+      },
+      strengths: {
+        ar: 'فيال مسحوق للحقن والتسريب الوريدي: 500 مجم، 1 جم.',
+        en: 'Powder for IV injection/infusion: 500mg, 1g.',
+      },
+      activeIngredients: {
+        ar: 'ميروبينيم ثلاثي المائيات (Meropenem Trihydrate)',
+        en: 'Meropenem Trihydrate',
+      },
+      ageRestrictions: {
+        ar: 'معتمد للرضع من عمر 3 أشهر فما فوق وللبالغين تحت إشراف المستشفى.',
+        en: 'Approved for infants >=3 months and adults under inpatient supervision.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 500 مجم إلى 1 جم وريدياً كل 8 ساعات (تصل إلى 2 جم كل 8 ساعات في التهاب السحايا).\nللأطفال (فوق 3 أشهر): 20 إلى 40 مجم/كجم كل 8 ساعات.',
+        en: 'Adults: 500mg to 1g IV every 8 hours (up to 2g q8h in meningitis).\nPediatrics (>3m): 20-40 mg/kg IV every 8 hours.',
+      },
+      contraindications: {
+        ar: 'فرط الحساسية للكاربابينيمات، أو سابقة صدمة تأقية لبنسلين أو سيفالوسبورين.',
+        en: 'Carbapenem hypersensitivity or prior anaphylactic reaction to beta-lactams.',
+      },
+      sideEffects: {
+        ar: 'إسهال، غثيان، التهاب موضع الحقن الوريدي، صداع، ونادراً تشنجات عصبية (أقل بكثير من إيميبينيم).',
+        en: 'Diarrhea, nausea, injection site inflammation, headache, rare seizures in renal impairment.',
+      },
+      interactions: {
+        ar: 'تفاعل خطير: يقلل مستوى حمض الفالبرويك (Depakine) في الدم بصورة حادة مما قد يعرض مريض الصرع لنوبات تشنج فورية.',
+        en: 'Major interaction: precipitously drops serum valproic acid levels, increasing breakthrough seizure risk.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ يُستخدم في الحالات الحرجة بالمستشفى عندما تفوق المنفعة المخاطر.',
+        en: 'Category B. Used in severe inpatient maternal infections when indicated.',
+      },
+      renalHepatic: {
+        ar: 'يتطلب خفض الجرعة ومباعدة الفترات الزمنية (كل 12 أو 24 ساعة) إذا قل معدل ترشيح الكلى (CrCl) عن 50 مل/دقيقة.',
+        en: 'Mandatory dosage reduction when creatinine clearance is <50 mL/min.',
+      },
+      patientEducation: {
+        ar: 'مضاد حيوي وريدي مقيد للمستشفيات فقط. أبلغ الطبيب فوراً إذا كنت تتناول أدوية الصرع (مثل ديباكين) أو لديك تاريخ حساسية للبنسلين.',
+        en: 'Hospital-restricted IV antibiotic. Inform physician immediately if taking valproate/anti-epileptics.',
+      },
+    },
+    brands: [
+      { name: 'Meronem 1g Vial', manufacturer: 'Pfizer / AstraZeneca', barcode: '6221054009411', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Meropenem 1g Vial', manufacturer: 'EIPICO', barcode: '6221127008417', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Reserve carbapenem for ESBL-producing Gram-negative infections in Egyptian ICUs.',
+  },
+
+  // 26. Cefepime (Maxipime)
+  {
+    id: 'cefepime',
+    fields: {
+      genericName: {
+        ar: 'سيفيبيم',
+        en: 'Cefepime',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي سيفالوسبورين - الجيل الرابع',
+        en: 'Fourth-Generation Cephalosporin Antibiotic',
+      },
+      approvedUses: {
+        ar: 'علاج الالتهاب الرئوي المتوسط إلى الشديد (بما فيه الناتج عن Pseudomonas)، حمى نقص المناعة والعدلات، عدوى المسالك البولية المعقدة، وعدوى البطن والجلد.',
+        en: 'Moderate-to-severe pneumonia, empiric therapy for febrile neutropenia, complicated UTIs, skin and intra-abdominal infections.',
+      },
+      mechanism: {
+        ar: 'يخترق الجدار الخلوي للبكتيريا السالبة والموجبة بسرعة عالية ويرتبط ببروتينات ربط البنسلين مسبباً تحلل البكتيريا.',
+        en: 'Bactericidal cell-wall inhibitor with zwitterionic structure allowing rapid penetration of Gram-negative outer membranes.',
+      },
+      priceEgypt: {
+        ar: 'ماكسيبيم 1 جم فيال (BMS / Smith): 62.00 جنيه مصري للفيال.\nسيفيبيم 1 جم فيال (Pharco BPI): 42.00 جنيه مصري للفيال.',
+        en: 'Maxipime 1g Vial: 62.00 EGP\nCefepime 1g Vial: 42.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: ماكسيبيم (Maxipime)، سيفيبيم فاركو (Cefepime)، ويميبم (Wincef).',
+        en: 'Available generics: Maxipime, Cefepime Pharco, Wincef.',
+      },
+      strengths: {
+        ar: 'فيال للحقن الوريدي أو العضلي: 500 مجم، 1 جم، 2 جم.',
+        en: 'Vials for IV/IM administration: 500mg, 1g, 2g.',
+      },
+      activeIngredients: {
+        ar: 'سيفيبيم هيدروكلوريد (Cefepime Hydrochloride)',
+        en: 'Cefepime Hydrochloride',
+      },
+      ageRestrictions: {
+        ar: 'معتمد للأطفال من عمر شهرين فما فوق وللبالغين.',
+        en: 'Approved for pediatric patients >=2 months and adults.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 1 جم إلى 2 جم وريدياً كل 8 أو 12 ساعة لمدة 7 إلى 10 أيام.\nللأطفال: 50 مجم/كجم كل 8 أو 12 ساعة.',
+        en: 'Adults: 1g to 2g IV every 8-12 hours for 7-10 days.\nChildren: 50 mg/kg IV every 8-12 hours.',
+      },
+      contraindications: {
+        ar: 'حساسية السيفالوسبورينات أو تفاعل تحسسي فوري للبنسلين.',
+        en: 'Immediate hypersensitivity to cephalosporins or beta-lactams.',
+      },
+      sideEffects: {
+        ar: 'إيجابية اختبار كومبس، طفح جلدي، إسهال، وسمية عصبية (ارتباك أو تشنجات) إذا لم تُخفض الجرعة في مرضى القصور الكلوي.',
+        en: 'Rash, diarrhea, positive Coombs test; neurotoxicity (encephalopathy/myoclonus) if unadjusted in renal failure.',
+      },
+      interactions: {
+        ar: 'يزيد من احتمالية السمية الكلوية عند تزامنه مع الأمينوجليكوزيدات ومدرات البول القوية.',
+        en: 'Monitor renal function closely when co-administered with aminoglycosides or potent diuretics.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن للاستخدام عند الحاجة الطبية أثناء الحمل.',
+        en: 'Category B. Acceptable in pregnancy under medical supervision.',
+      },
+      renalHepatic: {
+        ar: 'حرج: يجب خفض الجرعة بدقة عندما يقل معدل ترشيح الكلى عن 60 مل/دقيقة لمنع تراكم الدواء والسمية العصبية.',
+        en: 'Mandatory dose adjustment when CrCl <60 mL/min to prevent neurotoxicity.',
+      },
+      patientEducation: {
+        ar: 'يُعطى في المستشفيات وتحت إشراف طبي مع متابعة وظائف الكلى خاصة لكبار السن.',
+        en: 'Administered parenterally with renal monitoring, especially in elderly patients.',
+      },
+    },
+    brands: [
+      { name: 'Maxipime 1g Vial', manufacturer: 'Smith / BMS Egypt', barcode: '6221008006918', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Cefepime 1g Vial', manufacturer: 'Pharco BPI', barcode: '6221543007126', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: '4th-gen anti-pseudomonal cephalosporin in Egyptian hospitals.',
+  },
+
+  // 27. Cefdinir (Omnicef, Dinar)
+  {
+    id: 'cefdinir',
+    fields: {
+      genericName: {
+        ar: 'سيفدينير',
+        en: 'Cefdinir',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي سيفالوسبورين فموي - الجيل الثالث',
+        en: 'Third-Generation Oral Cephalosporin Antibiotic',
+      },
+      approvedUses: {
+        ar: 'علاج التهاب الأذن الوسطى الحاد لدى الأطفال، التهاب الجيوب الأنفية، التهاب البلعوم واللوزتين، التهاب الشعب الهوائية، والتهابات الجلد غير المعقدة.',
+        en: 'Acute bacterial otitis media, sinusitis, pharyngitis/tonsillitis, community-acquired pneumonia, and uncomplicated skin infections.',
+      },
+      mechanism: {
+        ar: 'يثبط تصنيع الجدار الخلوي البكتيري ويمتاز بثبات ممتاز أمام العديد من إنزيمات البيتا-لاكتاماز البكتيرية.',
+        en: 'Bactericidal third-generation oral cephalosporin inhibits cell-wall synthesis.',
+      },
+      priceEgypt: {
+        ar: 'أومنيسيف 300 مجم كبسول (Hikma - 10 كبسولات): 90.00 جنيه مصري.\nدينار 125 مجم/5 مل شراب للأطفال (Adwia): 52.00 جنيه مصري.\nسيفدين 300 مجم كبسول (Delta Pharma): 69.00 جنيه مصري.',
+        en: 'Omnicef 300mg (10 caps): 90.00 EGP\nDinar 125mg/5mL Susp: 52.00 EGP\nCefdin 300mg Caps: 69.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: أومنيسيف (Omnicef)، دينار (Dinar)، سيفدين (Cefdin)، إيجينير (Egynir).',
+        en: 'Available generics: Omnicef, Dinar, Cefdin, Egynir.',
+      },
+      strengths: {
+        ar: 'كبسولات: 300 مجم. شراب معلق للأطفال: 125 مجم/5 مل، 250 مجم/5 مل.',
+        en: 'Capsules: 300mg. Oral suspension: 125mg/5mL, 250mg/5mL.',
+      },
+      activeIngredients: {
+        ar: 'سيفدينير (Cefdinir)',
+        en: 'Cefdinir',
+      },
+      ageRestrictions: {
+        ar: 'آمن ومعتمد للرضع من عمر 6 أشهر والأطفال والبالغين.',
+        en: 'Approved for infants >=6 months, children, and adults.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 300 مجم كل 12 ساعة أو 600 مجم مرة واحدة يومياً لمدة 5 إلى 10 أيام.\nللأطفال (6 أشهر - 12 سنة): 14 مجم/كجم/يوم (تعطى مرة واحدة يومياً أو مقسمة كل 12 ساعة).',
+        en: 'Adults: 300mg q12h or 600mg once daily.\nChildren: 14 mg/kg/day once daily or divided q12h.',
+      },
+      contraindications: {
+        ar: 'حساسية معروفة للسيفالوسبورينات.',
+        en: 'Known allergy to cephalosporin antibiotics.',
+      },
+      sideEffects: {
+        ar: 'إسهال، غثيان، وتغير لون البراز إلى اللون الأحمر غير الضار عند تناوله بالتزامن مع مكملات الحديد أو ألبان الأطفال المدعمة بالحديد.',
+        en: 'Diarrhea, nausea; harmless reddish stool discoloration when taken with iron-containing products.',
+      },
+      interactions: {
+        ar: 'مضادات الحموضة ومكملات الحديد تقلل امتصاصه بنسبة كبيرة؛ يجب الفصل بينهما بساعتين على الأقل.',
+        en: 'Antacids and iron supplements markedly reduce absorption; separate by at least 2 hours.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن للاستخدام أثناء الحمل عند الحاجة الطبية.',
+        en: 'Category B. Safe for use during pregnancy when clinically indicated.',
+      },
+      renalHepatic: {
+        ar: 'تُخفض الجرعة إلى 300 مجم مرة واحدة يومياً للبالغين (أو 7 مجم/كجم للأطفال) إذا قل معدل ترشيح الكلى عن 30 مل/دقيقة.',
+        en: 'Reduce dose to 300mg once daily (or 7 mg/kg/day in children) if CrCl <30 mL/min.',
+      },
+      patientEducation: {
+        ar: 'تنبيه هام للأمهات: إذا كان طفلك يتناول فيتامينات تحتوي على الحديد، قد يتحول لون البراز إلى اللون المحمر؛ وهو تفاعل كيميائي طبيعي وغير مقلق ولا يعني نزيفاً.',
+        en: 'Counseling pearl: Concomitant iron or iron-fortified formula causes harmless reddish stools (not blood).',
+      },
+    },
+    brands: [
+      { name: 'Omnicef 300mg Capsules', manufacturer: 'Hikma Pharmaceuticals', barcode: '6221054008317', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Dinar 125mg/5mL Suspension', manufacturer: 'ADWIA Pharma', barcode: '6221127006219', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Widely prescribed pediatric and ENT oral 3rd-gen cephalosporin in Egypt.',
+  },
+
+  // 28. Cefadroxil (Duricef, Biodroxil, Curisafe)
+  {
+    id: 'cefadroxil',
+    fields: {
+      genericName: {
+        ar: 'سيفادروكسيل',
+        en: 'Cefadroxil',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي سيفالوسبورين فموي - الجيل الأول',
+        en: 'First-Generation Oral Cephalosporin Antibiotic',
+      },
+      approvedUses: {
+        ar: 'علاج التهاب الحلق واللوزتين العقدي، عدوى المسالك البولية غير المعقدة، والتهابات الجلد والأنسجة الرخوة (الحصف والدمامل والجروح).',
+        en: 'Streptococcal pharyngitis/tonsillitis, uncomplicated urinary tract infections, and skin/soft tissue infections.',
+      },
+      mechanism: {
+        ar: 'يثبط بناء جدار الخلية البكتيرية، ويتميز بنصف عمر أطول من السيفالكسين مما يسمح بإعطائه مرة أو مرتين يومياً فقط.',
+        en: 'Bactericidal 1st-gen cephalosporin with prolonged half-life allowing once or twice daily dosing.',
+      },
+      priceEgypt: {
+        ar: 'ديوريسيف 1 جم أقراص (Smith / BMS - 8 أقراص): 48.00 جنيه مصري.\nبيودروكسيل 500 مجم كبسول (Sandoz / Novartis): 45.00 جنيه مصري.\nكيريسيف 1 جم أقراص (Pharco): 36.00 جنيه مصري.',
+        en: 'Duricef 1g (8 tabs): 48.00 EGP\nBiodroxil 500mg Caps: 45.00 EGP\nCurisafe 1g Tabs: 36.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: ديوريسيف (Duricef)، بيودروكسيل (Biodroxil)، كيريسيف (Curisafe)، إبيدروكسيل (Epidroxil).',
+        en: 'Available generics: Duricef, Biodroxil, Curisafe, Epidroxil.',
+      },
+      strengths: {
+        ar: 'كبسولات: 500 مجم. أقراص: 1 جم. شراب معلق للأطفال: 125 مجم/5 مل، 250 مجم/5 مل، 500 مجم/5 مل.',
+        en: 'Capsules: 500mg. Tablets: 1g. Oral suspension: 125mg/5mL, 250mg/5mL, 500mg/5mL.',
+      },
+      activeIngredients: {
+        ar: 'سيفادروكسيل أحادي المائيات (Cefadroxil Monohydrate)',
+        en: 'Cefadroxil Monohydrate',
+      },
+      ageRestrictions: {
+        ar: 'آمن ومعتمد للأطفال والبالغين.',
+        en: 'Approved for pediatric and adult patients.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 1 جم إلى 2 جم يومياً تقسم على جرعة واحدة أو جرعتين كل 12 ساعة لمدة 7 إلى 10 أيام.\nللأطفال: 30 مجم/كجم/يوم تعطى كجرعة واحدة أو مقسمة كل 12 ساعة.',
+        en: 'Adults: 1-2g/day in single or 2 divided doses.\nChildren: 30 mg/kg/day once daily or divided q12h.',
+      },
+      contraindications: {
+        ar: 'حساسية السيفالوسبورينات أو حساسية البنسلين المفرطة.',
+        en: 'Cephalosporin hypersensitivity or severe penicillin anaphylaxis.',
+      },
+      sideEffects: {
+        ar: 'اضطراب معدي خفيف، إسهال، غثيان، أو طفح جلدي تحسسي.',
+        en: 'Mild GI upset, diarrhea, nausea, rash.',
+      },
+      interactions: {
+        ar: 'البروبنسيد يقلل من إطراحه الكلوي ويزيد تركيزه في الدم.',
+        en: 'Probenecid competitively inhibits renal tubular secretion, raising serum levels.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن ويوصف بشكل شائع أثناء الحمل والرضاعة.',
+        en: 'Category B. Widely used and safe in pregnancy.',
+      },
+      renalHepatic: {
+        ar: 'يجب زيادة الفترة بين الجرعات إلى كل 12-24 ساعة إذا قل معدل ترشيح الكلى عن 50 مل/دقيقة.',
+        en: 'Extend dosing intervals to 12-24h when CrCl <50 mL/min.',
+      },
+      patientEducation: {
+        ar: 'يمكن تناوله مع الطعام لتقليل أي غثيان في المعدة. يجب إكمال كورس التهاب اللوزتين لمدة 10 أيام كاملة للوقاية من الحمى الروماتيزمية.',
+        en: 'May be taken with food to minimize GI upset. Complete full 10-day course for strep throat.',
+      },
+    },
+    brands: [
+      { name: 'Duricef 1g Tablets', manufacturer: 'Smith / BMS Egypt', barcode: '6221008004125', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Curisafe 1g Tablets', manufacturer: 'Pharco Pharmaceuticals', barcode: '6221543005123', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Biodroxil 500mg Capsules', manufacturer: 'Sandoz Egypt', barcode: '6223000452182', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Essential 1st-gen oral cephalosporin in Egyptian community pharmacies.',
+  },
+
+  // 29. Ampicillin + Sulbactam (Unasyn, Ultracillin)
+  {
+    id: 'ampicillin-sulbactam',
+    fields: {
+      genericName: {
+        ar: 'أمبيسيلين + سولباكتام (سلتاميسيللين)',
+        en: 'Ampicillin / Sulbactam (Sultamicillin)',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي بنسلين واسع المجال مع مثبط بيتا-لاكتاماز',
+        en: 'Aminopenicillin + Beta-Lactamase Inhibitor',
+      },
+      approvedUses: {
+        ar: 'علاج التهابات الجهاز التنفسي العلوي والسفلي، التهاب الأذن الوسطى والجيوب الأنفية، عدوى الجلد والأنسجة الرخوة، عدوى النساء والحوض، وعدوى البطن والمسالك البولية.',
+        en: 'Respiratory tract infections, sinusitis, otitis media, skin/soft tissue infections, gynecological/pelvic and intra-abdominal infections.',
+      },
+      mechanism: {
+        ar: 'الأمبيسيلين يثبط جدار الخلية البكتيرية، بينما يحبط السولباكتام إنزيمات البيتا-لاكتاماز البكتيرية ليوسع الطيف ليشمل البكتيريا المقاومة للأمبيسيلين وحده.',
+        en: 'Ampicillin inhibits bacterial cell-wall synthesis; sulbactam irreversibly inactivates bacterial beta-lactamases.',
+      },
+      priceEgypt: {
+        ar: 'يوناسين 375 مجم أقراص (Pfizer Egypt - 12 قرص): 85.00 جنيه مصري.\nيوناسين 1.5 جم فيال حقن (Pfizer): 44.00 جنيه مصري.\nألتراسيللين 1.5 جم فيال (MUP): 31.00 جنيه مصري.',
+        en: 'Unasyn 375mg (12 tabs): 85.00 EGP\nUnasyn 1.5g Vial: 44.00 EGP\nUltracillin 1.5g Vial: 31.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: يوناسين (Unasyn)، ألتراسيللين (Ultracillin)، سولبين (Sulbin)، سيغماسين (Sigmacyn).',
+        en: 'Available generics: Unasyn, Ultracillin, Sulbin, Sigmacyn.',
+      },
+      strengths: {
+        ar: 'أقراص (سلتاميسيللين): 375 مجم، 750 مجم. شراب معلق: 250 مجم/5 مل. فيال للحقن الوريدي/العضلي: 750 مجم، 1.5 جم، 3 جم.',
+        en: 'Tablets: 375mg, 750mg. Suspension: 250mg/5mL. Vials for IV/IM: 750mg, 1.5g, 3g.',
+      },
+      activeIngredients: {
+        ar: 'أمبيسيلين + سولباكتام / سلتاميسيللين (Ampicillin + Sulbactam)',
+        en: 'Ampicillin Sodium + Sulbactam Sodium (Sultamicillin Tosilate)',
+      },
+      ageRestrictions: {
+        ar: 'معتمد للأطفال والرضع والبالغين.',
+        en: 'Approved for infants, children, and adults.',
+      },
+      dosingReference: {
+        ar: 'للبالغين فموياً: 375 مجم إلى 750 مجم مرتين يومياً كل 12 ساعة لمدة 5 إلى 14 يوماً.\nللبالغين حقناً: 1.5 جم إلى 3 جم كل 6 إلى 8 ساعات.',
+        en: 'Adults Oral: 375-750mg twice daily.\nAdults IV/IM: 1.5g to 3g every 6-8 hours.',
+      },
+      contraindications: {
+        ar: 'حساسية البنسلين المؤكدة، أو الإصابة بداء كثرة الوحيدات العدوائي (الفيفر الغدي).',
+        en: 'Penicillin allergy; infectious mononucleosis (high risk of morbilliform rash).',
+      },
+      sideEffects: {
+        ar: 'إسهال، غثيان، ألم في موضع الحقن العضلي، وطفح جلدي تحسسي.',
+        en: 'Diarrhea, nausea, IM injection site pain, skin rash.',
+      },
+      interactions: {
+        ar: 'الألوبيورينول (علاج النقرس) يزيد بشكل ملحوظ من احتمالية ظهور طفح جلدي مع الأمبيسيلين.',
+        en: 'Allopurinol significantly increases the incidence of ampicillin-associated skin rashes.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن ويوصف على نطاق واسع أثناء الحمل والعمليات القيصرية.',
+        en: 'Category B. Widely used and safe in pregnancy and obstetric prophylaxis.',
+      },
+      renalHepatic: {
+        ar: 'يجب مباعدة فترات الحقن إلى كل 12 أو 24 ساعة في حالات القصور الكلوي المتوسط والشديد.',
+        en: 'Extend dosing interval to q12h-q24h in moderate-to-severe renal impairment.',
+      },
+      patientEducation: {
+        ar: 'إذا ظهرت بقع حمراء أو حكة جلدية بعد أول جرعة، أوقف الدواء فوراً واستشر الطبيب لأنك قد تعاني من حساسية البنسلين.',
+        en: 'Stop immediately and seek medical advice if hives or generalized rash appear after dosing.',
+      },
+    },
+    brands: [
+      { name: 'Unasyn 1.5g Vial', manufacturer: 'Pfizer Egypt', barcode: '6221054002919', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Unasyn 375mg Tablets', manufacturer: 'Pfizer Egypt', barcode: '6221054002926', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Ultracillin 1.5g Vial', manufacturer: 'Medical Union Pharmaceuticals (MUP)', barcode: '6221127005818', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Cornerstone oral and parenteral beta-lactam combination across Egypt.',
+  },
+
+  // 30. Erythromycin (Erythrocin)
+  {
+    id: 'erythromycin',
+    fields: {
+      genericName: {
+        ar: 'إريثرومايسين',
+        en: 'Erythromycin',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي ماكروليد كلاسيكي',
+        en: 'Macrolide Antibiotic',
+      },
+      approvedUses: {
+        ar: 'بديل البنسلين الأول للمرضى المصابين بحساسية البنسلين في التهاب الحلق واللوزتين والوقاية من الحمى الروماتيزمية، السعال الديكي، حب الشباب الالتهابي، والتهابات الملتحمة عند حديثي الولادة.',
+        en: 'Penicillin-allergic alternative for strep pharyngitis and rheumatic fever prophylaxis, pertussis, chlamydia, acne vulgaris, and neonatal conjunctivitis.',
+      },
+      mechanism: {
+        ar: 'مثبط لنمو البكتيريا؛ يرتبط بالوحدة الفرعية 50S في ريبوسوم البكتيريا ويمنع تصنيع البروتين البكتيري.',
+        en: 'Bacteriostatic; binds 50S ribosomal subunit inhibiting bacterial protein translocation.',
+      },
+      priceEgypt: {
+        ar: 'إريثرومايسين 500 مجم أقراص (El Nasr / Misr): 36.00 جنيه مصري.\nإريثروسين 200 مجم شراب للأطفال (Abbott / Kahira): 32.00 جنيه مصري.',
+        en: 'Erythromycin 500mg Tabs: 36.00 EGP\nErythrocin 200mg/5mL Susp: 32.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: إريثروسين (Erythrocin)، إريثرومايسين (Erythromycin)، إريثروكيم (Erythrochem).',
+        en: 'Available generics: Erythrocin, Erythromycin, Erythrochem.',
+      },
+      strengths: {
+        ar: 'أقراص/كبسولات: 250 مجم، 500 مجم. شراب معلق: 200 مجم/5 مل. مرهم عيني وجل موضعي: 0.5%، 2%.',
+        en: 'Tablets: 250mg, 500mg. Suspension: 200mg/5mL. Ophthalmic ointment: 0.5%, Topical gel: 2%.',
+      },
+      activeIngredients: {
+        ar: 'إريثرومايسين إيثيل سكسينات أو ستيارات (Erythromycin)',
+        en: 'Erythromycin Stearate / Ethylsuccinate',
+      },
+      ageRestrictions: {
+        ar: 'معتمد لجميع الفئات العمرية مع الحذر في حديثي الولادة (الأسبوعين الأولين) لخطر تضيق البواب الضخامي.',
+        en: 'Approved across ages; caution in neonates <2 weeks due to infantile hypertrophic pyloric stenosis risk.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 250 إلى 500 مجم كل 6 إلى 12 ساعة لمدة 7 إلى 10 أيام.\nللأطفال: 30 إلى 50 مجم/كجم/يوم مقسمة على 3 إلى 4 جرعات.',
+        en: 'Adults: 250-500mg every 6-12 hours.\nChildren: 30-50 mg/kg/day divided every 6-8 hours.',
+      },
+      contraindications: {
+        ar: 'فرط الحساسية للماكروليدات، استطالة فترة QT، والتناول المتزامن مع السيمفاستاتين أو الأتورفاستاتين أو الإرغوتامين.',
+        en: 'Macrolide hypersensitivity, QT prolongation, concomitant simvastatin/lovastatin or ergot alkaloids.',
+      },
+      sideEffects: {
+        ar: 'تقلصات معدية ومغص شديد (لأنه يحفز مستقبلات الموتيلين في الأمعاء)، غثيان، قيء، وركود صفراوي كبدي عابر.',
+        en: 'Abdominal cramping (motilin receptor agonist effect), nausea, vomiting, cholestatic hepatitis.',
+      },
+      interactions: {
+        ar: 'مثبط قوي لإنزيم CYP3A4؛ يرفع سمية الستاتينات، الوارفارين، الكاربامازيبين، والثيوفيلين والديجوكسين.',
+        en: 'Potent CYP3A4 inhibitor; significantly elevates levels of statins, warfarin, theophylline, carbamazepine, and digoxin.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن أثناء الحمل (باستثناء ملح الإستولات Erythromycin estolate الذي يُمنع في الحمل لسميته الكبدية).',
+        en: 'Category B (base/ethylsuccinate safe; avoid estolate salt in pregnancy due to hepatotoxicity).',
+      },
+      renalHepatic: {
+        ar: 'يُطرح عبر الكبد والصفراء، لذا يجب الحذر وتعديل الجرعة في مرضى القصور الكبدي.',
+        en: 'Primarily hepatic excretion; exercise caution in hepatic dysfunction.',
+      },
+      patientEducation: {
+        ar: 'إذا سبب لك مغصاً بالمعدة، يمكنك تناوله بعد وجبة خفيفة. أبلغ الطبيب عن جميع أدوية الكوليسترول أو السيولة التي تتناولها.',
+        en: 'May be taken with light food if GI cramping occurs. Disclose all current statin or anticoagulant medications.',
+      },
+    },
+    brands: [
+      { name: 'Erythrocin 500mg Tablets', manufacturer: 'Kahira / Abbott', barcode: '6221008007126', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Erythromycin 500mg Tablets', manufacturer: 'El Nasr Pharmaceutical', barcode: '6221543008211', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Classic macrolide benchmark and penicillin-allergy alternative.',
+  },
+
+  // 31. Fusidic Acid (Fucidin)
+  {
+    id: 'fusidic-acid',
+    fields: {
+      genericName: {
+        ar: 'حمض الفيوسيديك',
+        en: 'Fusidic Acid',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي ستيرويدي مضاد للمكورات العنقودية (موضعي وجهازي)',
+        en: 'Fusidane Anti-Staphylococcal Antibiotic',
+      },
+      approvedUses: {
+        ar: 'علاج العدوى الجلدية البكتيرية السطحية الناتجة عن المكورات العنقودية (الحصف، الدمامل، التهاب بصيلات الشعر، الجروح والحروق الملتهبة، والداحس).',
+        en: 'Primary and secondary bacterial skin infections caused by Staphylococcus aureus (impetigo, folliculitis, boils, infected wounds, erythrasma).',
+      },
+      mechanism: {
+        ar: 'يثبط تخليق البروتين البكتيري عن طريق منع انفصال عامل الاستطالة G (EF-G) عن الريبوسوم، وهو فعال ضد سلالات المكورات العنقودية بما فيها بعض سلالات MRSA.',
+        en: 'Inhibits bacterial protein synthesis by interfering with elongation factor G (EF-G) translocation.',
+      },
+      priceEgypt: {
+        ar: 'فيوسيدين كريم أو مرهم 2% - 20 جم (LEO / MinaPharm): 53.00 جنيه مصري.\nفيوسيديرم كريم 2% - 15 جم (EVA Pharma): 32.00 جنيه مصري.\nفيوسي توب كريم 2% (Delta): 28.00 جنيه مصري.',
+        en: 'Fucidin 2% Cream/Ointment (20g): 53.00 EGP\nFusiderm 2% Cream (15g): 32.00 EGP\nFucitop 2% Cream: 28.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة (نفس المادة بدون كورتيزون): فيوسيدين (Fucidin)، فيوسيديرم (Fusiderm)، فيوسي توب (Fucitop)، فيوسيباكت (Fusibact).',
+        en: 'Available generics: Fucidin, Fusiderm, Fucitop, Fusibact.',
+      },
+      strengths: {
+        ar: 'كريم موضعي: 2%. مرهم موضعي (صوديوم فيوسيدات): 2%. قطرة عين هلامية (Fucithalmic): 1%. أقراص فموية: 250 مجم.',
+        en: 'Topical cream/ointment: 2%. Viscous eye drops: 1%. Oral tablets: 250mg.',
+      },
+      activeIngredients: {
+        ar: 'حمض الفيوسيديك / صوديوم فيوسيدات (Fusidic Acid)',
+        en: 'Fusidic Acid / Sodium Fusidate',
+      },
+      ageRestrictions: {
+        ar: 'الدهان الموضعي آمن لجميع الأعمار من الرضع إلى البالغين.',
+        en: 'Topical formulations are safe across all age groups.',
+      },
+      dosingReference: {
+        ar: 'موضعياً: تدهن طبقة رقيقة على المنطقة المصابة بعد تنظيفها من 2 إلى 3 مرات يومياً لمدة 7 أيام (لا تتجاوز 10-14 يوماً لمنع تطور المقاومة الموضعية).',
+        en: 'Topical: Apply a thin layer to affected skin 2 to 3 times daily for 7 days (avoid prolonged courses >14 days to prevent resistance).',
+      },
+      contraindications: {
+        ar: 'حساسية لمكونات الكريم، ولا يُستخدم على العدوى الفطرية أو الفيروسية كالهربس.',
+        en: 'Hypersensitivity to fusidic acid; ineffective in fungal or viral skin lesions.',
+      },
+      sideEffects: {
+        ar: 'نادراً تهيج موضعي خفيف، حرقان عابر، أو حكة.',
+        en: 'Rare mild local irritation, stinging, or contact dermatitis.',
+      },
+      interactions: {
+        ar: 'الأقراص الفموية منه تتفاعل بشدة مع أدوية الكوليسترول (الستاتينات) مسببة انحلال العضلات، أما الدهان الموضعي فامتصاصه ضئيل وآمن.',
+        en: 'Systemic fusidic acid is strictly contraindicated with statins (rhabdomyolysis risk); topical absorption is minimal.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'الكريم والمرهم الموضعي آمن تماماً أثناء الحمل والرضاعة (تجنب دهنه على حلمة الثدي مباشرة قبل الرضاعة).',
+        en: 'Topical use is safe in pregnancy and breastfeeding (avoid direct application to nipple prior to nursing).',
+      },
+      renalHepatic: {
+        ar: 'الاستخدام الموضعي لا يتطلب أي تعديل في مرضى الكلى أو الكبد.',
+        en: 'No adjustment needed for topical application.',
+      },
+      patientEducation: {
+        ar: 'تنبيه تمريضي مهم في مصر: فرّق بين فيوسيدين الأحمر (مضاد حيوي فقط للجروح والدمامل) وفيوسيكورت الأحمر والأصفر (يحتوي على كورتيزون ولا يُوضع على الجروح المفتوحة أو حب الشباب!).',
+        en: 'Crucial distinction: Plain Fucidin (red stripe) is pure antibiotic for wounds; Fucicort (red/yellow) contains betamethasone steroid and must not be put on open wounds or acne.',
+      },
+    },
+    brands: [
+      { name: 'Fucidin 2% Cream 20g', manufacturer: 'MinaPharm / LEO Pharma', barcode: '6221008008815', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Fusiderm 2% Cream 15g', manufacturer: 'Eva Pharma', barcode: '6221054007910', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Most common topical antibiotic in Egypt; includes stewardship warning against steroid-combo misuse.',
+  },
+
+  // 32. Rifaximin (Trcid, Gastrobiotic)
+  {
+    id: 'rifaximin',
+    fields: {
+      genericName: {
+        ar: 'ريفاكسيمين',
+        en: 'Rifaximin',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي ريفامايسين معوي (غير ممتص يعمل موضعياً بالأمعاء)',
+        en: 'Non-Absorbable Luminal Rifamycin Antibiotic',
+      },
+      approvedUses: {
+        ar: 'علاج إسهال المسافرين والنزلات المعوية البكتيرية غير المصحوبة بحمى، القولون العصبي المصحوب بإسهال وفرط نمو البكتيريا المعوية (SIBO)، والوقاية من الاعتلال الدماغي الكبدي (غيبوبة الكبد).',
+        en: 'Travelers diarrhea caused by non-invasive E. coli, irritable bowel syndrome with diarrhea (IBS-D), SIBO, and overt hepatic encephalopathy prophylaxis.',
+      },
+      mechanism: {
+        ar: 'يرتبط بإنزيم بوليميراز الحمض النووي الريبوزي البكتيري (RNA polymerase) فيثبط تصنيع البروتين البكتيري داخل تجويف الأمعاء بنسبة امتصاص للدم تقل عن 0.4%.',
+        en: 'Inhibits bacterial RNA synthesis by binding beta-subunit of DNA-dependent RNA polymerase locally inside the gut lumen (<0.4% systemic absorption).',
+      },
+      priceEgypt: {
+        ar: 'تراسيد 200 مجم أقراص (Al Andalous - 12 قرص): 78.00 جنيه مصري.\nجاستروبيوتك 200 مجم أقراص (AUG Pharma): 84.00 جنيه مصري.\nجاستروبيوتك 550 مجم أقراص (14 قرص): 210.00 جنيه مصري.',
+        en: 'Trcid 200mg (12 tabs): 78.00 EGP\nGastrobiotic 200mg Tabs: 84.00 EGP\nGastrobiotic 550mg (14 tabs): 210.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: تراسيد (Trcid)، جاستروبيوتك (Gastrobiotic)، إندوريفاكس (Endorifax)، نورميكس (Normix).',
+        en: 'Available generics: Trcid, Gastrobiotic, Endorifax, Normix.',
+      },
+      strengths: {
+        ar: 'أقراص مغلفة: 200 مجم، 400 مجم، 550 مجم. شراب معلق: 100 مجم/5 مل.',
+        en: 'Film-coated tablets: 200mg, 400mg, 550mg. Oral suspension: 100mg/5mL.',
+      },
+      activeIngredients: {
+        ar: 'ريفاكسيمين (Rifaximin)',
+        en: 'Rifaximin',
+      },
+      ageRestrictions: {
+        ar: 'الأقراص معتمدة للأطفال من 12 عاماً والبالغين؛ الشراب للأطفال من سن سنتين بإشراف الطبيب.',
+        en: 'Tablets approved for >=12 years; suspension used in children >=2 years.',
+      },
+      dosingReference: {
+        ar: 'للنزلات المعوية: 200 مجم 3 مرات يومياً (كل 8 ساعات) لمدة 3 أيام.\nللوقاية من غيبوبة الكبد: 550 مجم مرتين يومياً كل 12 ساعة.',
+        en: 'Infectious diarrhea: 200mg 3 times daily for 3 days.\nHepatic encephalopathy: 550mg twice daily.',
+      },
+      contraindications: {
+        ar: 'حساسية الريفامايسين، والإسهال المصحوب بارتفاع شديد في الحرارة أو دم في البراز (الدوسنتاريا أو الكامبيلوباكتر).',
+        en: 'Rifamycin hypersensitivity; diarrhea complicated by fever or hematochezia.',
+      },
+      sideEffects: {
+        ar: 'آمن جداً لأن امتصاصه للدم شبه منعدم؛ قد يسبب انتفاخاً خفيفاً أو صداعاً عابراً.',
+        en: 'Minimal systemic side effects due to negligible absorption; mild flatulence or headache.',
+      },
+      interactions: {
+        ar: 'السيكلوسبورين يزيد من الامتصاص الجهازي للريفاكسيمين.',
+        en: 'Cyclosporine inhibits P-gp and OATP, elevating systemic rifaximin exposure.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة C؛ على الرغم من ضعف امتصاصه، لا يُستخدم أثناء الحمل إلا عند الضرورة القصوى.',
+        en: 'Category C. Use in pregnancy only if clearly needed.',
+      },
+      renalHepatic: {
+        ar: 'لا يحتاج لتعديل الجرعة في القصور الكلوي. هو الدواء الأساسي المعتمد لحماية مرضى التليف الكبدي من الغيبوبة الكبدية.',
+        en: 'No renal dose adjustment required. First-line agent in hepatic cirrhosis to prevent encephalopathy.',
+      },
+      patientEducation: {
+        ar: 'لا يُستخدم هذا المضاد لعلاج الإسهال المدمم أو المصحوب بحمى شديدة؛ في تلك الحالة يجب مراجعة الطبيب فوراً.',
+        en: 'Do not use if diarrhea is accompanied by high fever or blood in the stool; seek medical evaluation.',
+      },
+    },
+    brands: [
+      { name: 'Trcid 200mg Tablets', manufacturer: 'Al Andalous Medical', barcode: '6221127009519', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Gastrobiotic 550mg Tablets', manufacturer: 'AUG Pharma', barcode: '6221054008614', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Essential luminal antibiotic in Egypt for infectious gastroenteritis and hepatic encephalopathy.',
+  },
 ];
