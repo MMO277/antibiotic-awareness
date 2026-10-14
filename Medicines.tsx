@@ -241,6 +241,9 @@ export default function Medicines() {
         >
           🛡️ {isAr ? 'تقرير الجودة واستيراد البيانات' : 'Data Audit & CSV/JSON Importer'}
         </button>
+        <Link to='/compare' className='btn ghost'>
+          ⚖️ {isAr ? 'مقارنة دواءين جنباً إلى جنب' : 'Compare 2 Drugs'}
+        </Link>
       </div>
 
       {/* Unified Search Bar */}

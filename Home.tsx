@@ -48,6 +48,16 @@ export default function Home() {
       color: '#0284c7',
     },
     {
+      to: '/compare',
+      icon: '⚖️',
+      badge: isAr ? 'مقارنة فورية' : 'Side-by-Side',
+      title: isAr ? 'مقارنة دواءين أو عبوتين جنباً إلى جنب' : 'Compare 2 Antibiotics Side-by-Side',
+      desc: isAr
+        ? 'قارن بين أي عبوتين تجاريتين في السعر والتكافؤ، أو قارن مادتين فعالتين في الطيف والجرعة والحمل والكلى.'
+        : 'Compare any two packages for equivalence and savings, or two active ingredients across 12 clinical rows.',
+      color: '#4f46e5',
+    },
+    {
       to: '/scan',
       icon: '📷',
       badge: isAr ? 'كاميرا ذكية' : 'Smart Scanner',

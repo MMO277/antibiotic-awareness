@@ -1,3 +1,4 @@
+import CompareDrugs from './CompareDrugs';
 import SafeDisposal from './SafeDisposal';
 import PediatricHelper from './PediatricHelper';
 import HealthProfile from './HealthProfile';
@@ -56,6 +57,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/medicines" element={<Medicines />} />
+        <Route path="/compare" element={<CompareDrugs />} />
         <Route path="/interactions" element={<Interactions />} />
         <Route path="/safe-disposal" element={<SafeDisposal />} />
         <Route path="/tracker" element={<Tracker />} />
