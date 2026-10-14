@@ -1103,12 +1103,8 @@ export const SOURCE_HINTS: { name: string; url: string }[] = [
         en: 'Bactericidal; inhibits bacterial cell wall synthesis by binding to penicillin-binding proteins (PBPs).',
       },
       priceEgypt: {
-        ar: 'سيفوتاكس 1 جم حقن (EIPICO): 33.00 جنيه مصري للفيال.
-كلافوران 1 جم حقن (Sanofi): 45.00 جنيه مصري للفيال.
-سيفوتاكس 500 مجم حقن: 22.00 جنيه مصري للفيال.',
-        en: 'Cefotax 1g Vial: 33.00 EGP
-Claforan 1g Vial: 45.00 EGP
-Cefotax 500mg Vial: 22.00 EGP.',
+        ar: 'سيفوتاكس 1 جم حقن (EIPICO): 33.00 جنيه مصري للفيال.\nكلافوران 1 جم حقن (Sanofi): 45.00 جنيه مصري للفيال.\nسيفوتاكس 500 مجم حقن: 22.00 جنيه مصري للفيال.',
+        en: 'Cefotax 1g Vial: 33.00 EGP\nClaforan 1g Vial: 45.00 EGP\nCefotax 500mg Vial: 22.00 EGP.',
       },
       substitutes: {
         ar: 'البدائل المتوفرة بنفس المادة الفعالة: سيفوتاكس (Cefotax)، كلافوران (Claforan)، تاكسيم (Taxim)، وراميسيفت (Ramiceft).',
@@ -1127,10 +1123,8 @@ Cefotax 500mg Vial: 22.00 EGP.',
         en: 'Approved across all age groups including neonates, infants, and adults with weight-based dosing.',
       },
       dosingReference: {
-        ar: 'للبالغين: 1 جم إلى 2 جم كل 8 أو 12 ساعة بالحقن الوريدي أو العضلي (الحد الأقصى 12 جم يومياً في الحالات الحرجة كالتهاب السحايا).
-للأطفال وحديثي الولادة: 50 إلى 100 مجم/كجم/يوم مقسمة على جرعات كل 6 إلى 12 ساعة.',
-        en: 'Adults: 1g to 2g IV/IM every 8 to 12 hours (up to 12g/day in severe infections).
-Pediatrics: 50-100 mg/kg/day divided every 6-12 hours.',
+        ar: 'للبالغين: 1 جم إلى 2 جم كل 8 أو 12 ساعة بالحقن الوريدي أو العضلي (الحد الأقصى 12 جم يومياً في الحالات الحرجة كالتهاب السحايا).\nللأطفال وحديثي الولادة: 50 إلى 100 مجم/كجم/يوم مقسمة على جرعات كل 6 إلى 12 ساعة.',
+        en: 'Adults: 1g to 2g IV/IM every 8 to 12 hours (up to 12g/day in severe infections).\nPediatrics: 50-100 mg/kg/day divided every 6-12 hours.',
       },
       contraindications: {
         ar: 'حساسية مفرطة معروفة تجاه السيفالوسبورينات أو تفاعلات تأقية سابقة تجاه البنسلينات.',
@@ -1187,10 +1181,8 @@ Pediatrics: 50-100 mg/kg/day divided every 6-12 hours.',
         en: 'Bactericidal cell-wall synthesis inhibitor resistant to staphylococcal beta-lactamase.',
       },
       priceEgypt: {
-        ar: 'فلوكسامو 1 جم أقراص (Amoun - 16 قرص): 68.00 جنيه مصري (الشريط: 34.00 جنيه).
-فلوسيل 500 مجم كبسول (Pharco - 16 كبسولة): 42.00 جنيه مصري (الشريط: 21.00 جنيه).',
-        en: 'Floxamo 1g (16 tab): 68.00 EGP (strip: 34.00 EGP)
-Flucil 500mg (16 cap): 42.00 EGP (strip: 21.00 EGP).',
+        ar: 'فلوكسامو 1 جم أقراص (Amoun - 16 قرص): 68.00 جنيه مصري (الشريط: 34.00 جنيه).\nفلوسيل 500 مجم كبسول (Pharco - 16 كبسولة): 42.00 جنيه مصري (الشريط: 21.00 جنيه).',
+        en: 'Floxamo 1g (16 tab): 68.00 EGP (strip: 34.00 EGP)\nFlucil 500mg (16 cap): 42.00 EGP (strip: 21.00 EGP).',
       },
       substitutes: {
         ar: 'البدائل المتوفرة: فلوكسامو (Floxamo)، فلوسيل (Flucil)، ستافيلوكس (Staphylox).',
@@ -1209,10 +1201,8 @@ Flucil 500mg (16 cap): 42.00 EGP (strip: 21.00 EGP).',
         en: 'Safe for infants, children, and adults with weight-based pediatric dosing.',
       },
       dosingReference: {
-        ar: 'للبالغين: 500 مجم إلى 1 جم كل 6 ساعات (أربع مرات يومياً) على معدة فارغة قبل الأكل بساعة أو بعده بساعتين.
-للأطفال: 25 إلى 50 مجم/كجم/يوم مقسمة على 4 جرعات متساوية.',
-        en: 'Adults: 500mg to 1g orally every 6 hours on an empty stomach.
-Children: 25-50 mg/kg/day divided into 4 doses.',
+        ar: 'للبالغين: 500 مجم إلى 1 جم كل 6 ساعات (أربع مرات يومياً) على معدة فارغة قبل الأكل بساعة أو بعده بساعتين.\nللأطفال: 25 إلى 50 مجم/كجم/يوم مقسمة على 4 جرعات متساوية.',
+        en: 'Adults: 500mg to 1g orally every 6 hours on an empty stomach.\nChildren: 25-50 mg/kg/day divided into 4 doses.',
       },
       contraindications: {
         ar: 'حساسية البنسلين، وتاريخ سابق ليرقان أو اعتلال كبدي ناتج عن الفلوكلوكساسيللين.',
@@ -1268,10 +1258,8 @@ Children: 25-50 mg/kg/day divided into 4 doses.',
         en: 'Bactericidal; binds irreversibly to bacterial 30S ribosomal subunits, inhibiting protein synthesis.',
       },
       priceEgypt: {
-        ar: 'أميكين 500 مجم حقن (BMS / Smith): 38.00 جنيه مصري للفيال.
-ميكاسين 500 مجم حقن (SEDICO): 27.50 جنيه مصري للفيال.',
-        en: 'Amikin 500mg Vial: 38.00 EGP
-Mikacin 500mg Vial: 27.50 EGP.',
+        ar: 'أميكين 500 مجم حقن (BMS / Smith): 38.00 جنيه مصري للفيال.\nميكاسين 500 مجم حقن (SEDICO): 27.50 جنيه مصري للفيال.',
+        en: 'Amikin 500mg Vial: 38.00 EGP\nMikacin 500mg Vial: 27.50 EGP.',
       },
       substitutes: {
         ar: 'البدائل المتوفرة: أميكين (Amikin)، ميكاسين (Mikacin)، أميكاسيتين (Amikacetin).',
@@ -1290,10 +1278,8 @@ Mikacin 500mg Vial: 27.50 EGP.',
         en: 'Used across all ages with strict weight-based and renal monitoring.',
       },
       dosingReference: {
-        ar: 'للبالغين: 15 مجم/كجم/يوم تعطى كجرعة واحدة يومياً بالحقن الوريدي البطيء أو مقسمة كل 12 ساعة.
-للأطفال وحديثي الولادة: 15 إلى 20 مجم/كجم/يوم مع مراقبة المستويات السريرية في الدم.',
-        en: 'Adults: 15 mg/kg/day as once-daily IV infusion or divided q12h.
-Neonates/children: 15-20 mg/kg/day with therapeutic drug monitoring.',
+        ar: 'للبالغين: 15 مجم/كجم/يوم تعطى كجرعة واحدة يومياً بالحقن الوريدي البطيء أو مقسمة كل 12 ساعة.\nللأطفال وحديثي الولادة: 15 إلى 20 مجم/كجم/يوم مع مراقبة المستويات السريرية في الدم.',
+        en: 'Adults: 15 mg/kg/day as once-daily IV infusion or divided q12h.\nNeonates/children: 15-20 mg/kg/day with therapeutic drug monitoring.',
       },
       contraindications: {
         ar: 'حساسية الأمينوجليكوزيد، الوهن العضلي الوبيل (Myasthenia gravis).',
@@ -1349,10 +1335,8 @@ Neonates/children: 15-20 mg/kg/day with therapeutic drug monitoring.',
         en: 'Binds to the bacterial 30S subunit, disrupting mRNA translation and protein synthesis.',
       },
       priceEgypt: {
-        ar: 'جاراميسين 80 مجم أمبول (Memphis / Schering-Plough): 18.00 جنيه مصري للأمبول.
-جنتاميسين 80 مجم أمبول (El Nasr): 10.50 جنيه مصري للأمبول.',
-        en: 'Garamycin 80mg Ampoule: 18.00 EGP
-Gentamycin 80mg Ampoule: 10.50 EGP.',
+        ar: 'جاراميسين 80 مجم أمبول (Memphis / Schering-Plough): 18.00 جنيه مصري للأمبول.\nجنتاميسين 80 مجم أمبول (El Nasr): 10.50 جنيه مصري للأمبول.',
+        en: 'Garamycin 80mg Ampoule: 18.00 EGP\nGentamycin 80mg Ampoule: 10.50 EGP.',
       },
       substitutes: {
         ar: 'البدائل المتوفرة: جاراميسين (Garamycin)، جنتاميسين (Gentamycin)، ريفوباسين (Refobacin).',
@@ -1371,10 +1355,8 @@ Gentamycin 80mg Ampoule: 10.50 EGP.',
         en: 'Used across all age brackets with weight-adjusted dosing and monitoring.',
       },
       dosingReference: {
-        ar: 'للبالغين: 3 إلى 5 مجم/كجم/يوم تعطى كجرعة واحدة وريدية ممتدة أو مقسمة كل 8 ساعات بالحقن العضلي أو الوريدي البطيء.
-للأطفال: 6 إلى 7.5 مجم/كجم/يوم مقسمة كل 8 ساعات.',
-        en: 'Adults: 3-5 mg/kg/day as once-daily infusion or divided q8h.
-Children: 6-7.5 mg/kg/day divided q8h.',
+        ar: 'للبالغين: 3 إلى 5 مجم/كجم/يوم تعطى كجرعة واحدة وريدية ممتدة أو مقسمة كل 8 ساعات بالحقن العضلي أو الوريدي البطيء.\nللأطفال: 6 إلى 7.5 مجم/كجم/يوم مقسمة كل 8 ساعات.',
+        en: 'Adults: 3-5 mg/kg/day as once-daily infusion or divided q8h.\nChildren: 6-7.5 mg/kg/day divided q8h.',
       },
       contraindications: {
         ar: 'حساسية مفرطة للأمينوجليكوزيدات، والوهن العضلي الوبيل.',
@@ -1430,10 +1412,8 @@ Children: 6-7.5 mg/kg/day divided q8h.',
         en: 'Bactericidal; inhibits bacterial DNA gyrase (topoisomerase II) and topoisomerase IV.',
       },
       priceEgypt: {
-        ar: 'أفيلوكس 400 مجم أقراص (Bayer - 5 أقراص): 185.00 جنيه مصري.
-موكسيفلوكس 400 مجم أقراص (Eva Pharma - 5 أقراص): 95.00 جنيه مصري.',
-        en: 'Avelox 400mg (5 tabs): 185.00 EGP
-Moxiflox 400mg (5 tabs): 95.00 EGP.',
+        ar: 'أفيلوكس 400 مجم أقراص (Bayer - 5 أقراص): 185.00 جنيه مصري.\nموكسيفلوكس 400 مجم أقراص (Eva Pharma - 5 أقراص): 95.00 جنيه مصري.',
+        en: 'Avelox 400mg (5 tabs): 185.00 EGP\nMoxiflox 400mg (5 tabs): 95.00 EGP.',
       },
       substitutes: {
         ar: 'البدائل المتوفرة: أفيلوكس (Avelox)، موكسيفلوكس (Moxiflox)، فلوكسابكت (Floxabact).',
@@ -1509,10 +1489,8 @@ Moxiflox 400mg (5 tabs): 95.00 EGP.',
         en: 'Cefoperazone inhibits cell-wall synthesis (active vs Pseudomonas); sulbactam irreversibly inhibits beta-lactamases.',
       },
       priceEgypt: {
-        ar: 'سيلبيرازون 1.5 جم حقن (Pfizer Egypt): 75.00 جنيه مصري للفيال.
-سيفوزون 1.5 جم حقن (Pharco BPI): 52.00 جنيه مصري للفيال.',
-        en: 'Sulperazon 1.5g Vial: 75.00 EGP
-Cefozone 1.5g Vial: 52.00 EGP.',
+        ar: 'سيلبيرازون 1.5 جم حقن (Pfizer Egypt): 75.00 جنيه مصري للفيال.\nسيفوزون 1.5 جم حقن (Pharco BPI): 52.00 جنيه مصري للفيال.',
+        en: 'Sulperazon 1.5g Vial: 75.00 EGP\nCefozone 1.5g Vial: 52.00 EGP.',
       },
       substitutes: {
         ar: 'البدائل المتوفرة: سيلبيرازون (Sulperazon)، سيفوزون (Cefozone)، باكتازون (Bactazone).',
@@ -1531,10 +1509,8 @@ Cefozone 1.5g Vial: 52.00 EGP.',
         en: 'Approved in pediatric and adult inpatient settings with calculated dosing.',
       },
       dosingReference: {
-        ar: 'للبالغين: 1.5 جم إلى 3 جم كل 12 ساعة بالحقن الوريدي أو العضلي (الحد الأقصى 4 جم سيفوبيرازون يومياً).
-للأطفال: 40 إلى 80 مجم/كجم/يوم مقسمة على جرعتين إلى أربع جرعات.',
-        en: 'Adults: 1.5g to 3g IV/IM every 12 hours.
-Pediatrics: 40-80 mg/kg/day divided into 2-4 doses.',
+        ar: 'للبالغين: 1.5 جم إلى 3 جم كل 12 ساعة بالحقن الوريدي أو العضلي (الحد الأقصى 4 جم سيفوبيرازون يومياً).\nللأطفال: 40 إلى 80 مجم/كجم/يوم مقسمة على جرعتين إلى أربع جرعات.',
+        en: 'Adults: 1.5g to 3g IV/IM every 12 hours.\nPediatrics: 40-80 mg/kg/day divided into 2-4 doses.',
       },
       contraindications: {
         ar: 'حساسية السيفالوسبورينات أو البنسلينات الشديدة.',
@@ -1590,10 +1566,8 @@ Pediatrics: 40-80 mg/kg/day divided into 2-4 doses.',
         en: 'Inhibits protein synthesis by binding to 23S ribosomal RNA of the 50S subunit, preventing 70S initiation complex formation.',
       },
       priceEgypt: {
-        ar: 'أفيروزوليد 600 مجم أقراص (Eva Pharma - 10 أقراص): 210.00 جنيه مصري (الشريط: 105.00 جنيه).
-زيفوكس 600 مجم أقراص (Pfizer - 10 أقراص): 490.00 جنيه مصري.',
-        en: 'Averozolid 600mg (10 tabs): 210.00 EGP (strip: 105.00 EGP)
-Zyvox 600mg (10 tabs): 490.00 EGP.',
+        ar: 'أفيروزوليد 600 مجم أقراص (Eva Pharma - 10 أقراص): 210.00 جنيه مصري (الشريط: 105.00 جنيه).\nزيفوكس 600 مجم أقراص (Pfizer - 10 أقراص): 490.00 جنيه مصري.',
+        en: 'Averozolid 600mg (10 tabs): 210.00 EGP (strip: 105.00 EGP)\nZyvox 600mg (10 tabs): 490.00 EGP.',
       },
       substitutes: {
         ar: 'البدائل المتوفرة: أفيروزوليد (Averozolid)، زيفوكس (Zyvox)، لينوليد (Linolid).',
@@ -1612,10 +1586,8 @@ Zyvox 600mg (10 tabs): 490.00 EGP.',
         en: 'Approved for pediatrics and adults under specialized infectious disease supervision.',
       },
       dosingReference: {
-        ar: 'للبالغين: قرص واحد 600 مجم كل 12 ساعة مع أو بدون طعام لمدة 10 إلى 14 يوماً (الحد الأقصى 28 يوماً لمنع تثبيط النخاع العظمي).
-للأطفال: 10 مجم/كجم كل 8 ساعات (أو كل 12 ساعة للأطفال فوق 12 سنة).',
-        en: 'Adults: 600mg orally or IV every 12 hours for 10-14 days (max 28 days).
-Children <12 years: 10 mg/kg every 8 hours.',
+        ar: 'للبالغين: قرص واحد 600 مجم كل 12 ساعة مع أو بدون طعام لمدة 10 إلى 14 يوماً (الحد الأقصى 28 يوماً لمنع تثبيط النخاع العظمي).\nللأطفال: 10 مجم/كجم كل 8 ساعات (أو كل 12 ساعة للأطفال فوق 12 سنة).',
+        en: 'Adults: 600mg orally or IV every 12 hours for 10-14 days (max 28 days).\nChildren <12 years: 10 mg/kg every 8 hours.',
       },
       contraindications: {
         ar: 'فرط الحساسية، والاستخدام المتزامن مع مثبطات أكسيداز أحادي الأمين (MAOIs) لتجنب متلازمة السيروتونين أو نوبات ارتفاع الضغط الحادة.',
@@ -1671,10 +1643,8 @@ Children <12 years: 10 mg/kg every 8 hours.',
         en: 'Inhibits bacterial cell wall synthesis by binding to D-Ala-D-Ala terminus of cell wall peptidoglycan precursors.',
       },
       priceEgypt: {
-        ar: 'فانكوسين 500 مجم فيال (EIPICO): 65.00 جنيه مصري للفيال.
-سيلوفان 500 مجم فيال (Hikma): 72.00 جنيه مصري للفيال.',
-        en: 'Vancocin 500mg Vial: 65.00 EGP
-Celovan 500mg Vial: 72.00 EGP.',
+        ar: 'فانكوسين 500 مجم فيال (EIPICO): 65.00 جنيه مصري للفيال.\nسيلوفان 500 مجم فيال (Hikma): 72.00 جنيه مصري للفيال.',
+        en: 'Vancocin 500mg Vial: 65.00 EGP\nCelovan 500mg Vial: 72.00 EGP.',
       },
       substitutes: {
         ar: 'البدائل المتوفرة: فانكوسين (Vancocin)، سيلوفان (Celovan)، فانكوميكس (Vancomix).',
@@ -1693,10 +1663,8 @@ Celovan 500mg Vial: 72.00 EGP.',
         en: 'Used across all ages with mandatory therapeutic drug monitoring (trough levels).',
       },
       dosingReference: {
-        ar: 'للبالغين: 15 إلى 20 مجم/كجم كل 8 إلى 12 ساعة بالتنقيط الوريدي البطيء (أكثر من 60 دقيقة لكل 1 جم لتفادي متلازمة الرجل الأحمر).
-لالتهاب القولون الغشائي الكاذب: 125 إلى 500 مجم فموياً كل 6 ساعات.',
-        en: 'Adults: 15-20 mg/kg IV every 8-12h infused over at least 60 minutes per 1g.
-Oral for C. difficile: 125-500mg q6h.',
+        ar: 'للبالغين: 15 إلى 20 مجم/كجم كل 8 إلى 12 ساعة بالتنقيط الوريدي البطيء (أكثر من 60 دقيقة لكل 1 جم لتفادي متلازمة الرجل الأحمر).\nلالتهاب القولون الغشائي الكاذب: 125 إلى 500 مجم فموياً كل 6 ساعات.',
+        en: 'Adults: 15-20 mg/kg IV every 8-12h infused over at least 60 minutes per 1g.\nOral for C. difficile: 125-500mg q6h.',
       },
       contraindications: {
         ar: 'فرط الحساسية المعروف للفانكومايسين.',
