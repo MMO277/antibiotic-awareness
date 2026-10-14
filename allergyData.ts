@@ -137,6 +137,14 @@ export const DRUG_ALLERGEN_MAP: Record<string, { family: string; ingredients: st
   'metronidazole': { family: 'nitroimidazole', ingredients: ['metronidazole'], nameAr: 'ميترونيدازول (فلاجيل)' },
   'nitrofurantoin': { family: 'nitrofuran', ingredients: ['nitrofurantoin'], nameAr: 'نيتروفورانتوين (ماكروفيوران)' },
   'clindamycin': { family: 'lincosamide', ingredients: ['clindamycin'], nameAr: 'كليندامايسين (دالاسين)' },
+  'cefotaxime': { family: 'cephalosporin', ingredients: ['cefotaxime'], nameAr: 'سيفوتاكسيم (سيفوتاكس)' },
+  'flucloxacillin': { family: 'penicillin', ingredients: ['flucloxacillin'], nameAr: 'فلوكلوكساسيللين (فلوكسامو)' },
+  'amikacin': { family: 'aminoglycoside', ingredients: ['amikacin'], nameAr: 'أميكاسين (أميكين)' },
+  'gentamicin': { family: 'aminoglycoside', ingredients: ['gentamicin'], nameAr: 'جنتامايسين (جاراميسين)' },
+  'moxifloxacin': { family: 'fluoroquinolone', ingredients: ['moxifloxacin'], nameAr: 'موكسيفلوكساسين (أفيلوكس)' },
+  'cefoperazone-sulbactam': { family: 'cephalosporin', ingredients: ['cefoperazone', 'sulbactam'], nameAr: 'سيفوبيرازون + سولباكتام (سيلبيرازون)' },
+  'linezolid': { family: 'oxazolidinone', ingredients: ['linezolid'], nameAr: 'لينيزوليد (أفيروزوليد)' },
+  'vancomycin': { family: 'glycopeptide', ingredients: ['vancomycin'], nameAr: 'فانكومايسين (فانكوسين)' },
 };
 
 /** Evaluates allergy match level and cross-reactivity for a selected drug */

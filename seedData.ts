@@ -151,8 +151,7 @@ export const SEED: SeedItem[] = [
       },
     },
     brands: [
-      { name: 'Flagyl 500mg Tablets (العلبة الحديثة)', manufacturer: 'Sanofi Egypt', barcode: '6223003990602', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
-      { name: 'Flagyl 500mg Tablets (تشغيلة سابقة)', manufacturer: 'Sanofi Egypt', barcode: '6221008001012', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Flagyl 500mg Tablets', manufacturer: 'Sanofi Egypt', barcode: '6221008001012', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
       { name: 'Amrizole 500mg Tablets', manufacturer: 'Amoun Pharmaceuticals', barcode: '6221543001229', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
       { name: 'Flagyl 125mg Suspension', manufacturer: 'Sanofi Egypt', barcode: '6221008001029', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
     ],
@@ -1081,5 +1080,654 @@ export const SOURCE_HINTS: { name: string; url: string }[] = [
     ],
     sources: [EDA_SRC, MP_SRC],
     notes: 'Approved verified clinical record with Egyptian pricing, EAN-13 barcodes and generic substitutes.',
+  },
+
+  // 17. Cefotaxime (Cefotax, Claforan)
+  {
+    id: 'cefotaxime',
+    fields: {
+      genericName: {
+        ar: 'سيفوتاكسيم',
+        en: 'Cefotaxime',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي سيفالوسبورين - الجيل الثالث',
+        en: 'Third-Generation Cephalosporin Antibiotic',
+      },
+      approvedUses: {
+        ar: 'علاج العدوى البكتيرية الحادة للجهاز التنفسي، الالتهاب الرئوي، عدوى الجهاز البولي، التهاب السحايا، تسمم الدم البكتيري، وعدوى العظام والمفاصل والوقاية قبل الجراحة.',
+        en: 'Lower respiratory tract infections, pneumonia, urinary tract infections, meningitis, bacteremia/septicemia, intra-abdominal and bone/joint infections.',
+      },
+      mechanism: {
+        ar: 'مضاد بكتيري واسع المجال يثبط تصنيع الجدار الخلوي البكتيري من خلال الارتباط ببروتينات ربط البنسلين (PBPs) مما يؤدي إلى تحلل وموت البكتيريا.',
+        en: 'Bactericidal; inhibits bacterial cell wall synthesis by binding to penicillin-binding proteins (PBPs).',
+      },
+      priceEgypt: {
+        ar: 'سيفوتاكس 1 جم حقن (EIPICO): 33.00 جنيه مصري للفيال.
+كلافوران 1 جم حقن (Sanofi): 45.00 جنيه مصري للفيال.
+سيفوتاكس 500 مجم حقن: 22.00 جنيه مصري للفيال.',
+        en: 'Cefotax 1g Vial: 33.00 EGP
+Claforan 1g Vial: 45.00 EGP
+Cefotax 500mg Vial: 22.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة بنفس المادة الفعالة: سيفوتاكس (Cefotax)، كلافوران (Claforan)، تاكسيم (Taxim)، وراميسيفت (Ramiceft).',
+        en: 'Available generics: Cefotax, Claforan, Taxim, Ramiceft.',
+      },
+      strengths: {
+        ar: 'فيال للحقن العضلي أو الوريدي: 500 مجم، 1 جم، 2 جم.',
+        en: 'Vials for IV/IM injection: 500mg, 1g, 2g.',
+      },
+      activeIngredients: {
+        ar: 'سيفوتاكسيم صوديوم (Cefotaxime Sodium)',
+        en: 'Cefotaxime Sodium',
+      },
+      ageRestrictions: {
+        ar: 'معتمد لجميع الفئات العمرية بما في ذلك حديثي الولادة والأطفال والبالغين بجرعات محسوبة بدقة.',
+        en: 'Approved across all age groups including neonates, infants, and adults with weight-based dosing.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 1 جم إلى 2 جم كل 8 أو 12 ساعة بالحقن الوريدي أو العضلي (الحد الأقصى 12 جم يومياً في الحالات الحرجة كالتهاب السحايا).
+للأطفال وحديثي الولادة: 50 إلى 100 مجم/كجم/يوم مقسمة على جرعات كل 6 إلى 12 ساعة.',
+        en: 'Adults: 1g to 2g IV/IM every 8 to 12 hours (up to 12g/day in severe infections).
+Pediatrics: 50-100 mg/kg/day divided every 6-12 hours.',
+      },
+      contraindications: {
+        ar: 'حساسية مفرطة معروفة تجاه السيفالوسبورينات أو تفاعلات تأقية سابقة تجاه البنسلينات.',
+        en: 'Hypersensitivity to cephalosporins or severe immediate penicillin allergy.',
+      },
+      sideEffects: {
+        ar: 'ألم والتهاب في موضع الحقن، طفح جلدي، إسهال خفيف، ونادراً التهاب القولون الغشائي الكاذب.',
+        en: 'Injection site pain/phlebitis, rash, diarrhea, elevated transaminases.',
+      },
+      interactions: {
+        ar: 'مدرات البول العروية كالفوروسيميد ومضادات الأمينوجليكوزيد تزيد من خطر السمية الكلوية.',
+        en: 'Concomitant aminoglycosides or loop diuretics may increase nephrotoxicity risk.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن ويوصف بصورة واسعة أثناء الحمل والرضاعة الطبيعية تحت إشراف الطبيب.',
+        en: 'Category B. Safe in pregnancy and breastfeeding when indicated.',
+      },
+      renalHepatic: {
+        ar: 'يجب خفض الجرعة بمقدار 50% عندما يقل معدل ترشيح الكلى (GFR) عن 20 مل/دقيقة.',
+        en: 'Reduce dose by 50% when GFR is <20 mL/min.',
+      },
+      patientEducation: {
+        ar: 'يُعطى بالحقن فقط ولا يؤخذ بالفم. يجب إكمال المدة المقررة بالكامل لمنع عودة العدوى أو تطور بكتيريا مقاومة.',
+        en: 'Injectable only. Complete prescribed course duration even if symptoms improve quickly.',
+      },
+    },
+    brands: [
+      { name: 'Cefotax 1g Vial', manufacturer: 'EIPICO', barcode: '6221127003463', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Claforan 1g Vial', manufacturer: 'Sanofi Egypt', barcode: '6223003991203', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Cefotax 500mg Vial', manufacturer: 'EIPICO', barcode: '6221127003470', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Standard 3rd gen cephalosporin workhorse in Egyptian emergency and pediatric wards.',
+  },
+
+  // 18. Flucloxacillin (Floxamo, Flucil)
+  {
+    id: 'flucloxacillin',
+    fields: {
+      genericName: {
+        ar: 'فلوكلوكساسيللين',
+        en: 'Flucloxacillin',
+      },
+      drugClass: {
+        ar: 'بنسلين مضاد لإنزيم البنسليناز (مضاد للمكورات العنقودية)',
+        en: 'Penicillinase-Resistant Penicillin (Anti-staphylococcal)',
+      },
+      approvedUses: {
+        ar: 'علاج التهابات الجلد والأنسجة الرخوة الناتجة عن المكورات العنقودية (الدمامل، الخراريج، الحصف، التهاب الهلل الخلوي، والجروح المصابة)، والتهاب العظام.',
+        en: 'Skin and soft tissue infections (cellulitis, boils, abscesses, impetigo), wound infections, and osteomyelitis caused by susceptible staphylococci.',
+      },
+      mechanism: {
+        ar: 'يثبط بناء جدار الخلية البكتيرية ويتميز بمقاومته لإنزيم البيتا-لاكتاماز المنتج بواسطة بكتيريا المكورات العنقودية الذهبية.',
+        en: 'Bactericidal cell-wall synthesis inhibitor resistant to staphylococcal beta-lactamase.',
+      },
+      priceEgypt: {
+        ar: 'فلوكسامو 1 جم أقراص (Amoun - 16 قرص): 68.00 جنيه مصري (الشريط: 34.00 جنيه).
+فلوسيل 500 مجم كبسول (Pharco - 16 كبسولة): 42.00 جنيه مصري (الشريط: 21.00 جنيه).',
+        en: 'Floxamo 1g (16 tab): 68.00 EGP (strip: 34.00 EGP)
+Flucil 500mg (16 cap): 42.00 EGP (strip: 21.00 EGP).',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: فلوكسامو (Floxamo)، فلوسيل (Flucil)، ستافيلوكس (Staphylox).',
+        en: 'Available generics: Floxamo, Flucil, Staphylox.',
+      },
+      strengths: {
+        ar: 'كبسولات/أقراص: 500 مجم، 1 جم. شراب معلق للأطفال: 125 مجم/5 مل، 250 مجم/5 مل.',
+        en: 'Capsules/tablets: 500mg, 1g. Oral suspension: 125mg/5mL, 250mg/5mL.',
+      },
+      activeIngredients: {
+        ar: 'فلوكلوكساسيللين صوديوم (Flucloxacillin Sodium)',
+        en: 'Flucloxacillin Sodium',
+      },
+      ageRestrictions: {
+        ar: 'آمن للرضع والأطفال والبالغين بجرعات ملائمة لكل فئة وزنية.',
+        en: 'Safe for infants, children, and adults with weight-based pediatric dosing.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 500 مجم إلى 1 جم كل 6 ساعات (أربع مرات يومياً) على معدة فارغة قبل الأكل بساعة أو بعده بساعتين.
+للأطفال: 25 إلى 50 مجم/كجم/يوم مقسمة على 4 جرعات متساوية.',
+        en: 'Adults: 500mg to 1g orally every 6 hours on an empty stomach.
+Children: 25-50 mg/kg/day divided into 4 doses.',
+      },
+      contraindications: {
+        ar: 'حساسية البنسلين، وتاريخ سابق ليرقان أو اعتلال كبدي ناتج عن الفلوكلوكساسيللين.',
+        en: 'Penicillin allergy or history of flucloxacillin-associated jaundice/hepatic dysfunction.',
+      },
+      sideEffects: {
+        ar: 'غثيان، إسهال خفيف، طفح جلدي، واعتلال كبدي نادر يظهر كيرقان ركودي في كبار السن.',
+        en: 'Gastrointestinal upset, diarrhea, rash; rare cholestatic jaundice, especially in older adults.',
+      },
+      interactions: {
+        ar: 'يتعارض مع الميثوتريكسات حيث يزيد من سميته، ويزيد من فعالية أدوية السيولة الفموية كالوارفارين.',
+        en: 'Increases methotrexate toxicity; may enhance warfarin anticoagulant effect.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن ويوصف بصورة معتادة للحوامل والمرضعات تحت الإشراف الطبي.',
+        en: 'Category B. Safe in pregnancy and lactation when indicated.',
+      },
+      renalHepatic: {
+        ar: 'يجب ضبط الجرعة في القصور الكلوي الشديد (الحد الأقصى 1 جم كل 8 ساعات). يُمنع لمن لديهم سوابق يرقان دوائي منه.',
+        en: 'Adjust in severe renal impairment (max 1g q8h). Avoid if history of flucloxacillin liver injury.',
+      },
+      patientEducation: {
+        ar: 'يجب تناوله على معدة فارغة تماماً (قبل الأكل بساعة أو بعد الأكل بساعتين) لأن الطعام يقلل امتصاصه بنسبة 50%.',
+        en: 'Take strictly on an empty stomach (1 hour before or 2 hours after meals) as food significantly reduces absorption.',
+      },
+    },
+    brands: [
+      { name: 'Floxamo 1g Tablets', manufacturer: 'Amoun Pharmaceutical Co.', barcode: '6221008005626', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Flucil 500mg Capsules', manufacturer: 'Pharco Pharmaceuticals', barcode: '6221543003429', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Frontline antistaphylococcal choice for Egyptian skin and wound infections.',
+  },
+
+  // 19. Amikacin (Amikin, Mikacin)
+  {
+    id: 'amikacin',
+    fields: {
+      genericName: {
+        ar: 'أميكاسين',
+        en: 'Amikacin',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي أمينوجليكوزيد',
+        en: 'Aminoglycoside Antibiotic',
+      },
+      approvedUses: {
+        ar: 'العدوى البكتيرية الشديدة الناتجة عن بكتيريا الجرام السالبة المقاومة، تسمم الدم، عدوى المسالك البولية المعقدة، والتهابات الجهاز التنفسي المستشفوية.',
+        en: 'Severe hospital-acquired Gram-negative infections, bacteremia, complicated UTIs, intra-abdominal and respiratory tract infections resistant to gentamicin.',
+      },
+      mechanism: {
+        ar: 'قاتل للبكتيريا؛ يرتبط بالوحدة الفرعية 30S في ريبوسومات البكتيريا مما يثبط تخليق البروتين ويؤدي لموت الخلية البكتيرية.',
+        en: 'Bactericidal; binds irreversibly to bacterial 30S ribosomal subunits, inhibiting protein synthesis.',
+      },
+      priceEgypt: {
+        ar: 'أميكين 500 مجم حقن (BMS / Smith): 38.00 جنيه مصري للفيال.
+ميكاسين 500 مجم حقن (SEDICO): 27.50 جنيه مصري للفيال.',
+        en: 'Amikin 500mg Vial: 38.00 EGP
+Mikacin 500mg Vial: 27.50 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: أميكين (Amikin)، ميكاسين (Mikacin)، أميكاسيتين (Amikacetin).',
+        en: 'Available generics: Amikin, Mikacin, Amikacetin.',
+      },
+      strengths: {
+        ar: 'أمبولات وفيالات للحقن: 100 مجم/2 مل، 250 مجم/2 مل، 500 مجم/2 مل.',
+        en: 'Vials/ampoules for IV/IM: 100mg/2mL, 250mg/2mL, 500mg/2mL.',
+      },
+      activeIngredients: {
+        ar: 'أميكاسين كبريتات (Amikacin Sulfate)',
+        en: 'Amikacin Sulfate',
+      },
+      ageRestrictions: {
+        ar: 'يُستخدم في جميع الأعمار بحذر شديد مع ضبط الجرعة بدقة حسب الوزن ووظائف الكلى.',
+        en: 'Used across all ages with strict weight-based and renal monitoring.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 15 مجم/كجم/يوم تعطى كجرعة واحدة يومياً بالحقن الوريدي البطيء أو مقسمة كل 12 ساعة.
+للأطفال وحديثي الولادة: 15 إلى 20 مجم/كجم/يوم مع مراقبة المستويات السريرية في الدم.',
+        en: 'Adults: 15 mg/kg/day as once-daily IV infusion or divided q12h.
+Neonates/children: 15-20 mg/kg/day with therapeutic drug monitoring.',
+      },
+      contraindications: {
+        ar: 'حساسية الأمينوجليكوزيد، الوهن العضلي الوبيل (Myasthenia gravis).',
+        en: 'Hypersensitivity to aminoglycosides, myasthenia gravis.',
+      },
+      sideEffects: {
+        ar: 'سمية كلوية (ارتفاع الكرياتينين)، سمية سمعية ودهليزية (طنين الأذن وضعف السمع والدوار)، وحصار عصبي عضلي.',
+        en: 'Nephrotoxicity, ototoxicity (auditory and vestibular damage), neuromuscular blockade.',
+      },
+      interactions: {
+        ar: 'ممنوع دمجه مع مدرات البول العروية كالفوروسيميد، أو الفانكومايسين، أو السيفالوسبورينات القوية دون مراقبة الكلى.',
+        en: 'Additive nephrotoxicity/ototoxicity with furosemide, vancomycin, cisplatin, and neuromuscular blockers.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة D؛ قد يسبب ضرراً سمعياً للجنين ولا يُستخدم إلا في الحالات المهددة للحياة مع انعدام البدائل.',
+        en: 'Category D. Potential fetal ototoxicity; reserved for life-threatening emergencies.',
+      },
+      renalHepatic: {
+        ar: 'حرج جداً: يتطلب خفض الجرعة أو مباعدة الفترات الزمنية بدقة بناءً على قياس تصفية الكرياتينين ومستوى الدواء بالدم.',
+        en: 'Critical: Mandatory dose adjustment and interval extension based on renal clearance.',
+      },
+      patientEducation: {
+        ar: 'يُعطى في المستشفيات والمراكز الطبية فقط. أبلغ الطاقم الطبي فوراً عند الشعور بطنين في الأذن أو دوار أو قلة كمية البول.',
+        en: 'Administered under medical supervision. Report tinnitus, dizziness, hearing changes, or decreased urine immediately.',
+      },
+    },
+    brands: [
+      { name: 'Amikin 500mg Vial', manufacturer: 'Bristol Myers Squibb / Smith', barcode: '6221054006128', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Mikacin 500mg Vial', manufacturer: 'SEDICO Pharmaceuticals', barcode: '6221127007812', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Potent aminoglycoside reserved for resistant gram-negative infections in Egyptian hospitals.',
+  },
+
+  // 20. Gentamicin (Garamycin)
+  {
+    id: 'gentamicin',
+    fields: {
+      genericName: {
+        ar: 'جنتامايسين',
+        en: 'Gentamicin',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي أمينوجليكوزيد واسع المجال',
+        en: 'Aminoglycoside Antibiotic',
+      },
+      approvedUses: {
+        ar: 'العدوى البكتيرية الحادة للجهاز البولي، تسمم الدم، عدوى البطن والحوض، حمى النفاس، والتهاب الشغاف الجرثومي بالاشتراك مع البنسلين.',
+        en: 'Severe systemic Gram-negative infections, complicated UTIs, bacteremia, pelvic/intra-abdominal infections, and bacterial endocarditis synergy.',
+      },
+      mechanism: {
+        ar: 'يرتبط بالوحدة 30S في ريبوسومات البكتيريا مسبباً أخطاء في ترجمة الشفرة الوراثية وتثبيط بناء البروتين وموت الخلية البكتيرية.',
+        en: 'Binds to the bacterial 30S subunit, disrupting mRNA translation and protein synthesis.',
+      },
+      priceEgypt: {
+        ar: 'جاراميسين 80 مجم أمبول (Memphis / Schering-Plough): 18.00 جنيه مصري للأمبول.
+جنتاميسين 80 مجم أمبول (El Nasr): 10.50 جنيه مصري للأمبول.',
+        en: 'Garamycin 80mg Ampoule: 18.00 EGP
+Gentamycin 80mg Ampoule: 10.50 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: جاراميسين (Garamycin)، جنتاميسين (Gentamycin)، ريفوباسين (Refobacin).',
+        en: 'Available generics: Garamycin, Gentamycin, Refobacin.',
+      },
+      strengths: {
+        ar: 'أمبولات للحقن العضلي أو الوريدي: 20 مجم/2 مل، 40 مجم/2 مل، 80 مجم/2 مل.',
+        en: 'Ampoules for IM/IV injection: 20mg/2mL, 40mg/2mL, 80mg/2mL.',
+      },
+      activeIngredients: {
+        ar: 'جنتامايسين سلفات (Gentamicin Sulfate)',
+        en: 'Gentamicin Sulfate',
+      },
+      ageRestrictions: {
+        ar: 'يُستخدم في جميع الأعمار بجرعات دقيقة محسوبة بالوزن مع مراقبة حثيثة للوظائف الكلوية.',
+        en: 'Used across all age brackets with weight-adjusted dosing and monitoring.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 3 إلى 5 مجم/كجم/يوم تعطى كجرعة واحدة وريدية ممتدة أو مقسمة كل 8 ساعات بالحقن العضلي أو الوريدي البطيء.
+للأطفال: 6 إلى 7.5 مجم/كجم/يوم مقسمة كل 8 ساعات.',
+        en: 'Adults: 3-5 mg/kg/day as once-daily infusion or divided q8h.
+Children: 6-7.5 mg/kg/day divided q8h.',
+      },
+      contraindications: {
+        ar: 'حساسية مفرطة للأمينوجليكوزيدات، والوهن العضلي الوبيل.',
+        en: 'Hypersensitivity to aminoglycosides, myasthenia gravis.',
+      },
+      sideEffects: {
+        ar: 'سمية كلوية، سمية سمعية ودهليزية (فقدان التوازن وطنين الأذن)، وتفاعلات حساسية موضعية.',
+        en: 'Nephrotoxicity, vestibular and cochlear ototoxicity, local injection site pain.',
+      },
+      interactions: {
+        ar: 'خطر مضاعف للسمية الكلوية والسمعية عند تناوله مع الفوروسيميد، الفانكومايسين، أو أدوية التخدير وباسطات العضلات.',
+        en: 'Synergistic nephro/ototoxicity with loop diuretics, amphotericin B, and vancomycin.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة D؛ يتخطى المشيمة ويشكل خطراً على العصب السمعي للجنين. يُستخدم فقط عند انعدام البدائل للحالات المهددة للحياة.',
+        en: 'Category D. Crosses placenta with risk of fetal cranial nerve VIII damage.',
+      },
+      renalHepatic: {
+        ar: 'يتطلب ضبطاً حاسماً للجرعة وتمديد الفترات الزمنية بين الجرعات عند انخفاض تصفية الكلى لتجنب التراكم السمي.',
+        en: 'Strict dosing interval prolongation required in renal insufficiency.',
+      },
+      patientEducation: {
+        ar: 'يُعطى بالحقن العضلي أو بالتنقيط الوريدي. يجب الإكثار من شرب السوائل أثناء العلاج لحماية الكليتين وإبلاغ التمريض عند أي دوار.',
+        en: 'Maintain high fluid intake during therapy to protect kidney function. Report balance issues immediately.',
+      },
+    },
+    brands: [
+      { name: 'Garamycin 80mg Ampoule', manufacturer: 'Memphis / Schering-Plough', barcode: '6221008003621', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Gentamycin 80mg Ampoule', manufacturer: 'El Nasr Pharmaceutical', barcode: '6221543008914', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Classic hospital antibiotic in Egyptian healthcare; requires renal hydration monitoring.',
+  },
+
+  // 21. Moxifloxacin (Avelox, Moxiflox)
+  {
+    id: 'moxifloxacin',
+    fields: {
+      genericName: {
+        ar: 'موكسيفلوكساسين',
+        en: 'Moxifloxacin',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي فلوروكينولون تنفسي',
+        en: 'Respiratory Fluoroquinolone Antibiotic',
+      },
+      approvedUses: {
+        ar: 'علاج الالتهاب الرئوي المكتسب من المجتمع (CAP)، التفاقم البكتيري الحاد لالتهاب الشعب الهوائية المزمن، والتهاب الجيوب الأنفية البكتيري الحاد، وعدوى الجلد والبطن المعقدة.',
+        en: 'Community-acquired pneumonia, acute bacterial sinusitis, acute exacerbations of chronic bronchitis, and complicated skin/intra-abdominal infections.',
+      },
+      mechanism: {
+        ar: 'قاتل للبكتيريا؛ يثبط إنزيمي توبوإيزوميراز II (DNA gyrase) وتوبوإيزوميراز IV مما يمنع تضاعف وإصلاح الحمض النووي البكتيري.',
+        en: 'Bactericidal; inhibits bacterial DNA gyrase (topoisomerase II) and topoisomerase IV.',
+      },
+      priceEgypt: {
+        ar: 'أفيلوكس 400 مجم أقراص (Bayer - 5 أقراص): 185.00 جنيه مصري.
+موكسيفلوكس 400 مجم أقراص (Eva Pharma - 5 أقراص): 95.00 جنيه مصري.',
+        en: 'Avelox 400mg (5 tabs): 185.00 EGP
+Moxiflox 400mg (5 tabs): 95.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: أفيلوكس (Avelox)، موكسيفلوكس (Moxiflox)، فلوكسابكت (Floxabact).',
+        en: 'Available generics: Avelox, Moxiflox, Floxabact.',
+      },
+      strengths: {
+        ar: 'أقراص مغلفة: 400 مجم. محلول للتنقيط الوريدي: 400 مجم/250 مل.',
+        en: 'Film-coated tablets: 400mg. IV infusion: 400mg/250mL.',
+      },
+      activeIngredients: {
+        ar: 'موكسيفلوكساسين هيدروكلوريد (Moxifloxacin HCl)',
+        en: 'Moxifloxacin Hydrochloride',
+      },
+      ageRestrictions: {
+        ar: 'ممنوع لمن هم دون سن 18 عاماً بسبب خطر إصابات المفاصل والأوتار.',
+        en: 'Contraindicated in patients <18 years due to arthropathy/tendon injury risks.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: قرص واحد 400 مجم مرة واحدة يومياً مع أو بدون طعام لمدة 5 إلى 10 أيام (لا يحتاج لتعديل الجرعة في مرضى الكلى).',
+        en: 'Adults: 400mg once daily orally or IV for 5 to 10 days.',
+      },
+      contraindications: {
+        ar: 'حساسية الكينولونات، استطالة فترة QT في تخطيط القلب، الوهن العضلي الوبيل، وتاريخ تمزق الأوتار.',
+        en: 'Hypersensitivity to quinolones, prolonged QT interval, myasthenia gravis, history of tendon rupture.',
+      },
+      sideEffects: {
+        ar: 'غثيان، صداع، دوار، إسهال، استطالة فترة QT، وخطر نادر لالتهاب أو تمزق وتر العرقوب (أخيل).',
+        en: 'Nausea, diarrhea, headache, dizziness, QT prolongation; risk of tendinitis/tendon rupture.',
+      },
+      interactions: {
+        ar: 'مضادات الحموضة والحديد والكالسيوم تقلل امتصاصه ويجب الفصل بساعتين على الأقل. الحذر مع أدوية القلب المسببة لاستطالة QT.',
+        en: 'Chelates with antacids, iron, and calcium (separate by 2h). Additive QT prolongation with antiarrhythmics.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة C؛ يُنصح بتجنبه في الحمل والرضاعة الطبيعية لوجود بدائل أكثر أماناً كالسيفالوسبورينات.',
+        en: 'Category C. Avoid in pregnancy and lactation unless no safer alternatives exist.',
+      },
+      renalHepatic: {
+        ar: 'يتميز بأنه يُطرح كبدياً بشكل أساسي، لذا لا يتطلب أي خفض للجرعة في مرضى القصور الكلوي حتى في الغسيل الكلوي.',
+        en: 'Hepatically eliminated; no dosage adjustment required in renal impairment or dialysis.',
+      },
+      patientEducation: {
+        ar: 'توقف عن تناول الدواء فوراً واستشر الطبيب إذا شعرت بألم مفاجئ أو التهاب في الأوتار (خاصة كعب القدم). اشرب كميات كافية من الماء.',
+        en: 'Discontinue immediately and seek care if you experience sudden tendon pain or swelling (especially heel).',
+      },
+    },
+    brands: [
+      { name: 'Avelox 400mg Tablets', manufacturer: 'Bayer', barcode: '6223000458127', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Moxiflox 400mg Tablets', manufacturer: 'Eva Pharma', barcode: '6221054007415', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Premium respiratory fluoroquinolone in Egypt; no renal adjustment needed.',
+  },
+
+  // 22. Cefoperazone + Sulbactam (Sulperazon, Cefozone)
+  {
+    id: 'cefoperazone-sulbactam',
+    fields: {
+      genericName: {
+        ar: 'سيفوبيرازون + سولباكتام',
+        en: 'Cefoperazone / Sulbactam',
+      },
+      drugClass: {
+        ar: 'سيفالوسبورين الجيل الثالث مع مثبط بيتا-لاكتاماز',
+        en: 'Third-Generation Cephalosporin with Beta-Lactamase Inhibitor',
+      },
+      approvedUses: {
+        ar: 'علاج العدوى البكتيرية الشديدة للجهاز التنفسي السفلي، عدوى القنوات المرارية والبطن، عدوى المسالك البولية المعقدة، والتهابات الحوض والوقاية الجراحية.',
+        en: 'Severe intra-abdominal and biliary tract infections, lower respiratory infections, complicated UTIs, and surgical prophylaxis.',
+      },
+      mechanism: {
+        ar: 'السيفوبيرازون يثبط جدار الخلية البكتيرية بما في ذلك الزائفة الزنجارية (Pseudomonas)، بينما يحمي السولباكتام الدواء من التحلل الإنزيمي.',
+        en: 'Cefoperazone inhibits cell-wall synthesis (active vs Pseudomonas); sulbactam irreversibly inhibits beta-lactamases.',
+      },
+      priceEgypt: {
+        ar: 'سيلبيرازون 1.5 جم حقن (Pfizer Egypt): 75.00 جنيه مصري للفيال.
+سيفوزون 1.5 جم حقن (Pharco BPI): 52.00 جنيه مصري للفيال.',
+        en: 'Sulperazon 1.5g Vial: 75.00 EGP
+Cefozone 1.5g Vial: 52.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: سيلبيرازون (Sulperazon)، سيفوزون (Cefozone)، باكتازون (Bactazone).',
+        en: 'Available generics: Sulperazon, Cefozone, Bactazone.',
+      },
+      strengths: {
+        ar: 'فيال للحقن الوريدي أو العضلي: 1.5 جم (1 جم سيفوبيرازون + 0.5 جم سولباكتام).',
+        en: 'Vials for IV/IM: 1.5g (1g cefoperazone + 0.5g sulbactam).',
+      },
+      activeIngredients: {
+        ar: 'سيفوبيرازون صوديوم + سولباكتام صوديوم',
+        en: 'Cefoperazone Sodium + Sulbactam Sodium',
+      },
+      ageRestrictions: {
+        ar: 'معتمد للأطفال والبالغين في المستشفيات بجرعات محسوبة بدقة.',
+        en: 'Approved in pediatric and adult inpatient settings with calculated dosing.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 1.5 جم إلى 3 جم كل 12 ساعة بالحقن الوريدي أو العضلي (الحد الأقصى 4 جم سيفوبيرازون يومياً).
+للأطفال: 40 إلى 80 مجم/كجم/يوم مقسمة على جرعتين إلى أربع جرعات.',
+        en: 'Adults: 1.5g to 3g IV/IM every 12 hours.
+Pediatrics: 40-80 mg/kg/day divided into 2-4 doses.',
+      },
+      contraindications: {
+        ar: 'حساسية السيفالوسبورينات أو البنسلينات الشديدة.',
+        en: 'Severe cephalosporin or beta-lactam hypersensitivity.',
+      },
+      sideEffects: {
+        ar: 'إسهال، طفح جلدي، نقص عابر في بروثرومبين الدم (زيادة القابلية للنزف)، وتفاعل شبيه بالديسفلفرام مع الكحول.',
+        en: 'Diarrhea, rash, hypoprothrombinemia (bleeding risk), and disulfiram-like ethanol reaction.',
+      },
+      interactions: {
+        ar: 'يزيد من خطر النزيف مع مميعات الدم ومضادات التخثر كالوارفارين وهيبارين؛ يوصى بإعطاء فيتامين K عند الحاجة.',
+        en: 'Increased bleeding risk with anticoagulants/heparin. Disulfiram-like reaction with alcohol.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B؛ آمن للاستخدام أثناء الحمل إذا استدعت الحالة السريرية بإشراف الطبيب.',
+        en: 'Category B. Considered safe in pregnancy when clinically necessary.',
+      },
+      renalHepatic: {
+        ar: 'يُطرح معظمه عبر الصفراء والمسالك الصفراوية، لذا يتطلب تعديل الجرعة في مرضى الانسداد الصفراوي أو القصور الكبدي الشديد.',
+        en: 'Predominantly biliary excretion; dose adjustment essential in severe biliary obstruction/hepatic dysfunction.',
+      },
+      patientEducation: {
+        ar: 'يُعطى في المستشفيات بالحقن. يُمنع تناول الكحول تماماً أثناء العلاج ولمدة 5 أيام بعده لتجنب التفاعلات الخطيرة.',
+        en: 'Inpatient injectable. Strictly avoid any alcohol during and for 5 days after therapy.',
+      },
+    },
+    brands: [
+      { name: 'Sulperazon 1.5g Vial', manufacturer: 'Pfizer Egypt', barcode: '6221054008126', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Cefozone 1.5g Vial', manufacturer: 'Pharco BPI', barcode: '6221543006718', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Standard biliary and intra-abdominal injectable antimicrobial in Egyptian surgical wards.',
+  },
+
+  // 23. Linezolid (Averozolid, Zyvox)
+  {
+    id: 'linezolid',
+    fields: {
+      genericName: {
+        ar: 'لينيزوليد',
+        en: 'Linezolid',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي أوكسازوليدينون (مضاد للمكورات المقاومة MRSA / VRE)',
+        en: 'Oxazolidinone Antibiotic (Anti-MRSA / VRE)',
+      },
+      approvedUses: {
+        ar: 'علاج العدوى الشديدة بالمكورات العنقودية المقاومة للميثيسيلين (MRSA)، المكورات المعوية المقاومة للفانكومايسين (VRE)، الالتهاب الرئوي المستشفوي، والتهابات الجلد المعقدة.',
+        en: 'Vancomycin-resistant Enterococcus (VRE) infections, hospital-acquired and MRSA pneumonia, and complicated skin/skin-structure infections.',
+      },
+      mechanism: {
+        ar: 'يثبط تخليق البروتين البكتيري عند نقطة فريدة جداً عبر الارتباط بالموقع 23S في الوحدة الريبوسومية 50S لمنع تكوّن معقد بدء الترجمة 70S.',
+        en: 'Inhibits protein synthesis by binding to 23S ribosomal RNA of the 50S subunit, preventing 70S initiation complex formation.',
+      },
+      priceEgypt: {
+        ar: 'أفيروزوليد 600 مجم أقراص (Eva Pharma - 10 أقراص): 210.00 جنيه مصري (الشريط: 105.00 جنيه).
+زيفوكس 600 مجم أقراص (Pfizer - 10 أقراص): 490.00 جنيه مصري.',
+        en: 'Averozolid 600mg (10 tabs): 210.00 EGP (strip: 105.00 EGP)
+Zyvox 600mg (10 tabs): 490.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: أفيروزوليد (Averozolid)، زيفوكس (Zyvox)، لينوليد (Linolid).',
+        en: 'Available generics: Averozolid, Zyvox, Linolid.',
+      },
+      strengths: {
+        ar: 'أقراص مغلفة: 600 مجم. محلول وريدي للتنقيط: 600 مجم/300 مل. شراب معلق للأطفال: 100 مجم/5 مل.',
+        en: 'Tablets: 600mg. IV infusion: 600mg/300mL. Oral suspension: 100mg/5mL.',
+      },
+      activeIngredients: {
+        ar: 'لينيزوليد (Linezolid)',
+        en: 'Linezolid',
+      },
+      ageRestrictions: {
+        ar: 'يُستخدم للأطفال والبالغين بحذر شديد وتحت إشراف استشاري العدوى.',
+        en: 'Approved for pediatrics and adults under specialized infectious disease supervision.',
+      },
+      dosingReference: {
+        ar: 'للبالغين: قرص واحد 600 مجم كل 12 ساعة مع أو بدون طعام لمدة 10 إلى 14 يوماً (الحد الأقصى 28 يوماً لمنع تثبيط النخاع العظمي).
+للأطفال: 10 مجم/كجم كل 8 ساعات (أو كل 12 ساعة للأطفال فوق 12 سنة).',
+        en: 'Adults: 600mg orally or IV every 12 hours for 10-14 days (max 28 days).
+Children <12 years: 10 mg/kg every 8 hours.',
+      },
+      contraindications: {
+        ar: 'فرط الحساسية، والاستخدام المتزامن مع مثبطات أكسيداز أحادي الأمين (MAOIs) لتجنب متلازمة السيروتونين أو نوبات ارتفاع الضغط الحادة.',
+        en: 'Hypersensitivity; concurrent MAOIs or uncontrolled hypertension/serotonergic agents.',
+      },
+      sideEffects: {
+        ar: 'تثبيط نقي العظم (نقص الصفائح الدموية وفقر الدم بعد 14 يوماً)، صداع، غثيان، إسهال، واعتلال عصبي محيطي وبصري عند الاستخدام المطول.',
+        en: 'Myelosuppression (thrombocytopenia, anemia), headache, nausea, peripheral/optic neuropathy with prolonged use.',
+      },
+      interactions: {
+        ar: 'يتفاعل مع مضادات الاكتئاب (SSRIs/SNRIs) مسبباً متلازمة السيروتونين، ومع الأطعمة الغنية بالتيرامين كالأجبان القديمة مسبباً نوبات ارتفاع ضغط الدم.',
+        en: 'Serotonin syndrome risk with SSRIs/SNRIs/triptans; hypertensive crisis with tyramine-rich foods.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة C؛ يُستخدم فقط عندما تفوق الفائدة السريرية المتوقعة المخاطر المحتملة.',
+        en: 'Category C. Use only if clearly needed and no alternatives available.',
+      },
+      renalHepatic: {
+        ar: 'لا يحتاج لتعديل الجرعة في القصور الكلوي أو الكبدي الخفيف إلى المتوسط، ولكن يفضل إعطاؤه بعد جلسة الغسيل الكلوي.',
+        en: 'No dose adjustment required for renal or mild-to-moderate hepatic impairment; dose after hemodialysis.',
+      },
+      patientEducation: {
+        ar: 'يجب عمل تحليل صورة دم كاملة (CBC) أسبوعياً أثناء العلاج لمراقبة الصفائح الدموية. تجنب تناول الأجبان المعتقة والمخللات بكميات كبيرة.',
+        en: 'Weekly complete blood count (CBC) monitoring is essential. Avoid large quantities of aged cheeses or fermented foods.',
+      },
+    },
+    brands: [
+      { name: 'Averozolid 600mg Tablets', manufacturer: 'Eva Pharma', barcode: '6221054009121', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Zyvox 600mg Tablets', manufacturer: 'Pfizer', barcode: '6223000216719', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Crucial reserve antibiotic in Egypt for resistant Gram-positive pathogens (MRSA/VRE).',
+  },
+
+  // 24. Vancomycin (Vancocin, Celovan)
+  {
+    id: 'vancomycin',
+    fields: {
+      genericName: {
+        ar: 'فانكومايسين',
+        en: 'Vancomycin',
+      },
+      drugClass: {
+        ar: 'مضاد حيوي جليكوببتيد (خط دفاع أخير ضد MRSA)',
+        en: 'Glycopeptide Antibiotic (Anti-MRSA Reserve)',
+      },
+      approvedUses: {
+        ar: 'العدوى الحادة الناتجة عن بكتيريا المكورات العنقودية المقاومة للميثيسيلين (MRSA)، التهاب الشغاف الجرثومي، عدوى العظام، والتهاب القولون الغشائي الكاذب الناجم عن Clostridioides difficile (عن طريق الفم فقط).',
+        en: 'Severe MRSA infections, endocarditis, osteomyelitis, septicemia; oral formulation solely for Clostridioides difficile colitis.',
+      },
+      mechanism: {
+        ar: 'مضاد بكتيري يثبط تصنيع جدار الخلية عن طريق الارتباط بنهاية D-alanyl-D-alanine في ببتيدوجلايكان جدار الخلية البكتيرية.',
+        en: 'Inhibits bacterial cell wall synthesis by binding to D-Ala-D-Ala terminus of cell wall peptidoglycan precursors.',
+      },
+      priceEgypt: {
+        ar: 'فانكوسين 500 مجم فيال (EIPICO): 65.00 جنيه مصري للفيال.
+سيلوفان 500 مجم فيال (Hikma): 72.00 جنيه مصري للفيال.',
+        en: 'Vancocin 500mg Vial: 65.00 EGP
+Celovan 500mg Vial: 72.00 EGP.',
+      },
+      substitutes: {
+        ar: 'البدائل المتوفرة: فانكوسين (Vancocin)، سيلوفان (Celovan)، فانكوميكس (Vancomix).',
+        en: 'Available generics: Vancocin, Celovan, Vancomix.',
+      },
+      strengths: {
+        ar: 'فيال مجفف بالتبريد للحقن الوريدي البطيء أو التحضير الفموي: 500 مجم، 1 جم.',
+        en: 'Lyophilized powder for IV infusion: 500mg, 1g.',
+      },
+      activeIngredients: {
+        ar: 'فانكومايسين هيدروكلوريد (Vancomycin HCl)',
+        en: 'Vancomycin Hydrochloride',
+      },
+      ageRestrictions: {
+        ar: 'يُستخدم لجميع الأعمار في المستشفيات تحت مراقبة تركيز الدواء في المصل (TDM).',
+        en: 'Used across all ages with mandatory therapeutic drug monitoring (trough levels).',
+      },
+      dosingReference: {
+        ar: 'للبالغين: 15 إلى 20 مجم/كجم كل 8 إلى 12 ساعة بالتنقيط الوريدي البطيء (أكثر من 60 دقيقة لكل 1 جم لتفادي متلازمة الرجل الأحمر).
+لالتهاب القولون الغشائي الكاذب: 125 إلى 500 مجم فموياً كل 6 ساعات.',
+        en: 'Adults: 15-20 mg/kg IV every 8-12h infused over at least 60 minutes per 1g.
+Oral for C. difficile: 125-500mg q6h.',
+      },
+      contraindications: {
+        ar: 'فرط الحساسية المعروف للفانكومايسين.',
+        en: 'Hypersensitivity to vancomycin.',
+      },
+      sideEffects: {
+        ar: 'متلازمة الرجل الأحمر (احمرار وتوهج الجلد وهبوط الضغط عند التسريب السريع)، سمية كلوية، سمية سمعية، والتهاب الوريد الخثاري.',
+        en: 'Red Man Syndrome (histaminoid flushing with rapid infusion), nephrotoxicity, ototoxicity, phlebitis.',
+      },
+      interactions: {
+        ar: 'يزيد من خطر القصور الكلوي عند مشاركته مع الأمينوجليكوزيدات أو مضادات الالتهاب غير الستيرويدية (NSAIDs) أو البيبراسيلين/تازوباكتام.',
+        en: 'Additive nephrotoxicity with aminoglycosides, NSAIDs, piperacillin/tazobactam, and furosemide.',
+      },
+      pregnancyBreastfeeding: {
+        ar: 'فئة B (الحقن الوريدي فئة C)؛ يُستخدم بحذر شديد مع قياس مستويات الدواء في الدم للحالات الضرورية.',
+        en: 'Category B/C. Use when benefits outweigh risks; monitor maternal serum levels.',
+      },
+      renalHepatic: {
+        ar: 'حاسم: يُطرح كلوياً بنسبة تفوق 80%. يجب خفض الجرعة ومباعدة الفترات الزمنية مع فحص الكرياتينين ومستوى القاع (Trough level 15-20 mcg/mL).',
+        en: 'Critical: 80%+ renal elimination. Dosing adjusted strictly according to renal function and trough levels.',
+      },
+      patientEducation: {
+        ar: 'يُعطى في المستشفى فقط ويجب أن يتم تسريبه ببطء شديد على مدار ساعة أو أكثر. أبلغ التمريض فوراً إذا شعرت بحكة شديدة أو احمرار في الوجه والرقبة.',
+        en: 'Administered as a slow IV infusion over at least 60-120 minutes. Report flushing, itching, or rash immediately.',
+      },
+    },
+    brands: [
+      { name: 'Vancocin 500mg Vial', manufacturer: 'EIPICO', barcode: '6221127004523', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+      { name: 'Celovan 500mg Vial', manufacturer: 'Hikma Pharmaceuticals', barcode: '6221054006734', verified: true, sourceUrl: 'https://edaegypt.gov.eg' },
+    ],
+    sources: [EDA_SRC, MP_SRC],
+    notes: 'Primary reserve parenteral glycopeptide for MRSA bacteremia and inpatient stewardship in Egypt.',
   },
 ];

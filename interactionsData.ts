@@ -362,6 +362,65 @@ export const RULES: InteractionRule[] = [
       en: 'Hospital Nursing Standard: Thoroughly flush lines with normal saline before and after IV antibiotic infusions.',
     },
   },
+
+  // Moxifloxacin
+  {
+    antibioticId: 'moxifloxacin',
+    targetId: 'calcium_antacids',
+    severity: 'moderate',
+    title: { ar: 'تفاعل متوسط: مضادات الحموضة تعطل امتصاص الموكسيفلوكساسين', en: 'Moderate: Antacid Chelation Impairing Moxifloxacin' },
+    mechanism: {
+      ar: 'أيونات الكالسيوم والمغنيسيوم والألومنيوم في مضادات الحموضة ترتبط بالموكسيفلوكساسين وتمنع امتصاصه في الجهاز الهضمي بنسبة تزيد عن 60%.',
+      en: 'Polyvalent cations (Mg, Al, Ca) chelate moxifloxacin, reducing bioavailability significantly.',
+    },
+    management: {
+      ar: 'تناول موكسيفلوكساسين قبل أدوية الحموضة بساعتين على الأقل أو بعدها بـ 4 ساعات.',
+      en: 'Take moxifloxacin 2 hours before or 4 hours after antacids.',
+    },
+    nursingTip: {
+      ar: 'إرشاد تمريضي: اسأل المريض إذا كان يتناول فوار أو أقراص لعلاج حرقان المعدة ونبهه لمواعيد الفصل.',
+      en: 'Nursing Guidance: Screen for OTC antacid use and educate patient on separated administration times.',
+    },
+  },
+
+  // Vancomycin
+  {
+    antibioticId: 'vancomycin',
+    targetId: 'nsaids',
+    severity: 'severe',
+    title: { ar: 'تعارض حرج: سمية كلوية مضاعفة مع المسكنات القوية', en: 'Severe: Synergistic Nephrotoxicity with NSAIDs' },
+    mechanism: {
+      ar: 'مضادات الالتهاب غير الستيرويدية كالكتافلام والبروفين تقلل تدفق الدم الكلوي وتضاعف خطر القصور الكلوي الحاد الناتج عن الفانكومايسين.',
+      en: 'NSAIDs constrict renal afferent arterioles and synergistically exacerbate vancomycin nephrotoxicity.',
+    },
+    management: {
+      ar: 'تجنب استخدام المسكنات غير الستيرويدية بالتزامن مع الفانكومايسين واستبدالها بالباراسيتامول الآمن عند الحاجة.',
+      en: 'Avoid concurrent NSAIDs; utilize paracetamol for analgesia during vancomycin therapy.',
+    },
+    nursingTip: {
+      ar: 'إرشاد تمريضي سريري: مراقبة كمية البول اليومية ومستوى الكرياتينين في الدم بانتظام.',
+      en: 'Clinical Nursing Metric: Monitor daily urine output and serum creatinine rigorously.',
+    },
+  },
+
+  // Flucloxacillin
+  {
+    antibioticId: 'flucloxacillin',
+    targetId: 'meals',
+    severity: 'moderate',
+    title: { ar: 'تفاعل متوسط: الطعام يقلل امتصاص الفلوكلوكساسيللين إلى النصف', en: 'Moderate: Food Significantly Reduces Absorption' },
+    mechanism: {
+      ar: 'وجود الطعام في المعدة يعيق امتصاص فلوكلوكساسيللين (فلوكسامو/فلوسيل) بنسبة تفوق 50% مما يؤدي لفشل القضاء على العدوى.',
+      en: 'Food delays gastric emptying and reduces flucloxacillin absorption by over 50%.',
+    },
+    management: {
+      ar: 'تناول الكبسولات أو الأقراص على معدة فارغة تماماً (قبل الأكل بساعة أو بعد الأكل بساعتين).',
+      en: 'Take strictly on an empty stomach (1 hour before or 2 hours after meals).',
+    },
+    nursingTip: {
+      ar: 'إرشاد للمريض: لا تتناول الدواء وسط الأكل، بل تناوله مع كوب ماء على معدة فارغة.',
+      en: 'Patient Instruction: Always take with a glass of water on an empty stomach, never during meals.',
+    },  },
 ];
 
 export const COMMON_QUICK_CHECKS = [
