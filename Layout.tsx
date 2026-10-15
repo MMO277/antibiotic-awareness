@@ -49,20 +49,20 @@ export default function Layout({ children }: { children: ReactNode }) {
   const navItems: NavItem[] = [
     { to: '/', key: 'navHome', icon: '🏠' },
     { to: '/medicines', key: 'navMedicines', icon: '💊' },
-    { to: '/green-prescription', key: 'navGreenRx', icon: '🌿' },
-    { to: '/awareness-week', key: 'navWAAW', icon: '🌍' },
-    { to: '/compare', key: 'navCompare', icon: '⚖️' },
-    { to: '/prescription-radar', key: 'navRadar', icon: '📡' },
     { to: '/scan', key: 'navScan', icon: '📷' },
-    { to: '/allergy-checker', key: 'navAllergyChecker', icon: '🛡️' },
-    { to: '/health-profile', key: 'navHealthProfile', icon: '👤' },
+    { to: '/prescription-radar', key: 'navRadar', icon: '📡' },
+    { to: '/green-prescription', key: 'navGreenRx', icon: '🌿' },
     { to: '/pediatric-helper', key: 'navPediatric', icon: '👶' },
+    { to: '/allergy-checker', key: 'navAllergyChecker', icon: '🛡️' },
+    { to: '/compare', key: 'navCompare', icon: '⚖️' },
+    { to: '/assistant', key: 'navAssistant', icon: '🎙️' },
+    { to: '/awareness-week', key: 'navWAAW', icon: '🌍' },
+    { to: '/health-profile', key: 'navHealthProfile', icon: '👤' },
     { to: '/interactions', key: 'navInteractions', icon: '⚡' },
     { to: '/tracker', key: 'navTracker', icon: '⏱️' },
     { to: '/side-effects', key: 'navSideEffects', icon: '🚨' },
     { to: '/safe-disposal', key: 'navSafeDisposal', icon: '♻️' },
     { to: '/listen', key: 'navListen', icon: '🎧' },
-    { to: '/assistant', key: 'navAssistant', icon: '🤖' },
     { to: '/learn', key: 'navLearn', icon: '📚' },
     { to: '/myth', key: 'navMyth', icon: '💡' },
     { to: '/quiz', key: 'navQuiz', icon: '📝' },
@@ -71,19 +71,15 @@ export default function Layout({ children }: { children: ReactNode }) {
     { to: '/methodology', key: 'navMethod', icon: '🔬' },
   ];
 
+  // Clean 7-item Quick Ribbon in the top bar (no crowding)
   const quickBarItems = [
     { to: '/', label: isAr ? 'الرئيسية' : 'Home', icon: '🏠' },
-    { to: '/medicines', label: isAr ? 'السجل الدوائي (206)' : 'Registry (206)', icon: '💊' },
+    { to: '/medicines', label: isAr ? 'الأدوية والبدائل' : 'Medicines', icon: '💊' },
+    { to: '/scan', label: isAr ? 'الماسح الذكي' : 'Smart Scan', icon: '📷' },
+    { to: '/prescription-radar', label: isAr ? 'رادار الروشتة' : 'Rx Radar', icon: '📡' },
     { to: '/green-prescription', label: isAr ? 'الروشتة الخضرا' : 'Green Rx', icon: '🌿' },
-    { to: '/awareness-week', label: isAr ? 'حملة نوفمبر العالمية' : 'WAAW Campaign', icon: '🌍' },
-    { to: '/compare', label: isAr ? 'مقارنة دواءين' : 'Compare Drugs', icon: '⚖️' },
-    { to: '/prescription-radar', label: isAr ? 'رادار الروشتة 24س' : 'Rx Radar 24h', icon: '📡' },
-    { to: '/scan', label: isAr ? 'مسح الباركود' : 'Scan Barcode', icon: '📷' },
-    { to: '/allergy-checker', label: isAr ? 'فاحص الحساسية' : 'Allergy Check', icon: '🛡️' },
     { to: '/pediatric-helper', label: isAr ? 'حاسبة الأطفال' : 'Pediatrics', icon: '👶' },
-    { to: '/interactions', label: isAr ? 'التداخلات' : 'Interactions', icon: '⚡' },
-    { to: '/tracker', label: isAr ? 'متابع الجرعات' : 'Dose Tracker', icon: '⏱️' },
-    { to: '/safe-disposal', label: isAr ? 'التخلص الآمن' : 'Safe Disposal', icon: '♻️' },
+    { to: '/awareness-week', label: isAr ? 'حملة نوفمبر' : 'WAAW', icon: '🌍' },
   ];
 
   return (
@@ -107,9 +103,6 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="header-actions">
-
-
-            {/* Dark mode toggle */}
             <button
               className="dark-toggle"
               onClick={toggle}
@@ -119,12 +112,10 @@ export default function Layout({ children }: { children: ReactNode }) {
               {dark ? '☀️' : '🌙'}
             </button>
 
-            {/* Language toggle */}
             <button className="lang" onClick={() => setLang(isAr ? 'en' : 'ar')} aria-label="Language">
               {isAr ? 'EN' : 'عربي'}
             </button>
 
-            {/* 3-Lines Hamburger Menu Button */}
             <button
               type="button"
               className="hamburger-btn"
@@ -138,7 +129,6 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Sleek Secondary Quick-Access Clinical Ribbon */}
         <div className="quick-ribbon-wrap">
           <div className="wrap quick-ribbon">
             {quickBarItems.map((qItem) => (
@@ -156,7 +146,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Slide-out Navigation Drawer */}
       {drawerOpen && (
         <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)}>
           <nav
@@ -168,8 +157,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               <div className="drawer-brand">
                 <span className="drawer-logo">💊</span>
                 <div>
-                  <b>{isAr ? 'أقسام المنصة السريرية' : 'Clinical Portal Menu'}</b>
-
+                  <b>{isAr ? 'أقسام المنصة' : 'Portal Menu'}</b>
                 </div>
               </div>
               <button
@@ -211,78 +199,17 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      {/* Page Content */}
       <div ref={pageRef} className="page-enter">
         {children}
       </div>
 
-      {/* Always-on Floating AI Assistant Bubble */}
       <ChatWidget />
 
-      {/* Professional Academic & Medical Footer on All Pages */}
-      <footer className="pro-footer">
-        <div className="wrap pro-footer-grid">
-          <div>
-            <div className="row" style={{ gap: '10px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '1.6rem' }}>💊</span>
-              <div>
-                <b style={{ fontSize: '1.05rem', color: '#fff' }}>{t('appName')}</b>
-
-              </div>
-            </div>
-            <p className="small" style={{ color: '#cbd5e1', lineHeight: 1.6 }}>
-              {isAr
-                ? 'المنصة الرقمية الوطنية للتوعية بالاستخدام الرشيد للمضادات الحيوية ومكافحة مقاومة الميكروبات (AMR) وفق أحدث دلائل هيئة الدواء المصرية ومنظمة الصحة العالمية.'
-                : 'National digital health portal for rational antibiotic stewardship and antimicrobial resistance (AMR) education aligned with EDA and WHO guidelines.'}
-            </p>
-          </div>
-
-          <div>
-            <h4 style={{ color: '#fff', margin: '0 0 10px' }}>
-              {isAr ? 'الأدوات السريرية السريعة' : 'Quick Clinical Tools'}
-            </h4>
-            <ul className="pro-footer-links">
-              <li><Link to="/medicines">{isAr ? 'السجل الدوائي المصري (206 عبوات)' : 'Egyptian Drug Registry (206)'}</Link></li>
-              <li><Link to="/scan">{isAr ? 'ماسح الباركود الخطي ورموز QR' : 'Barcode & QR Scanner'}</Link></li>
-              <li><Link to="/allergy-checker">{isAr ? 'فاحص الحساسية الدوائية المتقاطعة' : 'Drug Allergy Safety Checker'}</Link></li>
-              <li><Link to="/pediatric-helper">{isAr ? 'حاسبة جرعات شراب الأطفال' : 'Pediatric Dosage Calculator'}</Link></li>
-              <li><Link to="/safe-disposal">{isAr ? 'دليل التخلص الآمن وحماية البيئة' : 'Safe Antibiotic Disposal'}</Link></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 style={{ color: '#fff', margin: '0 0 10px' }}>
-              {isAr ? 'المصادر الطبية الرسمية والطوارئ' : 'Official Sources & Emergency'}
-            </h4>
-            <ul className="pro-footer-links">
-              <li>
-                <a href="https://edaegypt.gov.eg" target="_blank" rel="noopener noreferrer">
-                  {isAr ? 'هيئة الدواء المصرية (EDA)' : 'Egyptian Drug Authority (EDA)'} ↗
-                </a>
-              </li>
-              <li>
-                <a href="https://www.who.int/health-topics/antimicrobial-resistance" target="_blank" rel="noopener noreferrer">
-                  {isAr ? 'منظمة الصحة العالمية (WHO AMR)' : 'World Health Organization (WHO)'} ↗
-                </a>
-              </li>
-              <li>
-                <a href="https://medlineplus.gov/antibiotics.html" target="_blank" rel="noopener noreferrer">
-                  {isAr ? 'المكتبة الوطنية للطب (MedlinePlus)' : 'NIH MedlinePlus Drug Info'} ↗
-                </a>
-              </li>
-              <li style={{ marginTop: '8px' }}>
-                <span style={{ color: '#fca5a5', fontWeight: 700 }}>
-                  🚑 {isAr ? 'طوارئ الإسعاف المصري: 123' : 'Egypt Emergency Ambulance: 123'}
-                </span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="wrap" style={{ marginTop: '18px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+      <footer className="pro-footer" style={{ padding: '24px 0 18px' }}>
+        <div className="wrap">
           <Disclaimer compact />
-          <div className="small" style={{ textAlign: 'center', color: '#94a3b8', marginTop: '8px' }}>
-            © {new Date().getFullYear()} {t('appName')}
+          <div className="small" style={{ textAlign: 'center', color: '#94a3b8', marginTop: '10px' }}>
+            © {new Date().getFullYear()} {t('appName')} · 🚑 {isAr ? 'طوارئ الإسعاف المصري: 123' : 'Egypt Ambulance: 123'}
           </div>
         </div>
       </footer>
