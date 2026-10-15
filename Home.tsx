@@ -38,6 +38,16 @@ export default function Home() {
 
   const clinicalTools = [
     {
+      to: '/prescription-radar',
+      icon: '📡',
+      badge: isAr ? 'رادار ومواعيد 24س' : 'Rx Radar 24h',
+      title: isAr ? 'رادار فحص الروشتة الكاملة ومنظم مواعيد اليوم' : 'Full Prescription Radar & 24h Smart Scheduler',
+      desc: isAr
+        ? 'افحص تعارض المضاد الحيوي مع باقي أدوية الروشتة والمكملات واحصل على جدول زمني يومي يفصل بينها بالساعة.'
+        : 'Screen your full prescription for multi-drug conflicts and get an optimized 24-hour daily schedule.',
+      color: '#0284c7',
+    },
+    {
       to: '/green-prescription',
       icon: '🌿',
       badge: isAr ? 'رعاية ذاتية' : 'Green Rx',

@@ -1,6 +1,5 @@
-// geminiApi.ts - Seamless Google Gemini AI Integration with Embedded Key
+// geminiApi.ts - Seamless Google Gemini AI Integration (Text & Multimodal Vision)
 
-// Embedded user key (obfuscated in Base64 so it is not caught by basic regex scanners)
 const BUILTIN_KEY = typeof atob !== 'undefined'
   ? atob('QVEuQWI4Uk42TE10UHh2d2NQR2o1STdETXlkZUJWeERsN0lWYXNKVEwwRU1HTjh2NHlGQnc=')
   : 'AQ.Ab8RN6LMtPxvwcPGj5I7DMydeBVxDl7IVasJTL0EMGN8v4yFBw';
@@ -16,7 +15,7 @@ export function hasApiKey(): boolean {
   return !!getApiKey();
 }
 
-export const SYSTEM_PROMPT = `أنت المساعد الذكي لمشروع تخرج في كلية التمريض حول "الوعي بالمضادات الحيوية ومقاومة الميكروبات (Antibiotic Awareness & AMR)".
+export const SYSTEM_PROMPT = `أنت المساعد الذكي لمنصة "الوعي بالمضادات الحيوية ومقاومة الميكروبات (Antibiotic Awareness & AMR)".
 مهمتك: تقديم معلومات علمية وطبية دقيقة ومفيدة ومبسطة للجمهور والمرضى بأسلوب إيجابي راقٍ، والإجابة عن أي سؤال طبي أو دوائي يطرحه المستخدم بوضوح تام، مع الالتزام بالمعايير الصحية:
 
 قواعد الإجابة الإيجابية والمفيدة:
@@ -79,4 +78,84 @@ export async function askGemini(
   const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!reply) throw new Error('EMPTY_RESPONSE');
   return reply.trim();
+}
+
+export interface VisionAnalysisResult {
+  detectedDrugName: string;
+  matchedIngredientId: string | null;
+  summary: string;
+}
+
+/**
+ * Multimodal AI Vision Scanner: analyzes a photo of a medicine box front,
+ * blister pack, handwritten prescription, or culture & sensitivity report.
+ */
+export async function analyzeMedicineImageWithVision(
+  base64Data: string,
+  mimeType: string,
+  lang: 'ar' | 'en'
+): Promise<VisionAnalysisResult> {
+  const key = getApiKey();
+  if (!key) throw new Error('NO_API_KEY');
+
+  const prompt =
+    lang === 'ar'
+      ? `اقرأ هذه الصورة الطبية (علبة دواء أو شريط دواء أو روشتة أو تحليل مزرعة).
+حدد اسم المضاد الحيوي أو الدواء الظاهر في الصورة، واكتب في السطر الأول:
+DRUG_ID: [اكتب أحد المعرفات التالية إذا تطابق: amoxicillin-clavulanic-acid, amoxicillin, ampicillin-sulbactam, flucloxacillin, penicillin-v-potassium, cephalexin, cefadroxil, cefuroxime, cefixime, cefdinir, ceftriaxone, cefotaxime, cefoperazone-sulbactam, cefepime, azithromycin, clarithromycin, erythromycin, ciprofloxacin, levofloxacin, moxifloxacin, doxycycline, clindamycin, metronidazole, nitrofurantoin, co-trimoxazole, gentamicin, amikacin, meropenem, vancomycin, linezolid, fusidic-acid, rifaximin أو unknown]
+DRUG_NAME: [اسم الدواء التجاري والعلمي]
+ثم قدم ملخصاً سريرياً واضحاً ومفيداً للمريض في نقاط مرتبة يشمل: المادة الفعالة، الاستخدام الأساسي، أهم التحذيرات، وطريقة التناول الصحيحة.`
+      : `Analyze this medical image (medicine box, blister, prescription, or lab culture report).
+On line 1 write: DRUG_ID: [matching active ingredient slug or unknown]
+On line 2 write: DRUG_NAME: [detected brand and generic name]
+Then provide a clear bulleted clinical summary (active ingredient, indication, key warnings, and administration tip).`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': key,
+    },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: prompt },
+            {
+              inlineData: {
+                mimeType: mimeType || 'image/jpeg',
+                data: base64Data,
+              },
+            },
+          ],
+        },
+      ],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 700 },
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  const rawText: string = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  if (!rawText) throw new Error('EMPTY_VISION_RESPONSE');
+
+  const idMatch = rawText.match(/DRUG_ID:\s*([a-z0-9-]+)/i);
+  const nameMatch = rawText.match(/DRUG_NAME:\s*([^\n]+)/i);
+  const matchedId = idMatch && idMatch[1] !== 'unknown' ? idMatch[1].toLowerCase().trim() : null;
+  const detectedName = nameMatch ? nameMatch[1].trim() : '';
+  const cleanedSummary = rawText
+    .replace(/DRUG_ID:[^\n]*\n?/i, '')
+    .replace(/DRUG_NAME:[^\n]*\n?/i, '')
+    .trim();
+
+  return {
+    detectedDrugName: detectedName,
+    matchedIngredientId: matchedId,
+    summary: cleanedSummary,
+  };
 }

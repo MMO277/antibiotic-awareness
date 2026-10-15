@@ -11,6 +11,63 @@ export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 }
 
+export function isVoiceRecognitionSupported(): boolean {
+  if (typeof window === 'undefined') return false;
+  return 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+}
+
+export function startVoiceRecognition(
+  lang: 'ar' | 'en',
+  onResult: (transcript: string) => void,
+  onError?: (err: string) => void,
+  onEnd?: () => void
+): { stop: () => void } | null {
+  if (!isVoiceRecognitionSupported()) {
+    onError?.(lang === 'ar' ? 'المتصفح لا يدعم الإدخال الصوتي المباشر.' : 'Voice recognition not supported in this browser.');
+    return null;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const recognition = new SpeechRec();
+  recognition.lang = lang === 'ar' ? 'ar-EG' : 'en-US';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  recognition.onresult = (event: any) => {
+    const text = event?.results?.[0]?.[0]?.transcript || '';
+    if (text.trim()) {
+      onResult(text.trim());
+    }
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  recognition.onerror = (event: any) => {
+    onError?.(event?.error || 'voice-error');
+  };
+
+  recognition.onend = () => {
+    onEnd?.();
+  };
+
+  try {
+    recognition.start();
+  } catch {
+    onEnd?.();
+  }
+
+  return {
+    stop: () => {
+      try {
+        recognition.stop();
+      } catch {
+        /* ignore */
+      }
+    },
+  };
+}
+
 export function getVoices(): Promise<SpeechSynthesisVoice[]> {
   if (!isSpeechSupported()) return Promise.resolve([]);
   return new Promise((resolve) => {
@@ -19,14 +76,12 @@ export function getVoices(): Promise<SpeechSynthesisVoice[]> {
       resolve(voices);
       return;
     }
-    // Chrome loads voices asynchronously
     const handler = () => {
       voices = window.speechSynthesis.getVoices();
       window.speechSynthesis.removeEventListener('voiceschanged', handler);
       resolve(voices);
     };
     window.speechSynthesis.addEventListener('voiceschanged', handler);
-    // Fallback timeout in case voiceschanged never fires
     setTimeout(() => {
       resolve(window.speechSynthesis.getVoices());
     }, 500);
@@ -35,7 +90,6 @@ export function getVoices(): Promise<SpeechSynthesisVoice[]> {
 
 export function findVoiceForLang(voices: SpeechSynthesisVoice[], lang: 'ar' | 'en'): SpeechSynthesisVoice | null {
   if (lang === 'ar') {
-    // Prefer Egyptian or Saudi Arabic, then any Arabic
     const eg = voices.find((v) => v.lang === 'ar-EG' || v.lang === 'ar_EG');
     if (eg) return eg;
     const sa = voices.find((v) => v.lang === 'ar-SA' || v.lang === 'ar_SA');
@@ -60,6 +114,7 @@ export class SpeechPlayer {
   public onStateChange?: (state: { playing: boolean; paused: boolean }) => void;
   public onParagraphStart?: (index: number) => void;
   public onFinished?: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public onError?: (err: any) => void;
 
   constructor() {
@@ -121,7 +176,6 @@ export class SpeechPlayer {
     };
 
     u.onerror = (e) => {
-      // Ignore canceled errors caused by user clicking stop
       if (e.error !== 'canceled' && e.error !== 'interrupted') {
         console.warn('SpeechSynthesis error:', e);
         this.onError?.(e);

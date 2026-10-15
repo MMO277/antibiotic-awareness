@@ -4,6 +4,12 @@ import { useLang } from './i18n';
 import { useApproved } from './medicinesApi';
 import { buildPassages, respond, Reply } from './assistantLogic';
 import { askGemini, hasApiKey, ChatMessage } from './geminiApi';
+import {
+  isVoiceRecognitionSupported,
+  speakText,
+  startVoiceRecognition,
+  stopSpeech,
+} from './speechService';
 
 interface Msg {
   who: 'me' | 'bot';
@@ -42,6 +48,8 @@ export default function ChatWidget() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
+  const [listening, setListening] = useState(false);
+  const stopListenRef = useRef<(() => void) | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -50,7 +58,17 @@ export default function ChatWidget() {
     }
   }, [msgs, loading, isOpen]);
 
-  async function ask(raw: string) {
+  function extractAnswerPlainText(m: Msg): string {
+    if (m.text) return m.text;
+    const r = m.reply;
+    if (!r) return '';
+    if (r.kind === 'answer') {
+      return `${r.lead[lang]} ${r.hits.map((h) => h.text[lang]).join(' ')}`;
+    }
+    return r.text[lang] || '';
+  }
+
+  async function ask(raw: string, speakReply = false) {
     const text = raw.trim().slice(0, 300);
     if (!text || loading) return;
     const date = new Date().toLocaleDateString(isAr ? 'ar-EG' : 'en-GB');
@@ -63,16 +81,14 @@ export default function ChatWidget() {
       try {
         const history: ChatMessage[] = msgs.map((m) => ({
           who: m.who,
-          text:
-            m.text ||
-            (m.reply?.kind === 'answer'
-              ? m.reply.hits.map((h) => h.text[lang]).join(' ')
-              : m.reply?.text?.[lang] || ''),
+          text: extractAnswerPlainText(m),
         }));
 
         const aiResponse = await askGemini(text, history);
-        setMsgs((m) => [...m, { who: 'bot', text: aiResponse, date, isAi: true }]);
+        const botMsg: Msg = { who: 'bot', text: aiResponse, date, isAi: true };
+        setMsgs((m) => [...m, botMsg]);
         setLoading(false);
+        if (speakReply) speakText(aiResponse, lang);
         return;
       } catch (err) {
         console.warn('Gemini request failed in widget, falling back to local engine:', err);
@@ -80,8 +96,32 @@ export default function ChatWidget() {
     }
 
     const reply = respond(passages, meds, text);
-    setMsgs((m) => [...m, { who: 'bot', reply, date, isAi: false }]);
+    const botMsg: Msg = { who: 'bot', reply, date, isAi: false };
+    setMsgs((m) => [...m, botMsg]);
     setLoading(false);
+    if (speakReply) speakText(extractAnswerPlainText(botMsg), lang);
+  }
+
+  function toggleVoiceMic() {
+    if (listening) {
+      if (stopListenRef.current) stopListenRef.current();
+      setListening(false);
+      return;
+    }
+    if (!isVoiceRecognitionSupported()) return;
+    setListening(true);
+    stopListenRef.current = startVoiceRecognition(
+      lang,
+      (transcript) => {
+        setListening(false);
+        if (transcript.trim()) {
+          setQ(transcript);
+          ask(transcript, true);
+        }
+      },
+      () => setListening(false),
+      () => setListening(false),
+    );
   }
 
   const submit = (e: FormEvent) => {
@@ -91,7 +131,6 @@ export default function ChatWidget() {
 
   return (
     <aside className="chat-widget-root" aria-label="Smart Assistant & Emergency Widget">
-      {/* Floating Stack: Emergency 123 Button right ABOVE the Smart Assistant Button */}
       {!isOpen && !sosOpen && (
         <div className="floating-fab-stack">
           <button
@@ -124,7 +163,6 @@ export default function ChatWidget() {
         </div>
       )}
 
-      {/* Emergency SOS Quick Modal */}
       {sosOpen && (
         <div className="chat-popup sos-popup" role="dialog" aria-modal="true">
           <div className="popup-head sos-head">
@@ -184,17 +222,16 @@ export default function ChatWidget() {
         </div>
       )}
 
-      {/* Slide-up Chat Window */}
       {isOpen && (
         <div className="chat-popup" role="dialog" aria-modal="true">
           <div className="popup-head">
             <div className="popup-title">
               <span className="head-avatar">🤖</span>
               <div>
-                <b>{isAr ? 'المساعد الذكي للمضادات' : 'Antibiotic AI Assistant'}</b>
+                <b>{isAr ? 'المساعد الصوتي والذكي' : 'Voice & AI Assistant'}</b>
                 <div className="online-status">
                   <span className="status-dot"></span>
-                  <small>{isAr ? 'متصل وجاهز للرد' : 'Online & ready'}</small>
+                  <small>{isAr ? 'يدعم التحدث بالمايك 🎤' : 'Supports Voice Mic 🎤'}</small>
                 </div>
               </div>
             </div>
@@ -205,7 +242,10 @@ export default function ChatWidget() {
               <button
                 type="button"
                 className="close-popup-btn"
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  stopSpeech();
+                  setIsOpen(false);
+                }}
                 aria-label="Close chat"
               >
                 ✕
@@ -217,17 +257,24 @@ export default function ChatWidget() {
             {msgs.length === 0 && (
               <div className="msg bot">
                 {isAr
-                  ? 'أهلاً بك! أنا المساعد الذكي، اسألني عن أي مضاد حيوي، أسعاره، بدائله، أو تداخلاته مع الأطعمة والأدوية.'
-                  : 'Hello! I am your Smart Assistant. Ask me about any antibiotic, pricing, alternatives, or interactions.'}
+                  ? 'أهلاً بك! اضغط على 🎤 للتحدث بصوتك مباشرة، أو اكتب سؤالك عن أي مضاد حيوي أو أسعاره أو بدائله.'
+                  : 'Hello! Tap 🎤 to speak your question out loud, or type your question about any antibiotic.'}
               </div>
             )}
             {msgs.map((m, i) => {
               if (m.who === 'me') return <div key={i} className="msg me">{m.text}</div>;
 
+              const plainText = extractAnswerPlainText(m);
+
               if (m.isAi && m.text) {
                 return (
                   <div key={i} className="msg bot ai-reply">
-                    <div className="ai-badge">✨ {isAr ? 'رد الذكاء الاصطناعي' : 'AI Response'}</div>
+                    <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div className="ai-badge">✨ {isAr ? 'رد الذكاء الاصطناعي' : 'AI Response'}</div>
+                      <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
+                        🔊
+                      </button>
+                    </div>
                     <div className="ai-text">{m.text}</div>
                     <div className="src">{m.date}</div>
                   </div>
@@ -239,7 +286,12 @@ export default function ChatWidget() {
               if (r.kind === 'answer') {
                 return (
                   <div key={i} className="msg bot">
-                    <small className="muted">{r.lead[lang]}</small>
+                    <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                      <small className="muted">{r.lead[lang]}</small>
+                      <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
+                        🔊
+                      </button>
+                    </div>
                     {r.hits.map((p) => (
                       <div key={p.id}>
                         <p>{p.text[lang]}</p>
@@ -258,7 +310,12 @@ export default function ChatWidget() {
                   className={`msg bot ${r.tone === 'warn' || r.tone === 'alert' ? 'warn' : ''}`}
                   role={r.tone === 'alert' ? 'alert' : undefined}
                 >
-                  <p>{r.text[lang]}</p>
+                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <p style={{ margin: 0 }}>{r.text[lang]}</p>
+                    <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
+                      🔊
+                    </button>
+                  </div>
                   {r.links && r.links.length > 0 && (
                     <div className="src">
                       {r.links.map((l, k) => (
@@ -289,16 +346,29 @@ export default function ChatWidget() {
           </div>
 
           <form className="popup-form" onSubmit={submit}>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={toggleVoiceMic}
+              title={isAr ? 'تحدث بالمايك' : 'Speak'}
+              style={{
+                padding: '6px 10px',
+                background: listening ? '#fee2e2' : undefined,
+                color: listening ? '#dc2626' : undefined,
+              }}
+            >
+              {listening ? '⏹️' : '🎤'}
+            </button>
             <input
               value={q}
               maxLength={300}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={isAr ? 'اكتب سؤالك هنا...' : 'Type your question...'}
+              placeholder={listening ? (isAr ? 'تحدث الآن...' : 'Listening...') : isAr ? 'اكتب أو اضغط 🎤 للتحدث...' : 'Type or tap 🎤 to speak...'}
               aria-label="Ask assistant"
               disabled={loading}
             />
             <button className="btn" disabled={loading || !q.trim()}>
-              {loading ? '...' : (isAr ? 'إرسال' : 'Send')}
+              {loading ? '...' : isAr ? 'إرسال' : 'Send'}
             </button>
           </form>
         </div>

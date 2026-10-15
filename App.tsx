@@ -1,3 +1,4 @@
+import PrescriptionRadar from "./PrescriptionRadar";
 import AwarenessWeek from './AwarenessWeek';
 import GreenPrescription from './GreenPrescription';
 import CompareDrugs from './CompareDrugs';
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="/green-prescription" element={<GreenPrescription />} />
         <Route path="/awareness-week" element={<AwarenessWeek />} />
         <Route path="/compare" element={<CompareDrugs />} />
+        <Route path="/prescription-radar" element={<PrescriptionRadar />} />
         <Route path="/interactions" element={<Interactions />} />
         <Route path="/safe-disposal" element={<SafeDisposal />} />
         <Route path="/tracker" element={<Tracker />} />
