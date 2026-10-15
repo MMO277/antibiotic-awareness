@@ -167,16 +167,16 @@ export default function PrescriptionRadar() {
             titleAr: '⚠️ فصل زمني إلزامي (ساعتين إلى 3 ساعات)',
             titleEn: '⚠️ Mandatory 2–3 Hour Separation',
             ruleAr:
-              'أقراص الحديد والزنك تُبطل امتصاص هذا المضاد الحيوي إذا أُخذت في نفس الوقت. خذ الحديد في منتصف النهار (مثلاً 2 ظهراً) بعيداً عن جرعة المضاد.',
+              'أقراص الحديد والزنك تُبطل امتصاص هذا المضاد الحيوي إذا أُخذت في نفس الوقت. خذ الحديد في منتصف النهار (مثلاً 1:30 ظهراً) بعيداً عن جرعة المضاد.',
             ruleEn:
-              'Iron and zinc supplements strongly chelate this antibiotic. Take iron at midday (e.g. 2:00 PM) at least 2 hours apart.',
+              'Iron and zinc supplements strongly chelate this antibiotic. Take iron at midday (e.g. 1:30 PM) at least 2 hours apart.',
           });
         } else {
           list.push({
             coMedId: cid,
             coMedName: name,
             level: 'safe',
-            titleAr: '✅ آمن مع يفضل الفصل ساعة لراحة المعدة',
+            titleAr: '✅ آمن ويفضل الفصل ساعة لراحة المعدة',
             titleEn: '✅ Safe (1-hour spacing recommended for stomach comfort)',
             ruleAr: 'لا يوجد تفاعل كيميائي مباشر، ويفضل أخذ الحديد بعد الغداء لتقليل ثقل المعدة.',
             ruleEn: 'No direct chemical chelation; taking iron after lunch minimizes stomach upset.',
@@ -251,7 +251,7 @@ export default function PrescriptionRadar() {
           titleAr: '💡 ممتاز لحماية الأمعاء — بشرط الفصل ساعتين!',
           titleEn: '💡 Great for Gut Protection — Must Separate by 2 Hours!',
           ruleAr:
-            'إذا أخذت البروبيوتيك أو الزبادي في نفس لحظة المضاد الحيوي، سيقتل المضاد البكتيريا النافعة فوراً! خذه بعد جرعة المضاد بـساعتين.',
+            'إذا أخذت البروبيوتيك أو الزبادي في نفس لحظة المضاد الحيوي، سيقتل المضاد البكتيريا النافعة فوراً! خذه بعد جرعة المضاد بساعتين.',
           ruleEn:
             'Taking probiotics at the exact same time as the antibiotic kills the beneficial bacteria. Take 2 hours after your antibiotic dose.',
         });
@@ -323,7 +323,7 @@ export default function PrescriptionRadar() {
 
   // Build 24-Hour Smart Daily Schedule slots
   const dailySlots = useMemo(() => {
-    const abxName = isAr ? currentAbx.genericName.ar : currentAbx.genericName.en;
+    const abxName = isAr ? currentAbx?.nameAr || '' : currentAbx?.nameEn || '';
     const foodRuleAr =
       selectedAbx === 'amoxicillin-clavulanic-acid' || selectedAbx === 'metronidazole' || selectedAbx === 'cefuroxime' || selectedAbx === 'nitrofurantoin'
         ? 'مع بداية وجبة الطعام (لحماية المعدة وزيادة الامتصاص)'
@@ -495,8 +495,8 @@ export default function PrescriptionRadar() {
               {ACTIVE_INGREDIENTS.map((ing) => (
                 <option key={ing.id} value={ing.id}>
                   {isAr
-                    ? `${ing.genericName.ar} (${ing.genericName.en})`
-                    : `${ing.genericName.en} (${ing.genericName.ar})`}
+                    ? `${ing.nameAr} (${ing.nameEn})`
+                    : `${ing.nameEn} (${ing.nameAr})`}
                 </option>
               ))}
             </select>

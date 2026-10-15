@@ -156,7 +156,7 @@ export default function Scan() {
     } else {
       setMsg(
         isAr
-          ? `لم يتم العثور على دواء مطابق للرمز (${clean.slice(0, 20)}${clean.length > 20 ? '...' : ''}). يمكنك تجربة تبويب «قارئ صورة العلبة بالذكاء الاصطناعي» بالاعلى!`
+          ? `لم يتم العثور على دواء مطابق للرمز (${clean.slice(0, 20)}${clean.length > 20 ? '...' : ''}). يمكنك تجربة تبويب «قارئ صورة العلبة بالذكاء الاصطناعي» بالأعلى!`
           : t('scanNoMatch'),
       );
     }
@@ -259,26 +259,26 @@ export default function Scan() {
         matchedTradeName: isAr ? prodMatch.tradeNameAr : prodMatch.tradeNameEn,
         priceEgp: prodMatch.priceEgp,
         summary: isAr
-          ? `تم التعرف على: ${prodMatch.tradeNameAr} (${prodMatch.strength}) — المادة الفعالة: ${prodMatch.scientificComposition}. الفئة: ${ing?.classLabel.ar || ''}. تصنيف منظمة الصحة العالمية: ${ing?.whoAware || 'Access'}.`
-          : `Identified: ${prodMatch.tradeNameEn} (${prodMatch.strength}) — Active Ingredient: ${prodMatch.scientificComposition}. Class: ${ing?.classLabel.en || ''}. WHO AWaRe: ${ing?.whoAware || 'Access'}.`,
+          ? `تم التعرف على: ${prodMatch.tradeNameAr} (${prodMatch.strength}) — المادة الفعالة: ${prodMatch.scientificComposition}. الفئة: ${ing?.drugClass?.ar || ''}. تصنيف منظمة الصحة العالمية: ${ing?.whoAccessGroup || 'Access'}.`
+          : `Identified: ${prodMatch.tradeNameEn} (${prodMatch.strength}) — Active Ingredient: ${prodMatch.scientificComposition}. Class: ${ing?.drugClass?.en || ''}. WHO AWaRe: ${ing?.whoAccessGroup || 'Access'}.`,
       };
     }
 
     const ingMatch = ACTIVE_INGREDIENTS.find(
       (a) =>
-        clean.includes(a.genericName.en.toLowerCase().split(' ')[0]) ||
-        clean.includes(a.genericName.ar.split(' ')[0]) ||
+        clean.includes(a.nameEn.toLowerCase().split(' ')[0]) ||
+        clean.includes(a.nameAr.split(' ')[0]) ||
         clean.includes(a.id),
     );
 
     if (ingMatch) {
       return {
-        detectedText: isAr ? ingMatch.genericName.ar : ingMatch.genericName.en,
+        detectedText: isAr ? ingMatch.nameAr : ingMatch.nameEn,
         matchedIngredientId: ingMatch.id,
-        matchedTradeName: isAr ? ingMatch.genericName.ar : ingMatch.genericName.en,
+        matchedTradeName: isAr ? ingMatch.nameAr : ingMatch.nameEn,
         summary: isAr
-          ? `تم التعرف على المادة الفعالة: ${ingMatch.genericName.ar} (${ingMatch.genericName.en}) — الفئة: ${ingMatch.classLabel.ar} (WHO ${ingMatch.whoAware}).`
-          : `Identified Active Ingredient: ${ingMatch.genericName.en} — Class: ${ingMatch.classLabel.en} (WHO ${ingMatch.whoAware}).`,
+          ? `تم التعرف على المادة الفعالة: ${ingMatch.nameAr} (${ingMatch.nameEn}) — الفئة: ${ingMatch.drugClass?.ar || ''} (WHO ${ingMatch.whoAccessGroup || 'Access'}).`
+          : `Identified Active Ingredient: ${ingMatch.nameEn} — Class: ${ingMatch.drugClass?.en || ''} (WHO ${ingMatch.whoAccessGroup || 'Access'}).`,
       };
     }
 
