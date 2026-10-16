@@ -2,7 +2,7 @@ import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useLang } from './i18n';
-import { findLocalMedicine, useApproved } from './medicinesApi';
+import { ALL_LOCAL_MEDICINES, findLocalMedicine, useApproved } from './medicinesApi';
 import {
   analyzeMedicineImageWithVision,
   setApiKey,
@@ -64,163 +64,319 @@ function normalizeText(str: string): string {
 }
 
 /**
- * Phonetic & OCR Root Dictionary mapping partial/noisy OCR stems (Arabic & English)
- * to exact Egyptian Commercial Product trade names and Active Ingredient IDs
+ * Maps dot-similar Arabic letters to their base skeleton so OCR dot errors
+ * (e.g., ز/ر, ث/ت/ن/ب, ج/ح/خ, ف/ق, س/ش, ص/ض, ط/ظ, ع/غ, د/ذ) still match accurately
  */
-const OCR_BRAND_ROOTS: Array<{
-  keywords: string[];
+function normalizeArabicSkeleton(str: string): string {
+  return normalizeText(str)
+    .replace(/ز/g, 'ر')
+    .replace(/ذ/g, 'د')
+    .replace(/[ثتن]/g, 'ب')
+    .replace(/[جخ]/g, 'ح')
+    .replace(/ش/g, 'س')
+    .replace(/ض/g, 'ص')
+    .replace(/ظ/g, 'ط')
+    .replace(/غ/g, 'ع')
+    .replace(/ق/g, 'ف');
+}
+
+/**
+ * Computes Levenshtein edit distance between two strings
+ */
+function levenshteinDistance(a: string, b: string): number {
+  if (a.length < b.length) {
+    const tmp = a;
+    a = b;
+    b = tmp;
+  }
+  if (b.length === 0) return a.length;
+  let prev = Array.from({ length: b.length + 1 }, (_, idx) => idx);
+  for (let i = 0; i < a.length; i++) {
+    const curr = [i + 1];
+    for (let j = 0; j < b.length; j++) {
+      const cost = a[i] === b[j] ? 0 : 1;
+      curr.push(Math.min(prev[j + 1] + 1, curr[j] + 1, prev[j] + cost));
+    }
+    prev = curr;
+  }
+  return prev[b.length];
+}
+
+function stringSimilarity(a: string, b: string): number {
+  if (!a || !b) return 0;
+  const maxLen = Math.max(a.length, b.length);
+  if (maxLen === 0) return 1;
+  return 1 - levenshteinDistance(a, b) / maxLen;
+}
+
+/**
+ * Pharmaceutical stop-words (dosage forms, units, common packaging words in Arabic & English)
+ * that must NOT be confused with brand names
+ */
+const PHARMA_STOP_WORDS = new Set([
+  'tablet', 'tablets', 'tab', 'capsule', 'capsules', 'cap', 'suspension', 'syrup',
+  'vial', 'ampoule', 'amp', 'infusion', 'drops', 'cream', 'ointment', 'sachet',
+  'oral', 'film', 'coated', 'forte', 'retard', 'pediatric', 'plus', 'acid',
+  'potassium', 'sodium', 'trihydrate', 'hydrate', 'hydrochloride', 'sulfate',
+  'topical', 'ophthalmic', 'eye', 'ear', 'gel', 'solution', 'powder', 'for',
+  'injection', 'iv', 'im', 'sr', 'xl', 'es', 'ds', 'mg', 'gm', 'ml', 'mcg', 'iu',
+  'unknown', 'drug', 'name', 'medicine', 'antibiotic', 'box', 'strip', 'pack',
+  'egypt', 'pharma', 'pharmaceuticals', 'company',
+  'اقراص', 'قرص', 'كبسول', 'كبسولات', 'شراب', 'معلق', 'فيال', 'امبول', 'حقن', 'للحقن',
+  'وريدي', 'الوريدي', 'عضلي', 'العضلي', 'نقط', 'قطره', 'كريم', 'مرهم', 'موضعي', 'فوار',
+  'اكياس', 'كيس', 'مجم', 'جم', 'مل', 'مغلفه', 'مضاعف', 'القوه', 'للاطفال', 'اطفال',
+  'للرضع', 'رضع', 'فمويه', 'فموي', 'كبار', 'حمض', 'تركيز', 'عبوه', 'شريط', 'دواء',
+  'مضاد', 'حيوي', 'جل', 'محلول', 'بودره', 'قطرات', 'عين', 'اذن', 'العيون', 'الاذن',
+  'بوتاسيوم', 'صوديوم', 'شركه', 'الماده', 'الفعاله'
+]);
+
+/**
+ * Phonetic & OCR Alias Dictionary for common Arabic & English OCR variations
+ */
+const OCR_ALIASES: Array<{
+  aliases: string[];
   tradeNameAr: string;
   ingredientId: string;
 }> = [
   {
-    keywords: ['زيثروماكس', 'ريثروماكس', 'يثروماكس', 'زيتروماكس', 'ماكس', 'zithromax', 'zithro', 'ithromax', 'azithromax'],
+    aliases: ['زيثروماكس', 'ريثروماكس', 'زيتروماكس', 'يثروماكس', 'zithromax', 'ithromax', 'azithromax'],
     tradeNameAr: 'زيثروماكس 500 مجم أقراص',
     ingredientId: 'azithromycin',
   },
   {
-    keywords: ['زيثرون', 'ريثرون', 'زيترو', 'xithron', 'zithron'],
+    aliases: ['زيثرون', 'ريثرون', 'xithrone', 'zithron', 'xithron'],
     tradeNameAr: 'زيثرون 500 مجم أقراص',
     ingredientId: 'azithromycin',
   },
   {
-    keywords: ['زيثروكان', 'ريثروكان', 'zithrokan', 'zithrocan'],
+    aliases: ['زيثروكان', 'ريثروكان', 'zithrokan', 'zithrocan'],
     tradeNameAr: 'زيثروكان 500 مجم كبسول',
     ingredientId: 'azithromycin',
   },
   {
-    keywords: ['ايبيزيثرو', 'ابيزيثرو', 'epizithro'],
+    aliases: ['ايبيزيثرو', 'ابيزيثرو', 'epizithro'],
     tradeNameAr: 'إيبيزيثرو 500 مجم كبسول',
     ingredientId: 'azithromycin',
   },
   {
-    keywords: ['دلزوسين', 'delzosin', 'ازيثروميسين', 'ازيثرومايسين', 'azithromycin', 'azithro'],
-    tradeNameAr: 'زيثروماكس 500 مجم أقراص',
+    aliases: ['زيسروسين', 'ريسروسين', 'zisrocin'],
+    tradeNameAr: 'زيسروسين 500 مجم كبسول',
     ingredientId: 'azithromycin',
   },
   {
-    keywords: ['اوجمنتين', 'أوجمنتين', 'اوغمنتين', 'وجمنتين', 'augmentin', 'augment', 'ugmentin', 'gsk'],
+    aliases: ['اوجمنتين', 'اوغمنتين', 'وجمنتين', 'اوحمنتين', 'augmentin', 'ugmentin'],
     tradeNameAr: 'أوجمنتين 1 جم أقراص',
     ingredientId: 'amoxicillin-clavulanic-acid',
   },
   {
-    keywords: ['هاي بيوتك', 'هايبوتك', 'هايبيوتك', 'بيوتك', 'hibiotic', 'ibiotic'],
+    aliases: ['هاي بيوتك', 'هايبوتك', 'هايبيوتك', 'hibiotic', 'ibiotic'],
     tradeNameAr: 'هاي بيوتك 1 جم أقراص',
     ingredientId: 'amoxicillin-clavulanic-acid',
   },
   {
-    keywords: ['كلافيموكس', 'كلافموكس', 'klavox', 'clavamox'],
-    tradeNameAr: 'كلافيموكس 1 جم أقراص',
+    aliases: ['كلافيموكس', 'كلافوكس', 'klavox', 'clavamox'],
+    tradeNameAr: 'كلافوكس 1 جم أقراص',
     ingredientId: 'amoxicillin-clavulanic-acid',
   },
   {
-    keywords: ['كيورام', 'كوران', 'curam'],
-    tradeNameAr: 'كيورام 1 جم أقراص',
+    aliases: ['كورام', 'كيورام', 'كوران', 'curam'],
+    tradeNameAr: 'كورام 1 جم أقراص',
     ingredientId: 'amoxicillin-clavulanic-acid',
   },
   {
-    keywords: ['ميجاموكس', 'ميغاموكس', 'megamox'],
+    aliases: ['ميجاموكس', 'ميغاموكس', 'megamox'],
     tradeNameAr: 'ميجاموكس 1 جم أقراص',
     ingredientId: 'amoxicillin-clavulanic-acid',
   },
   {
-    keywords: ['اموكسيل', 'أموكسيل', 'ايموكس', 'إيموكس', 'amoxil', 'emox', 'amoxicillin', 'اموكسيسيلين'],
+    aliases: ['ايموكسكلاف', 'اموكسكلاف', 'emoxclav', 'e moxclav'],
+    tradeNameAr: 'إيموكسكلاف 1 جم أقراص',
+    ingredientId: 'amoxicillin-clavulanic-acid',
+  },
+  {
+    aliases: ['اموكسيل', 'أموكسيل', 'amoxil'],
     tradeNameAr: 'أموكسيل 500 مجم كبسول',
     ingredientId: 'amoxicillin',
   },
   {
-    keywords: ['فلاجيل', 'فلاحيل', 'فلاجل', 'flagyl', 'lagyl', 'امريزول', 'أمريزول', 'amrizole', 'metronidazole', 'مترونيدازول', 'ميترونيدازول'],
+    aliases: ['ايموكس', 'إيموكس', 'emox', 'e mox'],
+    tradeNameAr: 'إيموكس 500 مجم كبسول',
+    ingredientId: 'amoxicillin',
+  },
+  {
+    aliases: ['فلاجيل', 'فلاحيل', 'فلاجل', 'flagyl', 'lagyl'],
     tradeNameAr: 'فلاجيل 500 مجم أقراص',
     ingredientId: 'metronidazole',
   },
   {
-    keywords: ['سيبروفار', 'سبروفار', 'ciprofar', 'سيبروباي', 'ciprobay', 'سيبروسين', 'ciprocin', 'ciprofloxacin', 'سيبروفلوكساسين'],
+    aliases: ['امريزول', 'أمريزول', 'amrizole'],
+    tradeNameAr: 'أمريزول 500 مجم أقراص',
+    ingredientId: 'metronidazole',
+  },
+  {
+    aliases: ['سيبروفار', 'سبروفار', 'ciprofar'],
     tradeNameAr: 'سيبروفار 500 مجم أقراص',
     ingredientId: 'ciprofloxacin',
   },
   {
-    keywords: ['تافانيك', 'تافانك', 'tavanic', 'افالوكس', 'avalox', 'ليفوفلوكساسين', 'levofloxacin', 'levoxin', 'ليفوكسين'],
+    aliases: ['سيبروباي', 'ciprobay'],
+    tradeNameAr: 'سيبروباي 500 مجم أقراص',
+    ingredientId: 'ciprofloxacin',
+  },
+  {
+    aliases: ['سيبروسين', 'ciprocin'],
+    tradeNameAr: 'سيبروسين 500 مجم أقراص',
+    ingredientId: 'ciprofloxacin',
+  },
+  {
+    aliases: ['سيبروماي', 'cipromay'],
+    tradeNameAr: 'سيبروماي 500 مجم أقراص',
+    ingredientId: 'ciprofloxacin',
+  },
+  {
+    aliases: ['تافانيك', 'تافانك', 'tavanic'],
     tradeNameAr: 'تافانيك 500 مجم أقراص',
     ingredientId: 'levofloxacin',
   },
   {
-    keywords: ['كيبوركس', 'كيبركس', 'ceporex', 'كفلكس', 'keflex', 'ايبيلكس', 'ibilex', 'سيفالكسين', 'cephalexin'],
-    tradeNameAr: 'كيبوركس 1 جم أقراص',
+    aliases: ['ليفوكسين', 'levoxin'],
+    tradeNameAr: 'ليفوكسين 500 مجم أقراص',
+    ingredientId: 'levofloxacin',
+  },
+  {
+    aliases: ['ليفوديل', 'levodel'],
+    tradeNameAr: 'ليفوديل 500 مجم أقراص',
+    ingredientId: 'levofloxacin',
+  },
+  {
+    aliases: ['أفيلوكس', 'افيلوكس', 'افالوكس', 'avelox', 'avalox', 'موكسيفلوكس', 'moxiflox', 'فيجاموكس', 'vigamox'],
+    tradeNameAr: 'أفيلوكس 400 مجم أقراص',
+    ingredientId: 'moxifloxacin',
+  },
+  {
+    aliases: ['سيبوريكس', 'كيبوركس', 'كيبركس', 'ceporex', 'كفلكس', 'keflex', 'ايبيلكس', 'إيبيلكس', 'ibilex', 'أوسبكسين', 'ospexin'],
+    tradeNameAr: 'سيبوريكس 1 جم أقراص',
     ingredientId: 'cephalexin',
   },
   {
-    keywords: ['يوناسين', 'يوناسن', 'unasyn', 'سيجماسين', 'ألتراسين', 'امبيسيلين', 'ampicillin', 'sulbactam'],
+    aliases: ['يوناسين', 'يوناسن', 'unasyn', 'سيغماسين', 'sigmacyn', 'ألتراسيللين', 'ultracillin', 'سولبين', 'sulbin'],
     tradeNameAr: 'يوناسين 375 مجم أقراص',
     ingredientId: 'ampicillin-sulbactam',
   },
   {
-    keywords: ['فلوكساموكس', 'فلوكسموكس', 'floxamo', 'فلوكلوكساسيلين', 'flucloxacillin'],
-    tradeNameAr: 'فلوكساموكس 1 جم أقراص',
+    aliases: ['فلوكسامو', 'فلوكساموكس', 'floxamo', 'فلوسيل', 'flucil', 'فلوكسابكت', 'floxabact'],
+    tradeNameAr: 'فلوكسامو 500 مجم كبسول',
     ingredientId: 'flucloxacillin',
   },
   {
-    keywords: ['سيفترياكسون', 'سفترياكسون', 'روسيفين', 'rocephin', 'ceftriaxone', 'ترياكسون', 'وينترياكسون'],
-    tradeNameAr: 'روسيفين 1 جم فيال حقن',
+    aliases: ['روسيفين', 'rocephin', 'سيفترياكسون', 'ceftriaxone', 'وينترياكسون', 'wintriaxone', 'سيفاكسون', 'cefaxone', 'إبيسفين', 'epicephin'],
+    tradeNameAr: 'روسيفين 1 جم فيال',
     ingredientId: 'ceftriaxone',
   },
   {
-    keywords: ['سيفوتاكس', 'سفوتاكس', 'cefotax', 'cefotaxime', 'سيفوتاكسيم'],
+    aliases: ['سيفوتاكس', 'cefotax', 'كلافوران', 'claforan', 'راميسيفت', 'ramiceft'],
     tradeNameAr: 'سيفوتاكس 1 جم فيال',
     ingredientId: 'cefotaxime',
   },
   {
-    keywords: ['سوبراكس', 'سبراكس', 'suprax', 'سيفيكسيم', 'cefixime', 'زيموكس', 'ximox'],
+    aliases: ['سوبراكس', 'suprax', 'سيفيكس', 'cefix', 'زيماسيف', 'ximacef'],
     tradeNameAr: 'سوبراكس 400 مجم كبسول',
     ingredientId: 'cefixime',
   },
   {
-    keywords: ['زيناكس', 'زينات', 'zinnat', 'سيفوروكسيم', 'cefuroxime'],
+    aliases: ['زينات', 'زيناكس', 'zinnat', 'زيناسيف', 'zinacef', 'سيفوروكس', 'cefurox'],
     tradeNameAr: 'زينات 500 مجم أقراص',
     ingredientId: 'cefuroxime',
   },
   {
-    keywords: ['كلاسيد', 'كلاريثرو', 'klacid', 'clarithromycin', 'كلاريثرومايسين'],
+    aliases: ['ديوريسيف', 'duricef', 'بيودروكسيل', 'biodroxil', 'إيبيدروكسيل', 'ibidroxil', 'كيريسيف', 'curisafe'],
+    tradeNameAr: 'ديوريسيف 500 مجم كبسول',
+    ingredientId: 'cefadroxil',
+  },
+  {
+    aliases: ['أومنيسيف', 'omnicef', 'سيفدين', 'cefdin', 'دينار', 'dinar'],
+    tradeNameAr: 'أومنيسيف 300 مجم كبسول',
+    ingredientId: 'cefdinir',
+  },
+  {
+    aliases: ['سيلبيرازون', 'sulperazon', 'سيفوزون', 'cefozone', 'بيراكتام', 'peractam'],
+    tradeNameAr: 'سيلبيرازون 1 جم فيال',
+    ingredientId: 'cefoperazone-sulbactam',
+  },
+  {
+    aliases: ['ماكسيبيم', 'maxipime', 'سيفيبيم', 'cefepime', 'وينسيف', 'wincef'],
+    tradeNameAr: 'ماكسيبيم 1 جم فيال',
+    ingredientId: 'cefepime',
+  },
+  {
+    aliases: ['كلاسيد', 'klacid', 'كلاريكان', 'clarikan', 'كلاريثرو', 'clarithro'],
     tradeNameAr: 'كلاسيد 500 مجم أقراص',
     ingredientId: 'clarithromycin',
   },
   {
-    keywords: ['دالاسين', 'كليندام', 'dalacin', 'clindamycin', 'كليندامايسين'],
-    tradeNameAr: 'دالاسين سي 300 مجم كبسول',
-    ingredientId: 'clindamycin',
-  },
-  {
-    keywords: ['فيوسيدين', 'فيوسيد', 'fucidin', 'fusidic', 'فيوسيديك'],
-    tradeNameAr: 'فيوسيدين 2% كريم موضوعي',
-    ingredientId: 'fusidic-acid',
-  },
-  {
-    keywords: ['ماكروفيوران', 'يوفامين', 'macrofuran', 'uvamin', 'nitrofurantoin', 'نيتروفيورانتوين'],
-    tradeNameAr: 'ماكروفيوران 100 مجم كبسول',
-    ingredientId: 'nitrofurantoin',
-  },
-  {
-    keywords: ['سبترين', 'سوتريم', 'septrin', 'sutrim', 'trimethoprim', 'sulfamethoxazole'],
-    tradeNameAr: 'سبترين مضاعف القوة أقراص',
-    ingredientId: 'co-trimoxazole',
-  },
-  {
-    keywords: ['اهتراميسين', 'اريثرومايسين', 'اريثروسين', 'erythrocin', 'erythromycin'],
+    aliases: ['إريثروسين', 'اريثروسين', 'erythrocin', 'إريثرومايسين', 'erythromycin', 'أكني مايسين', 'aknemycin'],
     tradeNameAr: 'إريثروسين 500 مجم أقراص',
     ingredientId: 'erythromycin',
   },
   {
-    keywords: ['فيبراميسين', 'دوكسي', 'vibramycin', 'doxycycline', 'دوكسيسيكلين', 'تتراسيكلين'],
+    aliases: ['فيبراميسين', 'vibramycin', 'تابوسين', 'tabocin', 'دوكسي', 'doxymycin', 'doxycost'],
     tradeNameAr: 'فيبراميسين 100 مجم كبسول',
     ingredientId: 'doxycycline',
   },
   {
-    keywords: ['جاراميسين', 'جنتاميسين', 'garamycin', 'gentamicin'],
+    aliases: ['دالاسين', 'dalacin', 'كليندام', 'clindam', 'ألفاكليند', 'alfaclind', 'كلينداسول', 'clindasol'],
+    tradeNameAr: 'دالاسين سي 300 مجم كبسول',
+    ingredientId: 'clindamycin',
+  },
+  {
+    aliases: ['ماكروفيوران', 'macrofuran', 'يوفامين', 'uvamin', 'ميبافيوران', 'mepafuran'],
+    tradeNameAr: 'ماكروفيوران 100 مجم كبسول',
+    ingredientId: 'nitrofurantoin',
+  },
+  {
+    aliases: ['سبترين', 'septrin', 'سوتريم', 'sutrim', 'سبتازول', 'septazole'],
+    tradeNameAr: 'سبترين مضاعف القوة أقراص',
+    ingredientId: 'co-trimoxazole',
+  },
+  {
+    aliases: ['جاراميسين', 'garamycin', 'إيبيجنت', 'epigent', 'جنتاميسين', 'gentamycin'],
     tradeNameAr: 'جاراميسين 80 مجم أمبول',
     ingredientId: 'gentamicin',
   },
   {
-    keywords: ['اميكين', 'أميكاسين', 'amikin', 'amikacin'],
+    aliases: ['أميكين', 'اميكين', 'amikin', 'أميكابيوتك', 'amikabiotic', 'ميكاسين', 'mikacin'],
     tradeNameAr: 'أميكين 500 مجم فيال',
     ingredientId: 'amikacin',
+  },
+  {
+    aliases: ['ميرونيم', 'meronem', 'ميروبينيم', 'meropenem'],
+    tradeNameAr: 'ميرونيم 1 جم فيال',
+    ingredientId: 'meropenem',
+  },
+  {
+    aliases: ['فانكوسين', 'vancocin', 'فانكوميكس', 'vancomix', 'سيلوفان', 'celovan'],
+    tradeNameAr: 'فانكوميكس 500 مجم فيال',
+    ingredientId: 'vancomycin',
+  },
+  {
+    aliases: ['زيفوكس', 'zyvox', 'أفيروزوليد', 'averozolid', 'لينوليد', 'linolid'],
+    tradeNameAr: 'زيفوكس 600 مجم أقراص',
+    ingredientId: 'linezolid',
+  },
+  {
+    aliases: ['فيوسيدين', 'fucidin', 'فيوسيديرم', 'fusiderm', 'فيوسيباكت', 'fusibact', 'فيوسيثالمك', 'fucithalmic', 'fucitop'],
+    tradeNameAr: 'فيوسيدين 2% كريم',
+    ingredientId: 'fusidic-acid',
+  },
+  {
+    aliases: ['تراسيد', 'trcid', 'جاستروبيوتك', 'gastrobiotic', 'إندوريفاكس', 'endorifax', 'rifaximin'],
+    tradeNameAr: 'تراسيد 200 مجم أقراص',
+    ingredientId: 'rifaximin',
+  },
+  {
+    aliases: ['أوسبين', 'اوسبين', 'ospen', 'بنسلين', 'فينوكسي'],
+    tradeNameAr: 'أوسبين 1000 مجم أقراص',
+    ingredientId: 'penicillin-v-potassium',
   },
 ];
 
@@ -257,21 +413,21 @@ const DEMO_UNIFIED_SAMPLES = [
     method: 'ai_vision' as const,
     titleAr: 'تجربة قراءة وش علبة زيثروماكس 500 مجم',
     titleEn: 'Zithromax 500mg Box Front',
-    tradeMatch: 'زيثروماكس 500 مجم أقراص',
+    tradeMatch: 'Zithromax 500mg Tablets',
   },
   {
     id: 'amoxicillin-clavulanic-acid',
     method: 'barcode_exact' as const,
     titleAr: 'تجربة مسح علبة أوجمنتين 1 جم',
     titleEn: 'Augmentin 1g Box',
-    tradeMatch: 'أوجمنتين 1 جم أقراص',
+    tradeMatch: 'Augmentin 1g Tablets',
   },
   {
     id: 'ciprofloxacin',
     method: 'ai_vision' as const,
     titleAr: 'تجربة قراءة وش علبة سيبروفار 500 مجم',
     titleEn: 'Ciprofar 500mg Box Front',
-    tradeMatch: 'سيبروفار 500 مجم أقراص',
+    tradeMatch: 'Ciprofar 500mg Tablets',
   },
 ];
 
@@ -302,7 +458,7 @@ export default function Scan() {
     }
   }, []);
 
-  // Update live suggestions as user types in manual search box
+  // Update live suggestions as user types in manual search box (supports Arabic & English)
   useEffect(() => {
     const q = normalizeText(manual);
     if (!q || q.length < 2) {
@@ -334,7 +490,7 @@ export default function Scan() {
   }
 
   /**
-   * Builds a complete UnifiedScanResult from an EgyptianCommercialProduct or ActiveIngredient
+   * Builds a complete UnifiedScanResult from an EgyptianCommercialProduct
    */
   function buildResultFromProduct(
     prod: EgyptianCommercialProduct,
@@ -343,8 +499,9 @@ export default function Scan() {
   ): UnifiedScanResult {
     const ing = ACTIVE_INGREDIENTS.find((a) => a.id === prod.activeIngredientId);
     const med = findLocalMedicine(prod.activeIngredientId);
+    const usesLine = med?.approvedUses?.ar ? med.approvedUses.ar.split(/\r?\n/)[0] : '';
     const defaultSummary = isAr
-      ? `تمت قراءة الاسم من الصورة والتعرف على الدواء بنجاح: ${prod.tradeNameAr} (${prod.tradeNameEn}) — التركيز: ${prod.strength} — المادة الفعالة: ${prod.scientificComposition} — الفئة العلاجية: ${ing?.drugClass?.ar || ''} — تصنيف منظمة الصحة العالمية: ${ing?.whoAccessGroup || 'Access'}.${med?.approvedUses?.ar ? '\n\n• دواعي الاستعمال: ' + med.approvedUses.ar.split('\n')[0] : ''}`
+      ? `تمت قراءة الاسم من الصورة والتعرف على الدواء بنجاح: ${prod.tradeNameAr} (${prod.tradeNameEn}) — التركيز: ${prod.strength} — المادة الفعالة: ${prod.scientificComposition} — الفئة العلاجية: ${ing?.drugClass?.ar || ''} — تصنيف منظمة الصحة العالمية: ${ing?.whoAccessGroup || 'Access'}.${usesLine ? '\n\n• دواعي الاستعمال: ' + usesLine : ''}`
       : `Automatically read and identified from image: ${prod.tradeNameEn} (${prod.strength}) — Active Ingredient: ${prod.scientificComposition} — Class: ${ing?.drugClass?.en || ''} — WHO AWaRe: ${ing?.whoAccessGroup || 'Access'}.`;
 
     return {
@@ -359,7 +516,9 @@ export default function Scan() {
           : '🤖 Automatically Read Drug Name from Image — Full Profile Below',
       detectedText: isAr ? prod.tradeNameAr : prod.tradeNameEn,
       matchedIngredientId: prod.activeIngredientId,
-      matchedTradeName: isAr ? `${prod.tradeNameAr} (${prod.tradeNameEn})` : `${prod.tradeNameEn} (${prod.tradeNameAr})`,
+      matchedTradeName: isAr
+        ? `${prod.tradeNameAr} (${prod.tradeNameEn})`
+        : `${prod.tradeNameEn} (${prod.tradeNameAr})`,
       strength: prod.strength,
       manufacturer: prod.manufacturer,
       barcode: prod.barcode,
@@ -369,81 +528,192 @@ export default function Scan() {
   }
 
   /**
-   * High-accuracy matcher against OCR_BRAND_ROOTS, 206 Egyptian Commercial Products, & 32 Active Ingredients
+   * Universal Bilingual Scoring Matcher:
+   * Accurately matches ANY of the 206 Egyptian Commercial Products or 32 Active Ingredients
+   * whether the photographed name is in Arabic OR English (with fuzzy & dot-skeleton support)
    */
   function matchDrugFromText(
     rawText: string,
     method: UnifiedScanResult['method'] = 'ai_vision'
   ): UnifiedScanResult {
     const clean = normalizeText(rawText);
-    const tokens = clean.split(' ').filter((t) => t.length >= 3);
+    const cleanWords = clean.split(' ');
+    const inWords = cleanWords.filter(
+      (w) =>
+        w.length >= 2 &&
+        !PHARMA_STOP_WORDS.has(w) &&
+        !/^\d+(mg|g|gm|ml|mcg|iu)?$/.test(w)
+    );
 
-    // 1) Check OCR_BRAND_ROOTS dictionary first for resilient Arabic & English brand matching
-    for (const entry of OCR_BRAND_ROOTS) {
-      const hit = entry.keywords.some((kw) => clean.includes(normalizeText(kw)));
-      if (hit) {
-        const prod =
-          EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.tradeNameAr === entry.tradeNameAr) ||
-          EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.activeIngredientId === entry.ingredientId);
-        if (prod) {
-          return buildResultFromProduct(prod, method);
+    let bestProd: EgyptianCommercialProduct | null = null;
+    let bestScore = 0;
+
+    // 1) Score all 206 Egyptian Commercial Products (Arabic + English names + Active Ingredients)
+    for (const p of EGYPTIAN_COMMERCIAL_PRODUCTS) {
+      const arWords = normalizeText(p.tradeNameAr)
+        .split(' ')
+        .filter((w) => w.length >= 2 && !PHARMA_STOP_WORDS.has(w) && !/^\d+$/.test(w));
+      const enWords = normalizeText(p.tradeNameEn)
+        .split(' ')
+        .filter(
+          (w) =>
+            w.length >= 2 &&
+            !PHARMA_STOP_WORDS.has(w) &&
+            !/^\d+(mg|g|gm|ml|mcg|iu)?$/.test(w)
+        );
+
+      const arBrand =
+        arWords.length >= 2 && arWords[0].length <= 3
+          ? `${arWords[0]} ${arWords[1]}`
+          : arWords[0] || '';
+      const enBrand =
+        enWords.length >= 2 && enWords[0].length <= 2
+          ? `${enWords[0]} ${enWords[1]}`
+          : enWords[0] || '';
+
+      let score = 0;
+
+      // A. Exact Brand Match in English or Arabic
+      if (
+        enBrand &&
+        enBrand.length >= 3 &&
+        (cleanWords.includes(enBrand) || (enBrand.length >= 4 && clean.includes(enBrand)))
+      ) {
+        score = Math.max(score, 130 + enBrand.length * 3);
+      }
+      if (
+        arBrand &&
+        arBrand.length >= 3 &&
+        (cleanWords.includes(arBrand) || (arBrand.length >= 4 && clean.includes(arBrand)))
+      ) {
+        score = Math.max(score, 130 + arBrand.length * 3);
+      }
+
+      // B. Check OCR_ALIASES for this ingredient/product
+      if (score === 0) {
+        for (const entry of OCR_ALIASES) {
+          if (entry.ingredientId === p.activeIngredientId) {
+            const aliasHit = entry.aliases.some((al) => {
+              const alNorm = normalizeText(al);
+              return alNorm.length >= 4 && clean.includes(alNorm);
+            });
+            if (aliasHit && p.tradeNameAr.includes(entry.tradeNameAr.split(' ')[0])) {
+              score = Math.max(score, 125);
+            }
+          }
         }
       }
-    }
 
-    // 2) Match against all 206 Egyptian Commercial Products
-    const prodMatch = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => {
-      const arNorm = normalizeText(p.tradeNameAr);
-      const enNorm = normalizeText(p.tradeNameEn);
-      const compNorm = normalizeText(p.scientificComposition);
-
-      if (clean.includes(arNorm) || clean.includes(enNorm)) return true;
-
-      const firstAr = arNorm.split(' ')[0];
-      const firstEn = enNorm.split(' ')[0];
-      if (firstAr && firstAr.length >= 3 && clean.includes(firstAr)) return true;
-      if (firstEn && firstEn.length >= 3 && clean.includes(firstEn)) return true;
-
-      return tokens.some(
-        (tok) =>
-          tok.length >= 4 &&
-          (arNorm.includes(tok) || enNorm.includes(tok) || compNorm.includes(tok))
-      );
-    });
-
-    if (prodMatch) {
-      return buildResultFromProduct(prodMatch, method);
-    }
-
-    // 3) Match against Active Ingredients
-    const ingMatch = ACTIVE_INGREDIENTS.find((a) => {
-      const ar = normalizeText(a.nameAr);
-      const en = normalizeText(a.nameEn);
-      const idClean = a.id.replace(/-/g, ' ');
-      return (
-        clean.includes(ar) ||
-        clean.includes(en) ||
-        clean.includes(idClean) ||
-        tokens.some((tok) => tok.length >= 4 && (ar.includes(tok) || en.includes(tok) || idClean.includes(tok)))
-      );
-    });
-
-    if (ingMatch) {
-      const repProd = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.activeIngredientId === ingMatch.id);
-      if (repProd) {
-        return buildResultFromProduct(repProd, method);
+      // C. Fuzzy Levenshtein & Arabic Dot-Skeleton Match on Brand Words (handles OCR typos)
+      if (score === 0) {
+        for (const iw of inWords) {
+          if (iw.length >= 4) {
+            if (enBrand && enBrand.length >= 4) {
+              const simEn = stringSimilarity(iw, enBrand);
+              if (simEn >= 0.74) {
+                score = Math.max(score, Math.round(simEn * 105));
+              }
+            }
+            if (arBrand && arBrand.length >= 3) {
+              const simAr = stringSimilarity(iw, arBrand);
+              const simSkel = stringSimilarity(
+                normalizeArabicSkeleton(iw),
+                normalizeArabicSkeleton(arBrand)
+              );
+              if (simAr >= 0.74 || simSkel >= 0.82) {
+                score = Math.max(score, Math.round(Math.max(simAr, simSkel) * 105));
+              }
+            }
+          }
+        }
       }
-      return {
-        method,
-        confidenceLabelAr: '🤖 تمت قراءة المادة الفعالة من الصورة تلقائياً',
-        confidenceLabelEn: '🤖 Automatically Read Active Ingredient from Image',
-        detectedText: isAr ? ingMatch.nameAr : ingMatch.nameEn,
-        matchedIngredientId: ingMatch.id,
-        matchedTradeName: isAr ? `${ingMatch.nameAr} (${ingMatch.nameEn})` : ingMatch.nameEn,
-        summary: isAr
-          ? `تم التعرف على المادة الفعالة: ${ingMatch.nameAr} (${ingMatch.nameEn}) — الفئة: ${ingMatch.drugClass?.ar || ''} (WHO ${ingMatch.whoAccessGroup || 'Access'}).`
-          : `Identified Active Ingredient: ${ingMatch.nameEn} — Class: ${ingMatch.drugClass?.en || ''} (WHO ${ingMatch.whoAccessGroup || 'Access'}).`,
-      };
+
+      // D. Active Ingredient Match (both English & Arabic generic names)
+      const ing = ACTIVE_INGREDIENTS.find((a) => a.id === p.activeIngredientId);
+      if (ing) {
+        const ingArTokens = normalizeText(ing.nameAr)
+          .split(' ')
+          .filter((w) => w.length >= 3 && !PHARMA_STOP_WORDS.has(w));
+        const ingEnTokens = normalizeText(ing.nameEn)
+          .split(' ')
+          .filter((w) => w.length >= 3 && !PHARMA_STOP_WORDS.has(w));
+
+        let matchedEnIng = 0;
+        for (const gw of ingEnTokens) {
+          if (
+            clean.includes(gw) ||
+            inWords.some((iw) => iw.length >= 4 && stringSimilarity(iw, gw) >= 0.8)
+          ) {
+            matchedEnIng++;
+          }
+        }
+
+        let matchedArIng = 0;
+        for (const gw of ingArTokens) {
+          if (
+            clean.includes(gw) ||
+            inWords.some(
+              (iw) =>
+                iw.length >= 4 &&
+                (stringSimilarity(iw, gw) >= 0.8 ||
+                  stringSimilarity(normalizeArabicSkeleton(iw), normalizeArabicSkeleton(gw)) >= 0.85)
+            )
+          ) {
+            matchedArIng++;
+          }
+        }
+
+        if (matchedEnIng > 0) {
+          const ratio = matchedEnIng / Math.max(1, ingEnTokens.length);
+          score = Math.max(score, Math.round(70 + matchedEnIng * 20 + ratio * 25));
+        }
+        if (matchedArIng > 0) {
+          const ratio = matchedArIng / Math.max(1, ingArTokens.length);
+          score = Math.max(score, Math.round(70 + matchedArIng * 20 + ratio * 25));
+        }
+      }
+
+      // E. Secondary Tie-Breaker: Strength & Dosage Form (only if brand or ingredient matched!)
+      if (score > 0) {
+        const strengthNums = p.strength.match(/\d+/g) || [];
+        for (const num of strengthNums) {
+          if (cleanWords.includes(num) || clean.includes(`${num}mg`) || clean.includes(`${num}g`)) {
+            score += 15;
+          }
+        }
+        const formKeywords = [
+          'شراب', 'suspension', 'كبسول', 'capsule', 'اقراص', 'tablet',
+          'فيال', 'vial', 'امبول', 'ampoule', 'كريم', 'cream', 'نقط', 'drops',
+        ];
+        const prodNorm = `${normalizeText(p.tradeNameAr)} ${normalizeText(p.tradeNameEn)}`;
+        for (const fk of formKeywords) {
+          if (clean.includes(fk) && prodNorm.includes(fk)) {
+            score += 10;
+          }
+        }
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestProd = p;
+      }
+    }
+
+    if (bestProd && bestScore >= 65) {
+      return buildResultFromProduct(bestProd, method);
+    }
+
+    // 2) Also check ALL_LOCAL_MEDICINES brands & substitutes
+    for (const med of ALL_LOCAL_MEDICINES) {
+      const genAr = normalizeText(med.genericName.ar);
+      const genEn = normalizeText(med.genericName.en);
+      if (
+        (genAr.length >= 4 && clean.includes(genAr)) ||
+        (genEn.length >= 4 && clean.includes(genEn))
+      ) {
+        const rep = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.activeIngredientId === med.id);
+        if (rep) return buildResultFromProduct(rep, method);
+      }
     }
 
     return {
@@ -507,7 +777,7 @@ export default function Scan() {
       return;
     }
 
-    // 3) Match letters or name
+    // 3) Match Arabic or English drug name
     const textMatched = matchDrugFromText(clean, 'text_match');
     if (textMatched.matchedIngredientId) {
       setScanResult(textMatched);
@@ -574,15 +844,13 @@ export default function Scan() {
   }
 
   /**
-   * Normalizes image size to max 900px and extracts visual color-geometry features
-   * for Egyptian antibiotic boxes (e.g. Zithromax silver box + yellow-green triangle,
-   * Augmentin purple/blue band, Flagyl yellow/blue band, Ciprofar, Hibiotic, etc.)
+   * Normalizes image size to max 850px for fast OCR/Vision processing
+   * and checks native BarcodeDetector + Zithromax metallic triangle signature
    */
-  async function normalizeAndAnalyzeBoxVisuals(dataUrl: string): Promise<{
+  async function normalizeAndInspectImage(dataUrl: string): Promise<{
     normalizedDataUrl: string;
-    headerCropDataUrl: string;
-    visualMatchTradeName: string | null;
     nativeBarcode: string | null;
+    isZithromaxMetallicTriangle: boolean;
   }> {
     const img = new Image();
     img.src = dataUrl;
@@ -591,7 +859,7 @@ export default function Scan() {
       img.onerror = rej;
     });
 
-    const maxDim = 900;
+    const maxDim = 850;
     let w = img.width || 600;
     let h = img.height || 600;
     if (w > maxDim || h > maxDim) {
@@ -611,16 +879,15 @@ export default function Scan() {
     if (!ctx) {
       return {
         normalizedDataUrl: dataUrl,
-        headerCropDataUrl: dataUrl,
-        visualMatchTradeName: null,
         nativeBarcode: null,
+        isZithromaxMetallicTriangle: false,
       };
     }
 
     ctx.drawImage(img, 0, 0, w, h);
-    const normalizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    const normalizedDataUrl = canvas.toDataURL('image/jpeg', 0.84);
 
-    // Check native BarcodeDetector on normalized canvas
+    // Check native BarcodeDetector
     let nativeBarcode: string | null = null;
     if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
       try {
@@ -636,119 +903,62 @@ export default function Scan() {
       }
     }
 
-    // Create high-contrast top-half header crop for local OCR (where brand name is printed)
-    const headerCanvas = document.createElement('canvas');
-    headerCanvas.width = w;
-    headerCanvas.height = Math.max(120, Math.floor(h * 0.5));
-    const hCtx = headerCanvas.getContext('2d');
-    if (hCtx) {
-      hCtx.filter = 'contrast(220%) grayscale(100%)';
-      hCtx.drawImage(img, 0, 0, img.width, Math.floor(img.height * 0.5), 0, 0, headerCanvas.width, headerCanvas.height);
-    }
-    const headerCropDataUrl = headerCanvas.toDataURL('image/jpeg', 0.9);
+    // Check Zithromax metallic silver + lime-yellow triangle signature
+    let isZithromaxMetallicTriangle = false;
+    try {
+      const sampleCanvas = document.createElement('canvas');
+      const sw = 100;
+      const sh = 100;
+      sampleCanvas.width = sw;
+      sampleCanvas.height = sh;
+      const sCtx = sampleCanvas.getContext('2d');
+      if (sCtx) {
+        sCtx.drawImage(img, 0, 0, sw, sh);
+        const imgData = sCtx.getImageData(0, 0, sw, sh).data;
+        let centerLimeYellow = 0;
+        let centerTotal = 0;
+        let silverGrey = 0;
+        const totalPixels = sw * sh;
 
-    // Analyze Visual Box Signature (120x120 sample grid)
-    const sampleCanvas = document.createElement('canvas');
-    const sw = 120;
-    const sh = 120;
-    sampleCanvas.width = sw;
-    sampleCanvas.height = sh;
-    const sCtx = sampleCanvas.getContext('2d');
-    let visualMatchTradeName: string | null = null;
+        for (let y = 0; y < sh; y++) {
+          for (let x = 0; x < sw; x++) {
+            const idx = (y * sw + x) * 4;
+            const r = imgData[idx];
+            const g = imgData[idx + 1];
+            const b = imgData[idx + 2];
 
-    if (sCtx) {
-      sCtx.drawImage(img, 0, 0, sw, sh);
-      const imgData = sCtx.getImageData(0, 0, sw, sh).data;
-
-      let centerLimeYellow = 0;
-      let centerTotal = 0;
-      let silverGrey = 0;
-      let whitePixels = 0;
-      let purpleViolet = 0;
-      let yellowOrange = 0;
-      let redCrimson = 0;
-      let tealBlue = 0;
-      const totalPixels = sw * sh;
-
-      for (let y = 0; y < sh; y++) {
-        for (let x = 0; x < sw; x++) {
-          const idx = (y * sw + x) * 4;
-          const r = imgData[idx];
-          const g = imgData[idx + 1];
-          const b = imgData[idx + 2];
-
-          const inCenter = y >= sh * 0.18 && y <= sh * 0.85 && x >= sw * 0.15 && x <= sw * 0.85;
-          if (inCenter) {
-            centerTotal++;
-            // Zithromax iconic lime-green / yellow triangle
-            if (g > 115 && r > 85 && b < 125 && g - b > 28) {
-              centerLimeYellow++;
+            if (y >= sh * 0.2 && y <= sh * 0.85 && x >= sw * 0.15 && x <= sw * 0.85) {
+              centerTotal++;
+              if (g > 120 && r > 90 && b < 120 && g - b > 30) {
+                centerLimeYellow++;
+              }
+            }
+            if (Math.abs(r - g) < 28 && Math.abs(g - b) < 28 && r > 110 && r < 230) {
+              silverGrey++;
             }
           }
-
-          // Silver/grey metallic background (Zithromax box)
-          if (Math.abs(r - g) < 28 && Math.abs(g - b) < 28 && r > 105 && r < 230) {
-            silverGrey++;
-          }
-          // Bright white box background
-          if (r > 205 && g > 205 && b > 205 && Math.abs(r - g) < 20 && Math.abs(g - b) < 20) {
-            whitePixels++;
-          }
-          // Purple / violet stripe (Augmentin)
-          if (r > 90 && b > 110 && b - g > 25 && r - g > 15) {
-            purpleViolet++;
-          }
-          // Yellow / orange band (Flagyl / Ceporex)
-          if (r > 180 && g > 120 && b < 90 && r - b > 90) {
-            yellowOrange++;
-          }
-          // Crimson / red band (Hibiotic / Ciprofar)
-          if (r > 160 && g < 75 && b < 85 && r - g > 80) {
-            redCrimson++;
-          }
-          // Teal / deep blue band
-          if (b > 120 && g > 80 && r < 90 && b - r > 40) {
-            tealBlue++;
-          }
+        }
+        const limeRatio = centerTotal > 0 ? centerLimeYellow / centerTotal : 0;
+        const silverRatio = silverGrey / totalPixels;
+        if (limeRatio > 0.045 && silverRatio > 0.22) {
+          isZithromaxMetallicTriangle = true;
         }
       }
-
-      const limeRatio = centerTotal > 0 ? centerLimeYellow / centerTotal : 0;
-      const silverRatio = silverGrey / totalPixels;
-      const whiteRatio = whitePixels / totalPixels;
-      const purpleRatio = purpleViolet / totalPixels;
-      const yellowRatio = yellowOrange / totalPixels;
-      const redRatio = redCrimson / totalPixels;
-      const tealRatio = tealBlue / totalPixels;
-
-      // 1) Zithromax 500mg signature: lime-yellow triangle in center + silver/grey box
-      if (limeRatio > 0.035 && silverRatio > 0.18) {
-        visualMatchTradeName = 'زيثروماكس 500 مجم أقراص';
-      } else if (purpleRatio > 0.04 && (whiteRatio > 0.2 || silverRatio > 0.2)) {
-        visualMatchTradeName = 'أوجمنتين 1 جم أقراص';
-      } else if (yellowRatio > 0.05 && tealRatio > 0.02 && (whiteRatio > 0.15 || silverRatio > 0.15)) {
-        visualMatchTradeName = 'فلاجيل 500 مجم أقراص';
-      } else if (redRatio > 0.04 && tealRatio > 0.03) {
-        visualMatchTradeName = 'هاي بيوتك 1 جم أقراص';
-      } else if (yellowRatio > 0.06 && whiteRatio > 0.25) {
-        visualMatchTradeName = 'كيبوركس 1 جم أقراص';
-      } else if (tealRatio > 0.06 && (whiteRatio > 0.25 || silverRatio > 0.25)) {
-        visualMatchTradeName = 'أوجمنتين 1 جم أقراص';
-      }
+    } catch {
+      /* ignore */
     }
 
     return {
       normalizedDataUrl,
-      headerCropDataUrl,
-      visualMatchTradeName,
       nativeBarcode,
+      isZithromaxMetallicTriangle,
     };
   }
 
   /**
-   * Dual-Language Local Browser OCR (Arabic + English) via Tesseract.js CDN
+   * Local Browser OCR (English + Arabic) via Tesseract.js CDN
    */
-  async function performClientSideOcr(fullDataUrl: string, headerDataUrl: string): Promise<string> {
+  async function performClientSideOcr(imageDataUrl: string): Promise<string> {
     try {
       const win = window as any;
       if (!win.Tesseract) {
@@ -763,13 +973,10 @@ export default function Scan() {
       }
 
       if (win.Tesseract) {
-        const [resHeader, resFull] = await Promise.all([
-          win.Tesseract.recognize(headerDataUrl, 'ara+eng', { logger: () => {} }).catch(() => null),
-          win.Tesseract.recognize(fullDataUrl, 'ara+eng', { logger: () => {} }).catch(() => null),
-        ]);
-        const t1 = resHeader?.data?.text || '';
-        const t2 = resFull?.data?.text || '';
-        return `${t1} ${t2}`.trim();
+        const res = await win.Tesseract.recognize(imageDataUrl, 'eng+ara', {
+          logger: () => {},
+        });
+        return res?.data?.text || '';
       }
     } catch (err) {
       console.warn('Local OCR note:', err);
@@ -778,8 +985,8 @@ export default function Scan() {
   }
 
   /**
-   * Automatic Multi-Engine Pipeline:
-   * Reads the medicine box front or barcode and immediately displays ALL drug details
+   * Automatic Multi-Engine Bilingual Pipeline:
+   * Reads ANY Arabic or English antibiotic name from the image and displays ALL drug details
    */
   async function processUnifiedImage(fileOrBlob: File, dataUrl: string, fileNameHint: string) {
     setBusy(true);
@@ -789,27 +996,26 @@ export default function Scan() {
 
     setStatusStep(
       isAr
-        ? '🔍 جاري قراءة اسم الدواء والبيانات المطبوعة على العلبة تلقائياً...'
-        : '🔍 Automatically reading medicine name and details from the box...'
+        ? '🔍 جاري قراءة اسم الدواء (عربي / إنجليزي) من الصورة تلقائياً...'
+        : '🔍 Automatically reading medicine name (Arabic / English) from image...'
     );
 
-    // 1) Normalize image & analyze visual box signature + native barcode
-    let visualInfo = {
+    // 1) Normalize image & check native barcode
+    let inspected = {
       normalizedDataUrl: dataUrl,
-      headerCropDataUrl: dataUrl,
-      visualMatchTradeName: null as string | null,
       nativeBarcode: null as string | null,
+      isZithromaxMetallicTriangle: false,
     };
     try {
-      visualInfo = await normalizeAndAnalyzeBoxVisuals(dataUrl);
+      inspected = await normalizeAndInspectImage(dataUrl);
     } catch {
       /* fallback to raw dataUrl */
     }
 
-    if (visualInfo.nativeBarcode) {
+    if (inspected.nativeBarcode) {
       setBusy(false);
       setStatusStep('');
-      handleRef.current(visualInfo.nativeBarcode);
+      handleRef.current(inspected.nativeBarcode);
       return;
     }
 
@@ -829,7 +1035,7 @@ export default function Scan() {
         return;
       }
     } catch {
-      /* No barcode on front of box — continue to Vision/OCR */
+      /* No barcode on front of box — continue to Bilingual Vision & OCR */
     }
 
     // 3) Check filename if descriptive
@@ -849,8 +1055,9 @@ export default function Scan() {
       }
     }
 
-    // 4) Run Multi-Engine AI Vision & Cloud OCR on the normalized image
-    const base64Data = visualInfo.normalizedDataUrl.split(',')[1] || dataUrl.split(',')[1] || '';
+    // 4) Run Parallel Bilingual Vision + Cloud OCR (English Engine 2 + Arabic Engine 1)
+    const base64Data =
+      inspected.normalizedDataUrl.split(',')[1] || dataUrl.split(',')[1] || '';
     if (base64Data) {
       try {
         const aiAnalysis = await analyzeMedicineImageWithVision(
@@ -859,8 +1066,8 @@ export default function Scan() {
           lang
         );
 
-        // If Vision directly returned a valid matchedIngredientId or trade name
-        const combinedText = `${aiAnalysis.detectedDrugName || ''} ${aiAnalysis.matchedIngredientId || ''} ${aiAnalysis.rawExtractedText || ''} ${aiAnalysis.summary || ''}`;
+        // Match using the combined bilingual extracted text first
+        const combinedText = `${aiAnalysis.detectedDrugName || ''} ${aiAnalysis.rawExtractedText || ''}`;
         const matched = matchDrugFromText(combinedText, 'ai_vision');
 
         if (matched.matchedIngredientId) {
@@ -868,7 +1075,7 @@ export default function Scan() {
             ...matched,
             method: 'ai_vision',
             summary:
-              aiAnalysis.summary && aiAnalysis.summary.length > 25
+              aiAnalysis.summary && aiAnalysis.summary.length > 30
                 ? aiAnalysis.summary
                 : matched.summary,
           });
@@ -877,6 +1084,7 @@ export default function Scan() {
           return;
         }
 
+        // If Vision returned a direct matchedIngredientId
         if (aiAnalysis.matchedIngredientId) {
           const repProd = EGYPTIAN_COMMERCIAL_PRODUCTS.find(
             (p) => p.activeIngredientId === aiAnalysis.matchedIngredientId
@@ -891,31 +1099,17 @@ export default function Scan() {
           }
         }
       } catch (err) {
-        console.warn('Cloud vision cascade note:', err);
+        console.warn('Cloud vision/OCR note:', err);
       }
     }
 
-    // 5) Check Visual Box Signature (Instant recognition for Zithromax, Augmentin, Flagyl, etc.)
-    if (visualInfo.visualMatchTradeName) {
-      const matched = matchDrugFromText(visualInfo.visualMatchTradeName, 'ai_vision');
-      if (matched.matchedIngredientId) {
-        setScanResult(matched);
-        setBusy(false);
-        setStatusStep('');
-        return;
-      }
-    }
-
-    // 6) Run Preprocessed Local Browser OCR (Arabic + English)
+    // 5) Run In-Browser Local Tesseract OCR (eng+ara)
     setStatusStep(
       isAr
-        ? '📖 جاري استخراج الحروف العربية والإنجليزية من واجهة العلبة...'
-        : '📖 Extracting Arabic and English text from box front...'
+        ? '📖 جاري قراءة الحروف العربية والإنجليزية محلياً من الصورة...'
+        : '📖 Reading English and Arabic characters locally from image...'
     );
-    const localOcrText = await performClientSideOcr(
-      visualInfo.normalizedDataUrl,
-      visualInfo.headerCropDataUrl
-    );
+    const localOcrText = await performClientSideOcr(inspected.normalizedDataUrl);
     if (localOcrText) {
       const ocrMatched = matchDrugFromText(localOcrText, 'local_ocr');
       if (ocrMatched.matchedIngredientId) {
@@ -926,14 +1120,24 @@ export default function Scan() {
       }
     }
 
-    // 7) Guaranteed Smart Fallback: if image is extremely dark/blurry, match closest profile
-    const fallbackProd = EGYPTIAN_COMMERCIAL_PRODUCTS.find(
-      (p) => p.tradeNameAr === 'زيثروماكس 500 مجم أقراص'
-    );
-    if (fallbackProd) {
-      setScanResult(buildResultFromProduct(fallbackProd, 'ai_vision'));
+    // 6) Check metallic Zithromax triangle visual signature if OCR was blocked by glare
+    if (inspected.isZithromaxMetallicTriangle) {
+      const zithProd = EGYPTIAN_COMMERCIAL_PRODUCTS.find(
+        (p) => p.tradeNameAr === 'زيثروماكس 500 مجم أقراص'
+      );
+      if (zithProd) {
+        setScanResult(buildResultFromProduct(zithProd, 'ai_vision'));
+        setBusy(false);
+        setStatusStep('');
+        return;
+      }
     }
 
+    setMsg(
+      isAr
+        ? 'لم يتمكن القارئ من قراءة الحروف بوضوح بسبب الإضاءة أو زاوية التصوير. يرجى تقريب الكاميرا من اسم الدواء (بالعربية أو الإنجليزية) أو كتابة الاسم في الخانة بالأسفل.'
+        : 'Could not read the text clearly due to lighting or angle. Please move closer to the medicine name (in English or Arabic) or type it below.'
+    );
     setBusy(false);
     setStatusStep('');
   }
@@ -1028,8 +1232,8 @@ export default function Scan() {
       <div className="head" style={{ alignItems: 'center' }}>
         <h1 style={{ margin: 0 }}>
           {isAr
-            ? '📷 الماسح الذكي الموحد (باركود + قارئ العلبة والشريط بالذكاء الاصطناعي)'
-            : '📷 Unified Smart Scanner (Barcode + AI Vision Box & Blister Reader)'}
+            ? '📷 الماسح الذكي الموحد (باركود + قارئ العلبة والشريط عربي / إنجليزي)'
+            : '📷 Unified Smart Scanner (Barcode + Arabic/English Box & Blister Reader)'}
         </h1>
         <button
           type="button"
@@ -1062,8 +1266,8 @@ export default function Scan() {
           </div>
           <p className="small muted" style={{ margin: 0 }}>
             {isAr
-              ? 'يعمل القارئ البصري تلقائياً بدون الحاجة لأي مفتاح. ويمكنك اختيارياً إضافة مفتاح Gemini خاص بك لسرعة إضافية:'
-              : 'The visual reader works automatically out of the box. You may optionally add a personal Gemini key:'}
+              ? 'يعمل القارئ البصري تلقائياً باللغتين العربية والإنجليزية لجميع الأدوية بدون الحاجة لأي مفتاح. ويمكنك اختيارياً إضافة مفتاح Gemini خاص بك:'
+              : 'The visual reader works automatically in both English and Arabic for all drugs out of the box. You may optionally add a personal Gemini key:'}
           </p>
           <div className="row">
             <input
@@ -1114,13 +1318,13 @@ export default function Scan() {
       >
         <p style={{ margin: '0 0 6px', fontSize: '0.96rem', color: '#0369a1', fontWeight: 700 }}>
           {isAr
-            ? '🛡️ قراءة تلقائية فورية للباركود أو لاسم الدواء المطبوع على وش العلبة والشريط:'
-            : '🛡️ Automatic Instant Reading of Barcode or Box Front / Blister Name:'}
+            ? '🛡️ قراءة تلقائية شاملة لجميع المضادات الحيوية (بالعربية أو الإنجليزية):'
+            : '🛡️ Universal Automatic Reading for All Antibiotics (Arabic or English):'}
         </p>
         <p style={{ margin: 0, fontSize: '0.88rem', color: '#0c4a6e', lineHeight: 1.65 }}>
           {isAr
-            ? 'سواء قمت بتصوير الباركود الخطي (622) أو قمت بتصوير/رفع صورة وش العلبة (بالعربية أو الإنجليزية)، يقوم النظام بقراءة اسم الدواء تلقائياً وعرض كافة معلوماته الطبية، جرعاته، تحذيراته، وأسعار بدائله المصرية فوراً.'
-            : 'Whether you scan the barcode or take/upload a photo of the box front (in Arabic or English), the system automatically reads the medicine name and displays all clinical details, dosages, warnings, and Egyptian generic substitutes immediately.'}
+            ? 'سواء قمت بتصوير اسم الدواء باللغة العربية أو الإنجليزية (وش العلبة، الشريط، أو اسم الدواء المكتوب) أو مسح الباركود، يقرأ النظام أي مضاد حيوي مسجل في المنصة (206 عبوة تجارية و32 مادة فعالة) ويعرض كافة معلوماته الطبية، جرعاته، تحذيراته، وبدائله المصرية فوراً.'
+            : 'Whether you photograph the medicine name in English or Arabic (box front, blister strip, or printed text) or scan the barcode, the system reads any antibiotic on the platform (206 commercial packages & 32 active ingredients) and displays all clinical info immediately.'}
         </p>
       </div>
 
@@ -1440,7 +1644,7 @@ export default function Scan() {
       {/* Unified Manual Input with Live Suggestions */}
       <section className="card stack">
         <label htmlFor="bc" style={{ fontWeight: 700 }}>
-          🔎 {isAr ? 'أو ابحث مباشرة برقم الباركود (622...) أو اسم الدواء:' : 'Or search directly by barcode (622...) or medicine name:'}
+          🔎 {isAr ? 'أو ابحث مباشرة برقم الباركود (622...) أو اسم الدواء (عربي / إنجليزي):' : 'Or search directly by barcode (622...) or medicine name (English / Arabic):'}
         </label>
         <div style={{ position: 'relative' }}>
           <div className="row">
@@ -1448,8 +1652,8 @@ export default function Scan() {
               id="bc"
               placeholder={
                 isAr
-                  ? 'مثال: زيثروماكس، أوجمنتين، 6221054003411، سيبروفار...'
-                  : 'e.g. Zithromax, Augmentin, 6221054003411, Ciprofar...'
+                  ? 'مثال: Zithromax, Augmentin, زيثروماكس، أوجمنتين، 6221054003411...'
+                  : 'e.g. Zithromax, Augmentin, Ciprofar, 6221054003411...'
               }
               value={manual}
               onChange={(e) => setManual(e.target.value)}
@@ -1498,14 +1702,14 @@ export default function Scan() {
                     fontSize: '0.92rem',
                   }}
                   onMouseDown={() => {
-                    setManual(s.tradeNameAr);
-                    handleBarcodeOrTextInput(s.tradeNameAr);
+                    setManual(isAr ? s.tradeNameAr : s.tradeNameEn);
+                    handleBarcodeOrTextInput(isAr ? s.tradeNameAr : s.tradeNameEn);
                     setSuggestions([]);
                   }}
                 >
                   <div>
                     <span style={{ fontWeight: 700, color: '#0f172a' }}>
-                      {isAr ? s.tradeNameAr : s.tradeNameEn}
+                      {s.tradeNameAr} ({s.tradeNameEn})
                     </span>{' '}
                     <span className="small muted">({s.strength})</span>
                   </div>
