@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { ChangeEvent, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -702,7 +703,7 @@ export default function Medicines() {
       )}
 
       {/* DETAILED PACKAGE, BARCODE & ALTERNATIVES MODAL */}
-      {selectedProduct && selectedAlternatives && (
+      {selectedProduct && selectedAlternatives && createPortal(
         <div
           style={{
             position: 'fixed',
@@ -921,7 +922,8 @@ export default function Medicines() {
               </Link>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </main>
   );
