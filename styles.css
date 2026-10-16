@@ -2408,3 +2408,5 @@ body {
     page-break-inside: avoid;
   }
 }
+
+.ai-text { white-space: pre-line; line-height: 1.75; }

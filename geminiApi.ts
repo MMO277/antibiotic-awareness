@@ -1,4 +1,4 @@
-// geminiApi.ts - Multi-Engine Bilingual AI Vision & OCR (Arabic + English)
+// geminiApi.ts - Multi-Engine Bilingual AI Vision & Clean Clinical Assistant
 
 const BUILTIN_KEY = '';
 
@@ -36,21 +36,108 @@ export function isCustomApiKey(): boolean {
   return false;
 }
 
-export const SYSTEM_PROMPT = `أنت المساعد الذكي لمنصة "الوعي بالمضادات الحيوية" (Antibiotic Awareness Platform).
-مهمتك: تقديم معلومات علمية وطبية دقيقة ومفيدة ومبسطة للجمهور والمرضى بأسلوب إيجابي راقٍ، والإجابة عن أي سؤال طبي أو دوائي يطرحه المستخدم بوضوح تام، مع الالتزام بالمعايير الصحية:
+/**
+ * Cleans any raw LLM Markdown (tables, **, ###, ---, < >) into crisp, readable,
+ * well-spaced medical text with clean bullet points and numbered sections.
+ */
+export function cleanAssistantMarkdown(raw: string): string {
+  if (!raw) return '';
+  const preSplit = raw
+    .replace(/\|\s*\|/g, '\n|')
+    .replace(/\s*#{2,6}\s*/g, '\n### ')
+    .replace(/\s*---+\s*/g, '\n')
+    .replace(/\s+-\s+(?=\*\*)/g, '\n• ')
+    .replace(/\s+(?=\d+\.\s)/g, '\n');
+  const lines = preSplit.split(/\r?\n/);
+  const cleanedLines: string[] = [];
 
-قواعد الإجابة الإيجابية والمفيدة:
-1. أجب عن كل سؤال يطرحه المستخدم بطريقة مباشرة وعلمية مفصلة وواضحة، دون أي تهرب أو اعتذار غير مبرر.
-2. إذا سأل المستخدم عن المضاد الحيوي المناسب لمرض أو عدوى معينة (مثل الأسنان، المسالك البولية، التهاب اللوز، حب الشباب، الجيوب الأنفية، الأذن):
-   - اذكر له بوضوح الأدوية المعتمدة علمياً كخط أول (First-line) مع أسمائها العلمية والتجارية الشائعة (مثل أوجمنتين، زيثروماكس، فلاجيل، ماكروفيوران، إلخ).
-   - اشرح له بإيجاز كيف يعمل الدواء ولماذا تم اختياره.
-   - انصحه بلطف بضرورة مراجعة الطبيب المختص أو الصيدلي للفحص وتحديد الجرعة المناسبة والتأكد من عدم وجود حساسية.
-3. التوعية بالحقائق الجوهرية:
-   - المضاد الحيوي لا يعالج نزلات البرد أو الإنفلونزا الفيروسية، وحقنة/مجموعة البرد الشعبية خطيرة ومحرمة طبياً.
-   - ضرورة إكمال كورس العلاج كاملاً وعدم التوقف عند التحسن.
-   - التصرف الصحيح عند نسيان الجرعة، وتداخلات الحليب والكالسيوم مع بعض الأدوية.
-4. في حالات الطوارئ الحادة (صعوبة التنفس، تورم الوجه واللسان، الإغماء)، وجه المستخدم فوراً لطلب الإسعاف 123 أو التوجه للطوارئ.
-5. الأسلوب: لغة عربية فصحى بسيطة وواضحة، منسقة في نقاط مرتبة وسهلة القراءة.`;
+  for (let line of lines) {
+    let s = line.trim();
+    if (!s) {
+      if (cleanedLines.length > 0 && cleanedLines[cleanedLines.length - 1] !== '') {
+        cleanedLines.push('');
+      }
+      continue;
+    }
+
+    // Skip markdown horizontal rules or table separator rows (e.g., |---|---| or ---)
+    if (/^[-=_*|:\s]+$/.test(s)) {
+      continue;
+    }
+
+    // Convert markdown table rows (| col1 | col2 | col3 |) into clean readable bullet lines
+    if (s.includes('|')) {
+      const cells = s
+        .split('|')
+        .map((c) => c.replace(/\*\*/g, '').replace(/[<>*#`_]/g, '').trim())
+        .filter(Boolean);
+      if (cells.length === 0) continue;
+      // Skip table header rows that just say "نوع العدوى | المضاد الحيوي..."
+      if (
+        cells.some(
+          (c) =>
+            c === 'نوع العدوى' ||
+            c === 'الاسم العلمي' ||
+            c === 'طريقة العمل المختصرة' ||
+            c.toLowerCase() === 'first-line'
+        ) &&
+        cells.length >= 3
+      ) {
+        continue;
+      }
+      s = '• ' + cells.join(' — ');
+    }
+
+    // Strip markdown headings (###, ##, #) and add a blank line before section headers
+    if (/^#{1,6}\s+/.test(s)) {
+      s = s.replace(/^#{1,6}\s+/, '').trim();
+      if (cleanedLines.length > 0 && cleanedLines[cleanedLines.length - 1] !== '') {
+        cleanedLines.push('');
+      }
+      if (!s.endsWith(':')) s += ':';
+    }
+
+    // Remove raw **, __, `, and stray < > brackets
+    s = s
+      .replace(/\*\*/g, '')
+      .replace(/__/g, '')
+      .replace(/`/g, '')
+      .replace(/<\s*>/g, '')
+      .replace(/[<>]/g, '')
+      .trim();
+
+    // Normalize leading bullet markers (- or * at start of line) to •
+    s = s.replace(/^[-*]\s+/, '• ');
+
+    // Ensure inline numbered items or bullets that got squished onto one line are split cleanly
+    s = s
+      .replace(/\s+(?=\d+\.\s)/g, '\n')
+      .replace(/\s+(?=•\s)/g, '\n')
+      .replace(/\s+(?=⚠️)/g, '\n\n');
+
+    for (const sub of s.split('\n')) {
+      const trimmedSub = sub.trim();
+      if (trimmedSub) {
+        cleanedLines.push(trimmedSub);
+      }
+    }
+  }
+
+  return cleanedLines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+export const SYSTEM_PROMPT = `أنت المساعد الصيدلاني والطبي الذكي لـ «منصة الوعي بالمضادات الحيوية» (Antibiotic Awareness Platform).
+مهمتك: تقديم إجابات طبية ودوائية دقيقة، واضحة، ومرتبة بشكل مريح للعين بدون أي رموز برمجية أو جداول معقدة.
+
+قواعد تنسيق الإجابة (إلزامية جداً):
+1. ممنوع منعاً باتاً استخدام جداول Markdown (ممنوع استخدام الرمز | أو |---|---|).
+2. ممنوع منعاً باتاً استخدام نجوم التغميق ** أو علامات الشباك ### أو الخطوط --- أو الأقواس < >.
+3. اكتب الإجابة في فقرات قصيرة ومفصولة بسطر فارغ، واستخدم الترقيم الواضح (1. ، 2. ، 3.) أو النقاط (•) لترتيب المعلومات.
+4. إذا سأل المستخدم عن المضاد الحيوي المناسب لعدوى معينة (مثل الأسنان، المسالك البولية، التهاب اللوز، الجيوب الأنفية، الجلد، الأذن):
+   - اذكر الخيارات العلمية المعتمدة كخط أول (First-line) في نقاط مرقمة واضحة (الاسم العلمي والاسم التجاري الشائع في مصر مثل أوجمنتين، فلاجيل، زيثروماكس، دالاسين، ماكروفيوران، كيبوركس).
+   - اشرح باختصار سبب اختيار كل دواء.
+   - اختم بفقرة تبدأ برمز ⚠️ تحتوي على أهم التنبيهات الطبية وضرورة مراجعة الطبيب أو الصيدلي لتحديد الجرعة والتأكد من عدم وجود حساسية.
+5. في حالات الطوارئ الحادة (صعوبة التنفس، تورم الوجه واللسان، الإغماء)، وجه المستخدم فوراً للاتصال بالإسعاف المصري (123).`;
 
 export interface ChatMessage {
   who: 'me' | 'bot';
@@ -87,14 +174,14 @@ export async function askGemini(
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
           contents,
-          generationConfig: { temperature: 0.3, maxOutputTokens: 800 },
+          generationConfig: { temperature: 0.25, maxOutputTokens: 700 },
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
         const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (reply) return reply.trim();
+        if (reply) return cleanAssistantMarkdown(reply);
       }
     } catch {
       /* fallback to keyless endpoint */
@@ -116,7 +203,7 @@ export async function askGemini(
     body: JSON.stringify({
       model: 'openai',
       messages,
-      temperature: 0.3,
+      temperature: 0.25,
     }),
   });
 
@@ -124,7 +211,7 @@ export async function askGemini(
   const json = await res.json();
   const text = json?.choices?.[0]?.message?.content;
   if (!text) throw new Error('EMPTY_RESPONSE');
-  return text.trim();
+  return cleanAssistantMarkdown(text);
 }
 
 export interface VisionAnalysisResult {
@@ -163,7 +250,7 @@ function parseVisionText(rawText: string): {
   return {
     detectedDrugName: detectedName,
     matchedIngredientId: matchedId,
-    summary: summaryLines.join('\n').trim(),
+    summary: cleanAssistantMarkdown(summaryLines.join('\n')),
   };
 }
 
@@ -187,16 +274,15 @@ export async function analyzeMedicineImageWithVision(
 DRUG_ID: [اختر المعرف المطابق من القائمة: ${VISION_DRUG_IDS} أو unknown]
 وفي السطر الثاني:
 DRUG_NAME: [اسم الدواء التجاري والعلمي والتركيز كما يظهر في الصورة بالعربية والإنجليزية]
-ثم اكتب ملخصاً سريرياً واضحاً عن الدواء.`
+ثم اكتب ملخصاً سريرياً واضحاً عن الدواء بدون جداول وبدون رموز ** أو ###.`
       : `Read the medicine or antibiotic name shown in this image carefully whether written in English or Arabic (medicine box, blister pack, or printed/written text).
 Line 1: DRUG_ID: [matching slug from: ${VISION_DRUG_IDS} or unknown]
 Line 2: DRUG_NAME: [detected brand name, generic name, and strength in English and Arabic]
-Then write a clear clinical summary.`;
+Then write a clear clinical summary without markdown tables or ** symbols.`;
 
   const key = getApiKey();
   const dataUri = `data:${mimeType || 'image/jpeg'};base64,${base64Data}`;
 
-  // Task 1: Gemini API (if custom key starts with AIza)
   const runGemini = async (): Promise<string> => {
     if (!key || !key.startsWith('AIza')) return '';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
@@ -229,7 +315,6 @@ Then write a clear clinical summary.`;
     return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
   };
 
-  // Task 2: Keyless Multimodal Vision AI (reads Arabic & English boxes/text)
   const runPollinationsVision = async (): Promise<string> => {
     const visionRes = await fetch('https://text.pollinations.ai/openai', {
       method: 'POST',
@@ -253,7 +338,6 @@ Then write a clear clinical summary.`;
     return json?.choices?.[0]?.message?.content || '';
   };
 
-  // Task 3: Cloud OCR for English (OCREngine 2 is best for Latin/English pharmaceutical text)
   const runOcrEng = async (): Promise<string> => {
     const fd = new FormData();
     fd.append('apikey', 'helloworld');
@@ -270,7 +354,6 @@ Then write a clear clinical summary.`;
     return j?.ParsedResults?.[0]?.ParsedText || '';
   };
 
-  // Task 4: Cloud OCR for Arabic (OCREngine 1 is required for Arabic script)
   const runOcrAra = async (): Promise<string> => {
     const fd = new FormData();
     fd.append('apikey', 'helloworld');

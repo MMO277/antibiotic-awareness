@@ -3,12 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useLang } from './i18n';
 import { ALL_LOCAL_MEDICINES, findLocalMedicine, useApproved } from './medicinesApi';
-import {
-  analyzeMedicineImageWithVision,
-  setApiKey,
-  clearApiKey,
-  isCustomApiKey,
-} from './geminiApi';
+import { analyzeMedicineImageWithVision } from './geminiApi';
 import {
   ACTIVE_INGREDIENTS,
   EGYPTIAN_COMMERCIAL_PRODUCTS,
@@ -447,16 +442,8 @@ export default function Scan() {
   const [previewImg, setPreviewImg] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<UnifiedScanResult | null>(null);
 
-  // Settings & Autocomplete States
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState('');
+  // Live Autocomplete State
   const [suggestions, setSuggestions] = useState<EgyptianCommercialProduct[]>([]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setApiKeyInput(localStorage.getItem('gemini_api_key') || '');
-    }
-  }, []);
 
   // Update live suggestions as user types in manual search box (supports Arabic & English)
   useEffect(() => {
@@ -1229,81 +1216,11 @@ export default function Scan() {
 
   return (
     <main className="wrap narrow stack">
-      <div className="head" style={{ alignItems: 'center' }}>
-        <h1 style={{ margin: 0 }}>
-          {isAr
-            ? '📷 الماسح الذكي الموحد (باركود + قارئ العلبة والشريط عربي / إنجليزي)'
-            : '📷 Unified Smart Scanner (Barcode + Arabic/English Box & Blister Reader)'}
-        </h1>
-        <button
-          type="button"
-          className="btn ghost small"
-          onClick={() => setShowKeyModal(!showKeyModal)}
-          style={{ fontSize: '0.84rem' }}
-        >
-          ⚙️ {isAr ? 'إعدادات الذكاء الاصطناعي' : 'AI Settings'}
-        </button>
-      </div>
-
-      {/* Optional Gemini API Key Drawer */}
-      {showKeyModal && (
-        <div
-          className="card stack"
-          style={{
-            background: '#f8fafc',
-            border: '1px solid #cbd5e1',
-            padding: '14px',
-            borderRadius: '10px',
-          }}
-        >
-          <div className="head">
-            <h3 style={{ margin: 0, fontSize: '0.98rem' }}>
-              🔑 {isAr ? 'مفتاح Google Gemini API (إضافي اختياري):' : 'Google Gemini API Key (Optional):'}
-            </h3>
-            <button type="button" className="btn ghost small" onClick={() => setShowKeyModal(false)}>
-              ✕
-            </button>
-          </div>
-          <p className="small muted" style={{ margin: 0 }}>
-            {isAr
-              ? 'يعمل القارئ البصري تلقائياً باللغتين العربية والإنجليزية لجميع الأدوية بدون الحاجة لأي مفتاح. ويمكنك اختيارياً إضافة مفتاح Gemini خاص بك:'
-              : 'The visual reader works automatically in both English and Arabic for all drugs out of the box. You may optionally add a personal Gemini key:'}
-          </p>
-          <div className="row">
-            <input
-              type="password"
-              placeholder="AIzaSy..."
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              style={{ flex: 1, fontFamily: 'monospace' }}
-            />
-            <button
-              type="button"
-              className="btn small"
-              onClick={() => {
-                setApiKey(apiKeyInput);
-                setShowKeyModal(false);
-                setMsg(isAr ? '✅ تم حفظ المفتاح بنجاح!' : 'API Key saved!');
-              }}
-            >
-              {isAr ? 'حفظ' : 'Save'}
-            </button>
-            {isCustomApiKey() && (
-              <button
-                type="button"
-                className="btn ghost small danger"
-                onClick={() => {
-                  clearApiKey();
-                  setApiKeyInput('');
-                  setMsg(isAr ? 'تم مسح المفتاح.' : 'Key cleared.');
-                }}
-              >
-                {isAr ? 'مسح' : 'Clear'}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      <h1>
+        {isAr
+          ? '📷 الماسح الذكي الموحد (باركود + قارئ العلبة والشريط عربي / إنجليزي)'
+          : '📷 Unified Smart Scanner (Barcode + Arabic/English Box & Blister Reader)'}
+      </h1>
 
       {/* Safety Notice */}
       <div

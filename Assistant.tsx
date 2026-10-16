@@ -2,8 +2,14 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useApproved } from './medicinesApi';
-import { buildPassages, respond, ChatUiMessage, extractAnswerPlainText } from './assistantLogic';
-import { askGemini, hasApiKey, ChatMessage } from './geminiApi';
+import {
+  buildPassages,
+  respond,
+  ChatUiMessage,
+  extractAnswerPlainText,
+  isDirectVerifiedMatch,
+} from './assistantLogic';
+import { askGemini, ChatMessage, cleanAssistantMarkdown } from './geminiApi';
 import {
   isVoiceRecognitionSupported,
   speakText,
@@ -35,6 +41,114 @@ const CHIPS = {
     'Do antibiotics cure toothaches and dental pain?',
   ],
 };
+
+/**
+ * Renders structured clinical reply text into clean paragraphs, numbered cards,
+ * bullet lists, and highlighted warning boxes without any raw markdown clutter.
+ */
+function FormattedClinicalText({ text }: { text: string }) {
+  const cleaned = cleanAssistantMarkdown(text);
+  const blocks = cleaned.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
+
+  return (
+    <div style={{ display: 'grid', gap: '8px', lineHeight: 1.75, fontSize: '0.95rem', marginTop: '4px' }}>
+      {blocks.map((block, bIdx) => {
+        const isWarnBlock = block.startsWith('⚠️') || block.startsWith('🚨');
+        const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+
+        if (isWarnBlock) {
+          return (
+            <div
+              key={bIdx}
+              style={{
+                background: '#fffbeb',
+                border: '1px solid #fde68a',
+                borderInlineStart: '4px solid #f59e0b',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                color: '#78350f',
+              }}
+            >
+              {lines.map((line, lIdx) => (
+                <div
+                  key={lIdx}
+                  style={{
+                    fontWeight: lIdx === 0 ? 700 : 400,
+                    marginBottom: lIdx < lines.length - 1 ? '4px' : 0,
+                  }}
+                >
+                  {line}
+                </div>
+              ))}
+            </div>
+          );
+        }
+
+        return (
+          <div key={bIdx} style={{ display: 'grid', gap: '4px' }}>
+            {lines.map((line, lIdx) => {
+              const isNumbered = /^\d+\.\s/.test(line);
+              const isBullet = line.startsWith('•') || line.startsWith('-');
+              const colonIdx = line.indexOf(':');
+
+              if (isNumbered) {
+                return (
+                  <div
+                    key={lIdx}
+                    style={{
+                      background: '#ffffff',
+                      border: '1px solid #d3e4ea',
+                      borderRadius: '8px',
+                      padding: '8px 12px',
+                      color: '#0f172a',
+                    }}
+                  >
+                    {colonIdx > 0 && colonIdx < 65 ? (
+                      <>
+                        <strong style={{ color: '#0b3c5d' }}>{line.slice(0, colonIdx + 1)}</strong>
+                        <span>{line.slice(colonIdx + 1)}</span>
+                      </>
+                    ) : (
+                      <strong style={{ color: '#0b3c5d' }}>{line}</strong>
+                    )}
+                  </div>
+                );
+              }
+
+              if (isBullet) {
+                return (
+                  <div key={lIdx} style={{ paddingInlineStart: '8px', color: '#1e293b' }}>
+                    {colonIdx > 0 && colonIdx < 50 ? (
+                      <>
+                        <strong style={{ color: '#0b3c5d' }}>{line.slice(0, colonIdx + 1)}</strong>
+                        <span>{line.slice(colonIdx + 1)}</span>
+                      </>
+                    ) : (
+                      line
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <p
+                  key={lIdx}
+                  style={{
+                    margin: 0,
+                    fontWeight: lIdx === 0 && lines.length > 1 && line.endsWith(':') ? 700 : 400,
+                    color: lIdx === 0 && line.endsWith(':') ? '#0b3c5d' : '#12303f',
+                  }}
+                >
+                  {line}
+                </p>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function Assistant() {
   const { t, lang } = useLang();
@@ -71,28 +185,38 @@ export default function Assistant() {
     setQ('');
     setLoading(true);
 
-    if (hasApiKey()) {
-      try {
-        const history: ChatMessage[] = msgs.map((m) => ({
-          who: m.who,
-          text: extractAnswerPlainText(m, lang),
-        }));
-
-        const aiResponse = await askGemini(text, history);
-        const botMsg: ChatUiMessage = { who: 'bot', text: aiResponse, date, isAi: true };
-        setMsgs((m) => [...m, botMsg]);
-        setLoading(false);
-        if (shouldSpeakReply) {
-          speakText(aiResponse, lang);
-        }
-        return;
-      } catch (err) {
-        console.warn('Gemini request failed, smoothly using enhanced clinical engine:', err);
+    // 1) Check Verified Clinical Database & Condition Protocols FIRST (Instant, Curated, with Drug Links)
+    const localReply = respond(passages, meds, text);
+    if (isDirectVerifiedMatch(localReply)) {
+      const botMsg: ChatUiMessage = { who: 'bot', reply: localReply, date, isAi: false };
+      setMsgs((m) => [...m, botMsg]);
+      setLoading(false);
+      if (shouldSpeakReply) {
+        speakText(extractAnswerPlainText(botMsg, lang), lang);
       }
+      return;
     }
 
-    const reply = respond(passages, meds, text);
-    const botMsg: ChatUiMessage = { who: 'bot', reply, date, isAi: false };
+    // 2) For open-ended questions outside local passages, use AI Assistant with clean formatting
+    try {
+      const history: ChatMessage[] = msgs.map((m) => ({
+        who: m.who,
+        text: extractAnswerPlainText(m, lang),
+      }));
+
+      const aiResponse = await askGemini(text, history);
+      const botMsg: ChatUiMessage = { who: 'bot', text: aiResponse, date, isAi: true };
+      setMsgs((m) => [...m, botMsg]);
+      setLoading(false);
+      if (shouldSpeakReply) {
+        speakText(aiResponse, lang);
+      }
+      return;
+    } catch (err) {
+      console.warn('AI fallback to local reply:', err);
+    }
+
+    const botMsg: ChatUiMessage = { who: 'bot', reply: localReply, date, isAi: false };
     setMsgs((m) => [...m, botMsg]);
     setLoading(false);
 
@@ -127,7 +251,6 @@ export default function Assistant() {
         setVoiceNote('');
         if (transcript.trim()) {
           setQ(transcript);
-          // Automatically send and speak back the answer when asked by voice!
           ask(transcript, true);
         }
       },
@@ -232,8 +355,13 @@ export default function Assistant() {
             if (m.isAi && m.text) {
               return (
                 <div key={i} className="msg bot ai-reply">
-                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div className="ai-badge">✨ {isAr ? 'إجابة ذكية وموثقة' : 'Smart Verified Answer'}</div>
+                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <span
+                      className="badge"
+                      style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700, fontSize: '0.82rem' }}
+                    >
+                      ✨ {isAr ? 'إجابة طبية منظمة وموثقة' : 'Structured Medical Answer'}
+                    </span>
                     <button
                       type="button"
                       className="chip"
@@ -243,8 +371,8 @@ export default function Assistant() {
                       🔊 {isAr ? 'اسمع الإجابة' : 'Listen'}
                     </button>
                   </div>
-                  <div className="ai-text">{m.text}</div>
-                  <div className="src">{t('asstChecked')} {m.date}</div>
+                  <FormattedClinicalText text={m.text} />
+                  <div className="src" style={{ marginTop: '8px' }}>{t('asstChecked')} {m.date}</div>
                 </div>
               );
             }
@@ -254,8 +382,8 @@ export default function Assistant() {
             if (r.kind === 'answer') {
               return (
                 <div key={i} className="msg bot">
-                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <small className="muted">{r.lead[lang]}</small>
+                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <strong style={{ color: '#0b3c5d', fontSize: '0.95rem' }}>{r.lead[lang]}</strong>
                     <button
                       type="button"
                       className="chip"
@@ -265,10 +393,19 @@ export default function Assistant() {
                     </button>
                   </div>
                   {r.hits.map((p) => (
-                    <div key={p.id}>
-                      <p>{p.text[lang]}</p>
-                      <div className="src">
-                        <Link to={p.link ?? '/'}>{p.label}</Link>
+                    <div
+                      key={p.id}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #d3e4ea',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                        marginBottom: '8px',
+                      }}
+                    >
+                      <FormattedClinicalText text={p.text[lang]} />
+                      <div className="src" style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid #eef6f8' }}>
+                        <Link to={p.link ?? '/'} style={{ fontWeight: 700 }}>🔗 {p.label}</Link>
                         {p.unreviewed && <> · {t('unreviewed')}</>}
                         {p.refs.map((x) => (
                           <span key={x.url}>
@@ -290,26 +427,52 @@ export default function Assistant() {
                 className={`msg bot ${r.tone === 'warn' || r.tone === 'alert' ? 'warn' : ''}`}
                 role={r.tone === 'alert' ? 'alert' : undefined}
               >
-                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                  <span>{r.text[lang]}</span>
+                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span
+                    className="badge"
+                    style={{ background: '#dcfce7', color: '#166534', fontWeight: 700, fontSize: '0.82rem' }}
+                  >
+                    ✅ {isAr ? 'دليل سريري معتمد من المنصة' : 'Verified Clinical Protocol'}
+                  </span>
                   <button
                     type="button"
                     className="chip"
                     onClick={() => speakText(plainForSpeech, lang)}
                   >
-                    🔊
+                    🔊 {isAr ? 'اسمع الإجابة' : 'Listen'}
                   </button>
                 </div>
+                <FormattedClinicalText text={r.text[lang]} />
                 {r.links && r.links.length > 0 && (
-                  <div className="src">
+                  <div
+                    className="row wrapRow"
+                    style={{
+                      gap: '6px',
+                      marginTop: '10px',
+                      paddingTop: '8px',
+                      borderTop: '1px solid #d3e4ea',
+                    }}
+                  >
                     {r.links.map((l, k) => (
-                      <span key={l.to + k}>
-                        {k > 0 && ' · '}
-                        <Link to={l.to}>{l.label[lang]}</Link>
-                      </span>
+                      <Link
+                        key={l.to + k}
+                        to={l.to}
+                        className="chip"
+                        style={{
+                          textDecoration: 'none',
+                          background: '#ffffff',
+                          borderColor: '#0e9aa7',
+                          color: '#0a7c87',
+                          fontWeight: 700,
+                          fontSize: '0.84rem',
+                        }}
+                      >
+                        💊 {l.label[lang]}
+                      </Link>
                     ))}
                   </div>
                 )}
+                <div className="src" style={{ marginTop: '6px' }}>{t('asstChecked')} {m.date}</div>
               </div>
             );
           })}

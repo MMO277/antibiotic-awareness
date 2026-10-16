@@ -2,8 +2,14 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useApproved } from './medicinesApi';
-import { buildPassages, respond, ChatUiMessage, extractAnswerPlainText } from './assistantLogic';
-import { askGemini, hasApiKey, ChatMessage } from './geminiApi';
+import {
+  buildPassages,
+  respond,
+  ChatUiMessage,
+  extractAnswerPlainText,
+  isDirectVerifiedMatch,
+} from './assistantLogic';
+import { askGemini, ChatMessage, cleanAssistantMarkdown } from './geminiApi';
 import {
   isVoiceRecognitionSupported,
   speakText,
@@ -59,26 +65,34 @@ export default function ChatWidget() {
     setQ('');
     setLoading(true);
 
-    if (hasApiKey()) {
-      try {
-        const history: ChatMessage[] = msgs.map((m) => ({
-          who: m.who,
-          text: extractAnswerPlainText(m, lang),
-        }));
-
-        const aiResponse = await askGemini(text, history);
-        const botMsg: ChatUiMessage = { who: 'bot', text: aiResponse, date, isAi: true };
-        setMsgs((m) => [...m, botMsg]);
-        setLoading(false);
-        if (speakReply) speakText(aiResponse, lang);
-        return;
-      } catch (err) {
-        console.warn('Gemini request failed in widget, falling back to local engine:', err);
-      }
+    // 1) Check Verified Clinical Database & Condition Protocols FIRST
+    const localReply = respond(passages, meds, text);
+    if (isDirectVerifiedMatch(localReply)) {
+      const botMsg: ChatUiMessage = { who: 'bot', reply: localReply, date, isAi: false };
+      setMsgs((m) => [...m, botMsg]);
+      setLoading(false);
+      if (speakReply) speakText(extractAnswerPlainText(botMsg, lang), lang);
+      return;
     }
 
-    const reply = respond(passages, meds, text);
-    const botMsg: ChatUiMessage = { who: 'bot', reply, date, isAi: false };
+    // 2) For open-ended questions, use AI Assistant with clean formatting
+    try {
+      const history: ChatMessage[] = msgs.map((m) => ({
+        who: m.who,
+        text: extractAnswerPlainText(m, lang),
+      }));
+
+      const aiResponse = await askGemini(text, history);
+      const botMsg: ChatUiMessage = { who: 'bot', text: aiResponse, date, isAi: true };
+      setMsgs((m) => [...m, botMsg]);
+      setLoading(false);
+      if (speakReply) speakText(aiResponse, lang);
+      return;
+    } catch (err) {
+      console.warn('AI fallback in widget:', err);
+    }
+
+    const botMsg: ChatUiMessage = { who: 'bot', reply: localReply, date, isAi: false };
     setMsgs((m) => [...m, botMsg]);
     setLoading(false);
     if (speakReply) speakText(extractAnswerPlainText(botMsg, lang), lang);
@@ -251,13 +265,15 @@ export default function ChatWidget() {
               if (m.isAi && m.text) {
                 return (
                   <div key={i} className="msg bot ai-reply">
-                    <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div className="ai-badge">✨ {isAr ? 'رد الذكاء الاصطناعي' : 'AI Response'}</div>
+                    <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <div className="ai-badge">✨ {isAr ? 'إجابة طبية منظمة' : 'Structured Answer'}</div>
                       <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
                         🔊
                       </button>
                     </div>
-                    <div className="ai-text">{m.text}</div>
+                    <div className="ai-text" style={{ whiteSpace: 'pre-line', lineHeight: 1.7 }}>
+                      {cleanAssistantMarkdown(m.text)}
+                    </div>
                     <div className="src">{m.date}</div>
                   </div>
                 );
@@ -268,17 +284,19 @@ export default function ChatWidget() {
               if (r.kind === 'answer') {
                 return (
                   <div key={i} className="msg bot">
-                    <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                      <small className="muted">{r.lead[lang]}</small>
+                    <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <strong className="small" style={{ color: '#0b3c5d' }}>{r.lead[lang]}</strong>
                       <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
                         🔊
                       </button>
                     </div>
                     {r.hits.map((p) => (
-                      <div key={p.id}>
-                        <p>{p.text[lang]}</p>
+                      <div key={p.id} style={{ marginBottom: '6px' }}>
+                        <p style={{ whiteSpace: 'pre-line', lineHeight: 1.7, margin: '4px 0' }}>
+                          {cleanAssistantMarkdown(p.text[lang])}
+                        </p>
                         <div className="src">
-                          <Link to={p.link ?? '/'}>{p.label}</Link>
+                          <Link to={p.link ?? '/'} onClick={() => setIsOpen(false)}>🔗 {p.label}</Link>
                         </div>
                       </div>
                     ))}
@@ -292,18 +310,20 @@ export default function ChatWidget() {
                   className={`msg bot ${r.tone === 'warn' || r.tone === 'alert' ? 'warn' : ''}`}
                   role={r.tone === 'alert' ? 'alert' : undefined}
                 >
-                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <p style={{ margin: 0 }}>{r.text[lang]}</p>
+                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
+                    <p style={{ margin: 0, whiteSpace: 'pre-line', lineHeight: 1.7 }}>
+                      {cleanAssistantMarkdown(r.text[lang])}
+                    </p>
                     <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
                       🔊
                     </button>
                   </div>
                   {r.links && r.links.length > 0 && (
-                    <div className="src">
+                    <div className="src" style={{ marginTop: '6px' }}>
                       {r.links.map((l, k) => (
                         <span key={l.to + k}>
                           {k > 0 && ' · '}
-                          <Link to={l.to}>{l.label[lang]}</Link>
+                          <Link to={l.to} onClick={() => setIsOpen(false)}>💊 {l.label[lang]}</Link>
                         </span>
                       ))}
                     </div>

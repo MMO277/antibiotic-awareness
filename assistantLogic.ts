@@ -2,6 +2,7 @@ import { norm } from './search';
 import { ARTICLES } from './articlesData';
 import { MYTHS } from './contentData';
 import { Bi, FIELD_LABELS, Lang, Medicine, pick, TextField } from './types';
+import { EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 import * as R from './assistantReplies';
 import type { Link, PKind, ConditionKind } from './assistantReplies';
 
@@ -120,7 +121,7 @@ export function buildPassages(meds: Medicine[]): Passage[] {
       hay: norm(`${text('en')} ${text('ar')}`),
     });
   });
-  const FIELDS = ['approvedUses', 'mechanism', 'sideEffects', 'contraindications', 'interactions', 'pregnancyBreastfeeding', 'patientEducation'] as const;
+  const FIELDS = ['approvedUses', 'priceEgypt', 'substitutes', 'dosingReference', 'mechanism', 'sideEffects', 'contraindications', 'interactions', 'pregnancyBreastfeeding', 'patientEducation'] as const;
   meds.forEach((m) =>
     FIELDS.forEach((f) => {
       if (!m[f].en && !m[f].ar) return;
@@ -231,12 +232,30 @@ export function findMeds(meds: Medicine[], q: string): Medicine[] {
   const x = norm(q);
   const scored = meds
     .map((m) => {
-      const names = [m.genericName.en, m.genericName.ar, m.activeIngredients.en, m.activeIngredients.ar, ...m.brands.filter((b) => b.verified).map((b) => b.name)];
+      const commProds = EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => p.activeIngredientId === m.id);
+      const commBrandWords: string[] = [];
+      for (const p of commProds) {
+        const arFirst = p.tradeNameAr.split(' ')[0];
+        const enFirst = p.tradeNameEn.split(' ')[0];
+        if (arFirst && arFirst.length >= 3) commBrandWords.push(arFirst);
+        if (enFirst && enFirst.length >= 3) commBrandWords.push(enFirst);
+        commBrandWords.push(p.tradeNameAr, p.tradeNameEn);
+      }
+      const names = [
+        m.genericName.en,
+        m.genericName.ar,
+        m.activeIngredients.en,
+        m.activeIngredients.ar,
+        ...commBrandWords,
+        ...m.brands.filter((b) => b.verified).map((b) => b.name.split('(')[0].trim()),
+      ];
       let top = 0;
       for (const n of names) {
         if (!n) continue;
         const normN = norm(n);
-        if (normN.length >= 3 && x.includes(normN)) top = Math.max(top, 1.0);
+        if (normN.length >= 3 && x.includes(normN)) {
+          top = Math.max(top, 1.0 + normN.length * 0.02);
+        }
       }
       return { m, top };
     })
@@ -246,6 +265,9 @@ export function findMeds(meds: Medicine[], q: string): Medicine[] {
 }
 
 const ASPECTS: { f: TextField; re: RegExp }[] = [
+  { f: 'priceEgypt', re: /price|cost|how much|سعر|اسعار|بكام|ثمن|تمن|تكلفه/ },
+  { f: 'substitutes', re: /substitut|generic|alternative|بديل|بدائل|مثيل|مثائل|نفس الماده/ },
+  { f: 'dosingReference', re: /dosage|dose|جرعه|جرعات|كل كم ساعه|مواعيد/ },
   { f: 'sideEffects', re: /side effect|adverse|unwanted|harmful|جانبيه|الاعراض|اعراضه|مضاعفات|اضرار|ضرر|مخاطر|بيعمل ايه|يسبب|بيسبب/ },
   { f: 'interactions', re: /interact|combine|together with|mix|alcohol|تداخل|تتداخل|اخلط|كحول|مع (اي |ال)?(دوا|ادويه|مضاد|اكل|لبن)/ },
   { f: 'pregnancyBreastfeeding', re: /pregnan|breast.?feed|lactat|nursing mother|حامل|حمل|رضاعه|ارضاع|مرضع/ },
@@ -385,4 +407,11 @@ export function extractAnswerPlainText(m: ChatUiMessage, lang: 'ar' | 'en'): str
     return `${r.lead[lang]} ${r.hits.map((h) => h.text[lang]).join(' ')}`;
   }
   return r.text[lang] || '';
+}
+
+
+export function isDirectVerifiedMatch(r: Reply): boolean {
+  if (r.kind === 'answer') return true;
+  if (r.text === R.NONE || r.text === R.NONE_RELATED) return false;
+  return true;
 }
