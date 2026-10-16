@@ -137,6 +137,14 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
         setBusy(false);
         timerRef.current = window.setTimeout(() => {
           closeModal();
+          // Clear lamp seen & guest mode, then return to lamp entry screen
+          try {
+            sessionStorage.removeItem('aa_lamp_seen');
+            sessionStorage.removeItem('aa_guest_mode');
+          } catch {}
+          if (typeof authCtx?.openAuthModal === 'function') {
+            authCtx.openAuthModal('login');
+          }
         }, 550);
       }
     }
@@ -172,6 +180,13 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
       timerRef.current = null;
     }
     closeModal();
+    try {
+      sessionStorage.removeItem('aa_lamp_seen');
+      sessionStorage.removeItem('aa_guest_mode');
+    } catch {}
+    if (typeof authCtx?.openAuthModal === 'function') {
+      authCtx.openAuthModal('login');
+    }
   };
 
   const handleRetry = async () => {

@@ -23,6 +23,28 @@ import { auth, configured } from './firebase';
 
 export type AuthMode = 'login' | 'register' | 'forgot';
 
+export const GUEST_MODE_KEY = 'aa_guest_mode';
+
+export function isGuestModeActive(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return sessionStorage.getItem(GUEST_MODE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function setGuestModeActive(active: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (active) {
+      sessionStorage.setItem(GUEST_MODE_KEY, '1');
+    } else {
+      sessionStorage.removeItem(GUEST_MODE_KEY);
+    }
+  } catch {}
+}
+
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -40,6 +62,9 @@ export interface AuthContextType {
   logoutModalOpen: boolean;
   openLogoutModal: () => void;
   closeLogoutModal: () => void;
+  isGuest: boolean;
+  continueAsGuest: () => void;
+  exitGuestMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -59,6 +84,9 @@ const AuthContext = createContext<AuthContextType>({
   logoutModalOpen: false,
   openLogoutModal: () => {},
   closeLogoutModal: () => {},
+  isGuest: false,
+  continueAsGuest: () => {},
+  exitGuestMode: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -99,9 +127,10 @@ const googleProvider = new GoogleAuthProvider();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [isGuest, setIsGuest] = useState<boolean>(() => isGuestModeActive());
+  const [modalOpen, setModalOpen] = useState<boolean>(() => !isGuestModeActive());
   const [modalMode, setModalMode] = useState<AuthMode>('login');
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
@@ -109,6 +138,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!configured || !auth) {
       setUser(null);
       setLoading(false);
+      if (!isGuestModeActive()) {
+        setModalOpen(true);
+      }
       return;
     }
 
@@ -116,6 +148,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+      if (currentUser) {
+        setGuestModeActive(false);
+        setIsGuest(false);
+        setModalOpen(false);
+      } else {
+        if (!isGuestModeActive()) {
+          setModalOpen(true);
+        }
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -128,9 +169,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setModalOpen(true);
   };
 
+  const continueAsGuest = () => {
+    setGuestModeActive(true);
+    setIsGuest(true);
+    setModalOpen(false);
+    setError(null);
+  };
+
+  const exitGuestMode = () => {
+    // Return to lamp entry screen without calling Firebase sign-out
+    setGuestModeActive(false);
+    setIsGuest(false);
+    try {
+      sessionStorage.removeItem('aa_lamp_seen');
+    } catch {}
+    openAuthModal('login');
+  };
+
   const closeAuthModal = () => {
     setModalOpen(false);
     setError(null);
+    if (!user) {
+      setGuestModeActive(true);
+      setIsGuest(true);
+    }
   };
 
   const openLogoutModal = () => {
@@ -152,6 +214,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       await signInWithEmailAndPassword(auth, email.trim(), password);
+      setGuestModeActive(false);
+      setIsGuest(false);
       closeAuthModal();
     } catch (err: any) {
       const code = err?.code || 'auth/unknown';
@@ -174,6 +238,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await updateProfile(cred.user, { displayName: displayName.trim() });
         setUser({ ...cred.user, displayName: displayName.trim() } as User);
       }
+      setGuestModeActive(false);
+      setIsGuest(false);
       closeAuthModal();
     } catch (err: any) {
       const code = err?.code || 'auth/unknown';
@@ -182,7 +248,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // تسجيل الدخول بجوجل
   const loginWithGoogle = async () => {
     setError(null);
     if (!configured || !auth) {
@@ -192,6 +257,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       await signInWithPopup(auth, googleProvider);
+      setGuestModeActive(false);
+      setIsGuest(false);
       closeAuthModal();
     } catch (err: any) {
       const code = err?.code || 'auth/unknown';
@@ -202,6 +269,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     setError(null);
+    setGuestModeActive(false);
+    setIsGuest(false);
     if (!configured || !auth) {
       setUser(null);
       return;
@@ -251,6 +320,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logoutModalOpen,
         openLogoutModal,
         closeLogoutModal,
+        isGuest,
+        continueAsGuest,
+        exitGuestMode,
       }}
     >
       {children}

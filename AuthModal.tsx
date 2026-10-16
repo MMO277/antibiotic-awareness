@@ -144,6 +144,7 @@ export default function AuthModal() {
     modalMode,
     openAuthModal,
     closeAuthModal,
+    continueAsGuest,
     login,
     register,
     loginWithGoogle,
@@ -297,9 +298,14 @@ export default function AuthModal() {
             </div>
             <div className="auth-dark-name">{t('appName')}</div>
             <div className="auth-dark-hint">{isAr ? 'اسحب لإضاءة الشاشة' : 'Pull the chain to light the screen'}</div>
-            <button type="button" className="auth-skip" onClick={skipIntro}>
-              {isAr ? 'تخطي الحركة' : 'Skip Animation'}
-            </button>
+            <div className="auth-dark-actions">
+              <button type="button" className="auth-skip" onClick={skipIntro}>
+                {isAr ? 'تخطي الحركة' : 'Skip Animation'}
+              </button>
+              <button type="button" className="auth-guest-btn" onClick={continueAsGuest}>
+                👀 {isAr ? 'متابعة كزائر' : 'Continue as Guest'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -551,6 +557,12 @@ export default function AuthModal() {
                 </button>
               </div>
             )}
+            {/* Continue as Guest option for all visitors */}
+            <div className="auth-guest-prompt">
+              <button type="button" className="auth-guest-link" onClick={continueAsGuest}>
+                👀 {isAr ? 'متابعة التصفح كزائر بدون حساب' : 'Continue browsing as guest'}
+              </button>
+            </div>
           </div>
         )}
       </div>

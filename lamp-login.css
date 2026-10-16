@@ -178,3 +178,68 @@
 }
 @media (max-width: 380px) { .auth-glass { padding: 18px 14px 20px; } .auth-head h2 { font-size: 1.45rem; } }
 @media (max-height: 560px) { .auth-lamp { --lamp-y: 0vh; --lamp-s: .8; } .auth-dark-name { font-size: 1.2rem; } .auth-badge { width: 52px; height: 52px; } }
+
+/* Additional styles for Guest Mode & Initial Lamp Actions */
+.auth-dark-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.auth-guest-btn {
+  font: inherit;
+  font-size: .92rem;
+  color: #2ec4b6;
+  background: rgba(46, 196, 182, .12);
+  border: 1px solid rgba(46, 196, 182, .45);
+  border-radius: 999px;
+  padding: 10px 20px;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all .2s ease;
+}
+
+.auth-guest-btn:hover {
+  background: rgba(46, 196, 182, .24);
+  border-color: rgba(46, 196, 182, .75);
+}
+
+.auth-guest-btn:focus-visible {
+  outline: 3px solid #2ec4b6;
+  outline-offset: 2px;
+}
+
+.auth-guest-prompt {
+  text-align: center;
+  margin: 14px 0 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+.auth-guest-link {
+  background: transparent;
+  border: 1px dashed rgba(46, 196, 182, .5);
+  color: #2ec4b6;
+  border-radius: 12px;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all .2s ease;
+}
+
+.auth-guest-link:hover {
+  background: rgba(46, 196, 182, .12);
+  border-style: solid;
+}
+
+.auth-guest-link:focus-visible {
+  outline: 3px solid #2ec4b6;
+  outline-offset: 2px;
+}

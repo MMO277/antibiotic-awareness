@@ -38,6 +38,19 @@ export default function Layout({ children }: { children: ReactNode }) {
   const user = authCtx?.user;
   const openAuthModal = authCtx?.openAuthModal || (() => {});
 
+  const handleExitGuestMode = () => {
+    // Exit Guest Mode safely without calling Firebase sign-out
+    try {
+      sessionStorage.removeItem('aa_lamp_seen');
+      sessionStorage.removeItem('aa_guest_mode');
+    } catch {}
+    if (typeof authCtx?.exitGuestMode === 'function') {
+      authCtx.exitGuestMode();
+    } else {
+      openAuthModal('login');
+    }
+  };
+
   const pageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = pageRef.current;
@@ -115,19 +128,36 @@ export default function Layout({ children }: { children: ReactNode }) {
           <div className="header-actions">
             {/* User Account / Auth button */}
             {!user ? (
-              <button
-                type="button"
-                className="btn small ghost"
-                onClick={() => openAuthModal('login')}
-                style={{
-                  padding: '4px 10px',
-                  fontSize: '0.86rem',
-                  borderColor: 'rgba(255,255,255,0.4)',
-                  color: '#ffffff',
-                }}
-              >
-                👤 {isAr ? 'تسجيل الدخول' : 'Sign In'}
-              </button>
+              <div className="row" style={{ gap: '6px', alignItems: 'center' }}>
+                <span
+                  className="chip guest-indicator"
+                  style={{
+                    background: 'rgba(255,255,255,0.12)',
+                    color: '#e2e8f0',
+                    borderColor: 'rgba(255,255,255,0.25)',
+                    fontSize: '0.78rem',
+                    padding: '3px 8px',
+                    fontWeight: 600,
+                  }}
+                  title={isAr ? 'أنت تتصفح الموقع حالياً كزائر' : 'You are currently browsing as a guest'}
+                >
+                  👀 {isAr ? 'وضع الزائر' : 'Guest'}
+                </span>
+                <button
+                  type="button"
+                  className="btn small ghost"
+                  onClick={handleExitGuestMode}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '0.86rem',
+                    borderColor: 'rgba(255,255,255,0.4)',
+                    color: '#ffffff',
+                  }}
+                  title={isAr ? 'الخروج من وضع الزائر والعودة لشاشة الدخول' : 'Exit Guest Mode and return to sign in screen'}
+                >
+                  👤 {isAr ? 'تسجيل الدخول' : 'Sign In'}
+                </button>
+              </div>
             ) : (
               <div className="row" style={{ gap: '6px', alignItems: 'center' }}>
                 <Link
@@ -260,6 +290,34 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <span className="item-title">{t('navAdmin')}</span>
                 <span className="item-arrow">{isAr ? '←' : '→'}</span>
               </NavLink>
+
+              {!user && (
+                <>
+                  <div className="drawer-divider"></div>
+                  <button
+                    type="button"
+                    className="drawer-item"
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      handleExitGuestMode();
+                    }}
+                    style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#ffffff',
+                      cursor: 'pointer',
+                      textAlign: 'inherit',
+                    }}
+                  >
+                    <span className="item-icon">👤</span>
+                    <span className="item-title">
+                      {isAr ? 'تسجيل الدخول (الخروج من وضع الزائر)' : 'Sign In (Exit Guest Mode)'}
+                    </span>
+                    <span className="item-arrow">{isAr ? '←' : '→'}</span>
+                  </button>
+                </>
+              )}
 
               {user && (
                 <>
