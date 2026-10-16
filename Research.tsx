@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, configured } from './firebase';
 import { useLang } from './i18n';
 import { QUESTIONS } from './quizData';
 import { pick } from './types';
@@ -21,6 +21,10 @@ export default function Research() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    if (!configured || !db) {
+      setCfg(null);
+      return;
+    }
     getDoc(doc(db, 'researchConfig', 'main'))
       .then((s) => setCfg(s.exists() ? { enabled: !!s.data().enabled, ethicsApprovalRef: String(s.data().ethicsApprovalRef ?? '') } : null))
       .catch(() => setCfg(null));

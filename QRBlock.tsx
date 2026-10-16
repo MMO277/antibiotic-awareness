@@ -1,51 +1,45 @@
-import { useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import { useLang } from './i18n';
-import { medicineUrl } from './medicinesApi';
-
-const esc = (s: string) =>
-  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
 export default function QRBlock({ id, name }: { id: string; name: string }) {
-  const { t } = useLang();
-  const url = medicineUrl(id);
-  const [img, setImg] = useState('');
+  const { lang } = useLang();
+  const isAr = lang === 'ar';
 
-  useEffect(() => {
-    QRCode.toDataURL(url, {
-      width: 640,
-      margin: 2,
-      errorCorrectionLevel: 'M',
-      color: { dark: '#0B3C5D', light: '#FFFFFF' },
-    })
-      .then(setImg)
-      .catch(() => setImg(''));
-  }, [url]);
+  const fullUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname}#/medicine/${id}`
+    : `https://mmo277.github.io/antibiotic-awareness/#/medicine/${id}`;
 
-  function print() {
-    const w = window.open('', '_blank');
-    if (!w) return;
-    w.document.write(
-      `<html><head><title>${esc(name)}</title><style>body{font-family:sans-serif;text-align:center;padding:40px}img{width:320px;height:320px}p{word-break:break-all}</style></head>` +
-        `<body><h2>${esc(name)}</h2><img src="${img}" alt="QR"/><p>${esc(url)}</p><p>Antibiotic Awareness – educational use only</p>` +
-        `<script>window.onload=function(){window.print()}<\/script></body></html>`,
-    );
-    w.document.close();
-  }
+  const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(fullUrl)}`;
 
-  if (!img) return null;
   return (
-    <section className="card qr">
-      <h2>{t('qrTitle')}</h2>
-      <img src={img} alt={`QR ${name}`} width={220} height={220} />
-      <div className="row">
-        <a className="btn" href={img} download={`qr-${id}.png`}>
-          {t('qrDownload')}
-        </a>
-        <button className="btn ghost" onClick={print}>
-          {t('qrPrint')}
-        </button>
-      </div>
-    </section>
+    <div
+      className="card stack center"
+      style={{
+        background: '#f8fafc',
+        border: '1px solid #e2e8f0',
+        borderRadius: '12px',
+        padding: '14px',
+        maxWidth: '240px',
+      }}
+    >
+      <h4 style={{ margin: '0 0 8px', fontSize: '0.9rem', color: '#0b3c5d' }}>
+        📱 {isAr ? 'امسح لفتح النشرة على الموبايل' : 'Scan to open on mobile'}
+      </h4>
+      <img
+        src={qrImageUrl}
+        alt={`QR code for ${name}`}
+        style={{
+          width: '130px',
+          height: '130px',
+          borderRadius: '8px',
+          border: '1px solid #cbd5e1',
+          background: '#fff',
+          margin: '0 auto',
+        }}
+        loading="lazy"
+      />
+      <span className="small muted" style={{ fontSize: '0.78rem', marginTop: '6px', wordBreak: 'break-all' }}>
+        #{id}
+      </span>
+    </div>
   );
 }

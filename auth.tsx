@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, User } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { auth, db, configured } from './firebase';
 
 export type Role = 'editor' | 'reviewer' | 'admin';
 export const ROLES: Role[] = ['editor', 'reviewer', 'admin'];
@@ -33,6 +33,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!configured || !auth) {
+      setLoading(false);
+      return;
+    }
+
     return onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
@@ -67,9 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
+    if (!configured || !auth) throw new Error('Firebase is not configured');
     await signInWithEmailAndPassword(auth, email, password);
   };
   const logout = async () => {
+    if (!configured || !auth) return;
     await signOut(auth);
   };
 
