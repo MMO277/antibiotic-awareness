@@ -368,3 +368,21 @@ export function respond(passages: Passage[], meds: Medicine[], raw: string): Rep
     links: rel.length ? rel.map(linkOf) : R.DEFAULT_LINKS,
   };
 }
+
+export interface ChatUiMessage {
+  who: 'me' | 'bot';
+  text?: string;
+  reply?: Reply;
+  date?: string;
+  isAi?: boolean;
+}
+
+export function extractAnswerPlainText(m: ChatUiMessage, lang: 'ar' | 'en'): string {
+  if (m.text) return m.text;
+  const r = m.reply;
+  if (!r) return '';
+  if (r.kind === 'answer') {
+    return `${r.lead[lang]} ${r.hits.map((h) => h.text[lang]).join(' ')}`;
+  }
+  return r.text[lang] || '';
+}

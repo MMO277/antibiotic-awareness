@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { FormEvent, useEffect, useState } from 'react';
 import { useLang } from './i18n';
 import { useApproved } from './medicinesApi';
@@ -396,7 +397,7 @@ export default function Tracker() {
       )}
 
       {/* Add / Edit Schedule Modal */}
-      {showAddModal && (
+      {showAddModal && createPortal(
         <div className="modal-backdrop" onClick={() => setShowAddModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
@@ -538,7 +539,8 @@ export default function Tracker() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </main>
   );

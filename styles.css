@@ -154,8 +154,6 @@ legend { font-weight: 600; padding-inline: 6px; }
   .top, .foot, .btn { display: none !important; }
 }
 
-.chips { display: flex; gap: 8px; flex-wrap: wrap; }
-.chip { font: inherit; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--white); color: var(--ink); cursor: pointer; }
 .chip.on { background: var(--teal); border-color: var(--teal); color: var(--white); font-weight: 600; }
 .quick { font-size: 1.02rem; }
 .urgent { font-size: .95rem; }
@@ -174,10 +172,8 @@ legend { font-weight: 600; padding-inline: 6px; }
 .pbar .dont, .dot.dont { background: var(--danger); }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .92rem; }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 6px; }
-.tablewrap { overflow-x: auto; }
 .tbl { border-collapse: collapse; width: 100%; font-size: .92rem; }
 .tbl th, .tbl td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: start; white-space: nowrap; }
-.small { font-size: .88rem; }
 .chat { display: grid; gap: 10px; max-height: 60vh; overflow-y: auto; padding: 4px; align-content: start; }
 .msg { padding: 10px 14px; border-radius: 14px; max-width: 92%; overflow-wrap: anywhere; }
 .msg p { margin: .3rem 0; }
@@ -2019,28 +2015,6 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
-
-.emergency-header-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(239, 68, 68, 0.2);
-  color: #fecaca;
-  border: 1px solid rgba(248, 113, 113, 0.5);
-  padding: 5px 12px;
-  border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-.emergency-header-pill:hover {
-  background: #dc2626;
-  color: #fff;
-}
-@media (max-width: 640px) {
-  .emergency-header-pill { display: none; }
 }
 
 /* Secondary Quick-Access Clinical Ribbon */

@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useApproved } from './medicinesApi';
-import { buildPassages, respond, Reply } from './assistantLogic';
+import { buildPassages, respond, ChatUiMessage, extractAnswerPlainText } from './assistantLogic';
 import { askGemini, hasApiKey, ChatMessage } from './geminiApi';
 import {
   isVoiceRecognitionSupported,
@@ -10,14 +10,6 @@ import {
   startVoiceRecognition,
   stopSpeech,
 } from './speechService';
-
-interface Msg {
-  who: 'me' | 'bot';
-  text?: string;
-  reply?: Reply;
-  date?: string;
-  isAi?: boolean;
-}
 
 const WIDGET_CHIPS = {
   ar: [
@@ -45,7 +37,7 @@ export default function ChatWidget() {
 
   const [isOpen, setIsOpen] = useState(false);
   const [sosOpen, setSosOpen] = useState(false);
-  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [msgs, setMsgs] = useState<ChatUiMessage[]>([]);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
@@ -57,16 +49,6 @@ export default function ChatWidget() {
       endRef.current?.scrollIntoView({ block: 'nearest' });
     }
   }, [msgs, loading, isOpen]);
-
-  function extractAnswerPlainText(m: Msg): string {
-    if (m.text) return m.text;
-    const r = m.reply;
-    if (!r) return '';
-    if (r.kind === 'answer') {
-      return `${r.lead[lang]} ${r.hits.map((h) => h.text[lang]).join(' ')}`;
-    }
-    return r.text[lang] || '';
-  }
 
   async function ask(raw: string, speakReply = false) {
     const text = raw.trim().slice(0, 300);
@@ -81,11 +63,11 @@ export default function ChatWidget() {
       try {
         const history: ChatMessage[] = msgs.map((m) => ({
           who: m.who,
-          text: extractAnswerPlainText(m),
+          text: extractAnswerPlainText(m, lang),
         }));
 
         const aiResponse = await askGemini(text, history);
-        const botMsg: Msg = { who: 'bot', text: aiResponse, date, isAi: true };
+        const botMsg: ChatUiMessage = { who: 'bot', text: aiResponse, date, isAi: true };
         setMsgs((m) => [...m, botMsg]);
         setLoading(false);
         if (speakReply) speakText(aiResponse, lang);
@@ -96,10 +78,10 @@ export default function ChatWidget() {
     }
 
     const reply = respond(passages, meds, text);
-    const botMsg: Msg = { who: 'bot', reply, date, isAi: false };
+    const botMsg: ChatUiMessage = { who: 'bot', reply, date, isAi: false };
     setMsgs((m) => [...m, botMsg]);
     setLoading(false);
-    if (speakReply) speakText(extractAnswerPlainText(botMsg), lang);
+    if (speakReply) speakText(extractAnswerPlainText(botMsg, lang), lang);
   }
 
   function toggleVoiceMic() {
@@ -264,7 +246,7 @@ export default function ChatWidget() {
             {msgs.map((m, i) => {
               if (m.who === 'me') return <div key={i} className="msg me">{m.text}</div>;
 
-              const plainText = extractAnswerPlainText(m);
+              const plainText = extractAnswerPlainText(m, lang);
 
               if (m.isAi && m.text) {
                 return (

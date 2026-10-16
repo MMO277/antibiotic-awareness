@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -39,8 +40,8 @@ export default function HealthProfile() {
   const [medDrugName, setMedDrugName] = useState('');
   const [medActive, setMedActive] = useState('');
   const [medDose, setMedDose] = useState('');
-  const [medRoute, setMedRoute] = useState('oral');
-  const [medFreq, setMedFreq] = useState('twice_daily');
+  const medRoute = 'oral';
+  const medFreq = 'twice_daily';
   const [medStatus, setMedStatus] = useState<'active' | 'completed' | 'discontinued'>('active');
 
   useEffect(() => {
@@ -346,7 +347,7 @@ export default function HealthProfile() {
       </div>
 
       {/* Add Allergy Modal */}
-      {showAllergyModal && (
+      {showAllergyModal && createPortal(
         <div className="modal-backdrop" onClick={() => setShowAllergyModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
@@ -389,7 +390,7 @@ export default function HealthProfile() {
               <div className="form-row">
                 <div className="form-group">
                   <label><b>{lang === 'ar' ? 'درجة الخطورة:' : 'Severity:'}</b></label>
-                  <select value={severity} onChange={(e) => setSeverity(e.target.value as any)}>
+                  <select value={severity} onChange={(e) => setSeverity(e.target.value as AllergySeverity)}>
                     <option value="life_threatening">{lang === 'ar' ? 'مهددة للحياة (صدمة تحسسية وإغماء)' : 'Life Threatening'}</option>
                     <option value="severe">{lang === 'ar' ? 'شديدة (تورم وضيق تنفس)' : 'Severe'}</option>
                     <option value="moderate">{lang === 'ar' ? 'متوسطة (طفح جلدي واسع)' : 'Moderate'}</option>
@@ -399,7 +400,7 @@ export default function HealthProfile() {
 
                 <div className="form-group">
                   <label><b>{lang === 'ar' ? 'حالة التوثيق:' : 'Evidence Status:'}</b></label>
-                  <select value={evidence} onChange={(e) => setEvidence(e.target.value as any)}>
+                  <select value={evidence} onChange={(e) => setEvidence(e.target.value as EvidenceStatus)}>
                     <option value="patient_reported">{lang === 'ar' ? 'أبلغ عنها المريض' : 'Patient-Reported'}</option>
                     <option value="clinically_verified">{lang === 'ar' ? 'مؤكدة سريرياً باختبار جلد' : 'Clinically Verified'}</option>
                     <option value="suspected">{lang === 'ar' ? 'مشتبه بها فقط' : 'Suspected'}</option>
@@ -417,11 +418,12 @@ export default function HealthProfile() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Add Medication Modal */}
-      {showMedModal && (
+      {showMedModal && createPortal(
         <div className="modal-backdrop" onClick={() => setShowMedModal(false)}>
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
@@ -441,7 +443,7 @@ export default function HealthProfile() {
                 </div>
                 <div className="form-group">
                   <label><b>{lang === 'ar' ? 'الحالة:' : 'Status:'}</b></label>
-                  <select value={medStatus} onChange={(e) => setMedStatus(e.target.value as any)}>
+                  <select value={medStatus} onChange={(e) => setMedStatus(e.target.value as 'active' | 'completed' | 'discontinued')}>
                     <option value="active">{lang === 'ar' ? 'حالي' : 'Active'}</option>
                     <option value="completed">{lang === 'ar' ? 'مكتمل' : 'Completed'}</option>
                     <option value="discontinued">{lang === 'ar' ? 'متوقف' : 'Discontinued'}</option>
@@ -454,7 +456,8 @@ export default function HealthProfile() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </main>
   );
