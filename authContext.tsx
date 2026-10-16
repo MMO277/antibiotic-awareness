@@ -16,6 +16,8 @@ import {
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
+  signInWithPopup,
+  GoogleAuthProvider,
 } from 'firebase/auth';
 import { auth, configured } from './firebase';
 
@@ -28,6 +30,7 @@ export interface AuthContextType {
   clearError: () => void;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (email: string, password: string, displayName?: string, rememberMe?: boolean) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   modalOpen: boolean;
@@ -43,6 +46,7 @@ const AuthContext = createContext<AuthContextType>({
   clearError: () => {},
   login: async () => {},
   register: async () => {},
+  loginWithGoogle: async () => {},
   logout: async () => {},
   resetPassword: async () => {},
   modalOpen: false,
@@ -53,9 +57,6 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-/**
- * Maps Firebase Auth error codes to user-friendly clinical messages in Arabic and English
- */
 export function translateAuthError(errCode: string, isAr = true): string {
   switch (errCode) {
     case 'auth/unconfigured':
@@ -79,10 +80,16 @@ export function translateAuthError(errCode: string, isAr = true): string {
       return isAr ? 'تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت.' : 'Network connection failed. Please check your internet connection.';
     case 'auth/requires-recent-login':
       return isAr ? 'يجب إعادة تسجيل الدخول لتنفيذ هذا الإجراء الأمني.' : 'Please log in again to confirm this sensitive action.';
+    case 'auth/popup-closed-by-user':
+      return isAr ? 'تم إغلاق نافذة تسجيل الدخول. حاول مرة أخرى.' : 'Sign-in popup was closed. Please try again.';
+    case 'auth/popup-blocked':
+      return isAr ? 'المتصفح منع النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة.' : 'Popup was blocked by the browser. Please allow popups.';
     default:
       return isAr ? 'حدث خطأ في المصادقة. يُرجى إعادة المحاولة.' : 'Authentication error occurred. Please try again.';
   }
 }
+
+const googleProvider = new GoogleAuthProvider();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -92,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [modalMode, setModalMode] = useState<AuthMode>('login');
 
   useEffect(() => {
-    // If Firebase is not configured, preserve Guest Mode immediately with no network calls
     if (!configured || !auth) {
       setUser(null);
       setLoading(false);
@@ -120,11 +126,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
   };
 
-  /**
-   * Login with session persistence selection:
-   * - rememberMe = true: browserLocalPersistence (persists indefinitely across browser restarts)
-   * - rememberMe = false: browserSessionPersistence (clears on browser close, essential for shared devices)
-   */
   const login = async (email: string, password: string, rememberMe = false) => {
     setError(null);
     if (!configured || !auth) {
@@ -133,10 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(code);
     }
     try {
-      await setPersistence(
-        auth,
-        rememberMe ? browserLocalPersistence : browserSessionPersistence
-      );
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       await signInWithEmailAndPassword(auth, email.trim(), password);
       closeAuthModal();
     } catch (err: any) {
@@ -146,15 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  /**
-   * Account Registration with session persistence selection
-   */
-  const register = async (
-    email: string,
-    password: string,
-    displayName = '',
-    rememberMe = false
-  ) => {
+  const register = async (email: string, password: string, displayName = '', rememberMe = false) => {
     setError(null);
     if (!configured || !auth) {
       const code = 'auth/unconfigured';
@@ -162,15 +152,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(code);
     }
     try {
-      await setPersistence(
-        auth,
-        rememberMe ? browserLocalPersistence : browserSessionPersistence
-      );
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
       if (displayName.trim()) {
         await updateProfile(cred.user, { displayName: displayName.trim() });
         setUser({ ...cred.user, displayName: displayName.trim() } as User);
       }
+      closeAuthModal();
+    } catch (err: any) {
+      const code = err?.code || 'auth/unknown';
+      setError(code);
+      throw err;
+    }
+  };
+
+  // ✅ الجديد: تسجيل الدخول بجوجل
+  const loginWithGoogle = async () => {
+    setError(null);
+    if (!configured || !auth) {
+      const code = 'auth/unconfigured';
+      setError(code);
+      throw new Error(code);
+    }
+    try {
+      await signInWithPopup(auth, googleProvider);
       closeAuthModal();
     } catch (err: any) {
       const code = err?.code || 'auth/unknown';
@@ -217,6 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearError,
         login,
         register,
+        loginWithGoogle,
         logout,
         resetPassword,
         modalOpen,
