@@ -1,0 +1,543 @@
+/* Logout Cartoon Animation Styles
+   Antibiotic Awareness Portal
+   Features:
+   - Cartoon pill slip & fall keyframes
+   - Synchronized dust poof, peel slide, and orbiting dizzy stars
+   - Light / Dark theme support
+   - Responsive layout for narrow mobile screens
+   - Full prefers-reduced-motion support
+*/
+
+.logout-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 16px;
+  animation: logoutFadeIn 0.25s ease-out forwards;
+}
+
+@keyframes logoutFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.logout-card {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  color: #1e293b;
+  border-radius: 24px;
+  padding: 24px 20px 20px;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  text-align: center;
+  overflow: hidden;
+  animation: logoutCardPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+[data-theme='dark'] .logout-card {
+  background: #1e293b;
+  color: #f8fafc;
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+@keyframes logoutCardPop {
+  0% {
+    transform: scale(0.92) translateY(12px);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Top utility bar inside modal (Sound & Skip) */
+.logout-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.logout-tool-btn {
+  background: rgba(100, 116, 139, 0.12);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  color: inherit;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  min-height: 38px;
+}
+
+.logout-tool-btn:hover {
+  background: rgba(100, 116, 139, 0.2);
+  transform: translateY(-1px);
+}
+
+.logout-tool-btn:focus-visible {
+  outline: 2px solid #17b8c4;
+  outline-offset: 2px;
+}
+
+[data-theme='dark'] .logout-tool-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme='dark'] .logout-tool-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Stage container for cartoon character */
+.logout-stage {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(23, 184, 196, 0.06) 0%, rgba(23, 184, 196, 0.14) 100%);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px dashed rgba(23, 184, 196, 0.3);
+}
+
+[data-theme='dark'] .logout-stage {
+  background: linear-gradient(180deg, rgba(23, 184, 196, 0.05) 0%, rgba(23, 184, 196, 0.12) 100%);
+  border-color: rgba(23, 184, 196, 0.25);
+}
+
+/* Floor line */
+.logout-floor {
+  position: absolute;
+  bottom: 22px;
+  left: 10%;
+  right: 10%;
+  height: 4px;
+  background: rgba(23, 184, 196, 0.35);
+  border-radius: 2px;
+}
+
+/* Cartoon Pill Character Wrapper */
+.logout-character-wrap {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  width: 90px;
+  height: 120px;
+  margin-left: -45px;
+  transform-origin: 50% 90%;
+}
+
+/* ──────────────────────────────────────────────────────────
+   CARTOON SLIP & FALL CHOREOGRAPHY (Total: 1.85s)
+   0.00s - 0.38s: Jaunty walking/waving goodbye
+   0.38s - 0.76s: Slipping! Peel shoots forward, pill tilts back
+   0.76s - 1.15s: Midair spin & comical tumble
+   1.15s - 1.45s: Splat! Impact squash on floor, dust puff
+   1.45s - 1.85s: Rebound to sitting with dizzy stars & silly grin
+   ────────────────────────────────────────────────────────── */
+.logout-animated .logout-character-wrap {
+  animation: cartoonSlipFall 1.85s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+
+@keyframes cartoonSlipFall {
+  0% {
+    transform: translateX(-40px) translateY(0) rotate(0deg);
+  }
+  18% {
+    transform: translateX(-10px) translateY(-4px) rotate(4deg);
+  }
+  26% {
+    transform: translateX(0px) translateY(0) rotate(0deg);
+  }
+  38% {
+    transform: translateX(15px) translateY(-12px) rotate(-42deg);
+  }
+  52% {
+    transform: translateX(28px) translateY(-55px) rotate(-95deg);
+  }
+  68% {
+    transform: translateX(35px) translateY(-65px) rotate(-220deg);
+  }
+  80% {
+    transform: translateX(32px) translateY(-10px) rotate(-330deg);
+  }
+  85% {
+    transform: translateX(30px) translateY(8px) rotate(-360deg) scale(1.35, 0.62);
+  }
+  92% {
+    transform: translateX(30px) translateY(-8px) rotate(-360deg) scale(0.9, 1.12);
+  }
+  100% {
+    transform: translateX(30px) translateY(0px) rotate(-360deg) scale(1, 1);
+  }
+}
+
+/* Banana Peel Animation */
+.logout-peel {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  width: 44px;
+  height: 28px;
+  margin-left: -10px;
+  transform-origin: center;
+  opacity: 0.95;
+}
+
+.logout-animated .logout-peel {
+  animation: peelShoot 1.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@keyframes peelShoot {
+  0%,
+  24% {
+    transform: translateX(0) rotate(0deg);
+    opacity: 0.95;
+  }
+  38% {
+    transform: translateX(45px) rotate(35deg);
+    opacity: 1;
+  }
+  58% {
+    transform: translateX(110px) translateY(-15px) rotate(140deg);
+    opacity: 1;
+  }
+  78% {
+    transform: translateX(140px) translateY(0) rotate(210deg);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(145px) translateY(0) rotate(210deg);
+    opacity: 0.6;
+  }
+}
+
+/* Exclamation mark popping on surprise */
+.logout-exclamation {
+  position: absolute;
+  top: -15px;
+  left: 45px;
+  font-size: 26px;
+  font-weight: 900;
+  color: #ef4444;
+  opacity: 0;
+  transform: scale(0.4);
+}
+
+.logout-animated .logout-exclamation {
+  animation: exclamationPop 1.85s ease-out forwards;
+}
+
+@keyframes exclamationPop {
+  0%,
+  26% {
+    opacity: 0;
+    transform: scale(0.3) translateY(10px);
+  }
+  32% {
+    opacity: 1;
+    transform: scale(1.3) translateY(-8px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) translateY(-14px);
+  }
+  65%,
+  100% {
+    opacity: 0;
+    transform: scale(0.6) translateY(-25px);
+  }
+}
+
+/* Landing Dust Poof */
+.logout-dust-poof {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  margin-left: 5px;
+  width: 70px;
+  height: 30px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.logout-animated .logout-dust-poof {
+  animation: dustPoofExpand 1.85s ease-out forwards;
+}
+
+@keyframes dustPoofExpand {
+  0%,
+  82% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  85% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+  94% {
+    opacity: 0.4;
+    transform: scale(1.4) translateY(-4px);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6) translateY(-8px);
+  }
+}
+
+/* Orbiting Dizzy Stars */
+.logout-dizzy-stars {
+  position: absolute;
+  top: 0px;
+  left: 50%;
+  width: 70px;
+  height: 24px;
+  margin-left: -5px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.logout-animated .logout-dizzy-stars {
+  animation: starsSpin 1.85s ease-out forwards;
+}
+
+@keyframes starsSpin {
+  0%,
+  84% {
+    opacity: 0;
+    transform: scale(0.5) rotate(0deg);
+  }
+  90% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+/* Dynamic Eye States */
+.eye-normal,
+.eye-shock,
+.eye-dizzy {
+  transition: opacity 0.1s ease;
+}
+
+.logout-animated .eye-normal {
+  animation: showEyeNormal 1.85s forwards;
+}
+.logout-animated .eye-shock {
+  animation: showEyeShock 1.85s forwards;
+}
+.logout-animated .eye-dizzy {
+  animation: showEyeDizzy 1.85s forwards;
+}
+
+@keyframes showEyeNormal {
+  0%,
+  26% {
+    opacity: 1;
+  }
+  27%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes showEyeShock {
+  0%,
+  26% {
+    opacity: 0;
+  }
+  27%,
+  84% {
+    opacity: 1;
+  }
+  85%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes showEyeDizzy {
+  0%,
+  84% {
+    opacity: 0;
+  }
+  85%,
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Mouth States */
+.mouth-smile,
+.mouth-shock,
+.mouth-dizzy {
+  transition: opacity 0.1s ease;
+}
+
+.logout-animated .mouth-smile {
+  animation: showEyeNormal 1.85s forwards;
+}
+.logout-animated .mouth-shock {
+  animation: showEyeShock 1.85s forwards;
+}
+.logout-animated .mouth-dizzy {
+  animation: showEyeDizzy 1.85s forwards;
+}
+
+/* Content & Copy Styling */
+.logout-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0 0 6px;
+  color: inherit;
+}
+
+.logout-subtitle {
+  font-size: 0.92rem;
+  color: #64748b;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+[data-theme='dark'] .logout-subtitle {
+  color: #94a3b8;
+}
+
+/* Alert / Error Box */
+.logout-alert {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  margin-bottom: 14px;
+  text-align: start;
+}
+
+[data-theme='dark'] .logout-alert {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Action Buttons */
+.logout-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.logout-btn-primary {
+  background: #17b8c4;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 18px;
+  font-weight: 700;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 40px;
+}
+
+.logout-btn-primary:hover {
+  background: #139ea8;
+  transform: translateY(-1px);
+}
+
+.logout-btn-secondary {
+  background: transparent;
+  color: inherit;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-radius: 12px;
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 40px;
+}
+
+.logout-btn-secondary:hover {
+  background: rgba(100, 116, 139, 0.1);
+}
+
+/* Reduced Motion Mode */
+@media (prefers-reduced-motion: reduce) {
+  .logout-card {
+    animation: none;
+  }
+  .logout-animated .logout-character-wrap,
+  .logout-animated .logout-peel,
+  .logout-animated .logout-exclamation,
+  .logout-animated .logout-dust-poof,
+  .logout-animated .logout-dizzy-stars {
+    animation: none !important;
+  }
+  .logout-character-wrap {
+    transform: translateX(0) translateY(0) !important;
+  }
+  .eye-normal,
+  .mouth-smile {
+    opacity: 1 !important;
+  }
+  .eye-shock,
+  .eye-dizzy,
+  .mouth-shock,
+  .mouth-dizzy,
+  .logout-peel,
+  .logout-exclamation,
+  .logout-dust-poof,
+  .logout-dizzy-stars {
+    display: none !important;
+  }
+}
+
+/* Mobile Layout Adjustments */
+@media (max-width: 480px) {
+  .logout-card {
+    padding: 20px 16px 16px;
+    border-radius: 20px;
+  }
+  .logout-stage {
+    height: 180px;
+  }
+  .logout-title {
+    font-size: 1.15rem;
+  }
+  .logout-subtitle {
+    font-size: 0.86rem;
+  }
+  .logout-tool-btn {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+  }
+}

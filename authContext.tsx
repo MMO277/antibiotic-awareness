@@ -37,6 +37,9 @@ export interface AuthContextType {
   modalMode: AuthMode;
   openAuthModal: (mode?: AuthMode) => void;
   closeAuthModal: () => void;
+  logoutModalOpen: boolean;
+  openLogoutModal: () => void;
+  closeLogoutModal: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -53,6 +56,9 @@ const AuthContext = createContext<AuthContextType>({
   modalMode: 'login',
   openAuthModal: () => {},
   closeAuthModal: () => {},
+  logoutModalOpen: false,
+  openLogoutModal: () => {},
+  closeLogoutModal: () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -97,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<AuthMode>('login');
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     if (!configured || !auth) {
@@ -124,6 +131,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const closeAuthModal = () => {
     setModalOpen(false);
     setError(null);
+  };
+
+  const openLogoutModal = () => {
+    setError(null);
+    setLogoutModalOpen(true);
+  };
+
+  const closeLogoutModal = () => {
+    setLogoutModalOpen(false);
   };
 
   const login = async (email: string, password: string, rememberMe = false) => {
@@ -166,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // ✅ الجديد: تسجيل الدخول بجوجل
+  // تسجيل الدخول بجوجل
   const loginWithGoogle = async () => {
     setError(null);
     if (!configured || !auth) {
@@ -194,6 +210,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await signOut(auth);
     } catch (err: any) {
       console.error('Logout error:', err);
+      const code = err?.code || 'auth/unknown';
+      setError(code);
+      throw err;
     }
   };
 
@@ -229,6 +248,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         modalMode,
         openAuthModal,
         closeAuthModal,
+        logoutModalOpen,
+        openLogoutModal,
+        closeLogoutModal,
       }}
     >
       {children}

@@ -32,7 +32,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { dark, toggle } = useDarkMode();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { user, openAuthModal, logout } = useAuth();
+  const { user, openAuthModal, logoutModalOpen, openLogoutModal } = useAuth();
 
   const pageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -144,20 +144,23 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <button
                   type="button"
                   className="btn small ghost"
-                  onClick={logout}
+                  onClick={openLogoutModal}
+                  disabled={logoutModalOpen}
                   style={{
                     padding: '3px 8px',
                     fontSize: '0.8rem',
                     borderColor: 'rgba(255,255,255,0.25)',
                     color: '#fca5a5',
+                    cursor: logoutModalOpen ? 'not-allowed' : 'pointer',
+                    opacity: logoutModalOpen ? 0.65 : 1,
                   }}
                   title={isAr ? 'تسجيل الخروج' : 'Log out'}
+                  aria-label={isAr ? 'تسجيل الخروج' : 'Log out'}
                 >
-                  🚪
+                  🚪 {isAr ? 'خروج' : 'Logout'}
                 </button>
               </div>
             )}
-
 
             {/* Dark mode toggle */}
             <button
@@ -219,7 +222,6 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <span className="drawer-logo">💊</span>
                 <div>
                   <b>{isAr ? 'أقسام المنصة السريرية' : 'Clinical Portal Menu'}</b>
-
                 </div>
               </div>
               <button
@@ -256,6 +258,32 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <span className="item-title">{t('navAdmin')}</span>
                 <span className="item-arrow">{isAr ? '←' : '→'}</span>
               </NavLink>
+
+              {user && (
+                <>
+                  <div className="drawer-divider"></div>
+                  <button
+                    type="button"
+                    className="drawer-item"
+                    onClick={() => {
+                      setDrawerOpen(false);
+                      openLogoutModal();
+                    }}
+                    style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#fca5a5',
+                      cursor: 'pointer',
+                      textAlign: 'inherit',
+                    }}
+                  >
+                    <span className="item-icon">🚪</span>
+                    <span className="item-title">{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
+                    <span className="item-arrow">{isAr ? '←' : '→'}</span>
+                  </button>
+                </>
+              )}
             </div>
           </nav>
         </div>
@@ -277,7 +305,6 @@ export default function Layout({ children }: { children: ReactNode }) {
               <span style={{ fontSize: '1.6rem' }}>💊</span>
               <div>
                 <b style={{ fontSize: '1.05rem', color: '#fff' }}>{t('appName')}</b>
-
               </div>
             </div>
             <p className="small" style={{ color: '#cbd5e1', lineHeight: 1.6 }}>
