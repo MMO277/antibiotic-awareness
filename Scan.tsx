@@ -3,8 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useLang } from './i18n';
 import { useApproved } from './medicinesApi';
-import { analyzeMedicineImageWithVision, hasApiKey } from './geminiApi';
-import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
+import {
+  analyzeMedicineImageWithVision,
+  hasApiKey,
+  getApiKey,
+  setApiKey,
+  clearApiKey,
+  isCustomApiKey,
+} from './geminiApi';
+import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS, EgyptianCommercialProduct } from './egyptianDrugDatabase';
 
 /**
  * Extracts candidate barcode numbers and GS1 GTINs from any scanned raw text
@@ -36,8 +43,23 @@ function extractBarcodeCandidates(text: string): string[] {
   return Array.from(new Set(candidates.filter(Boolean)));
 }
 
+/**
+ * Normalizes Arabic and English text for accurate phonetic and fuzzy matching
+ */
+function normalizeText(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[ً-ٰٟ]/g, '') // remove Arabic tashkeel / vowels
+    .replace(/[أإآ]/g, 'ا')
+    .replace(/ة/g, 'ه')
+    .replace(/ى/g, 'ي')
+    .replace(/[^a-z0-9؀-ۿ\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 interface UnifiedScanResult {
-  method: 'barcode_exact' | 'ai_vision' | 'text_match';
+  method: 'barcode_exact' | 'local_ocr' | 'ai_vision' | 'text_match';
   confidenceLabelAr: string;
   confidenceLabelEn: string;
   detectedText: string;
@@ -49,6 +71,19 @@ interface UnifiedScanResult {
   priceEgp?: number | null;
   summary: string;
 }
+
+// Most common photographed antibiotics in Egypt for 1-tap instant match
+const POPULAR_EGYPTIAN_DRUGS = [
+  { id: 'azithromycin', nameAr: 'زيثروماكس 500 مجم (Zithromax)', nameEn: 'Zithromax 500mg', tradeMatch: 'زيثروماكس 500 مجم أقراص' },
+  { id: 'azithromycin', nameAr: 'زيثرون 500 مجم (Zithron)', nameEn: 'Zithron 500mg', tradeMatch: 'زيثرون 500 مجم أقراص' },
+  { id: 'amoxicillin-clavulanic-acid', nameAr: 'أوجمنتين 1 جم (Augmentin)', nameEn: 'Augmentin 1g', tradeMatch: 'أوجمنتين 1 جم أقراص' },
+  { id: 'amoxicillin-clavulanic-acid', nameAr: 'هاي بيوتك 1 جم (Hibiotic)', nameEn: 'Hibiotic 1g', tradeMatch: 'هاي بيوتك 1 جم أقراص' },
+  { id: 'ciprofloxacin', nameAr: 'سيبروفار 500 مجم (Ciprofar)', nameEn: 'Ciprofar 500mg', tradeMatch: 'سيبروفار 500 مجم أقراص' },
+  { id: 'metronidazole', nameAr: 'فلاجيل 500 مجم (Flagyl)', nameEn: 'Flagyl 500mg', tradeMatch: 'فلاجيل 500 مجم أقراص' },
+  { id: 'amoxicillin-clavulanic-acid', nameAr: 'كلافيموكس 1 جم (Klavox)', nameEn: 'Clavamox 1g', tradeMatch: 'كلافيموكس 1 جم أقراص' },
+  { id: 'cephalexin', nameAr: 'كيبوركس / إبيليكس (Keflex)', nameEn: 'Ceporex / Ibilex', tradeMatch: 'كيبوركس 1 جم أقراص' },
+  { id: 'ampicillin-sulbactam', nameAr: 'يوناسين 375 مجم (Unasyn)', nameEn: 'Unasyn 375mg', tradeMatch: 'يوناسين 375 مجم أقراص' },
+];
 
 const DEMO_UNIFIED_SAMPLES = [
   {
@@ -69,9 +104,9 @@ const DEMO_UNIFIED_SAMPLES = [
   },
   {
     id: 'azithromycin',
-    method: 'ai_vision' as const,
+    method: 'local_ocr' as const,
     titleAr: 'تجربة قراءة شريط زيثروماكس مقطوع (بدون باركود)',
-    titleEn: 'Torn Zithromax 500mg Blister (Vision Only)',
+    titleEn: 'Torn Zithromax 500mg Blister (Vision/OCR)',
     tradeAr: 'زيثروماكس 500 مجم كبسولات (Zithromax)',
     tradeEn: 'Zithromax 500mg Capsules',
     strength: '500 mg',
@@ -79,13 +114,13 @@ const DEMO_UNIFIED_SAMPLES = [
     barcode: '6221054003411',
     price: 165,
     aiTextAr:
-      'تم الاستنتاج بالذكاء الاصطناعي البصري: زيثروماكس 500 مجم (Azithromycin) — مضاد حيوي من عائلة الماكروليدات (WHO Watch). يُؤخذ مرة واحدة يومياً لمدة 3 إلى 5 أيام حسب وصف الطبيب، مع الفصل ساعتين عن مضادات الحموضة.',
+      'تم الاستنتاج عبر القارئ البصري الذكي: زيثروماكس 500 مجم (Azithromycin) — مضاد حيوي من عائلة الماكروليدات (WHO Watch). يُؤخذ مرة واحدة يومياً لمدة 3 إلى 5 أيام حسب وصف الطبيب، مع الفصل ساعتين عن مضادات الحموضة.',
     aiTextEn:
-      'AI Vision Detection: Zithromax 500mg (Azithromycin) — Macrolide antibiotic (WHO Watch). Taken once daily; separate by 2 hours from antacids.',
+      'OCR/Vision Detection: Zithromax 500mg (Azithromycin) — Macrolide antibiotic (WHO Watch). Taken once daily; separate by 2 hours from antacids.',
   },
   {
     id: 'ciprofloxacin',
-    method: 'ai_vision' as const,
+    method: 'local_ocr' as const,
     titleAr: 'تجربة قراءة وش علبة سيبروفار 500 مجم',
     titleEn: 'Ciprofar 500mg Box Front',
     tradeAr: 'سيبروفار 500 مجم أقراص (Ciprofar)',
@@ -95,9 +130,9 @@ const DEMO_UNIFIED_SAMPLES = [
     barcode: '6221008002341',
     price: 92,
     aiTextAr:
-      'تم الاستنتاج بالذكاء الاصطناعي البصري: سيبروفار 500 مجم (Ciprofloxacin) — مضاد حيوي من الفلوروكينولونات (WHO Watch). تنبيه مهم: افصله ساعتين عن منتجات الألبان والكالسيوم والحديد.',
+      'تم الاستنتاج عبر القارئ البصري الذكي: سيبروفار 500 مجم (Ciprofloxacin) — مضاد حيوي من الفلوروكينولونات (WHO Watch). تنبيه مهم: افصله ساعتين عن منتجات الألبان والكالسيوم والحديد.',
     aiTextEn:
-      'AI Vision Detection: Ciprofar 500mg (Ciprofloxacin) — Fluoroquinolone (WHO Watch). Separate by 2 hours from dairy, calcium, and iron supplements.',
+      'OCR/Vision Detection: Ciprofar 500mg (Ciprofloxacin) — Fluoroquinolone (WHO Watch). Separate by 2 hours from dairy, calcium, and iron supplements.',
   },
 ];
 
@@ -117,6 +152,34 @@ export default function Scan() {
   const [previewImg, setPreviewImg] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<UnifiedScanResult | null>(null);
 
+  // Settings & Autocomplete States
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [suggestions, setSuggestions] = useState<EgyptianCommercialProduct[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setApiKeyInput(localStorage.getItem('gemini_api_key') || '');
+    }
+  }, []);
+
+  // Update live suggestions as user types
+  useEffect(() => {
+    const q = normalizeText(manual);
+    if (!q || q.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+    const hits = EGYPTIAN_COMMERCIAL_PRODUCTS.filter(
+      (p) =>
+        normalizeText(p.tradeNameAr).includes(q) ||
+        normalizeText(p.tradeNameEn).includes(q) ||
+        normalizeText(p.scientificComposition).includes(q) ||
+        (p.barcode && p.barcode.includes(q))
+    ).slice(0, 5);
+    setSuggestions(hits);
+  }, [manual]);
+
   async function stop() {
     const s = scannerRef.current;
     scannerRef.current = null;
@@ -131,16 +194,30 @@ export default function Scan() {
     setRunning(false);
   }
 
-  // Match any detected text or filename against our 206 Egyptian products & 32 active ingredients
-  function matchDrugFromText(rawText: string, method: 'ai_vision' | 'text_match' = 'ai_vision'): UnifiedScanResult {
-    const clean = rawText.toLowerCase();
+  /**
+   * High-accuracy matcher against Egyptian Commercial Products & Active Ingredients
+   */
+  function matchDrugFromText(rawText: string, method: UnifiedScanResult['method'] = 'local_ocr'): UnifiedScanResult {
+    const clean = normalizeText(rawText);
+    const tokens = clean.split(' ').filter((t) => t.length > 2);
 
-    const prodMatch = EGYPTIAN_COMMERCIAL_PRODUCTS.find(
-      (p) =>
-        clean.includes(p.tradeNameEn.toLowerCase().split(' ')[0]) ||
-        clean.includes(p.tradeNameAr.split(' ')[0]) ||
-        clean.includes(p.activeIngredientId.replace(/-/g, ' ')),
-    );
+    // 1) Match by exact or tokenized commercial product
+    const prodMatch = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => {
+      const arNorm = normalizeText(p.tradeNameAr);
+      const enNorm = normalizeText(p.tradeNameEn);
+      const compNorm = normalizeText(p.scientificComposition);
+
+      if (clean.includes(arNorm) || clean.includes(enNorm)) return true;
+
+      // Check first distinctive brand word (e.g. "zithromax", "augmentin", "ciprofar", "flagyl")
+      const firstAr = arNorm.split(' ')[0];
+      const firstEn = enNorm.split(' ')[0];
+      if (firstAr && firstAr.length > 2 && clean.includes(firstAr)) return true;
+      if (firstEn && firstEn.length > 2 && clean.includes(firstEn)) return true;
+
+      // Check tokens
+      return tokens.some((tok) => tok.length > 3 && (arNorm.includes(tok) || enNorm.includes(tok) || compNorm.includes(tok)));
+    });
 
     if (prodMatch) {
       const ing = ACTIVE_INGREDIENTS.find((a) => a.id === prodMatch.activeIngredientId);
@@ -148,12 +225,16 @@ export default function Scan() {
         method,
         confidenceLabelAr:
           method === 'ai_vision'
-            ? '🤖 تطابق عبر القارئ البصري الذكي (يُرجى تأكيد التركيز من العلبة)'
-            : '🔎 تطابق نصي مع السجل المصري (يُرجى تأكيد التركيز)',
+            ? '🤖 تطابق عبر الذكاء الاصطناعي البصري'
+            : method === 'local_ocr'
+            ? '👁️ تطابق عبر القارئ البصري الذكي للعلبة'
+            : '🔎 تطابق نصي مع السجل المصري',
         confidenceLabelEn:
           method === 'ai_vision'
-            ? '🤖 AI Vision Match (Please confirm concentration on box)'
-            : '🔎 Registry Text Match (Please confirm concentration)',
+            ? '🤖 AI Vision Match'
+            : method === 'local_ocr'
+            ? '👁️ Smart Box OCR Match'
+            : '🔎 Registry Text Match',
         detectedText: isAr ? prodMatch.tradeNameAr : prodMatch.tradeNameEn,
         matchedIngredientId: prodMatch.activeIngredientId,
         matchedTradeName: isAr ? prodMatch.tradeNameAr : prodMatch.tradeNameEn,
@@ -162,17 +243,23 @@ export default function Scan() {
         barcode: prodMatch.barcode,
         priceEgp: prodMatch.priceEgp,
         summary: isAr
-          ? `تم التعرف على المستحضر: ${prodMatch.tradeNameAr} (${prodMatch.strength}) — المادة الفعالة: ${prodMatch.scientificComposition}. الفئة: ${ing?.drugClass?.ar || ''}. تصنيف منظمة الصحة العالمية: ${ing?.whoAccessGroup || 'Access'}.`
-          : `Identified Product: ${prodMatch.tradeNameEn} (${prodMatch.strength}) — Active Ingredient: ${prodMatch.scientificComposition}. Class: ${ing?.drugClass?.en || ''}. WHO AWaRe: ${ing?.whoAccessGroup || 'Access'}.`,
+          ? `تم التعرف على المستحضر: ${prodMatch.tradeNameAr} (${prodMatch.strength}) — المادة الفعالة: ${prodMatch.scientificComposition}. تصنيف منظمة الصحة العالمية: ${ing?.whoAccessGroup || 'Access'}.`
+          : `Identified Product: ${prodMatch.tradeNameEn} (${prodMatch.strength}) — Active Ingredient: ${prodMatch.scientificComposition}. WHO: ${ing?.whoAccessGroup || 'Access'}.`,
       };
     }
 
-    const ingMatch = ACTIVE_INGREDIENTS.find(
-      (a) =>
-        clean.includes(a.nameEn.toLowerCase().split(' ')[0]) ||
-        clean.includes(a.nameAr.split(' ')[0]) ||
-        clean.includes(a.id),
-    );
+    // 2) Match by active ingredient
+    const ingMatch = ACTIVE_INGREDIENTS.find((a) => {
+      const ar = normalizeText(a.nameAr);
+      const en = normalizeText(a.nameEn);
+      const idClean = a.id.replace(/-/g, ' ');
+      return (
+        clean.includes(ar) ||
+        clean.includes(en) ||
+        clean.includes(idClean) ||
+        tokens.some((tok) => tok.length > 3 && (ar.includes(tok) || en.includes(tok) || idClean.includes(tok)))
+      );
+    });
 
     if (ingMatch) {
       return {
@@ -253,18 +340,16 @@ export default function Scan() {
       return;
     }
 
-    // 3) If user typed letters (e.g. drug name on torn blister strip), match by name!
-    if (/[a-zA-Z\u0600-\u06FF]/.test(clean)) {
-      const textMatched = matchDrugFromText(clean, 'text_match');
-      if (textMatched.matchedIngredientId) {
-        setScanResult(textMatched);
-        return;
-      }
+    // 3) Match letters or partial name
+    const textMatched = matchDrugFromText(clean, 'text_match');
+    if (textMatched.matchedIngredientId) {
+      setScanResult(textMatched);
+      return;
     }
 
     setMsg(
       isAr
-        ? `لم يتم العثور على باركود مطابق للرمز (${clean.slice(0, 20)}). يمكنك تصوير وش العلبة أو كتابة أول حروف من اسم الدواء!`
+        ? `لم يتم العثور على دواء مطابق لـ (${clean.slice(0, 25)}). يمكنك كتابة اسم الدواء أو الضغط على أحد أزرار الأدوية الشائعة بالأسفل.`
         : t('scanNoMatch'),
     );
   }
@@ -321,18 +406,50 @@ export default function Scan() {
     }
   }
 
-  // Unified 3-Stage Waterfall Pipeline for any uploaded or captured image
+  /**
+   * Client-side OCR worker dynamically loaded via CDN without bundle overhead
+   */
+  async function performClientSideOcr(dataUrl: string): Promise<string> {
+    try {
+      // Check if Tesseract is already on window
+      const win = window as any;
+      if (!win.Tesseract) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('OCR_LOAD_FAILED'));
+          document.head.appendChild(script);
+        });
+      }
+
+      if (win.Tesseract) {
+        const result = await win.Tesseract.recognize(dataUrl, 'eng', {
+          logger: () => {},
+        });
+        return result?.data?.text || '';
+      }
+    } catch (err) {
+      console.warn('Local OCR attempt note:', err);
+    }
+    return '';
+  }
+
+  /**
+   * Unified 4-Stage Waterfall Pipeline: Barcode -> Client OCR -> Gemini Vision -> Smart Fallback
+   */
   async function processUnifiedImage(fileOrBlob: File, dataUrl: string, fileNameHint: string) {
     setBusy(true);
     setMsg('');
     setScanResult(null);
     setPreviewImg(dataUrl);
 
-    // STAGE 1: Deterministic Barcode / QR Scan (100% Accuracy Priority)
+    // STAGE 1: Exact Barcode / QR (100% Accuracy Priority)
     setStatusStep(
       isAr
-        ? '1️⃣ المرحلة الأولى: جاري فحص الصورة بحثاً عن باركود خطي أو رمز QR بدقة 100%...'
-        : 'Stage 1: Scanning image for exact linear barcode or QR code (100% precision)...',
+        ? '1️⃣ المرحلة الأولى: فحص الباركود الخطي (EAN-13)...'
+        : 'Stage 1: Scanning for linear barcode...',
     );
 
     try {
@@ -350,52 +467,81 @@ export default function Scan() {
         return;
       }
     } catch {
-      /* No barcode found in photo — automatically cascade to Stage 2 (AI Vision) */
+      /* No linear barcode found — proceed to Stage 2 */
     }
 
-    // STAGE 2: Multimodal AI Vision Analysis (Front of Box / Blister Strip / Prescription)
+    // STAGE 2: Client-side In-Browser Box / Blister OCR
     setStatusStep(
       isAr
-        ? '2️⃣ المرحلة الثانية: لم يُعثر على باركود بالصورة — جاري قراءة وش العلبة / الشريط بالذكاء الاصطناعي البصري...'
-        : 'Stage 2: No barcode in photo — analyzing box front / blister strip with AI Vision...',
+        ? '2️⃣ المرحلة الثانية: قراءة الحروف المطبوعة على العلبة عبر القارئ البصري...'
+        : 'Stage 2: Reading printed text on box/strip with optical reader...',
     );
 
+    const ocrText = await performClientSideOcr(dataUrl);
+    if (ocrText && ocrText.trim().length > 2) {
+      const ocrMatch = matchDrugFromText(ocrText + ' ' + fileNameHint, 'local_ocr');
+      if (ocrMatch.matchedIngredientId) {
+        setScanResult(ocrMatch);
+        setBusy(false);
+        setStatusStep('');
+        return;
+      }
+    }
+
+    // STAGE 3: Multimodal Gemini AI Vision (if key configured)
     const base64Data = dataUrl.split(',')[1] || '';
     if (hasApiKey() && base64Data) {
+      setStatusStep(
+        isAr
+          ? '3️⃣ المرحلة الثالثة: تحليل تفصيلي بالذكاء الاصطناعي البصري...'
+          : 'Stage 3: Analyzing with Multimodal AI Vision...',
+      );
       try {
         const aiAnalysis = await analyzeMedicineImageWithVision(
           base64Data,
           fileOrBlob.type || 'image/jpeg',
           lang,
         );
-        const matched = matchDrugFromText(aiAnalysis + ' ' + fileNameHint, 'ai_vision');
+        const combined = `${aiAnalysis.detectedDrugName || ''} ${aiAnalysis.matchedIngredientId || ''} ${aiAnalysis.summary || ''}`;
+        const matched = matchDrugFromText(combined + ' ' + fileNameHint, 'ai_vision');
+
+        if (aiAnalysis.matchedIngredientId && !matched.matchedIngredientId) {
+          const ing = ACTIVE_INGREDIENTS.find((a) => a.id === aiAnalysis.matchedIngredientId);
+          if (ing) {
+            matched.matchedIngredientId = ing.id;
+            matched.matchedTradeName = isAr ? ing.nameAr : ing.nameEn;
+          }
+        }
+
         setScanResult({
           ...matched,
-          summary: aiAnalysis,
+          method: 'ai_vision',
+          summary: typeof aiAnalysis.summary === 'string' ? aiAnalysis.summary : matched.summary,
         });
         setBusy(false);
         setStatusStep('');
         return;
       } catch (err) {
-        console.warn('Gemini Vision fallback to local matcher:', err);
+        console.warn('Gemini Vision fallback note:', err);
       }
     }
 
-    // STAGE 3: Smart Local Registry Matcher Fallback
-    const localMatch = matchDrugFromText(fileNameHint, 'ai_vision');
+    // STAGE 4: Smart Local Registry Fallback with 1-Tap Confirmation
+    const localMatch = matchDrugFromText(fileNameHint, 'local_ocr');
     if (localMatch.matchedIngredientId) {
       setScanResult(localMatch);
     } else {
       setScanResult({
-        method: 'ai_vision',
-        confidenceLabelAr: '📸 تم التقاط الصورة — اكتب أول حرفين من الاسم المطبوع للتأكيد الفوري',
-        confidenceLabelEn: '📸 Photo Captured — Type the first 2 letters on the box to confirm',
+        method: 'local_ocr',
+        confidenceLabelAr: '📸 تم التقاط الصورة — اختر الدواء بلمسة واحدة أو اكتب أول حرفين',
+        confidenceLabelEn: '📸 Photo Captured — Select drug with 1 tap or type first letters',
         detectedText: isAr ? 'صورة علبة أو شريط دواء' : 'Medicine Box / Strip Photo',
         summary: isAr
-          ? 'لم يُعثر على باركود واضح في هذه الزاوية. لضمان عدم حدوث أي خطأ طبي في التركيز، اكتب أول حرفين من اسم الدواء الظاهر أمامك في الخانة بالأسفل (مثلاً: أوجمنتين أو فلاج أو Zithro) ليتم مطابقته فوراً!'
-          : 'No barcode was visible at this angle. For 100% medication safety, type the first letters printed on the box in the field below to confirm the exact concentration.',
+          ? 'لم يُعثر على باركود واضح في هذه الزاوية. لضمان عدم حدوث أي خطأ طبي في التركيز، اختر الدواء من الأزرار السريعة بالأسفل أو اكتب أول حرفين (مثلاً: زيثروماكس أو أوجمنتين) ليتم مطابقته فوراً!'
+          : 'No barcode was visible at this angle. For 100% medication safety, tap one of the common medicines below or type the first letters.',
       });
     }
+
     setBusy(false);
     setStatusStep('');
   }
@@ -415,7 +561,7 @@ export default function Scan() {
     reader.readAsDataURL(file);
   }
 
-  // Capture current frame directly from the live camera video element!
+  // Capture current frame directly from the live camera video element
   async function captureLiveFrameForVision() {
     const videoEl = document.querySelector('#reader video') as HTMLVideoElement | null;
     if (!videoEl || videoEl.readyState < 2) {
@@ -437,7 +583,6 @@ export default function Scan() {
 
     await stop();
 
-    // Convert dataUrl to File object so Stage 1 (Html5Qrcode) + Stage 2 (AI Vision) both run on it
     const res = await fetch(dataUrl);
     const blob = await res.blob();
     const capturedFile = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' });
@@ -458,13 +603,83 @@ export default function Scan() {
 
   return (
     <main className="wrap narrow stack">
-      <h1>
-        {isAr
-          ? '📷 الماسح الذكي الموحد (باركود + قارئ العلبة والشريط بالذكاء الاصطناعي)'
-          : '📷 Unified Smart Scanner (Barcode + AI Vision Box & Blister Reader)'}
-      </h1>
+      <div className="head" style={{ alignItems: 'center' }}>
+        <h1 style={{ margin: 0 }}>
+          {isAr
+            ? '📷 الماسح الذكي الموحد (باركود + قارئ العلبة والشريط بالذكاء الاصطناعي)'
+            : '📷 Unified Smart Scanner (Barcode + AI Vision Box & Blister Reader)'}
+        </h1>
+        <button
+          type="button"
+          className="btn ghost small"
+          onClick={() => setShowKeyModal(!showKeyModal)}
+          style={{ fontSize: '0.84rem' }}
+        >
+          ⚙️ {isAr ? 'إعدادات الذكاء الاصطناعي (Gemini Key)' : 'AI Settings (Gemini Key)'}
+        </button>
+      </div>
 
-      {/* How the Safe 3-Stage Unified Pipeline Works */}
+      {/* Optional Gemini API Key Drawer */}
+      {showKeyModal && (
+        <div
+          className="card stack"
+          style={{
+            background: '#f8fafc',
+            border: '1px solid #cbd5e1',
+            padding: '14px',
+            borderRadius: '10px',
+          }}
+        >
+          <div className="head">
+            <h3 style={{ margin: 0, fontSize: '0.98rem' }}>
+              🔑 {isAr ? 'مفتاح Google Gemini API (اختياري لقراءة خط اليد والروشتات):' : 'Google Gemini API Key (Optional):'}
+            </h3>
+            <button type="button" className="btn ghost small" onClick={() => setShowKeyModal(false)}>
+              ✕
+            </button>
+          </div>
+          <p className="small muted" style={{ margin: 0 }}>
+            {isAr
+              ? 'المنصة تعمل محلياً بنسبة 100% بدون أي مفتاح لقراءة الباركود والسجل الدوائي. إذا أردت قراءة الروشتات المكتوبة بخط اليد وتحليل الصور المعقدة، يمكنك لصق مفتاح Gemini المجاني الخاص بك (من aistudio.google.com):'
+              : 'The platform works 100% offline for barcodes and registry. Paste your free Gemini key to enable handwriting prescription reading:'}
+          </p>
+          <div className="row">
+            <input
+              type="password"
+              placeholder="AIzaSy..."
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              style={{ flex: 1, fontFamily: 'monospace' }}
+            />
+            <button
+              type="button"
+              className="btn small"
+              onClick={() => {
+                setApiKey(apiKeyInput);
+                setShowKeyModal(false);
+                setMsg(isAr ? '✅ تم حفظ مفتاح الذكاء الاصطناعي بنجاح في متصفحك!' : 'API Key saved!');
+              }}
+            >
+              {isAr ? 'حفظ المفتاح' : 'Save'}
+            </button>
+            {isCustomApiKey() && (
+              <button
+                type="button"
+                className="btn ghost small danger"
+                onClick={() => {
+                  clearApiKey();
+                  setApiKeyInput('');
+                  setMsg(isAr ? 'تم مسح المفتاح والعودة للوضع المحلي.' : 'Key cleared.');
+                }}
+              >
+                {isAr ? 'مسح' : 'Clear'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Safety Notice */}
       <div
         className="notice tip"
         style={{
@@ -483,20 +698,20 @@ export default function Scan() {
         <ol style={{ margin: 0, paddingInlineStart: '20px', fontSize: '0.88rem', color: '#0c4a6e', lineHeight: 1.65 }}>
           <li>
             {isAr
-              ? 'الأولوية الأولى للباركود (دقة قطعية 100%): يبحث النظام أولاً عن الباركود الخطي (622) أو رمز QR في الكاميرا أو الصورة.'
-              : 'Priority 1 — Exact Barcode (100% Precision): Automatically checks for an Egyptian EAN-13 barcode or QR code first.'}
+              ? 'الأولوية الأولى للباركود (دقة قطعية 100%): يبحث النظام أولاً عن الباركود الخطي (622) على جانب أو قاع العلبة.'
+              : 'Priority 1 — Exact Barcode (100% Precision): Automatically checks for an Egyptian EAN-13 barcode first.'}
           </li>
           <li>
             {isAr
-              ? 'التحويل التلقائي للقارئ البصري (AI Vision): إذا صوّر المريض وش العلبة أو شريطاً مقطوعاً بدون باركود، يقرأ الذكاء الاصطناعي الاسم التجاري والتركيز ويعرض «بطاقة تأكيد» قبل فتح الدواء لمنع أي التباس بين التركيزات.'
-              : 'Priority 2 — Automatic AI Vision Fallback: If no barcode is present, AI Vision reads the box front or blister strip and shows a safety confirmation card.'}
+              ? 'التحويل التلقائي للقارئ البصري: إذا صوّرت وش العلبة أو شريطاً مقطوعاً، يقرأ النظام الاسم المطبوع ويطابقه مع السجل الدوائي المصري.'
+              : 'Priority 2 — Optical Box Reader: If no barcode is visible, reads the box front or blister strip to match generic alternatives.'}
           </li>
         </ol>
       </div>
 
       <div id="filereader" style={{ display: 'none' }} />
 
-      {/* Unified Camera & One-Tap Photo Scanner Card */}
+      {/* Unified Camera & Photo Scanner */}
       <section className="card stack" style={{ borderTop: '4px solid #0284c7' }}>
         <div id="reader" className="reader" />
 
@@ -611,6 +826,28 @@ export default function Scan() {
               )}
             </div>
 
+            {/* 1-Tap Quick Identification Chips (Especially when photo had no barcode) */}
+            {!scanResult?.matchedIngredientId && (
+              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #fcd34d' }}>
+                <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '0.9rem', color: '#92400e' }}>
+                  ⚡ {isAr ? 'هل الدواء المصور أحد أشهر هذه المضادات في مصر؟ اضغط للاختيار الفوري:' : 'Is it one of these popular Egyptian medicines? Tap to select:'}
+                </p>
+                <div className="row wrapRow" style={{ gap: '8px' }}>
+                  {POPULAR_EGYPTIAN_DRUGS.map((d) => (
+                    <button
+                      key={d.tradeMatch}
+                      type="button"
+                      className="chip"
+                      style={{ background: '#fff', borderColor: '#f59e0b', color: '#78350f', fontWeight: 600 }}
+                      onClick={() => handleBarcodeOrTextInput(d.tradeMatch)}
+                    >
+                      💊 {isAr ? d.nameAr : d.nameEn}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {scanResult?.matchedIngredientId && (
               <div className="row wrapRow" style={{ gap: '10px', marginTop: '6px' }}>
                 <Link to={`/medicine/${scanResult.matchedIngredientId}`} className="btn">
@@ -625,34 +862,87 @@ export default function Scan() {
         )}
       </section>
 
-      {/* Unified Manual Input: Accepts EITHER Barcode (622...) OR Partial Drug Name (Augm / فلاج) */}
+      {/* Unified Manual Input with Live Suggestions */}
       <section className="card stack">
         <label htmlFor="bc" style={{ fontWeight: 700 }}>
-          🔎 {isAr ? 'أو اكتب رقم الباركود (622...) أو أي حروف مقروءة على الشريط المقطوع:' : 'Or type the barcode number (622...) or any letters visible on the blister strip:'}
+          🔎 {isAr ? 'أو اكتب رقم الباركود (622...) أو أي حروف مقروءة على العلبة / الشريط:' : 'Or type barcode (622...) or drug name / letters:'}
         </label>
-        <div className="row">
-          <input
-            id="bc"
-            placeholder={
-              isAr
-                ? 'مثال: 6223003990602 أو أوجمنتين أو Zithro أو فلاج...'
-                : 'e.g. 6223003990602 or Augmentin or Zithro or Flagyl...'
-            }
-            value={manual}
-            onChange={(e) => setManual(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && manual.trim()) {
-                handleBarcodeOrTextInput(manual);
+        <div style={{ position: 'relative' }}>
+          <div className="row">
+            <input
+              id="bc"
+              placeholder={
+                isAr
+                  ? 'مثال: زيثروماكس، أوجمنتين، 6221054003411، سيبروفار...'
+                  : 'e.g. Zithromax, Augmentin, 6221054003411, Ciprofar...'
               }
-            }}
-          />
-          <button
-            type="button"
-            className="btn"
-            onClick={() => manual.trim() && handleBarcodeOrTextInput(manual)}
-          >
-            {isAr ? 'فحص ومطابقة' : 'Match Now'}
-          </button>
+              value={manual}
+              onChange={(e) => setManual(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && manual.trim()) {
+                  handleBarcodeOrTextInput(manual);
+                }
+              }}
+            />
+            <button
+              type="button"
+              className="btn"
+              onClick={() => manual.trim() && handleBarcodeOrTextInput(manual)}
+            >
+              {isAr ? 'فحص ومطابقة' : 'Match Now'}
+            </button>
+          </div>
+
+          {/* Live Autocomplete Dropdown */}
+          {suggestions.length > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                zIndex: 20,
+                background: '#fff',
+                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                marginTop: '4px',
+                overflow: 'hidden',
+              }}
+            >
+              {suggestions.map((s) => (
+                <div
+                  key={s.productId}
+                  style={{
+                    padding: '8px 12px',
+                    borderBottom: '1px solid #f1f5f9',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '0.92rem',
+                  }}
+                  onMouseDown={() => {
+                    setManual(s.tradeNameAr);
+                    handleBarcodeOrTextInput(s.tradeNameAr);
+                    setSuggestions([]);
+                  }}
+                >
+                  <div>
+                    <span style={{ fontWeight: 700, color: '#0f172a' }}>
+                      {isAr ? s.tradeNameAr : s.tradeNameEn}
+                    </span>{' '}
+                    <span className="small muted">({s.strength})</span>
+                  </div>
+                  {s.priceEgp && (
+                    <span className="badge" style={{ background: '#ecfdf5', color: '#065f46', fontSize: '0.8rem' }}>
+                      {s.priceEgp} {isAr ? 'ج.م' : 'EGP'}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Instant Interactive Demo Chips */}
@@ -673,11 +963,11 @@ export default function Scan() {
                     confidenceLabelAr:
                       sample.method === 'barcode_exact'
                         ? '🟢 تطابق قطعي 100% عبر الباركود المصري (EAN-13)'
-                        : '🤖 تطابق عبر القارئ البصري الذكي (يُرجى تأكيد التركيز من العلبة)',
+                        : '👁️ تطابق عبر القارئ البصري الذكي للعلبة',
                     confidenceLabelEn:
                       sample.method === 'barcode_exact'
                         ? '🟢 100% Exact Egyptian Barcode Match (EAN-13)'
-                        : '🤖 AI Vision Match (Please confirm concentration on box)',
+                        : '👁️ Smart Box OCR Match',
                     detectedText: isAr ? sample.tradeAr : sample.tradeEn,
                     matchedIngredientId: sample.id,
                     matchedTradeName: isAr ? sample.tradeAr : sample.tradeEn,
@@ -689,7 +979,7 @@ export default function Scan() {
                   });
                 }}
               >
-                {sample.method === 'barcode_exact' ? '🟢' : '🤖'} {isAr ? sample.titleAr : sample.titleEn}
+                {sample.method === 'barcode_exact' ? '🟢' : '👁️'} {isAr ? sample.titleAr : sample.titleEn}
               </button>
             ))}
           </div>

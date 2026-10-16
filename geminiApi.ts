@@ -15,6 +15,29 @@ export function hasApiKey(): boolean {
   return !!getApiKey();
 }
 
+export function setApiKey(key: string): void {
+  if (typeof window !== 'undefined') {
+    if (key.trim()) {
+      localStorage.setItem('gemini_api_key', key.trim());
+    } else {
+      localStorage.removeItem('gemini_api_key');
+    }
+  }
+}
+
+export function clearApiKey(): void {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('gemini_api_key');
+  }
+}
+
+export function isCustomApiKey(): boolean {
+  if (typeof window !== 'undefined') {
+    return !!localStorage.getItem('gemini_api_key');
+  }
+  return false;
+}
+
 export const SYSTEM_PROMPT = `أنت المساعد الذكي لمنصة "الوعي بالمضادات الحيوية ومقاومة الميكروبات (Antibiotic Awareness & AMR)".
 مهمتك: تقديم معلومات علمية وطبية دقيقة ومفيدة ومبسطة للجمهور والمرضى بأسلوب إيجابي راقٍ، والإجابة عن أي سؤال طبي أو دوائي يطرحه المستخدم بوضوح تام، مع الالتزام بالمعايير الصحية:
 
