@@ -4,6 +4,7 @@ import { useLang } from './i18n';
 import { useAuth } from './authContext';
 import Disclaimer from './Disclaimer';
 import ChatWidget from './ChatWidget';
+import LogoutModal from './LogoutModal';
 
 function useDarkMode() {
   const [dark, setDark] = useState<boolean>(() => {
@@ -32,7 +33,10 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { dark, toggle } = useDarkMode();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { user, openAuthModal, logoutModalOpen, openLogoutModal } = useAuth();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const authCtx = useAuth() as any;
+  const user = authCtx?.user;
+  const openAuthModal = authCtx?.openAuthModal || (() => {});
 
   const pageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -144,15 +148,13 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <button
                   type="button"
                   className="btn small ghost"
-                  onClick={openLogoutModal}
-                  disabled={logoutModalOpen}
+                  onClick={() => setShowLogoutModal(true)}
                   style={{
                     padding: '3px 8px',
                     fontSize: '0.8rem',
                     borderColor: 'rgba(255,255,255,0.25)',
                     color: '#fca5a5',
-                    cursor: logoutModalOpen ? 'not-allowed' : 'pointer',
-                    opacity: logoutModalOpen ? 0.65 : 1,
+                    cursor: 'pointer',
                   }}
                   title={isAr ? 'تسجيل الخروج' : 'Log out'}
                   aria-label={isAr ? 'تسجيل الخروج' : 'Log out'}
@@ -267,7 +269,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     className="drawer-item"
                     onClick={() => {
                       setDrawerOpen(false);
-                      openLogoutModal();
+                      setShowLogoutModal(true);
                     }}
                     style={{
                       width: '100%',
@@ -296,6 +298,9 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* Always-on Floating AI Assistant Bubble */}
       <ChatWidget />
+
+      {/* Self-contained Logout Modal mounted directly in Layout */}
+      <LogoutModal isOpen={showLogoutModal} onClose={() => setShowLogoutModal(false)} />
 
       {/* Professional Academic & Medical Footer on All Pages */}
       <footer className="pro-footer">

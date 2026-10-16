@@ -14,8 +14,17 @@ const prefersReducedMotion = (): boolean =>
   typeof window.matchMedia === 'function' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export default function LogoutModal() {
-  const { logoutModalOpen, closeLogoutModal, logout } = useAuth();
+interface LogoutModalProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) {
+  const authCtx = useAuth() as any;
+  const isModalOpen = isOpen !== undefined ? isOpen : Boolean(authCtx?.logoutModalOpen);
+  const closeModal = onClose || authCtx?.closeLogoutModal || (() => {});
+  const logout = authCtx?.logout || (async () => {});
+
   const { lang } = useLang();
   const isAr = lang === 'ar';
 
@@ -27,13 +36,13 @@ export default function LogoutModal() {
   const modalRef = useRef<HTMLDivElement>(null);
   const skipBtnRef = useRef<HTMLButtonElement>(null);
   const timerRef = useRef<number | null>(null);
+  const safetyTimerRef = useRef<number | null>(null);
   const hasTriggeredAudio = useRef<boolean>(false);
 
   // Focus trap & escape key handler
   useEffect(() => {
-    if (!logoutModalOpen) return;
+    if (!isModalOpen) return;
 
-    // Focus skip button on open
     window.setTimeout(() => {
       skipBtnRef.current?.focus();
     }, 50);
@@ -45,16 +54,20 @@ export default function LogoutModal() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [logoutModalOpen, stage]);
+  }, [isModalOpen, stage]);
 
   // Main logout orchestration when modal opens
   useEffect(() => {
-    if (!logoutModalOpen) {
+    if (!isModalOpen) {
       stopCartoonAudio();
       hasTriggeredAudio.current = false;
       if (timerRef.current) {
         window.clearTimeout(timerRef.current);
         timerRef.current = null;
+      }
+      if (safetyTimerRef.current) {
+        window.clearTimeout(safetyTimerRef.current);
+        safetyTimerRef.current = null;
       }
       return;
     }
@@ -64,21 +77,24 @@ export default function LogoutModal() {
     setErrorMessage('');
     setBusy(true);
 
-    // Play cartoon audio once per modal opening (only on user action, never autoplay)
+    // Play cartoon audio on user action
     if (!reduced && soundOn && !hasTriggeredAudio.current) {
       hasTriggeredAudio.current = true;
-      playCartoonFallSound(true);
+      try {
+        playCartoonFallSound(true);
+      } catch {
+        /* audio failure caught safely */
+      }
     }
 
     let isSignOutDone = false;
-    let isAnimationDone = reduced; // if reduced motion, animation is instantly ready
+    let isAnimationDone = reduced;
     let signOutFailedError: string | null = null;
 
     // 1. Perform actual Firebase sign out
     logout()
       .then(() => {
         isSignOutDone = true;
-        // Reset lamp seen key so lamp login intro is available on next sign in
         try {
           sessionStorage.removeItem('aa_lamp_seen');
         } catch {
@@ -89,7 +105,9 @@ export default function LogoutModal() {
       .catch((err: any) => {
         console.error('Firebase sign-out failed:', err);
         const code = err?.code || 'auth/network-request-failed';
-        signOutFailedError = translateAuthError(code, isAr);
+        signOutFailedError = typeof translateAuthError === 'function'
+          ? translateAuthError(code, isAr)
+          : (isAr ? 'تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت.' : 'Network connection failed. Please check your internet connection.');
         setErrorMessage(signOutFailedError);
         setStage('error');
         setBusy(false);
@@ -104,13 +122,21 @@ export default function LogoutModal() {
       }, 1900);
     }
 
+    // 3. Safety net: ensure modal never gets permanently stuck
+    safetyTimerRef.current = window.setTimeout(() => {
+      if (!isSignOutDone && stage === 'animating') {
+        isAnimationDone = true;
+        isSignOutDone = true;
+        checkCompletion();
+      }
+    }, 4500);
+
     function checkCompletion() {
       if (isSignOutDone && isAnimationDone && !signOutFailedError) {
         setStage('success');
         setBusy(false);
-        // Brief pause to appreciate the funny landed pose, then close
         timerRef.current = window.setTimeout(() => {
-          closeLogoutModal();
+          closeModal();
         }, 550);
       }
     }
@@ -121,10 +147,14 @@ export default function LogoutModal() {
         window.clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+      if (safetyTimerRef.current) {
+        window.clearTimeout(safetyTimerRef.current);
+        safetyTimerRef.current = null;
+      }
     };
-  }, [logoutModalOpen]);
+  }, [isModalOpen]);
 
-  if (!logoutModalOpen) return null;
+  if (!isModalOpen) return null;
 
   const toggleSound = () => {
     const next = !soundOn;
@@ -141,13 +171,7 @@ export default function LogoutModal() {
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    // Instantly close if already signed out, or wait for sign out to complete
-    if (stage === 'success') {
-      closeLogoutModal();
-    } else {
-      setStage('success');
-      closeLogoutModal();
-    }
+    closeModal();
   };
 
   const handleRetry = async () => {
@@ -164,11 +188,15 @@ export default function LogoutModal() {
       setStage('success');
       setBusy(false);
       window.setTimeout(() => {
-        closeLogoutModal();
+        closeModal();
       }, 500);
     } catch (err: any) {
       const code = err?.code || 'auth/network-request-failed';
-      setErrorMessage(translateAuthError(code, isAr));
+      setErrorMessage(
+        typeof translateAuthError === 'function'
+          ? translateAuthError(code, isAr)
+          : (isAr ? 'فشل تسجيل الخروج. يرجى المحاولة لاحقاً.' : 'Logout failed. Please try again.')
+      );
       setStage('error');
       setBusy(false);
     }
@@ -176,7 +204,7 @@ export default function LogoutModal() {
 
   const handleCancel = () => {
     stopCartoonAudio();
-    closeLogoutModal();
+    closeModal();
   };
 
   const isReduced = prefersReducedMotion();
