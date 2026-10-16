@@ -1,6 +1,7 @@
 import { ReactNode, useRef, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useLang } from './i18n';
+import { useAuth } from './authContext';
 import Disclaimer from './Disclaimer';
 import ChatWidget from './ChatWidget';
 
@@ -31,6 +32,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { dark, toggle } = useDarkMode();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { user, openAuthModal, logout } = useAuth();
 
   const pageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -107,6 +109,54 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="header-actions">
+            {/* User Account / Auth button */}
+            {!user ? (
+              <button
+                type="button"
+                className="btn small ghost"
+                onClick={() => openAuthModal('login')}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '0.86rem',
+                  borderColor: 'rgba(255,255,255,0.4)',
+                  color: '#ffffff',
+                }}
+              >
+                👤 {isAr ? 'تسجيل الدخول' : 'Sign In'}
+              </button>
+            ) : (
+              <div className="row" style={{ gap: '6px', alignItems: 'center' }}>
+                <Link
+                  to="/health-profile"
+                  className="chip"
+                  style={{
+                    background: 'rgba(255,255,255,0.15)',
+                    color: '#ffffff',
+                    borderColor: 'rgba(255,255,255,0.3)',
+                    fontSize: '0.82rem',
+                    textDecoration: 'none',
+                    fontWeight: 700,
+                  }}
+                  title={user.email || ''}
+                >
+                  👤 {user.displayName || user.email?.split('@')[0]}
+                </Link>
+                <button
+                  type="button"
+                  className="btn small ghost"
+                  onClick={logout}
+                  style={{
+                    padding: '3px 8px',
+                    fontSize: '0.8rem',
+                    borderColor: 'rgba(255,255,255,0.25)',
+                    color: '#fca5a5',
+                  }}
+                  title={isAr ? 'تسجيل الخروج' : 'Log out'}
+                >
+                  🚪
+                </button>
+              </div>
+            )}
 
 
             {/* Dark mode toggle */}

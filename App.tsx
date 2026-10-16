@@ -14,6 +14,8 @@ import { Route, Routes, Link } from 'react-router-dom';
 import { configured } from './firebase';
 import { useLang } from './i18n';
 import Layout from './Layout';
+import { AuthProvider } from './authContext';
+import AuthModal from './AuthModal';
 import Home from './Home';
 import Medicines from './Medicines';
 import MedicinePage from './MedicinePage';
@@ -29,15 +31,21 @@ import Dashboard from './Dashboard';
 import Editor from './Editor';
 
 function ConfigMissing() {
+  const { t } = useLang();
   return (
     <main className="wrap narrow">
       <div className="card">
         <h1>Firebase is not configured</h1>
         <p>
           Copy <code>.env.example</code> to <code>.env.local</code>, paste your Firebase web app values, then restart{' '}
-          <code>npm run dev</code>. See README.md, step 3.
+          <code>npm run dev</code>.
         </p>
-        <p dir="rtl">انسخ الملف <code>.env.example</code> إلى <code>.env.local</code> وأدخل قيم Firebase ثم أعد تشغيل المشروع.</p>
+        <p dir="rtl">
+          لوحة الإدارة تتطلب إعدادات Firebase. انسخ الملف <code>.env.example</code> إلى <code>.env.local</code> وأدخل القيم ثم أعد التشغيل.
+        </p>
+        <p style={{ marginTop: '1rem' }}>
+          <Link to="/" className="btn">{t('navHome')}</Link>
+        </p>
       </div>
     </main>
   );
@@ -54,39 +62,41 @@ function NotFound() {
 }
 
 export default function App() {
-  if (!configured) return <ConfigMissing />;
   return (
-    <Layout>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/medicines" element={<Medicines />} />
-        <Route path="/green-prescription" element={<GreenPrescription />} />
-        <Route path="/awareness-week" element={<AwarenessWeek />} />
-        <Route path="/compare" element={<CompareDrugs />} />
-        <Route path="/prescription-radar" element={<PrescriptionRadar />} />
-        <Route path="/interactions" element={<Interactions />} />
-        <Route path="/safe-disposal" element={<SafeDisposal />} />
-        <Route path="/tracker" element={<Tracker />} />
-        <Route path="/side-effects" element={<SideEffectsGuide />} />
-        <Route path="/listen" element={<ListenLearn />} />
-        <Route path="/health-profile" element={<HealthProfile />} />
-        <Route path="/allergy-checker" element={<AllergyChecker />} />
-        <Route path="/pediatric-helper" element={<PediatricHelper />} />
-        <Route path="/medicine/:id" element={<MedicinePage />} />
-        <Route path="/articles" element={<Articles />} />
-        <Route path="/articles/:id" element={<ArticlePage />} />
-        <Route path="/quiz" element={<Quiz />} />
-        <Route path="/scan" element={<Scan />} />
-        <Route path="/learn" element={<Learn />} />
-        <Route path="/assistant" element={<Assistant />} />
-        <Route path="/myth" element={<MythFact />} />
-        <Route path="/methodology" element={<Methodology />} />
-        <Route path="/research" element={<Research />} />
-        <Route path="/admin" element={<Dashboard />} />
-        <Route path="/admin/new" element={<Editor />} />
-        <Route path="/admin/medicine/:id" element={<Editor />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Layout>
+    <AuthProvider>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/medicines" element={<Medicines />} />
+          <Route path="/green-prescription" element={<GreenPrescription />} />
+          <Route path="/awareness-week" element={<AwarenessWeek />} />
+          <Route path="/compare" element={<CompareDrugs />} />
+          <Route path="/prescription-radar" element={<PrescriptionRadar />} />
+          <Route path="/interactions" element={<Interactions />} />
+          <Route path="/safe-disposal" element={<SafeDisposal />} />
+          <Route path="/tracker" element={<Tracker />} />
+          <Route path="/side-effects" element={<SideEffectsGuide />} />
+          <Route path="/listen" element={<ListenLearn />} />
+          <Route path="/health-profile" element={<HealthProfile />} />
+          <Route path="/allergy-checker" element={<AllergyChecker />} />
+          <Route path="/pediatric-helper" element={<PediatricHelper />} />
+          <Route path="/medicine/:id" element={<MedicinePage />} />
+          <Route path="/articles" element={<Articles />} />
+          <Route path="/articles/:id" element={<ArticlePage />} />
+          <Route path="/quiz" element={<Quiz />} />
+          <Route path="/scan" element={<Scan />} />
+          <Route path="/learn" element={<Learn />} />
+          <Route path="/assistant" element={<Assistant />} />
+          <Route path="/myth" element={<MythFact />} />
+          <Route path="/methodology" element={<Methodology />} />
+          <Route path="/research" element={<Research />} />
+          <Route path="/admin" element={configured ? <Dashboard /> : <ConfigMissing />} />
+          <Route path="/admin/new" element={configured ? <Editor /> : <ConfigMissing />} />
+          <Route path="/admin/medicine/:id" element={configured ? <Editor /> : <ConfigMissing />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Layout>
+      <AuthModal />
+    </AuthProvider>
   );
 }

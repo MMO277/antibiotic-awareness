@@ -1,21 +1,39 @@
+import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useLang } from './i18n';
-import { ARTICLES } from './articlesData';
+import { ARTICLES, Article } from './articlesData';
 import { pick } from './types';
-import Disclaimer from './Disclaimer';
 
 export default function Articles() {
   const { t, lang } = useLang();
+  const isAr = lang === 'ar';
+
   return (
-    <main className="wrap stack">
-      <h1>{t('articlesTitle')}</h1>
-      <p className="muted">{t('articlePending')}</p>
-      <div className="grid">
-        {ARTICLES.map((a) => (
-          <Link key={a.id} to={`/articles/${a.id}`} className="card link">
-            <h3>{pick(a.title, lang)}</h3>
-            <p>{pick(a.summary, lang)}</p>
-            <span className="more">{t('read')}</span>
+    <main className="wrap narrow stack">
+      <h1>📰 {t('navArticles')}</h1>
+      <p className="muted">
+        {isAr
+          ? 'مقالات وإرشادات توعوية مبسطة حول الاستخدام الرشيد للمضادات الحيوية والوقاية من المقاومة البكتيرية.'
+          : 'Educational articles and clinical guides on responsible antibiotic use and antimicrobial resistance prevention.'}
+      </p>
+
+      <div className="stack" style={{ gap: '12px', marginTop: '8px' }}>
+        {ARTICLES.map((art: Article) => (
+          <Link
+            key={art.id}
+            to={`/articles/${art.id}`}
+            className="card link"
+            style={{ textDecoration: 'none' }}
+          >
+            <h3 style={{ margin: '0 0 6px', color: 'var(--navy)' }}>
+              {pick(art.title, lang)}
+            </h3>
+            <p className="small muted" style={{ margin: 0 }}>
+              {pick(art.summary, lang)}
+            </p>
+            <span className="more" style={{ display: 'inline-block', marginTop: '6px' }}>
+              {isAr ? 'اقرأ المقال كاملاً ←' : 'Read Full Article →'}
+            </span>
           </Link>
         ))}
       </div>
@@ -24,29 +42,52 @@ export default function Articles() {
 }
 
 export function ArticlePage() {
-  const { id } = useParams();
+  const { id = '' } = useParams();
   const { t, lang } = useLang();
-  const a = ARTICLES.find((x) => x.id === id);
-  if (!a)
+  const isAr = lang === 'ar';
+
+  const article = useMemo(() => ARTICLES.find((a) => a.id === id), [id]);
+
+  if (!article) {
     return (
-      <main className="wrap narrow">
-        <p>{t('notFound')}</p>
-        <Link to="/articles">{t('navArticles')}</Link>
+      <main className="wrap narrow stack">
+        <p className="alert">{t('notFound')}</p>
+        <Link to="/articles" className="btn ghost">← {t('navArticles')}</Link>
       </main>
     );
+  }
+
+  const paragraphs = pick(article.body, lang).split(/\n\s*\n/).filter(Boolean);
+
   return (
     <main className="wrap narrow stack">
-      <Link to="/articles">← {t('navArticles')}</Link>
-      <article className="prose">
-        <h1>{pick(a.title, lang)}</h1>
-        <p className="alert">{t('articlePending')}</p>
-        {pick(a.body, lang)
-          .split('\n\n')
-          .map((p, i) => (
-            <p key={i}>{p}</p>
+      <Link to="/articles" className="small muted" style={{ textDecoration: 'none', marginBottom: '6px' }}>
+        ← {t('navArticles')}
+      </Link>
+
+      <article className="card stack" style={{ padding: '24px' }}>
+        <h1 style={{ color: 'var(--navy)', margin: '0 0 8px' }}>
+          {pick(article.title, lang)}
+        </h1>
+        <p className="lead" style={{ fontSize: '1.05rem', color: 'var(--teal-dark)', fontWeight: 600, margin: '0 0 16px' }}>
+          {pick(article.summary, lang)}
+        </p>
+        <hr style={{ border: 'none', borderTop: '1px solid var(--line)', margin: '0 0 16px' }} />
+
+        <div style={{ display: 'grid', gap: '12px', lineHeight: 1.8 }}>
+          {paragraphs.map((para, idx) => (
+            <p key={idx} style={{ margin: 0 }}>
+              {para}
+            </p>
           ))}
+        </div>
       </article>
-      <Disclaimer />
+
+      <div className="row" style={{ marginTop: '12px' }}>
+        <Link to="/articles" className="btn ghost">
+          ← {isAr ? 'العودة لجميع المقالات' : 'Back to All Articles'}
+        </Link>
+      </div>
     </main>
   );
 }

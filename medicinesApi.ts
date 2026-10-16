@@ -11,7 +11,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, configured } from './firebase';
 import { Brand, emptyMedicine, FIELD_LABELS, Medicine, Status, TEXT_FIELDS } from './types';
 import { SEED } from './seedData';
 import { EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
@@ -169,6 +169,10 @@ export async function fetchApproved(): Promise<Medicine[]> {
   const out = new Map<string, Medicine>();
   ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
 
+  if (!configured || !db) {
+    return Array.from(out.values()).sort((x, y) => x.id.localeCompare(y.id));
+  }
+
   try {
     const col = collection(db, 'medicines');
     const a = await getDocs(query(col, where('status', '==', 'approved')));
@@ -189,6 +193,9 @@ const isPreviewable = (status: Status, nSources: number) =>
 export async function fetchAll(): Promise<Medicine[]> {
   const out = new Map<string, Medicine>();
   ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
+  if (!configured || !db) {
+    return Array.from(out.values()).sort((a, b) => a.id.localeCompare(b.id));
+  }
   try {
     const snap = await getDocs(collection(db, 'medicines'));
     snap.docs.forEach((d) => {
@@ -205,6 +212,7 @@ export async function fetchAll(): Promise<Medicine[]> {
 export async function fetchOne(id: string): Promise<Medicine | null> {
   const clean = decodeURIComponent(id || '').toLowerCase().trim();
   const local = findLocalMedicine(clean);
+  if (!configured || !db) return local;
   try {
     const snap = await getDoc(doc(db, 'medicines', clean));
     if (snap.exists()) {
