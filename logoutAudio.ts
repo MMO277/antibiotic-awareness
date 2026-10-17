@@ -1,5 +1,10 @@
-// Web Audio API cartoon sound generator with fallback to locally bundled public/cartoon-fall.wav.
-// Sound is only played on explicit user gesture (logout click). Volume is kept gentle and brief (~1.3s).
+// Web Audio API 4-Scene Cartoon Sound Generator (Update 56)
+// Synchronized with the 3.0s Two-Character Door Push & Abyss Fall storyboard:
+// - Scene 1 (0.18s): Door handle click & creak open
+// - Scene 2 (0.82s): Playful cartoon push "boop" & surprise squeak
+// - Scene 3 (1.45s - 2.18s): Descending abyss slide whistle + distant twinkle chime
+// - Scene 4 (2.50s): Gentle cartoon door shut click/thud
+// Fallback to locally bundled public/cartoon-fall.wav if Web Audio API is unavailable.
 
 const SOUND_PREF_KEY = 'aa_logout_sound_enabled';
 
@@ -24,8 +29,13 @@ export function setSoundEnabled(enabled: boolean): void {
 
 let activeAudioContext: AudioContext | null = null;
 let activeAudioElement: HTMLAudioElement | null = null;
+let cleanupTimerId: number | null = null;
 
 export function stopCartoonAudio(): void {
+  if (cleanupTimerId !== null && typeof window !== 'undefined') {
+    window.clearTimeout(cleanupTimerId);
+    cleanupTimerId = null;
+  }
   if (activeAudioContext) {
     try {
       activeAudioContext.close();
@@ -48,25 +58,21 @@ export function stopCartoonAudio(): void {
 export function playCartoonFallSound(enabled = true): void {
   if (!enabled || typeof window === 'undefined') return;
 
-  // Clean up any ongoing playback
+  // Clean up any ongoing playback to prevent duplicate audio instances
   stopCartoonAudio();
 
-  // Check Web Audio API availability
   const AudioCtx =
     window.AudioContext ||
     (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
 
   if (!AudioCtx) {
-    // Fallback to locally bundled static WAV asset
     try {
       const audio = new Audio('./cartoon-fall.wav');
-      audio.volume = 0.28;
+      audio.volume = 0.26;
       activeAudioElement = audio;
-      audio.play().catch(() => {
-        /* autoplay policy or network error handled gracefully */
-      });
+      audio.play().catch(() => {});
     } catch {
-      /* ignore audio failure */
+      /* ignore */
     }
     return;
   }
@@ -81,12 +87,48 @@ export function playCartoonFallSound(enabled = true): void {
 
     const now = ctx.currentTime;
     const masterGain = ctx.createGain();
-    masterGain.gain.setValueAtTime(0.28, now);
+    masterGain.gain.setValueAtTime(0.26, now);
     masterGain.connect(ctx.destination);
 
     // ──────────────────────────────────────────────────────────
-    // Part 1: Cartoon Slide Whistle (Wheeee-oooo!)
-    // Smooth descending glide from 900 Hz down to 220 Hz with cute vibrato
+    // Scene 1 (0.18s - 0.48s): Door Handle Click & Creak Open
+    // ──────────────────────────────────────────────────────────
+    const doorOpenOsc = ctx.createOscillator();
+    const doorOpenGain = ctx.createGain();
+    doorOpenOsc.type = 'triangle';
+    doorOpenOsc.frequency.setValueAtTime(190, now + 0.18);
+    doorOpenOsc.frequency.linearRampToValueAtTime(310, now + 0.42);
+
+    doorOpenGain.gain.setValueAtTime(0.001, now + 0.18);
+    doorOpenGain.gain.linearRampToValueAtTime(0.14, now + 0.23);
+    doorOpenGain.gain.exponentialRampToValueAtTime(0.001, now + 0.46);
+
+    doorOpenOsc.connect(doorOpenGain);
+    doorOpenGain.connect(masterGain);
+    doorOpenOsc.start(now + 0.18);
+    doorOpenOsc.stop(now + 0.48);
+
+    // ──────────────────────────────────────────────────────────
+    // Scene 2 (0.82s - 1.15s): Playful Push "Boop" & Surprise Pop
+    // ──────────────────────────────────────────────────────────
+    const pushOsc = ctx.createOscillator();
+    const pushGain = ctx.createGain();
+    pushOsc.type = 'sine';
+    pushOsc.frequency.setValueAtTime(280, now + 0.82);
+    pushOsc.frequency.exponentialRampToValueAtTime(680, now + 0.98);
+    pushOsc.frequency.exponentialRampToValueAtTime(520, now + 1.12);
+
+    pushGain.gain.setValueAtTime(0.001, now + 0.82);
+    pushGain.gain.linearRampToValueAtTime(0.24, now + 0.86);
+    pushGain.gain.exponentialRampToValueAtTime(0.001, now + 1.14);
+
+    pushOsc.connect(pushGain);
+    pushGain.connect(masterGain);
+    pushOsc.start(now + 0.82);
+    pushOsc.stop(now + 1.15);
+
+    // ──────────────────────────────────────────────────────────
+    // Scene 3 (1.42s - 2.18s): Abyss Fall Slide Whistle + Twinkle
     // ──────────────────────────────────────────────────────────
     const whistleOsc = ctx.createOscillator();
     const whistleGain = ctx.createGain();
@@ -94,67 +136,61 @@ export function playCartoonFallSound(enabled = true): void {
     const vibratoGain = ctx.createGain();
 
     whistleOsc.type = 'sine';
-    whistleOsc.frequency.setValueAtTime(900, now);
-    whistleOsc.frequency.exponentialRampToValueAtTime(220, now + 0.75);
+    whistleOsc.frequency.setValueAtTime(960, now + 1.42);
+    whistleOsc.frequency.exponentialRampToValueAtTime(155, now + 2.16);
 
-    // Playful 14Hz cartoon vibrato
-    vibrato.frequency.setValueAtTime(14, now);
-    vibratoGain.gain.setValueAtTime(18, now);
-    vibrato.connect(whistleOsc.frequency);
+    vibrato.frequency.setValueAtTime(13, now + 1.42);
+    vibratoGain.gain.setValueAtTime(16, now + 1.42);
+    vibrato.connect(vibratoGain);
+    vibratoGain.connect(whistleOsc.frequency);
 
-    // Whistle envelope
-    whistleGain.gain.setValueAtTime(0.01, now);
-    whistleGain.gain.linearRampToValueAtTime(0.25, now + 0.08);
-    whistleGain.gain.setValueAtTime(0.25, now + 0.65);
-    whistleGain.gain.linearRampToValueAtTime(0.01, now + 0.78);
+    whistleGain.gain.setValueAtTime(0.001, now + 1.42);
+    whistleGain.gain.linearRampToValueAtTime(0.24, now + 1.50);
+    whistleGain.gain.setValueAtTime(0.22, now + 2.02);
+    whistleGain.gain.exponentialRampToValueAtTime(0.001, now + 2.18);
 
     whistleOsc.connect(whistleGain);
     whistleGain.connect(masterGain);
 
-    vibrato.start(now);
-    whistleOsc.start(now);
-    vibrato.stop(now + 0.8);
-    whistleOsc.stop(now + 0.8);
+    vibrato.start(now + 1.42);
+    whistleOsc.start(now + 1.42);
+    vibrato.stop(now + 2.20);
+    whistleOsc.stop(now + 2.20);
+
+    // Distant abyss twinkle chime (2.20s - 2.40s)
+    const chimeOsc = ctx.createOscillator();
+    const chimeGain = ctx.createGain();
+    chimeOsc.type = 'sine';
+    chimeOsc.frequency.setValueAtTime(1320, now + 2.20);
+    chimeOsc.frequency.exponentialRampToValueAtTime(1760, now + 2.34);
+
+    chimeGain.gain.setValueAtTime(0.001, now + 2.20);
+    chimeGain.gain.linearRampToValueAtTime(0.11, now + 2.23);
+    chimeGain.gain.exponentialRampToValueAtTime(0.001, now + 2.38);
+
+    chimeOsc.connect(chimeGain);
+    chimeGain.connect(masterGain);
+    chimeOsc.start(now + 2.20);
+    chimeOsc.stop(now + 2.40);
 
     // ──────────────────────────────────────────────────────────
-    // Part 2: Cartoon Impact Thud & Comedic Spring Boing (at 0.76s)
+    // Scene 4 (2.50s - 2.82s): Door Close Soft Latch Thud
     // ──────────────────────────────────────────────────────────
-    const impactTime = now + 0.76;
+    const shutOsc = ctx.createOscillator();
+    const shutGain = ctx.createGain();
+    shutOsc.type = 'triangle';
+    shutOsc.frequency.setValueAtTime(135, now + 2.50);
+    shutOsc.frequency.exponentialRampToValueAtTime(48, now + 2.74);
 
-    // Body thud: low frequency drop
-    const thudOsc = ctx.createOscillator();
-    const thudGain = ctx.createGain();
-    thudOsc.type = 'triangle';
-    thudOsc.frequency.setValueAtTime(135, impactTime);
-    thudOsc.frequency.exponentialRampToValueAtTime(45, impactTime + 0.25);
+    shutGain.gain.setValueAtTime(0.28, now + 2.50);
+    shutGain.gain.exponentialRampToValueAtTime(0.001, now + 2.78);
 
-    thudGain.gain.setValueAtTime(0.35, impactTime);
-    thudGain.gain.exponentialRampToValueAtTime(0.01, impactTime + 0.35);
+    shutOsc.connect(shutGain);
+    shutGain.connect(masterGain);
+    shutOsc.start(now + 2.50);
+    shutOsc.stop(now + 2.80);
 
-    thudOsc.connect(thudGain);
-    thudGain.connect(masterGain);
-
-    thudOsc.start(impactTime);
-    thudOsc.stop(impactTime + 0.38);
-
-    // Springy boing harmonic
-    const boingOsc = ctx.createOscillator();
-    const boingGain = ctx.createGain();
-    boingOsc.type = 'sine';
-    boingOsc.frequency.setValueAtTime(260, impactTime + 0.04);
-    boingOsc.frequency.exponentialRampToValueAtTime(80, impactTime + 0.45);
-
-    boingGain.gain.setValueAtTime(0.2, impactTime + 0.04);
-    boingGain.gain.exponentialRampToValueAtTime(0.01, impactTime + 0.48);
-
-    boingOsc.connect(boingGain);
-    boingGain.connect(masterGain);
-
-    boingOsc.start(impactTime + 0.04);
-    boingOsc.stop(impactTime + 0.5);
-
-    // Cleanup context after playback ends
-    window.setTimeout(() => {
+    cleanupTimerId = window.setTimeout(() => {
       if (activeAudioContext === ctx) {
         try {
           ctx.close();
@@ -163,12 +199,12 @@ export function playCartoonFallSound(enabled = true): void {
         }
         activeAudioContext = null;
       }
-    }, 1500);
+      cleanupTimerId = null;
+    }, 3100);
   } catch {
-    // If Web Audio API fails during node setup, try fallback audio element
     try {
       const audio = new Audio('./cartoon-fall.wav');
-      audio.volume = 0.28;
+      audio.volume = 0.26;
       activeAudioElement = audio;
       audio.play().catch(() => {});
     } catch {
