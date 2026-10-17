@@ -1373,7 +1373,7 @@ export default function Scan() {
                   }}
                 />
               )}
-              <div style={{ flex: 1, minWidth: '220px' }}>
+              <div style={{ flex: 1, minWidth: 'min(100%, 220px)' }}>
                 <h2 style={{ margin: '0 0 6px', color: '#065f46', fontSize: '1.3rem' }}>
                   {scanResult.matchedTradeName || scanResult.detectedText}
                 </h2>
@@ -1424,7 +1424,7 @@ export default function Scan() {
                 <div
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
                     gap: '10px',
                   }}
                 >

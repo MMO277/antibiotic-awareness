@@ -623,6 +623,7 @@ export default function PrescriptionRadar() {
               className="card"
               style={{
                 display: 'flex',
+                flexWrap: 'wrap',
                 gap: '14px',
                 alignItems: 'flex-start',
                 borderInlineStart: '4px solid #0284c7',
@@ -644,7 +645,7 @@ export default function PrescriptionRadar() {
                 <div>{slot.badge}</div>
                 <div>{isAr ? slot.timeAr : slot.timeEn}</div>
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: '1 1 200px', minWidth: 0 }}>
                 <ul style={{ margin: 0, paddingInlineStart: '18px', lineHeight: 1.7 }}>
                   {(isAr ? slot.itemsAr : slot.itemsEn).map((line, k) => (
                     <li key={k} style={{ fontWeight: k === 0 ? 700 : 500 }}>

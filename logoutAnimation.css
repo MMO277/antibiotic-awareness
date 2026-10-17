@@ -541,3 +541,38 @@
     font-size: 0.78rem;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UPDATE 52 — SHORT VIEWPORT & SMALL SCREEN RESPONSIVE ENHANCEMENTS
+   ══════════════════════════════════════════════════════════════════════════ */
+.logout-backdrop {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+
+.logout-card {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  margin: auto;
+}
+
+@media (max-height: 520px) {
+  .logout-stage {
+    height: 145px;
+    margin-bottom: 10px;
+  }
+  .logout-card {
+    padding: 14px 14px 12px;
+  }
+}
+
+@media (max-width: 350px) {
+  .logout-top-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .logout-stage {
+    height: 165px;
+  }
+}

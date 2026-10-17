@@ -175,7 +175,7 @@ export default function AwarenessWeek() {
               borderRadius: '14px',
               padding: '14px 18px',
               textAlign: 'center',
-              minWidth: '220px',
+              minWidth: 'min(100%, 220px)',
               backdropFilter: 'blur(8px)',
             }}
           >
@@ -291,7 +291,7 @@ export default function AwarenessWeek() {
                   <div
                     className="grid"
                     style={{
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
                       gap: '16px',
                       marginTop: '6px',
                     }}
@@ -516,7 +516,7 @@ export default function AwarenessWeek() {
             </button>
           </div>
 
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '18px' }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '18px' }}>
             {CAMPAIGN_POSTERS.map((poster) => {
               const shareText = `${poster.title[lang]}\n\n${poster.myth[lang]}\n\n${poster.fact[lang]}\n\n${poster.actionTip[lang]}`;
               return (
@@ -645,7 +645,7 @@ export default function AwarenessWeek() {
               : 'Pre-written posts with official WAAW hashtags ready for instant copying or sharing:'}
           </p>
 
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px' }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
             {SOCIAL_CAMPAIGN_POSTS.map((post) => {
               const fullPost = `${post.content[lang]}\n${siteUrl}\n\n${post.hashtags}`;
               return (

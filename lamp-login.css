@@ -243,3 +243,75 @@
   outline: 3px solid #2ec4b6;
   outline-offset: 2px;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UPDATE 52 — RESPONSIVE LAMP & MOBILE KEYBOARD / SHORT VIEWPORT SAFETY
+   ══════════════════════════════════════════════════════════════════════════ */
+.auth-scene {
+  padding-inline: max(12px, env(safe-area-inset-left)) max(12px, env(safe-area-inset-right));
+}
+
+.auth-glass {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-height: 680px) {
+  .auth-lamp {
+    --lamp-y: 1vh;
+    --lamp-s: 0.88;
+  }
+  .auth-dark-ui {
+    position: relative;
+    bottom: auto;
+    margin-top: auto;
+    padding-top: 230px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    width: 100%;
+  }
+  .auth-glass {
+    margin: 72px 0 max(24px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-height: 540px) {
+  .auth-lamp {
+    --lamp-y: -18px;
+    --lamp-s: 0.68;
+  }
+  .auth-dark-ui {
+    padding-top: 165px;
+    gap: 6px;
+  }
+  .auth-glass {
+    margin: 48px 0 max(18px, env(safe-area-inset-bottom));
+    padding: 16px 14px 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .auth-dark-name {
+    font-size: 1.25rem;
+  }
+  .auth-dark-hint {
+    font-size: 0.9rem;
+  }
+  .auth-skip,
+  .auth-guest-btn {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    width: 100%;
+    max-width: 260px;
+  }
+  .auth-glass {
+    padding: 16px 12px 18px;
+    border-radius: 18px;
+  }
+  .auth-head h2 {
+    font-size: 1.3rem;
+  }
+  .auth-tabs button {
+    font-size: 0.86rem;
+    padding: 6px 8px;
+  }
+}

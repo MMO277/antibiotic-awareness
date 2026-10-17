@@ -119,7 +119,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
       ) : users.length === 0 ? (
         <p style={{ color: 'var(--muted)' }}>No role documents found in Firestore yet.</p>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="tablewrap"><table className="tbl" style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
               <th style={{ padding: '0.5rem' }}>UID</th>
@@ -162,7 +162,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       )}
     </div>
   );

@@ -198,7 +198,7 @@ export default function CompareDrugs() {
           </div>
 
           {/* Selectors */}
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))' }}>
             <div className="card" style={{ borderTop: '4px solid #0284c7' }}>
               <label style={{ fontWeight: 700, display: 'block', marginBottom: '8px', color: '#0284c7' }}>
                 1️⃣ {isAr ? 'المستحضر التجاري الأول:' : 'First Commercial Package:'}
@@ -397,7 +397,7 @@ export default function CompareDrugs() {
           </div>
 
           {/* Selectors */}
-          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+          <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))' }}>
             <div className="card" style={{ borderTop: '4px solid #0284c7' }}>
               <label style={{ fontWeight: 700, display: 'block', marginBottom: '8px', color: '#0284c7' }}>
                 1️⃣ {isAr ? 'المادة الفعالة الأولى:' : 'First Active Ingredient:'}

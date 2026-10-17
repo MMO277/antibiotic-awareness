@@ -248,7 +248,7 @@ export default function GreenPrescription() {
                   : 'Tap the card that matches the current complaint to proceed to safety screening:'}
               </p>
 
-              <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+              <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '14px' }}>
                 {(Object.keys(GREEN_CARE_PLANS) as SymptomPathwayId[]).map((key) => {
                   const p = GREEN_CARE_PLANS[key];
                   return (
@@ -688,7 +688,7 @@ export default function GreenPrescription() {
                   </div>
 
                   {/* Grid for Do's and Avoid's */}
-                  <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                  <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '16px' }}>
                     {/* 1. What you can do now */}
                     <div className="card" style={{ borderTop: '4px solid #16a34a', background: '#f8fafc' }}>
                       <h3 style={{ color: '#15803d', margin: '0 0 10px' }}>

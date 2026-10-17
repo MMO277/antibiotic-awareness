@@ -205,7 +205,7 @@ export default function SafeDisposal() {
       {/* 4 Cardinal Sins to Avoid */}
       <section className="card">
         <h2>🚫 {isAr ? 'المحظورات الأربعة الشائعة في المنازل المصرية' : 'The 4 Dangerous Practices to Avoid'}</h2>
-        <div className="grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginTop: '12px' }}>
+        <div className="grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '16px', marginTop: '12px' }}>
           <div className="card" style={{ borderTop: '4px solid #ef4444' }}>
             <h4>❌ {isAr ? '«سيب الباقي في التلاجة للمرة الجاية»' : 'Saving Leftovers for Next Sickness'}</h4>
             <p className="small muted">
