@@ -4,7 +4,7 @@ import { Lang } from './types';
 const D: Record<Lang, Record<string, string>> = {
   ar: {
     appName: 'الوعي بالمضادات الحيوية',
-    navLearn: 'تعلّم', navMyth: 'خرافة أم حقيقة', navMethod: 'المنهجية',
+    navLearn: 'تعلّم', navMyth: 'خرافة أم حقيقة', navMethod: 'المنهجية', navGame: 'صائد البكتيريا 🎮',
     unreviewed: 'غير مراجع سريريًا',
     previewToggle: 'إظهار السجلات المبنية على مصدر رسمي وغير المراجعة سريريًا للزوار (مع تنبيه واضح)',
     previewToggleHelp: 'لا تظهر إلا السجلات التي لها مصدر واحد على الأقل. أوقف هذا الخيار ليرى الزوار المعتمد فقط.',
@@ -99,7 +99,7 @@ const D: Record<Lang, Record<string, string>> = {
   },
   en: {
     appName: 'Antibiotic Awareness',
-    navLearn: 'Learn', navMyth: 'Myth or fact', navMethod: 'Methodology',
+    navLearn: 'Learn', navMyth: 'Myth or fact', navMethod: 'Methodology', navGame: 'Bacteria Hunter 🎮',
     unreviewed: 'Not clinically reviewed',
     previewToggle: 'Show source-based records that are not clinically reviewed to visitors (with a clear warning)',
     previewToggleHelp: 'Only records with at least one source are shown. Turn this off so visitors see approved records only.',

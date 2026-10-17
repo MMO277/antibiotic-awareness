@@ -173,6 +173,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     { to: '/articles', key: 'navArticles', icon: '📰' },
     { to: '/research', key: 'navResearch', icon: '📊' },
     { to: '/methodology', key: 'navMethod', icon: '🔬' },
+    { to: '/game', key: 'navGame', icon: '🎮' },
   ];
 
   const quickBarItems = [

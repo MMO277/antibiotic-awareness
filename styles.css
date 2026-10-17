@@ -3727,3 +3727,264 @@ label,
     margin-inline-start: auto;
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   BACTERIA HUNTER GAME STYLES
+   ═══════════════════════════════════════════════════ */
+
+.bh-page { padding-block: 1rem; }
+
+.bh-wrapper {
+  padding: 0.75rem;
+  background: #060f1e;
+  border: 1px solid rgba(0,200,255,0.18);
+  border-radius: 12px;
+}
+
+.bh-header {
+  text-align: center;
+  padding: 0.6rem 0 0.75rem;
+}
+.bh-page-title {
+  font-size: clamp(1.1rem, 4vw, 1.5rem);
+  color: #00D2FF;
+  margin: 0 0 0.2rem;
+  font-weight: 700;
+}
+.bh-page-sub {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+/* ─── Canvas ─── */
+.bh-canvas-container {
+  width: 100%;
+  min-height: 320px;
+  max-height: 72vh;
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0,200,255,0.15);
+}
+.bh-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+/* ─── Overlay ─── */
+.bh-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(3, 10, 25, 0.92);
+  z-index: 10;
+  padding: 1rem;
+}
+.bh-card {
+  background: rgba(10, 22, 40, 0.97);
+  border: 1px solid rgba(0,200,255,0.25);
+  border-radius: 14px;
+  padding: 1.5rem 1.25rem;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.bh-logo {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+.bh-title {
+  font-size: clamp(1.1rem, 5vw, 1.6rem);
+  color: #00E5FF;
+  margin: 0;
+  font-weight: 800;
+}
+.bh-subtitle {
+  color: #90a4ae;
+  font-size: 0.82rem;
+  margin: 0;
+  line-height: 1.4;
+}
+.bh-controls-hint {
+  background: rgba(0,200,255,0.06);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.73rem;
+  color: #78909c;
+  text-align: start;
+}
+.bh-controls-hint p { margin: 0.15rem 0; }
+
+.bh-highscore { color: #FFD700; font-weight: 600; font-size: 0.9rem; }
+
+/* ─── Buttons ─── */
+.bh-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  width: 100%;
+}
+.bh-btn-primary {
+  background: linear-gradient(135deg, #00BCD4, #0097A7);
+  color: #fff;
+  box-shadow: 0 0 18px rgba(0,188,212,0.35);
+}
+.bh-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 28px rgba(0,188,212,0.55); }
+.bh-btn-ghost {
+  background: rgba(255,255,255,0.05);
+  color: #78909c;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.bh-btn-ghost:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+.bh-diff-btn { font-size: 0.95rem; padding: 0.55rem; }
+.bh-diff-easy  { background: linear-gradient(135deg,#27AE60,#1e8449); color:#fff; }
+.bh-diff-medium{ background: linear-gradient(135deg,#F39C12,#d68910); color:#fff; }
+.bh-diff-hard  { background: linear-gradient(135deg,#C0392B,#96281b); color:#fff; }
+.bh-diff-easy:hover, .bh-diff-medium:hover, .bh-diff-hard:hover { opacity: 0.88; transform: translateY(-1px); }
+
+/* ─── Result screen ─── */
+.bh-result-stats {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: #90a4ae;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  padding: 0.6rem;
+}
+.bh-result-stats b { color: #00E5FF; font-size: 1rem; }
+.bh-new-best { color: #FFD700; font-weight: 700; font-size: 1rem; }
+
+.bh-achievements-earned {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.bh-badge {
+  background: rgba(46,204,113,0.15);
+  border: 1px solid rgba(46,204,113,0.35);
+  color: #2ECC71;
+  border-radius: 6px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.bh-edu-end {
+  background: rgba(0,150,200,0.08);
+  border: 1px solid rgba(0,200,255,0.15);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.78rem;
+  color: #b0bec5;
+  text-align: start;
+  line-height: 1.5;
+}
+.bh-edu-end p { margin: 0; }
+
+/* ─── Mobile controls ─── */
+.bh-mobile-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.5rem 0.4rem;
+  gap: 0.5rem;
+}
+.bh-mobile-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+.bh-shoot-btn {
+  width: 68px; height: 68px;
+  border-radius: 50%;
+  background: rgba(0,180,255,0.2);
+  border: 2.5px solid rgba(0,220,255,0.55);
+  font-size: 2rem;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  transition: background 0.1s;
+  display: flex; align-items: center; justify-content: center;
+}
+.bh-shoot-btn:active { background: rgba(0,180,255,0.5); }
+.bh-pause-btn {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  touch-action: none;
+}
+
+/* ─── Achievements grid ─── */
+.bh-all-achievements {
+  padding: 0.6rem 0 0.4rem;
+}
+.bh-all-achievements h3 {
+  color: #7f8c8d;
+  font-size: 0.8rem;
+  margin: 0 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.bh-ach-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.bh-ach-item {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #546e7a;
+  border-radius: 6px;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.73rem;
+  transition: all 0.2s;
+}
+.bh-ach-item.earned {
+  background: rgba(46,204,113,0.12);
+  border-color: rgba(46,204,113,0.3);
+  color: #2ECC71;
+}
+
+/* ─── Disclaimer ─── */
+.bh-disclaimer {
+  font-size: 0.72rem;
+  color: #546e7a;
+  margin: 0.5rem 0 0;
+  padding: 0.5rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* ─── Light theme overrides ─── */
+[data-theme="light"] .bh-wrapper { background: #f0f8ff; border-color: rgba(0,150,200,0.2); }
+[data-theme="light"] .bh-card { background: #fff; border-color: rgba(0,150,200,0.3); }
+[data-theme="light"] .bh-canvas-container { border-color: rgba(0,150,200,0.25); }
+[data-theme="light"] .bh-page-title { color: #0097A7; }
+[data-theme="light"] .bh-disclaimer { color: #78909c; }
+
+/* ─── RTL adjustments ─── */
+[dir="rtl"] .bh-controls-hint { text-align: end; }
+[dir="rtl"] .bh-edu-end { text-align: end; }
+[dir="rtl"] .bh-mobile-controls { flex-direction: row-reverse; }
