@@ -64,11 +64,12 @@ export function useGamingMode(
     void exitNative();
   }, [applyDom, exitNative]);
 
-  const enter = useCallback(() => {
+  const enter = useCallback((opts?: { native?: boolean }) => {
     if (activeRef.current) return;
     activeRef.current = true;
     setActive(true);
     applyDom(true);
+    if (opts && opts.native === false) return; // immersive CSS layout only (no user gesture available)
     const el = targetRef.current as FsEl | null;
     if (!el) return;
     try {
@@ -88,6 +89,42 @@ export function useGamingMode(
       weEnteredNative.current = false;
     }
   }, [applyDom, targetRef]);
+
+  /** True when the browser exposes a usable Fullscreen API (false on e.g. iPhone Safari). */
+  const nativeSupported =
+    typeof document !== 'undefined' &&
+    Boolean(
+      document.fullscreenEnabled ||
+        (document as Document & { webkitFullscreenEnabled?: boolean }).webkitFullscreenEnabled,
+    );
+
+  /**
+   * Toggle ONLY the native browser fullscreen, leaving the immersive layout untouched.
+   * Must be called from a user gesture. Leaving via this toggle does not trigger the "lost" callback.
+   */
+  const toggleNative = useCallback(() => {
+    if (fsElement()) {
+      weEnteredNative.current = false;
+      void exitNative();
+      return;
+    }
+    const el = targetRef.current as FsEl | null;
+    if (!el) return;
+    try {
+      const req = el.requestFullscreen
+        ? el.requestFullscreen({ navigationUI: 'hide' } as FullscreenOptions)
+        : el.webkitRequestFullscreen
+          ? el.webkitRequestFullscreen()
+          : undefined;
+      if (req && typeof (req as Promise<void>).then === 'function') {
+        (req as Promise<void>)
+          .then(() => { weEnteredNative.current = !!fsElement(); })
+          .catch(() => { weEnteredNative.current = false; });
+      }
+    } catch {
+      weEnteredNative.current = false;
+    }
+  }, [exitNative, targetRef]);
 
   // Keep UI state in sync with the real browser fullscreen state (Esc key, system gesture, etc.)
   useEffect(() => {
@@ -119,5 +156,5 @@ export function useGamingMode(
     }
   }, [applyDom, exitNative]);
 
-  return { active, nativeFullscreen, enter, exit };
+  return { active, nativeFullscreen, nativeSupported, enter, exit, toggleNative };
 }

@@ -18,12 +18,148 @@
   box-shadow: 0 14px 36px rgba(2, 12, 27, 0.45);
 }
 
+/* ── Immersive (true full-screen) game layout ─────────────────────────────────────────────
+   Active for the whole play session (like Bacteria Hunter's gaming mode): the wrapper is pinned
+   to the viewport, uses the dynamic viewport height (mobile browser bars) and respects safe areas. */
 .ms-wrapper.ms-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  box-sizing: border-box;
+  width: 100vw;
   height: 100vh;
   height: 100dvh;
+  max-width: none;
+  margin: 0;
+  gap: 6px;
+  border: 0;
   border-radius: 0;
-  padding: env(safe-area-inset-top, 10px) env(safe-area-inset-right, 12px)
-    env(safe-area-inset-bottom, 10px) env(safe-area-inset-left, 12px);
+  box-shadow: none;
+  overflow: hidden;
+  overscroll-behavior: none;
+  padding: max(6px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px))
+    max(6px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+}
+
+/* Progress loading / error screen shown before the game mounts */
+.ms-gate {
+  min-height: 60vh;
+  align-items: center;
+  justify-content: center;
+}
+.ms-gate-card {
+  text-align: center;
+  max-width: 480px;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  padding: 20px;
+}
+.ms-gate-card h2 { margin: 0; font-size: 1.1rem; color: #e0f2fe; }
+.ms-gate-card p { margin: 0; color: #cbd5e1; font-size: 0.9rem; line-height: 1.55; }
+
+/* Cloud-sync indicator + banners */
+.ms-sync-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+.ms-sync-chip.saved { color: #86efac; border-color: rgba(74, 222, 128, 0.45); }
+.ms-sync-chip.saving { color: #fde68a; }
+.ms-sync-chip.error { color: #fecaca; border-color: rgba(248, 113, 113, 0.55); }
+
+.ms-sync-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #e0f2fe;
+  background: rgba(14, 154, 167, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.ms-sync-banner.error {
+  color: #fee2e2;
+  background: rgba(127, 29, 29, 0.35);
+  border-color: rgba(248, 113, 113, 0.55);
+}
+.ms-sync-banner-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+
+.ms-btn-short { display: none; }
+
+/* Compact HUD chrome while immersive: the 3D scene gets every spare pixel */
+.ms-immersive .ms-topbar {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  gap: 8px;
+  padding: 5px 8px;
+  min-height: 46px;
+}
+.ms-immersive .ms-topbar-left { flex-wrap: nowrap; gap: 8px; min-width: 0; flex: 1 1 auto; }
+.ms-immersive .ms-title-block { flex-wrap: nowrap; min-width: 0; gap: 8px; }
+.ms-immersive .ms-title {
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ms-immersive .ms-scenario-pill {
+  max-width: 34vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ms-immersive .ms-topbar-actions {
+  flex-wrap: nowrap;
+  flex: 0 1 auto;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ms-immersive .ms-topbar-actions::-webkit-scrollbar { display: none; }
+.ms-immersive .ms-top-btn,
+.ms-immersive .ms-exit-btn {
+  min-height: 36px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.ms-immersive .ms-objective-bar {
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  gap: 8px;
+  max-height: 4.6em;
+  overflow: auto;
+}
+.ms-immersive .ms-objective-text { flex: 1 1 0; min-width: 0; }
+.ms-immersive .ms-objective-chips { flex: 0 0 auto; max-width: 55%; }
+
+/* The level/scenario list floats over the scene and scrolls inside the screen */
+.ms-immersive .ms-scenario-drawer {
+  position: absolute;
+  z-index: 40;
+  inset-inline: max(8px, env(safe-area-inset-left, 0px));
+  top: calc(max(6px, env(safe-area-inset-top, 0px)) + 54px);
+  bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Top Bar */
@@ -373,9 +509,10 @@
 }
 
 .ms-wrapper.ms-immersive .ms-viewport {
-  flex: 1;
+  flex: 1 1 0;
   height: auto;
-  min-height: 260px;
+  min-height: 0;
+  border-radius: 12px;
 }
 
 .ms-canvas {
@@ -971,4 +1108,39 @@
     padding: 8px 14px;
     font-size: 0.85rem;
   }
+}
+
+/* ── Immersive: small screens, landscape phones, safe areas ─────────────────────────────── */
+.ms-immersive .ms-dialogue-modal { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.ms-immersive .ms-hud-controls {
+  bottom: max(14px, 2.5vh);
+  inset-inline: max(18px, 3vw);
+}
+
+@media (max-width: 900px), (max-height: 520px) {
+  .ms-immersive .ms-btn-label { display: none; }
+  .ms-immersive .ms-btn-short { display: inline; }
+  .ms-immersive .ms-top-btn { padding: 6px 10px; min-width: 40px; }
+  .ms-immersive .ms-title { display: none; }
+}
+
+@media (max-width: 560px) {
+  .ms-immersive .ms-exit-btn { padding: 6px 12px; }
+  .ms-immersive .ms-exit-btn span:last-child { display: none; }
+  .ms-immersive .ms-scenario-pill { max-width: 46vw; }
+}
+
+/* Landscape phones: very little height, so shrink everything that is not the scene */
+@media (max-height: 520px) {
+  .ms-immersive .ms-objective-bar { max-height: 2.9em; font-size: 0.76rem; }
+  .ms-immersive .ms-objective-label { display: none; }
+  .ms-immersive .ms-objective-chips { display: none; }
+  .ms-immersive .ms-joystick-base { width: 76px; height: 76px; }
+  .ms-immersive .ms-joystick-knob { width: 34px; height: 34px; }
+  .ms-immersive .ms-joy-caption { display: none; }
+  .ms-immersive .ms-interact-btn { min-height: 44px; padding: 6px 12px; }
+  .ms-immersive .ms-proximity-prompt { bottom: 96px; padding: 5px 12px; }
+  .ms-immersive .ms-dialogue-backdrop { padding: 6px; }
+  .ms-immersive .ms-dialogue-modal { padding: 10px 14px; gap: 8px; max-height: 98%; }
+  .ms-immersive .ms-controls-hint-banner { top: 6px; padding: 6px 10px; font-size: 0.76rem; }
 }

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { useLang } from './i18n';
+import { useAuth } from './authContext';
 import { pick } from './types';
 import { useGamingMode } from './useGamingMode';
 import Disclaimer from './Disclaimer';
@@ -19,8 +20,22 @@ import {
   InteractivePropDefinition,
   isExperienceUnlocked,
   loadSimulatorProgress,
-  saveSimulatorProgress,
 } from './medicalSimulatorLevels';
+import {
+  emptyProgress,
+  hasExtraIds,
+  mergeProgress,
+  normalizeProgress,
+  SimulatorProgress,
+} from './simulatorProgressModel';
+import {
+  cloudProgressAvailable,
+  isLocalMergeResolved,
+  markLocalMergeResolved,
+  readCloudProgress,
+  readUidCache,
+} from './simulatorProgressCloud';
+import { useSimulatorProgressSync } from './useSimulatorProgressSync';
 import {
   BoxObstacle,
   buildHospitalWardScene,
@@ -78,7 +93,25 @@ function collidesWithObstacles(x: number, z: number, obstacles: BoxObstacle[]): 
   return false;
 }
 
-export default function MedicalSimulator() {
+/** Appends IDs from `extra` that `base` lacks; returns the SAME array when nothing is new (no re-render loops). */
+function unionIds(base: string[], extra: string[]): string[] {
+  const have = new Set(base);
+  const add = extra.filter((x) => !have.has(x));
+  return add.length ? [...base, ...add] : base;
+}
+
+interface SimulatorGameProps {
+  /** Firebase UID when progress is account-based; null = guest / local-only. */
+  uid: string | null;
+  /** Progress already loaded (cloud + per-account cache merged, or local for guests). */
+  initial: SimulatorProgress;
+  /** Last known cloud document (null if none / guest). */
+  remote: SimulatorProgress | null;
+  /** Progress found on this device from before sign-in that the user may merge into the account. */
+  localOffer: SimulatorProgress | null;
+}
+
+function MedicalSimulatorGame({ uid, initial, remote, localOffer }: SimulatorGameProps) {
   const { lang } = useLang();
   const isAr = lang === 'ar';
   const navigate = useNavigate();
@@ -89,8 +122,9 @@ export default function MedicalSimulator() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wardAssetsRef = useRef<WardSceneAssets | null>(null);
 
-  // Load saved progress from localStorage safely (non-clinical level completion & badges)
-  const initialSaved = useMemo(() => loadSimulatorProgress(), []);
+  // Progress is loaded BEFORE this component mounts (see MedicalSimulator gate below), so levels never
+  // flash as locked while cloud data is still loading.
+  const initialSaved = initial;
 
   // Configurable graphics & UI states
   const [lowGraphics, setLowGraphics] = useState<boolean>(detectDefaultLowGraphics);
@@ -211,15 +245,46 @@ export default function MedicalSimulator() {
     return levelInteractiveProps.find((p) => p.id === nearestPropId) || null;
   }, [nearestPropId, levelInteractiveProps]);
 
-  // Persist progress to localStorage whenever completedScenarios, earnedBadges, or activeScenarioId changes
+  // Cloud sync (signed-in) or local-only save (guest). Another device's progress discovered during a
+  // save is merged into state (IDs are only ever added, never removed).
+  const handleMergedProgress = useCallback((m: SimulatorProgress) => {
+    setCompletedScenarios((prev) => unionIds(prev, m.completedIds));
+    setEarnedBadges((prev) => unionIds(prev, m.earnedBadgeIds));
+  }, []);
+  const {
+    state: syncState,
+    queue: queueProgress,
+    flush: flushProgress,
+  } = useSimulatorProgressSync({ uid, remote, onMerged: handleMergedProgress });
+
+  // Offer to merge progress that was saved on this device before sign-in
+  const [mergeOffer, setMergeOffer] = useState<SimulatorProgress | null>(localOffer);
+  const acceptMergeOffer = () => {
+    if (mergeOffer) handleMergedProgress(mergeOffer);
+    if (uid) markLocalMergeResolved(uid);
+    setMergeOffer(null);
+  };
+  const dismissMergeOffer = () => {
+    if (uid) markLocalMergeResolved(uid);
+    setMergeOffer(null);
+  };
+
   useEffect(() => {
-    saveSimulatorProgress({
+    queueProgress({
       version: 1,
       completedIds: completedScenarios,
       earnedBadgeIds: earnedBadges,
       lastPlayedId: activeScenarioId,
     });
-  }, [completedScenarios, earnedBadges, activeScenarioId]);
+  }, [completedScenarios, earnedBadges, activeScenarioId, queueProgress]);
+
+  // The simulator is an immersive game screen from the moment it opens (like Bacteria Hunter).
+  // Native browser fullscreen needs a user gesture, so it is requested on the first tap in the scene
+  // or via the Full Screen button; the CSS immersive layout works everywhere (incl. iPhone Safari).
+  useEffect(() => {
+    gaming.enter({ native: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Reconfigure the 3D scene's dynamic theme & interactive clue props when switching levels
   useEffect(() => {
@@ -736,9 +801,20 @@ export default function MedicalSimulator() {
     camPitchRef.current = Math.max(0.28, Math.min(1.05, camPitchRef.current + dy * 0.0055));
   };
 
+  const autoFullscreenTriedRef = useRef<boolean>(false);
+
   const handleViewportPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (orbitPointerIdRef.current === e.pointerId) {
       orbitPointerIdRef.current = null;
+    }
+    // First tap on the 3D scene (a real user gesture): try native fullscreen once, never again automatically.
+    if (
+      !autoFullscreenTriedRef.current &&
+      e.type === 'pointerup' &&
+      !(e.target as HTMLElement).closest('button, .ms-dialogue-modal, .ms-joystick-zone')
+    ) {
+      autoFullscreenTriedRef.current = true;
+      if (gaming.nativeSupported && !gaming.nativeFullscreen) gaming.toggleNative();
     }
   };
 
@@ -804,6 +880,7 @@ export default function MedicalSimulator() {
     if ((decisionLog.length > 0 || solvedPropIds.length > 0) && !scenarioFinished) {
       setConfirmExit(true);
     } else {
+      flushProgress();
       gaming.exit();
       navigate('/games');
     }
@@ -811,6 +888,7 @@ export default function MedicalSimulator() {
 
   const handleConfirmExit = () => {
     setConfirmExit(false);
+    flushProgress();
     gaming.exit();
     navigate('/games');
   };
@@ -846,22 +924,51 @@ export default function MedicalSimulator() {
           </div>
 
           <div className="ms-topbar-actions">
+            <span
+              className={`ms-sync-chip ${syncState}`}
+              role="status"
+              title={
+                syncState === 'local'
+                  ? isAr
+                    ? 'وضع الزائر: يُحفظ التقدم على هذا الجهاز فقط'
+                    : 'Guest mode: progress is saved on this device only'
+                  : syncState === 'saving'
+                  ? isAr
+                    ? 'جارٍ حفظ التقدم في حسابك...'
+                    : 'Saving progress to your account...'
+                  : syncState === 'error'
+                  ? isAr
+                    ? 'تعذّر الحفظ السحابي، سيُعاد المحاولة تلقائياً'
+                    : 'Cloud save failed, will retry automatically'
+                  : isAr
+                  ? 'تم حفظ تقدمك في حسابك'
+                  : 'Progress saved to your account'
+              }
+            >
+              {syncState === 'local' ? '💾' : syncState === 'saving' ? '☁️…' : syncState === 'error' ? '⚠️' : '☁️✓'}
+            </span>
+
             <button
               type="button"
               className="ms-top-btn active"
               onClick={() => setShowScenarioDrawer((s) => !s)}
               title={isAr ? 'فتح قائمة المستويات الـ 10 والسيناريوهات الـ 5' : 'Open 10 Campaign Levels & 5 Original Scenarios'}
+              aria-label={isAr ? 'قائمة المستويات والسيناريوهات' : 'Levels and scenarios'}
             >
               🗺️{' '}
-              {isAr
-                ? `المستويات (${completedCampaignCount}/10) • السيناريوهات (${completedOriginalCount}/5)`
-                : `Levels (${completedCampaignCount}/10) • Scenarios (${completedOriginalCount}/5)`}
+              <span className="ms-btn-label">
+                {isAr
+                  ? `المستويات (${completedCampaignCount}/10) • السيناريوهات (${completedOriginalCount}/5)`
+                  : `Levels (${completedCampaignCount}/10) • Scenarios (${completedOriginalCount}/5)`}
+              </span>
+              <span className="ms-btn-short">{completedCampaignCount}/10</span>
             </button>
 
             <button
               type="button"
               className={`ms-top-btn ${lowGraphics ? 'active' : ''}`}
               onClick={() => setLowGraphics((lg) => !lg)}
+              aria-label={isAr ? 'تبديل الرسوميات المنخفضة' : 'Toggle low graphics'}
               title={
                 isAr
                   ? 'وضع الرسوميات المنخفضة للأجهزة الضعيفة'
@@ -869,38 +976,83 @@ export default function MedicalSimulator() {
               }
             >
               ⚡{' '}
-              {isAr
-                ? lowGraphics
-                  ? 'رسوميات منخفضة: مفعّل'
-                  : 'رسوميات قياسية'
-                : lowGraphics
-                ? 'Low Graphics: ON'
-                : 'Standard 3D'}
+              <span className="ms-btn-label">
+                {isAr
+                  ? lowGraphics
+                    ? 'رسوميات منخفضة: مفعّل'
+                    : 'رسوميات قياسية'
+                  : lowGraphics
+                  ? 'Low Graphics: ON'
+                  : 'Standard 3D'}
+              </span>
             </button>
 
             <button
               type="button"
               className="ms-top-btn"
               onClick={() => setPaused((p) => !p)}
+              aria-label={paused ? (isAr ? 'استئناف' : 'Resume') : isAr ? 'إيقاف مؤقت' : 'Pause'}
             >
-              {paused ? (isAr ? '▶ استئناف' : '▶ Resume') : isAr ? '⏸ إيقاف مؤقت' : '⏸ Pause'}
+              {paused ? '▶' : '⏸'}{' '}
+              <span className="ms-btn-label">
+                {paused ? (isAr ? 'استئناف' : 'Resume') : isAr ? 'إيقاف مؤقت' : 'Pause'}
+              </span>
             </button>
 
-            <button
-              type="button"
-              className="ms-top-btn"
-              onClick={() => (gaming.active ? gaming.exit() : gaming.enter())}
-            >
-              {gaming.active
-                ? isAr
-                  ? '🗗 تصغير الشاشة'
-                  : '🗗 Exit Fullscreen'
-                : isAr
-                ? '⛶ ملء الشاشة'
-                : '⛶ Fullscreen'}
-            </button>
+            {gaming.nativeSupported && (
+              <button
+                type="button"
+                className="ms-top-btn"
+                onClick={gaming.toggleNative}
+                aria-label={
+                  gaming.nativeFullscreen
+                    ? isAr ? 'الخروج من ملء الشاشة' : 'Exit full screen'
+                    : isAr ? 'ملء الشاشة' : 'Full screen'
+                }
+              >
+                {gaming.nativeFullscreen ? '🗗' : '⛶'}{' '}
+                <span className="ms-btn-label">
+                  {gaming.nativeFullscreen
+                    ? isAr ? 'تصغير الشاشة' : 'Exit Fullscreen'
+                    : isAr ? 'ملء الشاشة' : 'Fullscreen'}
+                </span>
+              </button>
+            )}
           </div>
         </header>
+
+        {/* Merge offer: progress saved on this device before signing in */}
+        {mergeOffer && uid && (
+          <div className="ms-sync-banner" role="status">
+            <span>
+              {isAr
+                ? '💾 وجدنا تقدماً محفوظاً على هذا الجهاز قبل تسجيل الدخول. هل تريد دمجه مع حسابك؟ (لن يُحذف أي تقدم)'
+                : '💾 We found progress saved on this device from before you signed in. Merge it into your account? (Nothing will be removed.)'}
+            </span>
+            <span className="ms-sync-banner-actions">
+              <button type="button" className="ms-hint-dismiss" onClick={acceptMergeOffer}>
+                {isAr ? 'دمج' : 'Merge'}
+              </button>
+              <button type="button" className="ms-cam-reset-btn" onClick={dismissMergeOffer}>
+                {isAr ? 'لا، شكراً' : 'No thanks'}
+              </button>
+            </span>
+          </div>
+        )}
+
+        {/* Cloud save problem (progress stays safe on this device and retries automatically) */}
+        {uid && syncState === 'error' && (
+          <div className="ms-sync-banner error" role="alert">
+            <span>
+              {isAr
+                ? '⚠️ تعذّر حفظ تقدمك في الحساب الآن. تقدمك محفوظ على هذا الجهاز وسنعيد المحاولة تلقائياً.'
+                : '⚠️ Could not save to your account right now. Your progress is kept on this device and will retry automatically.'}
+            </span>
+            <button type="button" className="ms-cam-reset-btn" onClick={flushProgress}>
+              {isAr ? 'إعادة المحاولة' : 'Retry now'}
+            </button>
+          </div>
+        )}
 
         {/* Locked Level Notification Banner */}
         {lockedToastMsg && (
@@ -955,8 +1107,16 @@ export default function MedicalSimulator() {
               <>
                 <p className="small muted" style={{ margin: 0, color: '#94a3b8' }}>
                   {isAr
-                    ? 'يُفتح المستوى ١ تلقائياً، ويتم فتح كل مستوى تالٍ تدريجياً فور إتمام المستوى الذي يسبقه. يُحفظ تقدمك محلياً على جهازك بأمان.'
-                    : 'Level 1 is unlocked by default; each subsequent level unlocks progressively after completing the previous level. Progress is saved locally.'}
+                    ? `يُفتح المستوى ١ تلقائياً، ويتم فتح كل مستوى تالٍ تدريجياً فور إتمام المستوى الذي يسبقه. ${
+                        uid
+                          ? 'يُحفظ تقدمك في حسابك ويتزامن عبر أجهزتك.'
+                          : 'يُحفظ تقدمك على هذا الجهاز فقط — سجّل الدخول لحفظه في حسابك.'
+                      }`
+                    : `Level 1 is unlocked by default; each subsequent level unlocks progressively after completing the previous level. ${
+                        uid
+                          ? 'Progress is saved to your account and syncs across your devices.'
+                          : 'Progress is saved on this device only — sign in to save it to your account.'
+                      }`}
                 </p>
                 <div className="ms-scenario-grid">
                   {CAMPAIGN_TEN_LEVELS.map((lvl: CampaignLevel) => {
@@ -1735,8 +1895,8 @@ export default function MedicalSimulator() {
 
           <p className="ms-medical-disclaimer">
             {isAr
-              ? '⚠️ تنبيه طبي وتعليمي: هذه المحاكاة ثلاثية الأبعاد تستخدم حالات خيالية للتدريب والتوعية فقط، ولا تقدم تشخيصاً طبياً أو وصفات علاجية أو جرعات دوائية، ولا تغني عن مراجعة الطبيب أو الصيدلي المؤهل، ولا تُعد شهادة كفاءة سريرية. يُحفظ تقدم المراحل محلياً فقط دون أي بيانات صحية.'
-              : '⚠️ Educational Medical Notice: This 3D simulation uses fictional cases for educational stewardship training only. It does not diagnose, prescribe, provide dosages, certify clinical competence, or replace a licensed clinician. Level progression is stored locally with zero personal health data.'}
+              ? `⚠️ تنبيه طبي وتعليمي: هذه المحاكاة ثلاثية الأبعاد تستخدم حالات خيالية للتدريب والتوعية فقط، ولا تقدم تشخيصاً طبياً أو وصفات علاجية أو جرعات دوائية، ولا تغني عن مراجعة الطبيب أو الصيدلي المؤهل، ولا تُعد شهادة كفاءة سريرية. ${uid ? 'يُحفظ تقدم المراحل في حسابك' : 'يُحفظ تقدم المراحل محلياً على هذا الجهاز'} دون أي بيانات صحية.`
+              : `⚠️ Educational Medical Notice: This 3D simulation uses fictional cases for educational stewardship training only. It does not diagnose, prescribe, provide dosages, certify clinical competence, or replace a licensed clinician. Level progression is ${uid ? 'saved to your account' : 'stored locally on this device'} with zero personal health data.`}
           </p>
         </section>
 
@@ -1776,6 +1936,151 @@ export default function MedicalSimulator() {
           <Disclaimer compact />
         </div>
       )}
+    </main>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════════════════════════
+// Progress gate: loads the signed-in user's cloud progress BEFORE the game mounts, so levels never
+// appear locked while cloud data is still loading. Guests use the existing local-only progress.
+// ════════════════════════════════════════════════════════════════════════════════════════════
+
+type GateState =
+  | { status: 'loading' }
+  | {
+      status: 'ready';
+      uid: string | null;
+      initial: SimulatorProgress;
+      remote: SimulatorProgress | null;
+      localOffer: SimulatorProgress | null;
+    }
+  | { status: 'error'; uid: string; cache: SimulatorProgress | null };
+
+const CLOUD_LOAD_TIMEOUT_MS = 10000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = window.setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      (v) => {
+        window.clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        window.clearTimeout(t);
+        reject(e);
+      }
+    );
+  });
+}
+
+export default function MedicalSimulator() {
+  const { lang } = useLang();
+  const isAr = lang === 'ar';
+  const { user, loading: authLoading } = useAuth();
+  const uid = cloudProgressAvailable() && user ? user.uid : null;
+
+  const [gate, setGate] = useState<GateState>({ status: 'loading' });
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    if (authLoading) {
+      setGate({ status: 'loading' });
+      return;
+    }
+
+    // Guest (or Firebase not configured): existing local-only progress, kept separate from any account.
+    if (!uid) {
+      setGate({
+        status: 'ready',
+        uid: null,
+        initial: normalizeProgress(loadSimulatorProgress()),
+        remote: null,
+        localOffer: null,
+      });
+      return;
+    }
+
+    let cancelled = false;
+    setGate({ status: 'loading' });
+    const cache = readUidCache(uid);
+
+    withTimeout(readCloudProgress(uid), CLOUD_LOAD_TIMEOUT_MS)
+      .then((remote) => {
+        if (cancelled) return;
+        // Cloud is the source of truth; the per-account cache only ADDS progress that never reached the cloud.
+        let initial = mergeProgress(remote ?? emptyProgress(), cache ? { ...cache, lastPlayedId: undefined } : emptyProgress());
+        if (!initial.lastPlayedId && cache?.lastPlayedId) {
+          initial = { ...initial, lastPlayedId: cache.lastPlayedId };
+        }
+        // Progress saved on this device before sign-in (legacy/guest key): offer a safe merge, once.
+        const legacy = normalizeProgress(loadSimulatorProgress());
+        const localOffer = !isLocalMergeResolved(uid) && hasExtraIds(legacy, initial) ? legacy : null;
+        setGate({ status: 'ready', uid, initial, remote, localOffer });
+      })
+      .catch(() => {
+        if (!cancelled) setGate({ status: 'error', uid, cache });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, uid, attempt]);
+
+  if (gate.status === 'ready') {
+    return (
+      <MedicalSimulatorGame
+        key={gate.uid ?? 'guest'}
+        uid={gate.uid}
+        initial={gate.initial}
+        remote={gate.remote}
+        localOffer={gate.localOffer}
+      />
+    );
+  }
+
+  return (
+    <main className="wrap ms-page" dir={isAr ? 'rtl' : 'ltr'}>
+      <div className="card ms-wrapper ms-gate">
+        {gate.status === 'loading' ? (
+          <div className="ms-gate-card" role="status">
+            <div className="ms-spinner" aria-hidden="true">🏥</div>
+            <h2>{isAr ? 'جارٍ تحميل تقدمك...' : 'Loading your progress...'}</h2>
+          </div>
+        ) : (
+          <div className="ms-gate-card" role="alert">
+            <h2>{isAr ? 'تعذّر تحميل تقدمك من الحساب' : "Couldn't load your saved progress"}</h2>
+            <p>
+              {isAr
+                ? 'تأكد من اتصالك بالإنترنت ثم أعد المحاولة. يمكنك أيضاً المتابعة بالنسخة المحفوظة على هذا الجهاز؛ لن يُحذف أي تقدم وسيُدمج مع حسابك عند عودة الاتصال.'
+                : 'Check your connection and try again. You can also continue with the copy saved on this device; no progress will be lost and it will merge into your account once you are back online.'}
+            </p>
+            <div className="ms-error-actions">
+              <button type="button" className="btn" onClick={() => setAttempt((n) => n + 1)}>
+                {isAr ? 'إعادة المحاولة' : 'Try again'}
+              </button>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() =>
+                  setGate({
+                    status: 'ready',
+                    uid: gate.uid,
+                    initial: gate.cache ?? emptyProgress(),
+                    remote: null,
+                    localOffer: null,
+                  })
+                }
+              >
+                {isAr ? 'المتابعة بنسخة هذا الجهاز' : 'Continue with this device'}
+              </button>
+              <Link className="btn ghost" to="/games">
+                {isAr ? 'العودة لمركز الألعاب' : 'Back to Game Center'}
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
     </main>
   );
 }
