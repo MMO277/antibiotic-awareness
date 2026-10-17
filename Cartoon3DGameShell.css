@@ -6,45 +6,74 @@
 .c3d-fictional-ribbon {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   background: rgba(245, 158, 11, 0.18);
   border: 1px solid rgba(251, 191, 36, 0.55);
   color: #fde68a;
-  font-size: 0.75rem;
+  font-size: 0.73rem;
   font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
+  padding: 2px 9px;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  flex-shrink: 0;
 }
 
-/* Inventory / Keycard Bar (Escape the Lab & Clues) */
+/* Hide the secondary fictional ribbon inside the topbar on mobile/tablet so it never squeezes
+   the mission title or wraps word-by-word vertically. */
+.ms-topbar .c3d-fictional-ribbon {
+  display: none !important;
+}
+
+@media (min-width: 1180px) {
+  .ms-topbar .c3d-fictional-ribbon {
+    display: inline-flex !important;
+  }
+}
+
+/* Inventory / Keycard Bar (Escape the Lab & Clues) — compact single-line horizontal scroll strip */
 .c3d-inventory-bar {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  scrollbar-width: none;
   background: rgba(15, 23, 42, 0.88);
   border: 1px solid rgba(45, 212, 191, 0.35);
-  padding: 6px 12px;
-  border-radius: 11px;
-  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+}
+.c3d-inventory-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .c3d-inv-label {
   font-weight: 700;
   color: #5eead4;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .c3d-inv-chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 0.76rem;
+  padding: 2px 9px;
+  border-radius: 8px;
+  font-size: 0.73rem;
   font-weight: 600;
   background: rgba(30, 41, 59, 0.85);
   border: 1px dashed rgba(148, 163, 184, 0.4);
   color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .c3d-inv-chip.collected {
@@ -58,10 +87,10 @@
   background: #071320;
   border: 1px solid rgba(56, 189, 248, 0.45);
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   display: grid;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .c3d-micro-header {
@@ -80,8 +109,8 @@
 }
 
 .c3d-micro-lens {
-  width: 176px;
-  height: 176px;
+  width: clamp(132px, 36vw, 170px);
+  height: clamp(132px, 36vw, 170px);
   border-radius: 50%;
   border: 4px solid #38bdf8;
   box-shadow: 0 0 24px rgba(56, 189, 248, 0.35), inset 0 0 18px rgba(0, 0, 0, 0.65);
@@ -101,7 +130,7 @@
 
 .c3d-micro-controls {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
 }
 
@@ -116,10 +145,10 @@
   background: rgba(30, 41, 59, 0.9);
   border: 1px solid rgba(148, 163, 184, 0.4);
   color: #cbd5e1;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 8px;
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -133,8 +162,8 @@
 .c3d-focus-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.8rem;
+  gap: 8px;
+  font-size: 0.78rem;
   color: #bae6fd;
 }
 
@@ -145,7 +174,7 @@
 
 .c3d-focus-status {
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   padding: 5px 10px;
   border-radius: 8px;
   font-weight: 600;
@@ -168,35 +197,36 @@
   background: #071524;
   border: 1px solid rgba(52, 211, 153, 0.45);
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   display: grid;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .c3d-ast-meta {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 6px;
   background: rgba(15, 23, 42, 0.8);
-  padding: 8px 10px;
+  padding: 7px 9px;
   border-radius: 10px;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 .c3d-ast-table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .c3d-ast-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 .c3d-ast-table th,
 .c3d-ast-table td {
-  padding: 6px 8px;
+  padding: 5px 7px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
   text-align: start;
 }
@@ -211,11 +241,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 26px;
-  padding: 2px 7px;
+  min-width: 24px;
+  padding: 2px 6px;
   border-radius: 6px;
   font-weight: 800;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
 }
 
 .c3d-sir-pill.S {
@@ -239,9 +269,10 @@
 .c3d-aware-pill {
   display: inline-block;
   padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 0.72rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .c3d-aware-pill.Access {
@@ -267,58 +298,58 @@
   background: #160b14;
   border: 1px solid rgba(248, 113, 113, 0.45);
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   display: grid;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 7px;
+  margin-bottom: 8px;
 }
 
 .c3d-vitals-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
-  gap: 6px;
+  grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+  gap: 5px;
 }
 
 .c3d-vital-cell {
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(56, 189, 248, 0.3);
   border-radius: 8px;
-  padding: 5px 8px;
+  padding: 4px 6px;
   text-align: center;
 }
 
 .c3d-vital-cell small {
   display: block;
   color: #94a3b8;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
 }
 
 .c3d-vital-cell strong {
   color: #38bdf8;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
 }
 
 .c3d-redflag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .c3d-redflag-chip {
   background: rgba(220, 38, 38, 0.25);
   border: 1px solid #f87171;
   color: #fecaca;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 3px 9px;
-  border-radius: 999px;
+  padding: 2px 8px;
+  border-radius: 8px;
 }
 
 /* Puzzle Hint Toggle */
 .c3d-hint-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
   margin-bottom: 6px;
 }
 
@@ -327,10 +358,10 @@
   background: rgba(234, 179, 8, 0.18);
   border: 1px solid rgba(250, 204, 21, 0.5);
   color: #fef08a;
-  padding: 4px 11px;
+  padding: 4px 10px;
   border-radius: 8px;
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -338,8 +369,20 @@
 .c3d-hint-box {
   background: rgba(234, 179, 8, 0.14);
   border-inline-start: 3px solid #facc15;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border-radius: 8px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #fef9c3;
+}
+
+@media (max-width: 680px) {
+  .c3d-inv-label {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-height: 520px) {
+  .c3d-inventory-bar {
+    display: none;
+  }
 }

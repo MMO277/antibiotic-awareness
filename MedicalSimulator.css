@@ -1,44 +1,51 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   MEDICAL LIFE SIMULATOR 3D (/medical-simulator) — Scoped Styles
+   MEDICAL LIFE SIMULATOR 3D (/medical-simulator) & SHARED 3D HUD — Scoped Styles
    ══════════════════════════════════════════════════════════════════════════ */
 
 .ms-page {
-  padding-block: 16px 36px;
+  padding-block: 12px 32px;
 }
 
+.card.ms-wrapper,
 .ms-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px;
+  gap: 8px;
+  padding: 12px;
   background: #081523;
   color: #f1f5f9;
   border: 1px solid rgba(56, 189, 248, 0.28);
   border-radius: 18px;
   box-shadow: 0 14px 36px rgba(2, 12, 27, 0.45);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* ── Immersive (true full-screen) game layout ─────────────────────────────────────────────
-   Active for the whole play session (like Bacteria Hunter's gaming mode): the wrapper is pinned
-   to the viewport, uses the dynamic viewport height (mobile browser bars) and respects safe areas. */
+   Matches Bacteria Hunter's proven full-screen pattern (.bh-immersive): pinned to the viewport,
+   uses dynamic viewport height (100dvh), and respects mobile safe areas with higher specificity
+   than global .card rules in styles.css. */
+.card.ms-wrapper.ms-immersive,
 .ms-wrapper.ms-immersive {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  box-sizing: border-box;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  max-width: none;
-  margin: 0;
-  gap: 6px;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  overflow: hidden;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10000 !important;
+  box-sizing: border-box !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  margin: 0 !important;
+  gap: 5px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #081523 !important;
+  overflow: hidden !important;
   overscroll-behavior: none;
   padding: max(6px, env(safe-area-inset-top, 0px)) max(8px, env(safe-area-inset-right, 0px))
-    max(6px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+    max(6px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px)) !important;
 }
 
 /* Progress loading / error screen shown before the game mounts */
@@ -63,7 +70,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 30px;
+  min-height: 32px;
   padding: 0 8px;
   border-radius: 9px;
   font-size: 0.78rem;
@@ -72,6 +79,7 @@
   border: 1px solid rgba(148, 163, 184, 0.35);
   color: #cbd5e1;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .ms-sync-chip.saved { color: #86efac; border-color: rgba(74, 222, 128, 0.45); }
 .ms-sync-chip.saving { color: #fde68a; }
@@ -81,13 +89,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   flex: 0 0 auto;
-  padding: 7px 12px;
+  padding: 6px 10px;
   border-radius: 10px;
-  font-size: 0.82rem;
-  line-height: 1.45;
+  font-size: 0.8rem;
+  line-height: 1.4;
   color: #e0f2fe;
   background: rgba(14, 154, 167, 0.2);
   border: 1px solid rgba(56, 189, 248, 0.4);
@@ -101,148 +109,124 @@
 
 .ms-btn-short { display: none; }
 
-/* Compact HUD chrome while immersive: the 3D scene gets every spare pixel */
-.ms-immersive .ms-topbar {
-  flex: 0 0 auto;
-  flex-wrap: nowrap;
-  gap: 8px;
-  padding: 5px 8px;
-  min-height: 46px;
-}
-.ms-immersive .ms-topbar-left { flex-wrap: nowrap; gap: 8px; min-width: 0; flex: 1 1 auto; }
-.ms-immersive .ms-title-block { flex-wrap: nowrap; min-width: 0; gap: 8px; }
-.ms-immersive .ms-title {
-  font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ms-immersive .ms-scenario-pill {
-  max-width: 34vw;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ms-immersive .ms-topbar-actions {
-  flex-wrap: nowrap;
-  flex: 0 1 auto;
-  gap: 6px;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.ms-immersive .ms-topbar-actions::-webkit-scrollbar { display: none; }
-.ms-immersive .ms-top-btn,
-.ms-immersive .ms-exit-btn {
-  min-height: 36px;
-  white-space: nowrap;
-  flex: 0 0 auto;
-}
-.ms-immersive .ms-objective-bar {
-  flex: 0 0 auto;
-  flex-wrap: nowrap;
-  padding: 5px 10px;
-  font-size: 0.8rem;
-  gap: 8px;
-  max-height: 4.6em;
-  overflow: auto;
-}
-.ms-immersive .ms-objective-text { flex: 1 1 0; min-width: 0; }
-.ms-immersive .ms-objective-chips { flex: 0 0 auto; max-width: 55%; }
-
-/* The level/scenario list floats over the scene and scrolls inside the screen */
-.ms-immersive .ms-scenario-drawer {
-  position: absolute;
-  z-index: 40;
-  inset-inline: max(8px, env(safe-area-inset-left, 0px));
-  top: calc(max(6px, env(safe-area-inset-top, 0px)) + 54px);
-  bottom: max(8px, env(safe-area-inset-bottom, 0px));
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Top Bar */
+/* ── Top Control Bar (HUD Header) ──────────────────────────────────────────────────────── */
 .ms-topbar {
+  flex: 0 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(56, 189, 248, 0.22);
-  padding: 10px 14px;
-  border-radius: 14px;
+  gap: 8px;
+  flex-wrap: nowrap;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  padding: 6px 10px;
+  border-radius: 12px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .ms-topbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .ms-exit-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  background: rgba(239, 68, 68, 0.18);
-  border: 1px solid rgba(248, 113, 113, 0.55);
-  color: #fecaca;
-  padding: 7px 13px;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  border: 1.5px solid rgba(255, 255, 255, 0.8);
+  color: #ffffff;
+  min-height: 36px;
+  padding: 4px 12px;
+  border-radius: 999px;
   font: inherit;
-  font-size: 0.86rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 800;
   cursor: pointer;
-  transition: background 0.18s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .ms-exit-btn:hover {
-  background: rgba(239, 68, 68, 0.35);
-  color: #ffffff;
+  filter: brightness(1.08);
+  transform: scale(1.02);
 }
 
 .ms-title-block {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .ms-title {
   margin: 0;
-  font-size: clamp(1.05rem, 2.5vw, 1.3rem);
+  font-size: clamp(0.92rem, 2vw, 1.12rem);
   color: #38bdf8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .ms-scenario-pill {
+  display: block;
   background: rgba(14, 154, 167, 0.25);
   border: 1px solid rgba(45, 212, 191, 0.4);
   color: #99f6e4;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 1 auto;
 }
 
 .ms-topbar-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+.ms-topbar-actions::-webkit-scrollbar { display: none; }
 
 .ms-top-btn {
-  background: rgba(30, 41, 59, 0.9);
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(30, 41, 59, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.38);
   color: #e2e8f0;
-  padding: 6px 12px;
+  min-height: 36px;
+  padding: 5px 11px;
   border-radius: 9px;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  touch-action: manipulation;
   transition: all 0.18s ease;
 }
 
@@ -255,24 +239,36 @@
 
 /* Locked Toast */
 .ms-locked-toast {
+  flex: 0 0 auto;
   background: rgba(180, 83, 9, 0.32);
   border: 1px solid #f59e0b;
   color: #fef3c7;
-  padding: 9px 14px;
+  padding: 7px 12px;
   border-radius: 10px;
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 600;
   text-align: center;
 }
 
 /* Scenario & Campaign Level Drawer */
 .ms-scenario-drawer {
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(15, 23, 42, 0.97);
+  border: 1px solid rgba(56, 189, 248, 0.4);
   border-radius: 14px;
   padding: 14px;
   display: grid;
   gap: 12px;
+}
+
+.ms-immersive .ms-scenario-drawer {
+  position: absolute;
+  z-index: 45;
+  inset-inline: max(8px, env(safe-area-inset-left, 0px));
+  top: calc(max(6px, env(safe-area-inset-top, 0px)) + 54px);
+  bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .ms-drawer-head {
@@ -311,9 +307,13 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 235px), 1fr));
   gap: 10px;
-  max-height: 340px;
+  max-height: 360px;
   overflow-y: auto;
   padding-inline-end: 4px;
+}
+
+.ms-immersive .ms-scenario-grid {
+  max-height: none;
 }
 
 .ms-scen-card {
@@ -408,39 +408,50 @@
   border-radius: 6px;
 }
 
-/* Objective Bar */
+/* ── Objective & Interactive Clue Bar ──────────────────────────────────────────────────── */
 .ms-objective-bar {
+  flex: 0 0 auto;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
   background: rgba(14, 154, 167, 0.16);
   border: 1px solid rgba(56, 189, 248, 0.3);
-  border-radius: 12px;
-  padding: 9px 14px;
-  font-size: 0.9rem;
+  border-radius: 11px;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .ms-objective-text {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  flex: 1 1 320px;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  line-height: 1.4;
+  color: #f1f5f9;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .ms-objective-label {
   font-weight: 700;
   color: #38bdf8;
+  margin-inline-end: 6px;
 }
 
 .ms-objective-chips {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
+  scrollbar-width: none;
+  padding-bottom: 1px;
 }
+.ms-objective-chips::-webkit-scrollbar { display: none; }
 
 .ms-timer-chip {
   display: inline-flex;
@@ -449,21 +460,26 @@
   background: rgba(239, 68, 68, 0.18);
   border: 1px solid rgba(248, 113, 113, 0.45);
   color: #fecaca;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.78rem;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.73rem;
   font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .ms-prop-status-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 11px;
-  border-radius: 999px;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 8px;
   font: inherit;
-  font-size: 0.79rem;
+  font-size: 0.73rem;
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  touch-action: manipulation;
   transition: transform 0.15s ease;
 }
 
@@ -486,16 +502,18 @@
 .ms-target-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(15, 23, 42, 0.75);
+  gap: 5px;
+  background: rgba(15, 23, 42, 0.78);
   border: 1px solid rgba(56, 189, 248, 0.4);
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  padding: 2px 9px;
+  border-radius: 8px;
+  font-size: 0.73rem;
   color: #e0f2fe;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* 3D Viewport */
+/* ── 3D Viewport ───────────────────────────────────────────────────────────────────────── */
 .ms-viewport {
   position: relative;
   width: 100%;
@@ -506,12 +524,14 @@
   border: 1px solid rgba(56, 189, 248, 0.3);
   touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
 }
 
+.card.ms-wrapper.ms-immersive .ms-viewport,
 .ms-wrapper.ms-immersive .ms-viewport {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   height: auto;
-  min-height: 0;
+  min-height: 180px;
   border-radius: 12px;
 }
 
@@ -525,21 +545,22 @@
 .ms-status-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(8, 21, 35, 0.82);
+  background: rgba(8, 21, 35, 0.84);
   backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  z-index: 15;
+  padding: 16px;
+  z-index: 25;
 }
 
 .ms-status-card {
   background: #0f2438;
   border: 1px solid rgba(56, 189, 248, 0.4);
   border-radius: 16px;
-  padding: 24px;
-  max-width: 480px;
+  padding: 20px;
+  max-width: 460px;
+  width: 100%;
   text-align: center;
   color: #f8fafc;
 }
@@ -547,10 +568,11 @@
 .ms-status-card h2 {
   color: #38bdf8;
   margin-bottom: 8px;
+  font-size: 1.1rem;
 }
 
 .ms-spinner {
-  font-size: 2.6rem;
+  font-size: 2.4rem;
   margin-bottom: 8px;
 }
 
@@ -562,28 +584,34 @@
   margin-top: 14px;
 }
 
-/* Controls Hint */
+/* Controls Hint Banner inside Viewport */
 .ms-controls-hint-banner {
   position: absolute;
-  top: 12px;
-  inset-inline: 12px;
-  background: rgba(15, 23, 42, 0.88);
+  top: 8px;
+  inset-inline: 8px;
+  background: rgba(15, 23, 42, 0.92);
   border: 1px solid rgba(56, 189, 248, 0.45);
-  border-radius: 12px;
-  padding: 10px 14px;
+  border-radius: 10px;
+  padding: 7px 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  font-size: 0.84rem;
+  gap: 10px;
+  font-size: 0.76rem;
+  line-height: 1.38;
   color: #e2e8f0;
   z-index: 8;
 }
 
+.ms-controls-hint-banner > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .ms-controls-hint-banner strong {
   color: #38bdf8;
-  display: block;
-  margin-bottom: 2px;
+  display: inline;
+  margin-inline-end: 6px;
 }
 
 .ms-hint-dismiss {
@@ -591,62 +619,80 @@
   color: #ffffff;
   border: none;
   border-radius: 8px;
-  padding: 6px 12px;
+  padding: 5px 10px;
   font: inherit;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
-/* Proximity Prompt */
+/* Proximity Prompt (Station / NPC Action Bar) */
 .ms-proximity-prompt {
   position: absolute;
-  bottom: 132px;
+  bottom: 128px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.92);
-  border: 2px solid #22c55e;
-  border-radius: 999px;
-  padding: 8px 16px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1.5px solid #22c55e;
+  border-radius: 12px;
+  padding: 6px 11px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  z-index: 10;
-  max-width: 92%;
+  justify-content: space-between;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 12;
+  width: min(94%, 460px);
+  box-sizing: border-box;
 }
 
 .ms-prox-emoji {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
+  flex-shrink: 0;
 }
 
 .ms-prox-info {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
   line-height: 1.25;
+  overflow: hidden;
 }
 
 .ms-prox-info strong {
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
 .ms-prox-info small {
-  font-size: 0.75rem;
+  font-size: 0.71rem;
   color: #86efac;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
 .ms-prox-btn {
   background: #16a34a;
   color: #ffffff;
   border: none;
-  border-radius: 999px;
-  padding: 8px 16px;
+  border-radius: 9px;
+  padding: 6px 12px;
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
+  touch-action: manipulation;
 }
 
 .ms-prox-btn.prop {
@@ -657,16 +703,20 @@
   filter: brightness(1.08);
 }
 
-/* Mobile & Touch HUD Controls */
+/* Mobile & Touch HUD Controls (Keep joystick on left & action buttons on right in both LTR & RTL, like Bacteria Hunter) */
 .ms-hud-controls {
   position: absolute;
-  bottom: 12px;
-  inset-inline: 14px;
+  bottom: 10px;
+  inset-inline: 12px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   pointer-events: none;
   z-index: 9;
+}
+
+[dir="rtl"] .ms-hud-controls {
+  flex-direction: row-reverse;
 }
 
 .ms-joystick-zone,
@@ -675,12 +725,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .ms-joystick-base {
-  width: 96px;
-  height: 96px;
+  width: 86px;
+  height: 86px;
   border-radius: 50%;
   background: rgba(15, 23, 42, 0.68);
   border: 2px solid rgba(56, 189, 248, 0.55);
@@ -691,8 +741,8 @@
 }
 
 .ms-joystick-knob {
-  width: 42px;
-  height: 42px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #38bdf8, #0284c7);
   border: 2px solid #ffffff;
@@ -701,44 +751,49 @@
 }
 
 .ms-joy-caption {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: #cbd5e1;
-  background: rgba(15, 23, 42, 0.7);
-  padding: 2px 8px;
+  background: rgba(15, 23, 42, 0.75);
+  padding: 2px 7px;
   border-radius: 6px;
+  white-space: nowrap;
 }
 
 .ms-action-zone {
   align-items: flex-end;
-  gap: 8px;
+  gap: 6px;
 }
 
 .ms-cam-reset-btn {
-  background: rgba(15, 23, 42, 0.78);
+  background: rgba(15, 23, 42, 0.82);
   border: 1px solid rgba(148, 163, 184, 0.45);
   color: #e2e8f0;
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 5px 11px;
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
+  touch-action: manipulation;
 }
 
 .ms-interact-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 54px;
-  padding: 10px 18px;
-  border-radius: 16px;
-  background: rgba(30, 41, 59, 0.85);
+  gap: 6px;
+  min-height: 46px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: rgba(30, 41, 59, 0.88);
   border: 2px solid rgba(148, 163, 184, 0.4);
   color: #94a3b8;
   font: inherit;
   font-weight: 700;
-  font-size: 0.92rem;
+  font-size: 0.84rem;
   cursor: pointer;
+  white-space: nowrap;
+  touch-action: manipulation;
   transition: all 0.2s ease;
 }
 
@@ -750,35 +805,37 @@
 }
 
 .ms-interact-icon {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 
 /* Dialogue, Prop Puzzle & Summary Overlay Modals */
 .ms-dialogue-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(6, 17, 30, 0.78);
+  background: rgba(6, 17, 30, 0.82);
   backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px;
-  z-index: 20;
+  padding: 10px;
+  z-index: 30;
 }
 
 .ms-dialogue-modal {
   background: #0f2438;
   border: 1px solid rgba(56, 189, 248, 0.45);
-  border-radius: 18px;
+  border-radius: 16px;
   width: 100%;
   max-width: 660px;
-  max-height: 92%;
+  max-height: 94%;
   overflow-y: auto;
-  padding: 18px 20px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 16px;
   color: #f8fafc;
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.55);
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .ms-prop-modal {
@@ -789,38 +846,40 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-  padding-bottom: 10px;
+  padding-bottom: 8px;
 }
 
 .ms-speaker-badge {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .ms-speaker-avatar {
-  font-size: 2rem;
+  font-size: 1.75rem;
   background: rgba(14, 154, 167, 0.22);
   border: 1px solid rgba(56, 189, 248, 0.4);
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .ms-speaker-badge strong {
   display: block;
   color: #38bdf8;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .ms-speaker-badge small {
   color: #94a3b8;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
 }
 
 .ms-dialogue-close {
@@ -832,16 +891,17 @@
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .ms-dialogue-speech {
   background: rgba(15, 23, 42, 0.72);
   border-inline-start: 4px solid #38bdf8;
-  padding: 12px 14px;
+  padding: 10px 12px;
   border-radius: 10px;
-  font-size: 0.98rem;
-  line-height: 1.7;
-  margin: 0 0 12px;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  margin: 0 0 10px;
   color: #f1f5f9;
 }
 
@@ -851,7 +911,7 @@
 }
 
 .ms-choices-prompt {
-  font-size: 0.86rem;
+  font-size: 0.84rem;
   font-weight: 700;
   color: #99f6e4;
 }
@@ -865,11 +925,11 @@
   background: rgba(30, 41, 59, 0.9);
   border: 1px solid rgba(56, 189, 248, 0.32);
   color: #f8fafc;
-  padding: 11px 14px;
+  padding: 10px 12px;
   border-radius: 12px;
   font: inherit;
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: 0.88rem;
+  line-height: 1.5;
   cursor: pointer;
   transition: all 0.16s ease;
 }
@@ -883,14 +943,14 @@
 .ms-choice-index {
   background: #0284c7;
   color: #ffffff;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   flex-shrink: 0;
   margin-top: 2px;
 }
@@ -898,7 +958,7 @@
 /* Immediate Feedback Box */
 .ms-feedback-box {
   border-radius: 12px;
-  padding: 14px;
+  padding: 12px;
   display: grid;
   gap: 8px;
 }
@@ -920,18 +980,18 @@
 
 .ms-feedback-title {
   font-weight: 700;
-  font-size: 0.96rem;
+  font-size: 0.92rem;
 }
 
 .ms-feedback-text,
 .ms-feedback-rationale {
   margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.6;
+  font-size: 0.86rem;
+  line-height: 1.55;
 }
 
 .ms-continue-btn {
-  margin-top: 6px;
+  margin-top: 4px;
   width: 100%;
 }
 
@@ -939,50 +999,50 @@
   background: rgba(14, 154, 167, 0.16);
   border: 1px dashed rgba(56, 189, 248, 0.45);
   border-radius: 10px;
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
 }
 
 /* Summary Modal */
 .ms-summary-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-  padding-bottom: 10px;
+  padding-bottom: 8px;
 }
 
 .ms-summary-icon {
-  font-size: 2.2rem;
+  font-size: 2rem;
 }
 
 .ms-summary-header h2 {
   color: #ffffff;
   margin: 4px 0 0;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
 }
 
 .ms-summary-content {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .ms-summary-section {
   background: rgba(15, 23, 42, 0.72);
   border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 0.88rem;
+  padding: 9px 11px;
+  font-size: 0.85rem;
 }
 
 .ms-summary-section strong {
   display: block;
   color: #38bdf8;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .ms-summary-section p {
   margin: 0;
-  line-height: 1.6;
+  line-height: 1.55;
 }
 
 .ms-decision-list {
@@ -990,42 +1050,36 @@
   padding: 0;
   margin: 6px 0 0;
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .ms-decision-item {
   background: rgba(15, 23, 42, 0.65);
   border-radius: 10px;
-  padding: 9px 12px;
-  font-size: 0.84rem;
+  padding: 8px 10px;
+  font-size: 0.82rem;
   border-inline-start: 4px solid #38bdf8;
 }
 
-.ms-decision-item.optimal {
-  border-inline-start-color: #22c55e;
-}
-.ms-decision-item.caution {
-  border-inline-start-color: #f59e0b;
-}
-.ms-decision-item.unsafe {
-  border-inline-start-color: #ef4444;
-}
+.ms-decision-item.optimal { border-inline-start-color: #22c55e; }
+.ms-decision-item.caution { border-inline-start-color: #f59e0b; }
+.ms-decision-item.unsafe { border-inline-start-color: #ef4444; }
 
 .ms-decision-choice {
   font-weight: 600;
-  margin: 3px 0;
+  margin: 2px 0;
 }
 
 .ms-decision-why {
   color: #cbd5e1;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }
 
 .ms-sources-box {
   background: rgba(15, 23, 42, 0.55);
   border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 0.82rem;
+  padding: 8px 11px;
+  font-size: 0.8rem;
 }
 
 .ms-sources-box ul {
@@ -1039,38 +1093,48 @@
 
 .ms-summary-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-/* Session Progress & Disclaimer Bar */
+/* Session Progress & Disclaimer Bar (hidden during immersive full-screen play, like Bacteria Hunter) */
 .ms-session-bar {
+  flex: 0 0 auto;
   background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   display: grid;
-  gap: 8px;
+  gap: 6px;
+}
+
+.ms-immersive .ms-session-bar {
+  display: none !important;
 }
 
 .ms-badges-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 0.82rem;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  font-size: 0.78rem;
 }
+.ms-badges-row::-webkit-scrollbar { display: none; }
 
 .ms-badge-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
+  gap: 4px;
+  padding: 3px 9px;
   border-radius: 999px;
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid rgba(148, 163, 184, 0.25);
   color: #64748b;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .ms-badge-chip.earned {
@@ -1082,65 +1146,195 @@
 
 .ms-medical-disclaimer {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: #94a3b8;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
-@media (max-width: 640px) {
-  .ms-viewport {
-    height: clamp(360px, 60vh, 520px);
+/* ── Responsive Breakpoints for Tablets & Phones ───────────────────────────────────────── */
+
+@media (max-width: 960px), (max-height: 560px) {
+  .ms-btn-label { display: none !important; }
+  .ms-btn-short { display: inline !important; }
+  .ms-top-btn { padding: 4px 8px; min-width: 34px; min-height: 32px; }
+  .ms-title { display: none !important; }
+}
+
+/* On mobile phones (<= 680px):
+   - Row 1 of .ms-topbar has Exit button on start edge + Action buttons on end edge (like Bacteria Hunter)
+   - Row 2 of .ms-topbar gives the Stage/Scenario Title 100% full width so Arabic titles never wrap into a vertical pill */
+@media (max-width: 680px) {
+  .ms-topbar {
+    flex-wrap: wrap;
+    padding: 5px 8px;
+    gap: 5px 6px;
+  }
+  .ms-topbar-left {
+    display: contents;
+  }
+  .ms-exit-btn {
+    order: 1;
+    padding: 3px 10px;
+    min-height: 32px;
+    font-size: 0.75rem;
+  }
+  .ms-topbar-actions {
+    order: 2;
+    margin-inline-start: auto;
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+  .ms-sync-chip {
+    min-height: 30px;
+    padding: 0 6px;
+    font-size: 0.73rem;
+  }
+  .ms-top-btn {
+    min-height: 32px;
+    min-width: 32px;
+    padding: 3px 7px;
+    font-size: 0.75rem;
+  }
+  .ms-title-block {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+  }
+  .ms-scenario-pill {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+    font-size: 0.77rem;
+    line-height: 1.38;
+    padding: 4px 10px;
+    border-radius: 8px;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+  .ms-objective-bar {
+    padding: 5px 9px;
+    gap: 4px;
+    font-size: 0.76rem;
+  }
+  .ms-objective-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.36;
+  }
+  .ms-controls-hint-banner {
+    top: 6px;
+    inset-inline: 6px;
+    padding: 5px 8px;
+    font-size: 0.73rem;
   }
   .ms-proximity-prompt {
-    bottom: 118px;
-    padding: 6px 12px;
+    bottom: 92px;
+    padding: 5px 10px;
+    gap: 8px;
+  }
+  .ms-action-zone {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
   }
   .ms-joystick-base {
-    width: 82px;
-    height: 82px;
+    width: 72px;
+    height: 72px;
   }
   .ms-joystick-knob {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
+  }
+  .ms-joy-caption {
+    display: none;
   }
   .ms-interact-btn {
-    min-height: 48px;
-    padding: 8px 14px;
-    font-size: 0.85rem;
+    min-height: 42px;
+    padding: 6px 12px;
+    font-size: 0.79rem;
+  }
+  .ms-dialogue-backdrop {
+    padding: 6px;
+  }
+  .ms-dialogue-modal {
+    padding: 12px 13px;
+    gap: 10px;
+    max-height: 96%;
   }
 }
 
-/* ── Immersive: small screens, landscape phones, safe areas ─────────────────────────────── */
-.ms-immersive .ms-dialogue-modal { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-.ms-immersive .ms-hud-controls {
-  bottom: max(14px, 2.5vh);
-  inset-inline: max(18px, 3vw);
+@media (max-width: 420px) {
+  .ms-exit-btn span:last-child { display: none; }
+  .ms-exit-btn { padding: 3px 10px; min-width: 36px; }
 }
 
-@media (max-width: 900px), (max-height: 520px) {
-  .ms-immersive .ms-btn-label { display: none; }
-  .ms-immersive .ms-btn-short { display: inline; }
-  .ms-immersive .ms-top-btn { padding: 6px 10px; min-width: 40px; }
-  .ms-immersive .ms-title { display: none; }
-}
-
-@media (max-width: 560px) {
-  .ms-immersive .ms-exit-btn { padding: 6px 12px; }
-  .ms-immersive .ms-exit-btn span:last-child { display: none; }
-  .ms-immersive .ms-scenario-pill { max-width: 46vw; }
-}
-
-/* Landscape phones: very little height, so shrink everything that is not the scene */
+/* Landscape phones: single-row ultra-compact chrome so the 3D scene gets maximum height */
 @media (max-height: 520px) {
-  .ms-immersive .ms-objective-bar { max-height: 2.9em; font-size: 0.76rem; }
-  .ms-immersive .ms-objective-label { display: none; }
-  .ms-immersive .ms-objective-chips { display: none; }
-  .ms-immersive .ms-joystick-base { width: 76px; height: 76px; }
-  .ms-immersive .ms-joystick-knob { width: 34px; height: 34px; }
-  .ms-immersive .ms-joy-caption { display: none; }
-  .ms-immersive .ms-interact-btn { min-height: 44px; padding: 6px 12px; }
-  .ms-immersive .ms-proximity-prompt { bottom: 96px; padding: 5px 12px; }
-  .ms-immersive .ms-dialogue-backdrop { padding: 6px; }
-  .ms-immersive .ms-dialogue-modal { padding: 10px 14px; gap: 8px; max-height: 98%; }
-  .ms-immersive .ms-controls-hint-banner { top: 6px; padding: 6px 10px; font-size: 0.76rem; }
+  .card.ms-wrapper.ms-immersive,
+  .ms-wrapper.ms-immersive {
+    gap: 4px;
+    padding: 4px max(6px, env(safe-area-inset-right, 0px)) 4px max(6px, env(safe-area-inset-left, 0px)) !important;
+  }
+  .ms-topbar {
+    flex-wrap: nowrap;
+    padding: 3px 8px;
+    min-height: 38px;
+  }
+  .ms-topbar-left {
+    display: flex;
+    flex: 1 1 0;
+    width: auto;
+  }
+  .ms-title-block {
+    order: 0;
+    flex: 1 1 0;
+    width: auto;
+  }
+  .ms-topbar-actions {
+    order: 0;
+    margin-inline-start: 0;
+    flex: 0 0 auto;
+    width: auto;
+  }
+  .ms-objective-bar {
+    flex-direction: row;
+    align-items: center;
+    padding: 3px 8px;
+    font-size: 0.74rem;
+    gap: 8px;
+  }
+  .ms-objective-text {
+    flex: 1 1 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+  .ms-objective-label { display: none; }
+  .ms-objective-chips {
+    width: auto;
+    max-width: 48%;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .ms-joystick-base { width: 64px; height: 64px; }
+  .ms-joystick-knob { width: 28px; height: 28px; }
+  .ms-joy-caption { display: none; }
+  .ms-action-zone {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+  .ms-interact-btn { min-height: 38px; padding: 5px 10px; font-size: 0.76rem; }
+  .ms-proximity-prompt {
+    top: 8px;
+    bottom: auto;
+    width: min(64%, 380px);
+    padding: 4px 10px;
+  }
+  .ms-controls-hint-banner { display: none; }
 }

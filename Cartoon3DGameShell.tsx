@@ -890,11 +890,13 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
 
     canvas.addEventListener('webglcontextlost', onContextLost, false);
 
+    let orientTimer: number | undefined;
     const updateSize = () => {
       if (!renderer || !sceneAssets || !viewport) return;
       const r = viewport.getBoundingClientRect();
-      const w = Math.max(280, Math.floor(r.width));
-      const h = Math.max(240, Math.floor(r.height));
+      const w = Math.floor(viewport.clientWidth || r.width);
+      const h = Math.floor(viewport.clientHeight || r.height);
+      if (w < 60 || h < 60) return;
       const dprCap = lowGraphics ? 1.25 : 2.0;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap));
       renderer.setSize(w, h, false);
@@ -902,13 +904,21 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
       sceneAssets.camera.updateProjectionMatrix();
     };
 
+    const onOrientationChange = () => {
+      updateSize();
+      window.clearTimeout(orientTimer);
+      orientTimer = window.setTimeout(updateSize, 140);
+    };
+
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
       resizeObserver = new ResizeObserver(() => updateSize());
       resizeObserver.observe(viewport);
-    } else {
-      window.addEventListener('resize', updateSize);
     }
+    const vv = window.visualViewport;
+    window.addEventListener('resize', updateSize);
+    window.addEventListener('orientationchange', onOrientationChange);
+    vv?.addEventListener('resize', updateSize);
 
     const onVisibilityChange = () => {
       isTabHidden = document.hidden;
@@ -1064,11 +1074,13 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
       }
       canvas.removeEventListener('webglcontextlost', onContextLost);
       document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.clearTimeout(orientTimer);
       if (resizeObserver) {
         resizeObserver.disconnect();
-      } else {
-        window.removeEventListener('resize', updateSize);
       }
+      window.removeEventListener('resize', updateSize);
+      window.removeEventListener('orientationchange', onOrientationChange);
+      vv?.removeEventListener('resize', updateSize);
       if (sceneAssets) {
         sceneAssets.disposeAll();
       }
@@ -1561,7 +1573,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
             </div>
           )}
 
-          {showControlsHint && sceneStatus === 'ready' && !modalOpen && !missionFinished && (
+          {showControlsHint && sceneStatus === 'ready' && !modalOpen && !missionFinished && !nearestPropDef && !nearestNpc && (
             <div className="ms-controls-hint-banner">
               <div>
                 <strong>🎮 {pick(config.controlsHintTitle, lang)}</strong>

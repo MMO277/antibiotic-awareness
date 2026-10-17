@@ -606,11 +606,13 @@ function MedicalSimulatorGame({ uid, initial, remote, localOffer }: SimulatorGam
 
     canvas.addEventListener('webglcontextlost', onContextLost, false);
 
+    let orientTimer: number | undefined;
     const updateSize = () => {
       if (!renderer || !wardAssets || !viewport) return;
       const r = viewport.getBoundingClientRect();
-      const w = Math.max(280, Math.floor(r.width));
-      const h = Math.max(240, Math.floor(r.height));
+      const w = Math.floor(viewport.clientWidth || r.width);
+      const h = Math.floor(viewport.clientHeight || r.height);
+      if (w < 60 || h < 60) return;
       const dprCap = lowGraphics ? 1.25 : 2.0;
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, dprCap));
       renderer.setSize(w, h, false);
@@ -618,13 +620,21 @@ function MedicalSimulatorGame({ uid, initial, remote, localOffer }: SimulatorGam
       wardAssets.camera.updateProjectionMatrix();
     };
 
+    const onOrientationChange = () => {
+      updateSize();
+      window.clearTimeout(orientTimer);
+      orientTimer = window.setTimeout(updateSize, 140);
+    };
+
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
       resizeObserver = new ResizeObserver(() => updateSize());
       resizeObserver.observe(viewport);
-    } else {
-      window.addEventListener('resize', updateSize);
     }
+    const vv = window.visualViewport;
+    window.addEventListener('resize', updateSize);
+    window.addEventListener('orientationchange', onOrientationChange);
+    vv?.addEventListener('resize', updateSize);
 
     const onVisibilityChange = () => {
       isTabHidden = document.hidden;
@@ -767,11 +777,13 @@ function MedicalSimulatorGame({ uid, initial, remote, localOffer }: SimulatorGam
       }
       canvas.removeEventListener('webglcontextlost', onContextLost);
       document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.clearTimeout(orientTimer);
       if (resizeObserver) {
         resizeObserver.disconnect();
-      } else {
-        window.removeEventListener('resize', updateSize);
       }
+      window.removeEventListener('resize', updateSize);
+      window.removeEventListener('orientationchange', onOrientationChange);
+      vv?.removeEventListener('resize', updateSize);
       if (wardAssets) {
         wardAssets.disposeAll();
       }
@@ -1318,7 +1330,7 @@ function MedicalSimulatorGame({ uid, initial, remote, localOffer }: SimulatorGam
           )}
 
           {/* First-time Controls Hint Banner */}
-          {showControlsHint && sceneStatus === 'ready' && !modalOpen && !scenarioFinished && (
+          {showControlsHint && sceneStatus === 'ready' && !modalOpen && !scenarioFinished && !nearestPropDef && !nearestNpc && (
             <div className="ms-controls-hint-banner">
               <div>
                 <strong>🎮 {isAr ? 'طريقة التحرك وحل الأدلة 3D:' : 'How to Explore, Solve 3D Clues & Interact:'}</strong>
