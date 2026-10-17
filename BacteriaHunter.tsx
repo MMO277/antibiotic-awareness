@@ -156,7 +156,9 @@ function makeEnemy(type: Enemy['type'], W: number, H: number, wave: number, diff
 
 // ─── Game Engine Hook ─────────────────────────────────────────────────────────
 
-function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: boolean) {
+type CanvasMetrics = { w: number; h: number; dpr: number };
+
+function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: boolean, sizeRef: React.MutableRefObject<CanvasMetrics>) {
   const stateRef = useRef({
     gameState: 'menu' as GameState,
     difficulty: 'easy' as Difficulty,
@@ -199,7 +201,7 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
   const initGame = useCallback((diff: Difficulty) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const W = canvas.width, H = canvas.height;
+    const W = sizeRef.current.w, H = sizeRef.current.h;
     S.difficulty = diff;
     S.player = {
       x: W / 2, y: H / 2,
@@ -220,13 +222,13 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
     S.achievementTimer = 0; S.lastAchievement = '';
     S.gameState = 'playing';
     tick();
-  }, [S, canvasRef, tick]);
+  }, [S, canvasRef, sizeRef, tick]);
 
   // ─── Spawn Wave ────────────────────────────────────────────────────────────
   const spawnWave = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const W = canvas.width, H = canvas.height;
+    const W = sizeRef.current.w, H = sizeRef.current.h;
     const wave = S.wave;
     const isBossWave = wave > 0 && wave % 4 === 0;
     if (isBossWave) {
@@ -255,7 +257,7 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
       S.showEdu = true;
       S.eduTimer = 240;
     }
-  }, [S, canvasRef, isAr, tick]);
+  }, [S, canvasRef, sizeRef, isAr, tick]);
 
   // ─── Achievements helper ───────────────────────────────────────────────────
   const earn = useCallback((id: string, label: string) => {
@@ -282,7 +284,8 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const W = canvas.width, H = canvas.height;
+    const W = sizeRef.current.w, H = sizeRef.current.h;
+    ctx.setTransform(sizeRef.current.dpr, 0, 0, sizeRef.current.dpr, 0, 0);
     const gs = S.gameState;
     S.frameCount++;
 
@@ -831,7 +834,7 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
     const rect = () => canvas.getBoundingClientRect();
     const toCanvas = (cx: number, cy: number) => {
       const r = rect();
-      return { x: (cx - r.left) * (canvas.width / r.width), y: (cy - r.top) * (canvas.height / r.height) };
+      return { x: (cx - r.left) * (sizeRef.current.w / r.width), y: (cy - r.top) * (sizeRef.current.h / r.height) };
     };
     const mm = (e: MouseEvent) => { const p = toCanvas(e.clientX, e.clientY); mouseRef.current = p; };
     const md = (e: MouseEvent) => { mouseDownRef.current = true; const p = toCanvas(e.clientX, e.clientY); mouseRef.current = p; };
@@ -840,7 +843,7 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
     canvas.addEventListener('mousedown', md);
     window.addEventListener('mouseup', mu);
     return () => { canvas.removeEventListener('mousemove', mm); canvas.removeEventListener('mousedown', md); window.removeEventListener('mouseup', mu); };
-  }, []);
+  }, [sizeRef]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -913,6 +916,10 @@ function Joystick({ joyRef, size = 90 }: { joyRef: React.MutableRefObject<{ acti
   );
 }
 
+// Mobile-portrait layout reserves (CSS px): joystick/shoot row, and wrapper/page padding.
+const BH_CONTROLS_RESERVE = 124;
+const BH_CHROME_RESERVE = 40;
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function BacteriaHunter() {
@@ -920,25 +927,56 @@ export default function BacteriaHunter() {
   const isAr = lang === 'ar';
   const canvasRef = useRef<HTMLCanvasElement>(null!);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [canvasSize, setCanvasSize] = useState({ w: 360, h: 560 });
-  const { S, joyRef, shootBtnRef, initGame, uiTick, tick } = useGameEngine(canvasRef, isAr);
+  // Logical game size (CSS px) is kept separate from the canvas backing-store size (CSS px × dpr).
+  const sizeRef = useRef<CanvasMetrics>({ w: 360, h: 560, dpr: 1 });
+  const [canvasSize, setCanvasSize] = useState<CanvasMetrics>({ w: 360, h: 560, dpr: 1 });
+  const { S, joyRef, shootBtnRef, initGame, uiTick, tick } = useGameEngine(canvasRef, isAr, sizeRef);
 
   // Resize canvas
   useEffect(() => {
     const update = () => {
       const el = containerRef.current;
       if (!el) return;
-      const r = el.getBoundingClientRect();
-      const w = Math.floor(r.width);
-      const h = Math.floor(Math.min(r.height, window.innerHeight * 0.72));
-      setCanvasSize({ w, h });
+      const vv = window.visualViewport;
+      const vw = window.innerWidth;
+      const vh = vv ? vv.height : window.innerHeight;
+      // Mobile portrait only: give the game container an explicit height that fills the
+      // viewport (minus sticky site header + on-screen controls), instead of letting it
+      // collapse to the canvas' default 360:560 aspect ratio.
+      const mobilePortrait = vw <= 700 && window.innerHeight > vw;
+      let w: number, h: number, dpr = 1;
+      if (mobilePortrait) {
+        const topBar = document.querySelector('header.top')?.getBoundingClientRect().height ?? 64;
+        const avail = Math.floor(vh - topBar - BH_CONTROLS_RESERVE - BH_CHROME_RESERVE);
+        const target = Math.max(320, avail);
+        el.style.height = `${target}px`;
+        // use the container's real inner size (it has a border) so logical size == displayed size
+        w = Math.floor(el.clientWidth);
+        h = Math.floor(el.clientHeight);
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+      } else {
+        el.style.height = '';
+        const r = el.getBoundingClientRect();
+        w = Math.floor(r.width);
+        h = Math.floor(Math.min(r.height, window.innerHeight * 0.72));
+      }
+      const prev = sizeRef.current;
+      if (prev.w === w && prev.h === h && prev.dpr === dpr) return;
+      sizeRef.current = { w, h, dpr };
+      // keep the player inside the new play area
+      const pl = S.player;
+      if (pl) {
+        pl.x = Math.min(Math.max(pl.x, pl.radius), w - pl.radius);
+        pl.y = Math.min(Math.max(pl.y, pl.radius), h - pl.radius);
+      }
+      setCanvasSize({ w, h, dpr });
     };
     update();
     const ro = new ResizeObserver(update);
     if (containerRef.current) ro.observe(containerRef.current);
     window.addEventListener('resize', update);
     return () => { ro.disconnect(); window.removeEventListener('resize', update); };
-  }, []);
+  }, [S]);
 
   // Prevent page scroll when touch is on canvas
   useEffect(() => {
@@ -1055,9 +1093,21 @@ export default function BacteriaHunter() {
 
   const isInGame = gs === 'playing' || gs === 'paused' || gs === 'boss_intro';
 
+  const wasInGame = useRef(false);
+  useEffect(() => {
+    if (isInGame && !wasInGame.current && window.innerWidth <= 700 && window.innerHeight > window.innerWidth) {
+      const el = containerRef.current;
+      if (el) {
+        const topBar = document.querySelector('header.top')?.getBoundingClientRect().height ?? 64;
+        window.scrollTo({ top: Math.max(0, window.scrollY + el.getBoundingClientRect().top - topBar - 6) });
+      }
+    }
+    wasInGame.current = isInGame;
+  }, [isInGame]);
+
   return (
     <main className="wrap narrow bh-page" dir={isAr ? 'rtl' : 'ltr'}>
-      <div className="card bh-wrapper">
+      <div className={`card bh-wrapper${isInGame ? ' bh-playing' : ''}`}>
         <div className="bh-header">
           <h1 className="bh-page-title">🦠 {isAr ? 'صائد البكتيريا' : 'Bacteria Hunter'}</h1>
           <p className="bh-page-sub">{isAr ? 'لعبة أركيد تعليمية للوعي بالمضادات الحيوية' : 'Educational arcade game for antibiotic awareness'}</p>
@@ -1066,8 +1116,8 @@ export default function BacteriaHunter() {
         <div ref={containerRef} className="bh-canvas-container" style={{ position: 'relative' }}>
           <canvas
             ref={canvasRef}
-            width={canvasSize.w}
-            height={canvasSize.h}
+            width={Math.round(canvasSize.w * canvasSize.dpr)}
+            height={Math.round(canvasSize.h * canvasSize.dpr)}
             className="bh-canvas"
           />
           {renderOverlay()}
