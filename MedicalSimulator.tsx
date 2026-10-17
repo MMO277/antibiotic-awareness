@@ -13,6 +13,15 @@ import {
   SIMULATOR_NPCS,
 } from './medicalSimulatorScenarios';
 import {
+  CAMPAIGN_TEN_LEVELS,
+  CampaignLevel,
+  EnvironmentTheme,
+  InteractivePropDefinition,
+  isExperienceUnlocked,
+  loadSimulatorProgress,
+  saveSimulatorProgress,
+} from './medicalSimulatorLevels';
+import {
   BoxObstacle,
   buildHospitalWardScene,
   updateCharacterAnimations,
@@ -26,7 +35,24 @@ interface DecisionLogItem {
   choice: ScenarioChoice;
 }
 
+type PlayableExperience = MedicalScenario & {
+  isCampaignLevel?: boolean;
+  campaignIndex?: number;
+  requiredLevelId?: string | null;
+  unlockRequirementText?: { ar: string; en: string };
+  environmentTheme?: EnvironmentTheme;
+  gentleTimerSeconds?: number;
+  interactiveProps?: InteractivePropDefinition[];
+  requirePropsSolvedBeforeNodeId?: string;
+};
+
+const ALL_EXPERIENCES: PlayableExperience[] = [
+  ...CAMPAIGN_TEN_LEVELS,
+  ...MEDICAL_SIMULATOR_SCENARIOS,
+];
+
 const INTERACT_DISTANCE = 2.45;
+const PROP_INTERACT_DISTANCE = 2.25;
 const PLAYER_SPEED = 4.2; // World units per second
 const PLAYER_RADIUS = 0.42;
 
@@ -61,6 +87,10 @@ export default function MedicalSimulator() {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const wardAssetsRef = useRef<WardSceneAssets | null>(null);
+
+  // Load saved progress from localStorage safely (non-clinical level completion & badges)
+  const initialSaved = useMemo(() => loadSimulatorProgress(), []);
 
   // Configurable graphics & UI states
   const [lowGraphics, setLowGraphics] = useState<boolean>(detectDefaultLowGraphics);
@@ -69,11 +99,30 @@ export default function MedicalSimulator() {
   const [paused, setPaused] = useState<boolean>(false);
   const [showControlsHint, setShowControlsHint] = useState<boolean>(true);
   const [showScenarioDrawer, setShowScenarioDrawer] = useState<boolean>(false);
+  const [drawerTab, setDrawerTab] = useState<'campaign10' | 'original5'>('campaign10');
+  const [lockedToastMsg, setLockedToastMsg] = useState<string>('');
   const [confirmExit, setConfirmExit] = useState<boolean>(false);
 
-  // Active Scenario & Branching Dialogue State Machine (in-memory session only — nothing persisted to Firebase)
-  const [activeScenarioId, setActiveScenarioId] = useState<string>(MEDICAL_SIMULATOR_SCENARIOS[0].id);
-  const [currentNodeId, setCurrentNodeId] = useState<string>(MEDICAL_SIMULATOR_SCENARIOS[0].initialNodeId);
+  // Active Experience & Branching Dialogue / Prop Puzzle State Machine
+  const [activeScenarioId, setActiveScenarioId] = useState<string>(() => {
+    if (
+      initialSaved.lastPlayedId &&
+      ALL_EXPERIENCES.some((e) => e.id === initialSaved.lastPlayedId) &&
+      isExperienceUnlocked(initialSaved.lastPlayedId, initialSaved.completedIds)
+    ) {
+      return initialSaved.lastPlayedId;
+    }
+    return CAMPAIGN_TEN_LEVELS[0].id;
+  });
+
+  const activeScenario: PlayableExperience = useMemo(() => {
+    return (
+      ALL_EXPERIENCES.find((s) => s.id === activeScenarioId) ||
+      CAMPAIGN_TEN_LEVELS[0]
+    );
+  }, [activeScenarioId]);
+
+  const [currentNodeId, setCurrentNodeId] = useState<string>(activeScenario.initialNodeId);
   const [dialogueOpen, setDialogueOpen] = useState<boolean>(false);
   const [activeSpeaker, setActiveSpeaker] = useState<NpcRole | null>(null);
   const [pendingFeedback, setPendingFeedback] = useState<{
@@ -82,12 +131,30 @@ export default function MedicalSimulator() {
   } | null>(null);
   const [scenarioFinished, setScenarioFinished] = useState<boolean>(false);
   const [decisionLog, setDecisionLog] = useState<DecisionLogItem[]>([]);
-  const [completedScenarios, setCompletedScenarios] = useState<string[]>([]);
-  const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
+  const [completedScenarios, setCompletedScenarios] = useState<string[]>(initialSaved.completedIds);
+  const [earnedBadges, setEarnedBadges] = useState<string[]>(initialSaved.earnedBadgeIds);
 
-  // Nearby NPC state for HUD prompt & Interact button
+  // Interactive 3D Prop / Clue Puzzle State
+  const [solvedPropIds, setSolvedPropIds] = useState<string[]>([]);
+  const solvedPropIdsRef = useRef<string[]>([]);
+  solvedPropIdsRef.current = solvedPropIds;
+
+  const [activePropModalId, setActivePropModalId] = useState<string | null>(null);
+  const [propStepIndex, setPropStepIndex] = useState<number>(0);
+  const [propFeedback, setPropFeedback] = useState<{
+    isCorrect: boolean;
+    text: string;
+  } | null>(null);
+
+  // Gentle ER Response Pacing Timer (for Level 1)
+  const [gentleElapsedSec, setGentleElapsedSec] = useState<number>(0);
+
+  // Nearby NPC & Nearby 3D Prop states for HUD prompt & Interact button
   const [nearestNpc, setNearestNpc] = useState<NpcRole | null>(null);
   const nearestNpcRef = useRef<NpcRole | null>(null);
+
+  const [nearestPropId, setNearestPropId] = useState<string | null>(null);
+  const nearestPropIdRef = useRef<string | null>(null);
 
   // Input references (Keyboard + Virtual Joystick + Camera Touch Orbit)
   const keysRef = useRef<Record<string, boolean>>({});
@@ -104,17 +171,10 @@ export default function MedicalSimulator() {
   // Prevent repeated rapid choice clicks
   const choiceLockRef = useRef<boolean>(false);
 
-  // Fullscreen / Immersive Gaming Mode hook (reuses existing safe utility)
+  // Fullscreen / Immersive Gaming Mode hook
   const gaming = useGamingMode(wrapperRef, () => {
     setPaused(true);
   });
-
-  const activeScenario: MedicalScenario = useMemo(() => {
-    return (
-      MEDICAL_SIMULATOR_SCENARIOS.find((s) => s.id === activeScenarioId) ||
-      MEDICAL_SIMULATOR_SCENARIOS[0]
-    );
-  }, [activeScenarioId]);
 
   const currentNode = useMemo(() => {
     if (scenarioFinished) return null;
@@ -128,47 +188,174 @@ export default function MedicalSimulator() {
   const pausedRef = useRef<boolean>(paused);
   pausedRef.current = paused;
 
-  const dialogueOpenRef = useRef<boolean>(dialogueOpen);
-  dialogueOpenRef.current = dialogueOpen;
+  const modalOpen = dialogueOpen || activePropModalId !== null;
+  const modalOpenRef = useRef<boolean>(modalOpen);
+  modalOpenRef.current = modalOpen;
 
-  // Start or switch to a scenario cleanly
-  const startScenario = useCallback((scenarioId: string) => {
-    const found =
-      MEDICAL_SIMULATOR_SCENARIOS.find((s) => s.id === scenarioId) ||
-      MEDICAL_SIMULATOR_SCENARIOS[0];
-    choiceLockRef.current = false;
-    setActiveScenarioId(found.id);
-    setCurrentNodeId(found.initialNodeId);
-    setPendingFeedback(null);
-    setScenarioFinished(false);
-    setDecisionLog([]);
-    setDialogueOpen(false);
-    setActiveSpeaker(null);
-    setShowScenarioDrawer(false);
-  }, []);
+  const levelInteractiveProps: InteractivePropDefinition[] = useMemo(() => {
+    return activeScenario.interactiveProps || [];
+  }, [activeScenario]);
 
-  // Restart current scenario
+  const allLevelPropsSolved = useMemo(() => {
+    if (levelInteractiveProps.length === 0) return true;
+    return levelInteractiveProps.every((p) => solvedPropIds.includes(p.id));
+  }, [levelInteractiveProps, solvedPropIds]);
+
+  const activePropDef = useMemo(() => {
+    if (!activePropModalId) return null;
+    return levelInteractiveProps.find((p) => p.id === activePropModalId) || null;
+  }, [activePropModalId, levelInteractiveProps]);
+
+  const nearestPropDef = useMemo(() => {
+    if (!nearestPropId) return null;
+    return levelInteractiveProps.find((p) => p.id === nearestPropId) || null;
+  }, [nearestPropId, levelInteractiveProps]);
+
+  // Persist progress to localStorage whenever completedScenarios, earnedBadges, or activeScenarioId changes
+  useEffect(() => {
+    saveSimulatorProgress({
+      version: 1,
+      completedIds: completedScenarios,
+      earnedBadgeIds: earnedBadges,
+      lastPlayedId: activeScenarioId,
+    });
+  }, [completedScenarios, earnedBadges, activeScenarioId]);
+
+  // Reconfigure the 3D scene's dynamic theme & interactive clue props when switching levels
+  useEffect(() => {
+    const assets = wardAssetsRef.current;
+    if (!assets) return;
+    const theme: EnvironmentTheme = activeScenario.environmentTheme || 'ward';
+    const props = activeScenario.interactiveProps || [];
+    assets.configureLevelEnvironment(theme, props, lowGraphics);
+    // Reset player avatar to center entrance when starting a new level
+    assets.playerRig.root.position.set(0, 0, 1.2);
+    assets.playerRig.root.rotation.y = Math.PI;
+  }, [activeScenario, lowGraphics]);
+
+  // Gentle pacing timer for levels that specify gentleTimerSeconds (e.g. Level 1 ER)
+  useEffect(() => {
+    if (!activeScenario.gentleTimerSeconds || scenarioFinished || paused || modalOpen) return;
+    const interval = window.setInterval(() => {
+      setGentleElapsedSec((s) => s + 1);
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [activeScenario.gentleTimerSeconds, scenarioFinished, paused, modalOpen]);
+
+  // Start or switch to a scenario/level (enforcing progressive unlocking)
+  const startScenario = useCallback(
+    (scenarioId: string, overrideUnlocked = false) => {
+      const found = ALL_EXPERIENCES.find((s) => s.id === scenarioId);
+      if (!found) return;
+
+      const unlocked =
+        overrideUnlocked || isExperienceUnlocked(found.id, completedScenarios);
+      if (!unlocked) {
+        const reqText = found.unlockRequirementText
+          ? pick(found.unlockRequirementText, lang)
+          : isAr
+          ? 'أكمل المستوى السابق أولاً لفتح هذا المستوى.'
+          : 'Complete the previous level first to unlock this level.';
+        setLockedToastMsg(`🔒 ${reqText}`);
+        window.setTimeout(() => setLockedToastMsg(''), 3800);
+        return;
+      }
+
+      choiceLockRef.current = false;
+      setLockedToastMsg('');
+      setActiveScenarioId(found.id);
+      setCurrentNodeId(found.initialNodeId);
+      setPendingFeedback(null);
+      setScenarioFinished(false);
+      setDecisionLog([]);
+      setSolvedPropIds([]);
+      setActivePropModalId(null);
+      setPropStepIndex(0);
+      setPropFeedback(null);
+      setGentleElapsedSec(0);
+      setDialogueOpen(false);
+      setActiveSpeaker(null);
+      setShowScenarioDrawer(false);
+    },
+    [completedScenarios, isAr, lang]
+  );
+
+  // Restart current scenario/level
   const restartCurrentScenario = useCallback(() => {
-    startScenario(activeScenario.id);
+    startScenario(activeScenario.id, true);
   }, [activeScenario.id, startScenario]);
 
-  // Trigger interaction with nearby NPC (or open current dialogue if matching)
+  // Open 3D Prop Clue/Puzzle Modal
+  const openPropModal = useCallback((propId: string) => {
+    setActivePropModalId(propId);
+    setPropStepIndex(0);
+    setPropFeedback(null);
+    setDialogueOpen(false);
+  }, []);
+
+  // Trigger interaction with nearby 3D Prop OR nearby NPC
   const handleInteract = useCallback(() => {
     if (pausedRef.current || scenarioFinished) return;
-    if (dialogueOpenRef.current) return;
+    if (modalOpenRef.current) return;
 
+    // Prioritize nearby unsolved 3D interactive clue/prop if within range, or any nearby prop
+    const propId = nearestPropIdRef.current;
     const npc = nearestNpcRef.current;
-    if (!npc) return;
 
-    setActiveSpeaker(npc);
-    setDialogueOpen(true);
-  }, [scenarioFinished]);
+    if (propId && (!npc || !solvedPropIdsRef.current.includes(propId))) {
+      openPropModal(propId);
+      return;
+    }
 
-  // Keep a ref to handleInteract for keyboard 'E' listener
+    if (npc) {
+      setActiveSpeaker(npc);
+      setDialogueOpen(true);
+      return;
+    }
+
+    if (propId) {
+      openPropModal(propId);
+    }
+  }, [openPropModal, scenarioFinished]);
+
   const interactFnRef = useRef(handleInteract);
   interactFnRef.current = handleInteract;
 
-  // Handle selecting a dialogue choice
+  // Handle selecting an option inside a 3D Prop Puzzle Modal
+  const handleSelectPropOption = (opt: {
+    id: string;
+    label: { ar: string; en: string };
+    isCorrect: boolean;
+    feedback: { ar: string; en: string };
+  }) => {
+    if (!activePropDef) return;
+    setPropFeedback({
+      isCorrect: opt.isCorrect,
+      text: pick(opt.feedback, lang),
+    });
+  };
+
+  const handleAdvancePropStep = () => {
+    if (!activePropDef || !propFeedback) return;
+    if (!propFeedback.isCorrect) {
+      // Let the player try again without shaming
+      setPropFeedback(null);
+      return;
+    }
+
+    if (propStepIndex + 1 < activePropDef.puzzleSteps.length) {
+      setPropStepIndex((i) => i + 1);
+      setPropFeedback(null);
+    } else {
+      // Prop puzzle completed!
+      const finishedId = activePropDef.id;
+      setSolvedPropIds((prev) => (prev.includes(finishedId) ? prev : [...prev, finishedId]));
+      setPropFeedback(null);
+      setActivePropModalId(null);
+    }
+  };
+
+  // Handle selecting a dialogue choice with an NPC
   const handleSelectChoice = (choice: ScenarioChoice) => {
     if (choiceLockRef.current || !currentNode || pendingFeedback) return;
     choiceLockRef.current = true;
@@ -204,9 +391,7 @@ export default function MedicalSimulator() {
       setCompletedScenarios((prev) =>
         prev.includes(activeScenario.id) ? prev : [...prev, activeScenario.id]
       );
-      // Award scenario badge if at least one optimal choice was made
-      const allOptimal = decisionLog.every((d) => d.choice.quality === 'optimal');
-      if (allOptimal || decisionLog.some((d) => d.choice.quality === 'optimal')) {
+      if (decisionLog.some((d) => d.choice.quality === 'optimal') || decisionLog.length > 0) {
         setEarnedBadges((prev) =>
           prev.includes(activeScenario.id) ? prev : [...prev, activeScenario.id]
         );
@@ -217,8 +402,10 @@ export default function MedicalSimulator() {
     const nextNode = activeScenario.nodes[nextId];
     setCurrentNodeId(nextId);
     if (nextNode) {
-      // If the next node is with the same NPC, keep dialogue open; otherwise close so player walks to the next NPC in 3D!
-      if (nextNode.targetNpc === activeSpeaker) {
+      if (
+        nextNode.targetNpc === activeSpeaker &&
+        activeScenario.requirePropsSolvedBeforeNodeId !== nextId
+      ) {
         setDialogueOpen(true);
       } else {
         setDialogueOpen(false);
@@ -227,7 +414,7 @@ export default function MedicalSimulator() {
     }
   };
 
-  // Keyboard Listeners (WASD / Arrows + E to interact + Esc/P to pause)
+  // Keyboard Listeners (WASD / Arrows + E to interact + P to pause)
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
@@ -245,11 +432,11 @@ export default function MedicalSimulator() {
         code === 'ArrowRight'
       ) {
         keysRef.current[code] = true;
-        if (!dialogueOpenRef.current) {
+        if (!modalOpenRef.current) {
           e.preventDefault();
         }
       } else if (code === 'KeyE') {
-        if (!dialogueOpenRef.current) {
+        if (!modalOpenRef.current) {
           e.preventDefault();
           interactFnRef.current();
         }
@@ -309,6 +496,15 @@ export default function MedicalSimulator() {
       renderer.setSize(initW, initH, false);
 
       wardAssets = buildHospitalWardScene(lowGraphics);
+      wardAssetsRef.current = wardAssets;
+
+      // Configure initial level theme and 3D props
+      wardAssets.configureLevelEnvironment(
+        activeScenario.environmentTheme || 'ward',
+        activeScenario.interactiveProps || [],
+        lowGraphics
+      );
+
       wardAssets.camera.aspect = initW / initH;
       wardAssets.camera.updateProjectionMatrix();
 
@@ -327,7 +523,6 @@ export default function MedicalSimulator() {
       return;
     }
 
-    // Handle WebGL Context Loss & Restoration Gracefully
     const onContextLost = (e: Event) => {
       e.preventDefault();
       if (rafId !== null) {
@@ -346,7 +541,6 @@ export default function MedicalSimulator() {
 
     canvas.addEventListener('webglcontextlost', onContextLost, false);
 
-    // Responsive Canvas Resizing via ResizeObserver
     const updateSize = () => {
       if (!renderer || !wardAssets || !viewport) return;
       const r = viewport.getBoundingClientRect();
@@ -367,13 +561,11 @@ export default function MedicalSimulator() {
       window.addEventListener('resize', updateSize);
     }
 
-    // Pause / Throttle when browser tab is hidden
     const onVisibilityChange = () => {
       isTabHidden = document.hidden;
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
 
-    // Delta-time Animation Loop
     let lastTime = performance.now();
     let elapsedTime = 0;
 
@@ -386,14 +578,13 @@ export default function MedicalSimulator() {
 
       if (isTabHidden || !renderer || !wardAssets) return;
 
-      const { scene, camera, playerRig, npcRigs, obstacles, wardBounds } = wardAssets;
+      const { scene, camera, playerRig, npcRigs, propRigs, obstacles, wardBounds } = wardAssets;
 
       let isMoving = false;
 
-      if (!pausedRef.current && !dialogueOpenRef.current) {
+      if (!pausedRef.current && !modalOpenRef.current) {
         elapsedTime += dt;
 
-        // Read Keyboard + Virtual Joystick inputs
         const k = keysRef.current;
         let inputX = joyVecRef.current.x;
         let inputZ = joyVecRef.current.y;
@@ -409,7 +600,6 @@ export default function MedicalSimulator() {
           const normX = inputX / Math.max(1, len);
           const normZ = inputZ / Math.max(1, len);
 
-          // Transform movement relative to camera yaw angle
           const yaw = camYawRef.current;
           const cosY = Math.cos(yaw);
           const sinY = Math.sin(yaw);
@@ -421,7 +611,6 @@ export default function MedicalSimulator() {
           const curX = playerRig.root.position.x;
           const curZ = playerRig.root.position.z;
 
-          // Sliding collision check along X then Z
           const nextX = Math.max(wardBounds.minX, Math.min(wardBounds.maxX, curX + worldDx * step));
           if (!collidesWithObstacles(nextX, curZ, obstacles)) {
             playerRig.root.position.x = nextX;
@@ -432,7 +621,6 @@ export default function MedicalSimulator() {
             playerRig.root.position.z = nextZ;
           }
 
-          // Smoothly rotate avatar toward movement heading
           const targetAngle = Math.atan2(worldDx, worldDz);
           playerRig.root.rotation.y = targetAngle;
         }
@@ -460,12 +648,32 @@ export default function MedicalSimulator() {
         setNearestNpc(closestRole);
       }
 
-      // Update Procedural Character Animations
+      // Check proximity to 3D Interactive Clue/Puzzle Props
+      let closestPropId: string | null = null;
+      let closestPropDist = PROP_INTERACT_DISTANCE;
+      Object.keys(propRigs).forEach((pid) => {
+        const pr = propRigs[pid];
+        const d = Math.hypot(px - pr.root.position.x, pz - pr.root.position.z);
+        if (d < closestPropDist) {
+          closestPropDist = d;
+          closestPropId = pid;
+        }
+      });
+
+      if (closestPropId !== nearestPropIdRef.current) {
+        nearestPropIdRef.current = closestPropId;
+        setNearestPropId(closestPropId);
+      }
+
+      // Update Procedural Character & Prop Animations
       updateCharacterAnimations(
         playerRig,
         npcRigs,
+        propRigs,
+        solvedPropIdsRef.current,
         targetNpcRef.current,
         closestRole,
+        closestPropId,
         isMoving,
         elapsedTime
       );
@@ -488,6 +696,7 @@ export default function MedicalSimulator() {
 
     return () => {
       mounted = false;
+      wardAssetsRef.current = null;
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
@@ -505,6 +714,7 @@ export default function MedicalSimulator() {
         renderer.dispose();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lowGraphics, isAr]);
 
   // Touch / Mouse Camera Orbit Drag on the 3D Viewport
@@ -558,9 +768,40 @@ export default function MedicalSimulator() {
     joyVecRef.current = { x: 0, y: 0 };
   };
 
+  // Find next sequential experience for "Next Level" button
+  const getNextExperience = (): PlayableExperience | null => {
+    if (activeScenario.isCampaignLevel && activeScenario.campaignIndex) {
+      const nextCampaign = CAMPAIGN_TEN_LEVELS.find(
+        (l) => l.campaignIndex === activeScenario.campaignIndex! + 1
+      );
+      return nextCampaign || null;
+    }
+    const idx = MEDICAL_SIMULATOR_SCENARIOS.findIndex((s) => s.id === activeScenario.id);
+    if (idx >= 0 && idx + 1 < MEDICAL_SIMULATOR_SCENARIOS.length) {
+      return MEDICAL_SIMULATOR_SCENARIOS[idx + 1];
+    }
+    return null;
+  };
+
+  const completedCampaignCount = useMemo(
+    () => CAMPAIGN_TEN_LEVELS.filter((l) => completedScenarios.includes(l.id)).length,
+    [completedScenarios]
+  );
+
+  const completedOriginalCount = useMemo(
+    () => MEDICAL_SIMULATOR_SCENARIOS.filter((s) => completedScenarios.includes(s.id)).length,
+    [completedScenarios]
+  );
+
+  // Check if current dialogue node requires 3D prop clues to be solved first
+  const nodeBlockedByUnsolvedProp =
+    currentNode &&
+    activeScenario.requirePropsSolvedBeforeNodeId === currentNode.id &&
+    !allLevelPropsSolved;
+
   // Exit Game Handler
   const handleRequestExit = () => {
-    if (decisionLog.length > 0 && !scenarioFinished) {
+    if ((decisionLog.length > 0 || solvedPropIds.length > 0) && !scenarioFinished) {
       setConfirmExit(true);
     } else {
       gaming.exit();
@@ -607,11 +848,14 @@ export default function MedicalSimulator() {
           <div className="ms-topbar-actions">
             <button
               type="button"
-              className="ms-top-btn"
+              className="ms-top-btn active"
               onClick={() => setShowScenarioDrawer((s) => !s)}
-              title={isAr ? 'تغيير السيناريو التدريبي' : 'Switch Training Scenario'}
+              title={isAr ? 'فتح قائمة المستويات الـ 10 والسيناريوهات الـ 5' : 'Open 10 Campaign Levels & 5 Original Scenarios'}
             >
-              📋 {isAr ? `السيناريوهات (${completedScenarios.length}/5)` : `Scenarios (${completedScenarios.length}/5)`}
+              🗺️{' '}
+              {isAr
+                ? `المستويات (${completedCampaignCount}/10) • السيناريوهات (${completedOriginalCount}/5)`
+                : `Levels (${completedCampaignCount}/10) • Scenarios (${completedOriginalCount}/5)`}
             </button>
 
             <button
@@ -624,7 +868,14 @@ export default function MedicalSimulator() {
                   : 'Toggle Low Graphics Mode for weaker devices'
               }
             >
-              ⚡ {isAr ? (lowGraphics ? 'رسوميات منخفضة: مفعّل' : 'رسوميات قياسية') : lowGraphics ? 'Low Graphics: ON' : 'Standard 3D'}
+              ⚡{' '}
+              {isAr
+                ? lowGraphics
+                  ? 'رسوميات منخفضة: مفعّل'
+                  : 'رسوميات قياسية'
+                : lowGraphics
+                ? 'Low Graphics: ON'
+                : 'Standard 3D'}
             </button>
 
             <button
@@ -651,15 +902,46 @@ export default function MedicalSimulator() {
           </div>
         </header>
 
-        {/* Scenario Selector Drawer */}
+        {/* Locked Level Notification Banner */}
+        {lockedToastMsg && (
+          <div className="ms-locked-toast" role="status">
+            {lockedToastMsg}
+          </div>
+        )}
+
+        {/* Progressive Level & Scenario Selector Drawer */}
         {showScenarioDrawer && (
-          <section className="ms-scenario-drawer" aria-label={isAr ? 'قائمة السيناريوهات الخمسة' : 'Five Clinical Scenarios'}>
+          <section
+            className="ms-scenario-drawer"
+            aria-label={isAr ? 'اختيار المستويات والسيناريوهات' : 'Level & Scenario Selector'}
+          >
             <div className="ms-drawer-head">
-              <strong>
-                {isAr
-                  ? 'اختر أحد السيناريوهات السريرية الخمسة:'
-                  : 'Select one of the 5 Clinical Stewardship Scenarios:'}
-              </strong>
+              <div className="ms-drawer-tabs" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={drawerTab === 'campaign10'}
+                  className={`ms-tab-btn ${drawerTab === 'campaign10' ? 'active' : ''}`}
+                  onClick={() => setDrawerTab('campaign10')}
+                >
+                  🏆{' '}
+                  {isAr
+                    ? `حملة المستويات العشرة المتدرجة (${completedCampaignCount}/10)`
+                    : `10 Progressive Campaign Levels (${completedCampaignCount}/10)`}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={drawerTab === 'original5'}
+                  className={`ms-tab-btn ${drawerTab === 'original5' ? 'active' : ''}`}
+                  onClick={() => setDrawerTab('original5')}
+                >
+                  🩺{' '}
+                  {isAr
+                    ? `السيناريوهات الأساسية الخمسة (${completedOriginalCount}/5)`
+                    : `5 Core Clinical Scenarios (${completedOriginalCount}/5)`}
+                </button>
+              </div>
               <button
                 type="button"
                 className="btn ghost small"
@@ -668,32 +950,90 @@ export default function MedicalSimulator() {
                 {isAr ? 'إغلاق ✕' : 'Close ✕'}
               </button>
             </div>
-            <div className="ms-scenario-grid">
-              {MEDICAL_SIMULATOR_SCENARIOS.map((scen) => {
-                const isDone = completedScenarios.includes(scen.id);
-                const isCurrent = scen.id === activeScenario.id;
-                return (
-                  <button
-                    key={scen.id}
-                    type="button"
-                    className={`ms-scen-card ${isCurrent ? 'current' : ''} ${isDone ? 'done' : ''}`}
-                    onClick={() => startScenario(scen.id)}
-                  >
-                    <div className="ms-scen-card-top">
-                      <span className="ms-scen-num">#{scen.number}</span>
-                      <span className="ms-scen-badge">{pick(scen.categoryBadge, lang)}</span>
-                      {isDone && <span className="ms-done-check">✓ {isAr ? 'مكتمل' : 'Completed'}</span>}
-                    </div>
-                    <strong>{pick(scen.title, lang)}</strong>
-                    <small>{pick(scen.subtitle, lang)}</small>
-                  </button>
-                );
-              })}
-            </div>
+
+            {drawerTab === 'campaign10' ? (
+              <>
+                <p className="small muted" style={{ margin: 0, color: '#94a3b8' }}>
+                  {isAr
+                    ? 'يُفتح المستوى ١ تلقائياً، ويتم فتح كل مستوى تالٍ تدريجياً فور إتمام المستوى الذي يسبقه. يُحفظ تقدمك محلياً على جهازك بأمان.'
+                    : 'Level 1 is unlocked by default; each subsequent level unlocks progressively after completing the previous level. Progress is saved locally.'}
+                </p>
+                <div className="ms-scenario-grid">
+                  {CAMPAIGN_TEN_LEVELS.map((lvl: CampaignLevel) => {
+                    const isDone = completedScenarios.includes(lvl.id);
+                    const isUnlocked = isExperienceUnlocked(lvl.id, completedScenarios);
+                    const isCurrent = lvl.id === activeScenario.id;
+                    return (
+                      <button
+                        key={lvl.id}
+                        type="button"
+                        className={`ms-scen-card ${isCurrent ? 'current' : ''} ${
+                          isDone ? 'done' : ''
+                        } ${!isUnlocked ? 'locked' : ''}`}
+                        onClick={() => startScenario(lvl.id)}
+                      >
+                        <div className="ms-scen-card-top">
+                          <span className="ms-scen-num">
+                            {isUnlocked ? `${lvl.badgeIcon} L${lvl.campaignIndex}` : `🔒 L${lvl.campaignIndex}`}
+                          </span>
+                          <span className="ms-scen-badge">{pick(lvl.categoryBadge, lang)}</span>
+                          {isDone ? (
+                            <span className="ms-done-check">✓ {isAr ? 'مكتمل' : 'Completed'}</span>
+                          ) : !isUnlocked ? (
+                            <span className="ms-lock-tag">🔒 {isAr ? 'مغلق' : 'Locked'}</span>
+                          ) : (
+                            <span className="ms-open-tag">{isAr ? 'متاح' : 'Unlocked'}</span>
+                          )}
+                        </div>
+                        <strong>{pick(lvl.title, lang)}</strong>
+                        <small>{pick(lvl.subtitle, lang)}</small>
+                        {!isUnlocked && (
+                          <div className="ms-unlock-req-hint">
+                            🔒 {pick(lvl.unlockRequirementText, lang)}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="small muted" style={{ margin: 0, color: '#94a3b8' }}>
+                  {isAr
+                    ? 'السيناريوهات التدريبية الخمسة الأصلية متاحة دائماً للعب والمراجعة في أي وقت:'
+                    : 'All 5 original clinical scenarios remain permanently unlocked for open practice:'}
+                </p>
+                <div className="ms-scenario-grid">
+                  {MEDICAL_SIMULATOR_SCENARIOS.map((scen) => {
+                    const isDone = completedScenarios.includes(scen.id);
+                    const isCurrent = scen.id === activeScenario.id;
+                    return (
+                      <button
+                        key={scen.id}
+                        type="button"
+                        className={`ms-scen-card ${isCurrent ? 'current' : ''} ${isDone ? 'done' : ''}`}
+                        onClick={() => startScenario(scen.id)}
+                      >
+                        <div className="ms-scen-card-top">
+                          <span className="ms-scen-num">#{scen.number}</span>
+                          <span className="ms-scen-badge">{pick(scen.categoryBadge, lang)}</span>
+                          {isDone && (
+                            <span className="ms-done-check">✓ {isAr ? 'مكتمل' : 'Completed'}</span>
+                          )}
+                        </div>
+                        <strong>{pick(scen.title, lang)}</strong>
+                        <small>{pick(scen.subtitle, lang)}</small>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </section>
         )}
 
-        {/* Current Objective Banner */}
+        {/* Current Objective & Interactive Clue Checklist Bar */}
         <div className="ms-objective-bar">
           <div className="ms-objective-text">
             <span className="ms-objective-label">
@@ -702,23 +1042,57 @@ export default function MedicalSimulator() {
             <span>
               {scenarioFinished
                 ? isAr
-                  ? 'أكملت هذا السيناريو بنجاح! راجع الملخص التعليمي أو اختر سيناريو آخر.'
-                  : 'Scenario completed! Review the clinical summary below or choose another scenario.'
+                  ? 'أكملت هذا المستوى بنجاح! راجع الملخص التعليمي أو انتقل للمستوى التالي.'
+                  : 'Level completed! Review the clinical summary below or advance to the next level.'
                 : currentNode
                 ? pick(currentNode.objectiveHint, lang)
                 : pick(activeScenario.briefing, lang)}
             </span>
           </div>
 
-          {targetNpc && !scenarioFinished && (
-            <div className="ms-target-chip">
-              <span>{SIMULATOR_NPCS[targetNpc].avatarEmoji}</span>
-              <span>
-                {isAr ? 'الشخصية المستهدفة:' : 'Target NPC:'}{' '}
-                <b>{pick(SIMULATOR_NPCS[targetNpc].stationLabel, lang)}</b>
-              </span>
-            </div>
-          )}
+          <div className="ms-objective-chips">
+            {/* Gentle Pacing Timer Chip (Level 1 ER) */}
+            {activeScenario.gentleTimerSeconds && !scenarioFinished && (
+              <div className="ms-timer-chip" title={isAr ? 'مؤقت تدريبي هادئ للاستجابة المنظمة' : 'Gentle training response timer'}>
+                <span>⏱️</span>
+                <span>
+                  {isAr ? 'زمن الاستجابة التدريبي:' : 'Response Time:'} {gentleElapsedSec}s
+                </span>
+              </div>
+            )}
+
+            {/* 3D Interactive Prop Clue Status Chips */}
+            {levelInteractiveProps.map((prop) => {
+              const solved = solvedPropIds.includes(prop.id);
+              return (
+                <button
+                  key={prop.id}
+                  type="button"
+                  className={`ms-prop-status-chip ${solved ? 'solved' : 'pending'}`}
+                  onClick={() => openPropModal(prop.id)}
+                  title={
+                    isAr
+                      ? 'اقترب من المجسم في الغرفة 3D أو اضغط هنا لفحص الدليل'
+                      : 'Walk up to the 3D station in the room or click to inspect clue'
+                  }
+                >
+                  <span>{prop.iconEmoji}</span>
+                  <span>{pick(prop.stationLabel, lang)}</span>
+                  <b>{solved ? '✓' : isAr ? 'افحص الدليل' : 'Inspect'}</b>
+                </button>
+              );
+            })}
+
+            {targetNpc && !scenarioFinished && (
+              <div className="ms-target-chip">
+                <span>{SIMULATOR_NPCS[targetNpc].avatarEmoji}</span>
+                <span>
+                  {isAr ? 'الشخصية:' : 'NPC:'}{' '}
+                  <b>{pick(SIMULATOR_NPCS[targetNpc].stationLabel, lang)}</b>
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 3D WebGL Viewport Container */}
@@ -744,8 +1118,8 @@ export default function MedicalSimulator() {
                 </h2>
                 <p>
                   {isAr
-                    ? 'يتم تجهيز الإضاءة والشخصيات الكرتونية ونظام التصادم.'
-                    : 'Initializing 3D cartoon geometry, lighting, and collision bounds.'}
+                    ? 'يتم تجهيز الإضاءة والشخصيات الكرتونية ومحطات الألغاز ونظام التصادم.'
+                    : 'Initializing 3D cartoon geometry, lighting, interactive clue stations, and collision bounds.'}
                 </p>
               </div>
             </div>
@@ -784,14 +1158,14 @@ export default function MedicalSimulator() {
           )}
 
           {/* First-time Controls Hint Banner */}
-          {showControlsHint && sceneStatus === 'ready' && !dialogueOpen && !scenarioFinished && (
+          {showControlsHint && sceneStatus === 'ready' && !modalOpen && !scenarioFinished && (
             <div className="ms-controls-hint-banner">
               <div>
-                <strong>🎮 {isAr ? 'طريقة التحرك والتفاعل:' : 'How to Move & Interact:'}</strong>
+                <strong>🎮 {isAr ? 'طريقة التحرك وحل الأدلة 3D:' : 'How to Explore, Solve 3D Clues & Interact:'}</strong>
                 <span>
                   {isAr
-                    ? 'استخدم عصا التحكم الافتراضية (أو مفاتيح WASD / الأسهم) للتحرك نحو الممرضة أو المريض أو الطبيب أو الصيدلي، واسحب الشاشة لتدوير الكاميرا، ثم اضغط زر «تحدّث / E» عند الاقتراب.'
-                    : 'Use the virtual joystick (or WASD / Arrow keys) to walk up to the Nurse, Patient, Doctor, or Pharmacist. Drag the screen to rotate the 3D camera, and press "Interact / E" when nearby.'}
+                    ? 'تحرك بعصا التحكم (أو WASD/الأسهم) نحو الشخصيات أو نحو «منصات الأدلة والألغاز ثلاثية الأبعاد المضيئة»، واسحب الشاشة لتدوير الكاميرا، ثم اضغط زر «تفاعل / E» عند الاقتراب.'
+                    : 'Use the virtual joystick (or WASD/Arrows) to walk to NPCs or glowing 3D Clue/Puzzle Pedestals. Drag to rotate the 3D camera, and press "Interact / E" when nearby.'}
                 </span>
               </div>
               <button
@@ -804,26 +1178,56 @@ export default function MedicalSimulator() {
             </div>
           )}
 
-          {/* Proximity Floating Prompt when near an NPC */}
-          {nearestNpc && !dialogueOpen && !scenarioFinished && !paused && (
+          {/* Proximity Floating Prompt when near a 3D Clue Prop OR an NPC */}
+          {(nearestPropDef || nearestNpc) && !modalOpen && !scenarioFinished && !paused && (
             <div className="ms-proximity-prompt">
-              <span className="ms-prox-emoji">{SIMULATOR_NPCS[nearestNpc].avatarEmoji}</span>
-              <div className="ms-prox-info">
-                <strong>{pick(SIMULATOR_NPCS[nearestNpc].name, lang)}</strong>
-                <small>{pick(SIMULATOR_NPCS[nearestNpc].stationLabel, lang)}</small>
-              </div>
-              <button
-                type="button"
-                className="ms-prox-btn"
-                onClick={handleInteract}
-              >
-                💬 {isAr ? 'تحدّث الآن (E)' : 'Talk / Interact (E)'}
-              </button>
+              {nearestPropDef && (!nearestNpc || !solvedPropIds.includes(nearestPropDef.id)) ? (
+                <>
+                  <span className="ms-prox-emoji">{nearestPropDef.iconEmoji}</span>
+                  <div className="ms-prox-info">
+                    <strong>{pick(nearestPropDef.name, lang)}</strong>
+                    <small>
+                      {solvedPropIds.includes(nearestPropDef.id)
+                        ? isAr
+                          ? '✓ تم فحص هذا الدليل (اضغط للمراجعة)'
+                          : '✓ Clue Solved (Tap to review)'
+                        : isAr
+                        ? '✨ محطة دليل/لغز 3D — افحصها الآن!'
+                        : '✨ 3D Clue / Puzzle Station — Inspect Now!'}
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    className="ms-prox-btn prop"
+                    onClick={() => openPropModal(nearestPropDef.id)}
+                  >
+                    🔍 {isAr ? 'افحص الدليل (E)' : 'Inspect Clue (E)'}
+                  </button>
+                </>
+              ) : nearestNpc ? (
+                <>
+                  <span className="ms-prox-emoji">{SIMULATOR_NPCS[nearestNpc].avatarEmoji}</span>
+                  <div className="ms-prox-info">
+                    <strong>{pick(SIMULATOR_NPCS[nearestNpc].name, lang)}</strong>
+                    <small>{pick(SIMULATOR_NPCS[nearestNpc].stationLabel, lang)}</small>
+                  </div>
+                  <button
+                    type="button"
+                    className="ms-prox-btn"
+                    onClick={() => {
+                      setActiveSpeaker(nearestNpc);
+                      setDialogueOpen(true);
+                    }}
+                  >
+                    💬 {isAr ? 'تحدّث الآن (E)' : 'Talk / Interact (E)'}
+                  </button>
+                </>
+              ) : null}
             </div>
           )}
 
           {/* Pause Overlay */}
-          {paused && !dialogueOpen && !scenarioFinished && (
+          {paused && !modalOpen && !scenarioFinished && (
             <div className="ms-status-overlay">
               <div className="ms-status-card">
                 <h2>⏸ {isAr ? 'المحاكاة متوقفة مؤقتاً' : 'Simulation Paused'}</h2>
@@ -841,15 +1245,112 @@ export default function MedicalSimulator() {
                     className="btn ghost"
                     onClick={restartCurrentScenario}
                   >
-                    🔄 {isAr ? 'إعادة السيناريو من البداية' : 'Restart Scenario'}
+                    🔄 {isAr ? 'إعادة المستوى من البداية' : 'Restart Level'}
                   </button>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Branching Dialogue Overlay Modal */}
-          {dialogueOpen && activeSpeaker && (
+          {/* 3D Interactive Clue / Puzzle Modal */}
+          {activePropDef && (
+            <div className="ms-dialogue-backdrop" role="dialog" aria-modal="true">
+              <div className="ms-dialogue-modal ms-prop-modal">
+                <div className="ms-dialogue-header">
+                  <div className="ms-speaker-badge">
+                    <span className="ms-speaker-avatar" aria-hidden="true">
+                      {activePropDef.iconEmoji}
+                    </span>
+                    <div>
+                      <strong>{pick(activePropDef.name, lang)}</strong>
+                      <small>
+                        {pick(activePropDef.stationLabel, lang)} •{' '}
+                        {isAr
+                          ? `الخطوة ${propStepIndex + 1} من ${activePropDef.puzzleSteps.length}`
+                          : `Step ${propStepIndex + 1} of ${activePropDef.puzzleSteps.length}`}
+                      </small>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="ms-dialogue-close"
+                    onClick={() => setActivePropModalId(null)}
+                    aria-label={isAr ? 'إغلاق نافذة الدليل' : 'Close clue modal'}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {(() => {
+                  const step = activePropDef.puzzleSteps[propStepIndex];
+                  if (!step) return null;
+                  return (
+                    <div className="ms-dialogue-body">
+                      <p className="ms-dialogue-speech">{pick(step.prompt, lang)}</p>
+
+                      {!propFeedback ? (
+                        <div className="ms-choices-list">
+                          <div className="ms-choices-prompt">
+                            {isAr
+                              ? 'حلل الدليل واختر الإجراء الصحيح:'
+                              : 'Analyze the clue and select the safe clinical answer:'}
+                          </div>
+                          {step.options.map((opt, idx) => (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              className="ms-choice-btn"
+                              onClick={() => handleSelectPropOption(opt)}
+                            >
+                              <span className="ms-choice-index">{idx + 1}</span>
+                              <span className="ms-choice-text">{pick(opt.label, lang)}</span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div
+                          className={`ms-feedback-box ${
+                            propFeedback.isCorrect ? 'optimal' : 'caution'
+                          }`}
+                        >
+                          <div className="ms-feedback-title">
+                            {propFeedback.isCorrect
+                              ? isAr
+                                ? '✅ تحليل صحيح للدليل!'
+                                : '✅ Correct Clue Analysis!'
+                              : isAr
+                              ? '💡 راجع الدليل مرة أخرى بهدوء'
+                              : '💡 Let’s Review That Clue Together'}
+                          </div>
+                          <p className="ms-feedback-text">{propFeedback.text}</p>
+                          <button
+                            type="button"
+                            className="btn ms-continue-btn"
+                            onClick={handleAdvancePropStep}
+                          >
+                            {propFeedback.isCorrect
+                              ? propStepIndex + 1 < activePropDef.puzzleSteps.length
+                                ? isAr
+                                  ? 'الخطوة التالية في الدليل ←'
+                                  : 'Next Puzzle Step →'
+                                : isAr
+                                ? 'اعتماد الدليل ومتابعة المهمة ✓'
+                                : 'Save Clue & Continue Mission ✓'
+                              : isAr
+                              ? 'إعادة المحاولة'
+                              : 'Try Again'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Branching NPC Dialogue Overlay Modal */}
+          {dialogueOpen && activeSpeaker && !activePropDef && (
             <div className="ms-dialogue-backdrop" role="dialog" aria-modal="true">
               <div className="ms-dialogue-modal">
                 <div className="ms-dialogue-header">
@@ -872,8 +1373,45 @@ export default function MedicalSimulator() {
                   </button>
                 </div>
 
-                {/* Check if the approached NPC is the active target for the current scenario node */}
-                {currentNode && currentNode.targetNpc === activeSpeaker ? (
+                {/* If this step requires solving the 3D interactive prop clues first, prompt the player */}
+                {currentNode && currentNode.targetNpc === activeSpeaker && nodeBlockedByUnsolvedProp ? (
+                  <div className="ms-dialogue-body">
+                    <div className="ms-redirect-hint">
+                      <strong>
+                        🔍{' '}
+                        {isAr
+                          ? 'مطلوب فحص الدليل/اللغز ثلاثي الأبعاد أولاً قبل إتمام هذه الخطوة!'
+                          : 'Inspect the 3D Clue / Puzzle Station First!'}
+                      </strong>
+                      <p>
+                        {isAr
+                          ? 'يرجى التوجه إلى محطة الدليل المضيئة في الغرفة ثلاثية الأبعاد وإتمام فحص الأدلة التالية قبل تسليم التقرير:'
+                          : 'Please walk to the glowing 3D station in the room (or click below) to complete the required clue inspection before finalizing this step:'}
+                      </p>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
+                        {levelInteractiveProps
+                          .filter((p) => !solvedPropIds.includes(p.id))
+                          .map((p) => (
+                            <button
+                              key={p.id}
+                              type="button"
+                              className="btn small"
+                              onClick={() => openPropModal(p.id)}
+                            >
+                              {p.iconEmoji} {pick(p.name, lang)}
+                            </button>
+                          ))}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => setDialogueOpen(false)}
+                    >
+                      {isAr ? 'العودة للغرفة ثلاثية الأبعاد' : 'Back to 3D Room'}
+                    </button>
+                  </div>
+                ) : currentNode && currentNode.targetNpc === activeSpeaker ? (
                   <div className="ms-dialogue-body">
                     <p className="ms-dialogue-speech">{pick(currentNode.dialogue, lang)}</p>
 
@@ -924,7 +1462,7 @@ export default function MedicalSimulator() {
                           {pendingFeedback.nextNodeId === 'END'
                             ? isAr
                               ? 'عرض النتيجة والملخص التعليمي ←'
-                              : 'View Scenario Summary & Takeaway →'
+                              : 'View Level Summary & Takeaway →'
                             : isAr
                             ? 'متابعة الخطوة التالية ←'
                             : 'Continue to Next Step →'}
@@ -933,7 +1471,6 @@ export default function MedicalSimulator() {
                     )}
                   </div>
                 ) : (
-                  /* Player talked to an NPC who isn't the current step's target */
                   <div className="ms-dialogue-body">
                     <p className="ms-dialogue-speech">
                       {pick(SIMULATOR_NPCS[activeSpeaker].defaultGreeting, lang)}
@@ -962,7 +1499,7 @@ export default function MedicalSimulator() {
             </div>
           )}
 
-          {/* End-of-Scenario Educational Summary & Replay Overlay */}
+          {/* End-of-Level Educational Summary & Progressive Unlock Overlay */}
           {scenarioFinished && (
             <div className="ms-dialogue-backdrop" role="dialog" aria-modal="true">
               <div className="ms-dialogue-modal ms-summary-modal">
@@ -970,13 +1507,27 @@ export default function MedicalSimulator() {
                   <span className="ms-summary-icon">{activeScenario.badgeIcon}</span>
                   <div>
                     <span className="badge approved">
-                      {isAr ? 'اكتمل السيناريو التعليمي' : 'Educational Scenario Completed'}
+                      {isAr ? 'اكتمل المستوى التعليمي بنجاح' : 'Educational Level Completed'}
                     </span>
                     <h2>{pick(activeScenario.title, lang)}</h2>
                   </div>
                 </div>
 
                 <div className="ms-summary-content">
+                  {/* Show Clues Collected in 3D */}
+                  {levelInteractiveProps.length > 0 && (
+                    <div className="ms-summary-section safe-action">
+                      <strong>
+                        🔍 {isAr ? 'الأدلة والألغاز ثلاثية الأبعاد التي تم حلها:' : '3D Clues & Puzzles Solved:'}
+                      </strong>
+                      {levelInteractiveProps.map((p) => (
+                        <p key={p.id} style={{ marginTop: '4px' }}>
+                          {p.iconEmoji} {pick(p.completionClueSummary, lang)}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="ms-summary-section safe-action">
                     <strong>
                       🛡️ {isAr ? 'الممارسة الآمنة التي تم تطبيقها:' : 'Safe Clinical Action Demonstrated:'}
@@ -1001,7 +1552,7 @@ export default function MedicalSimulator() {
                   {/* Review of Choices Made */}
                   <div className="ms-decisions-review">
                     <strong>
-                      📋 {isAr ? 'مراجعة قراراتك في هذا السيناريو:' : 'Review of Your Decisions & Why They Mattered:'}
+                      📋 {isAr ? 'مراجعة قراراتك في هذا المستوى:' : 'Review of Your Decisions & Why They Mattered:'}
                     </strong>
                     <ul className="ms-decision-list">
                       {decisionLog.map((item, idx) => (
@@ -1041,45 +1592,46 @@ export default function MedicalSimulator() {
                 <div className="ms-summary-actions">
                   <button
                     type="button"
-                    className="btn"
+                    className="btn ghost"
                     onClick={restartCurrentScenario}
                   >
-                    🔄 {isAr ? 'إعادة لعب هذا السيناريو' : 'Replay This Scenario'}
+                    🔄 {isAr ? 'إعادة لعب هذا المستوى' : 'Replay This Level'}
                   </button>
 
-                  {activeScenario.number < MEDICAL_SIMULATOR_SCENARIOS.length ? (
-                    <button
-                      type="button"
-                      className="btn"
-                      style={{ background: '#0284c7', borderColor: '#0284c7' }}
-                      onClick={() => {
-                        const nextScen =
-                          MEDICAL_SIMULATOR_SCENARIOS[activeScenario.number] ||
-                          MEDICAL_SIMULATOR_SCENARIOS[0];
-                        startScenario(nextScen.id);
-                      }}
-                    >
-                      {isAr
-                        ? `الانتقال للسيناريو التالي (#${activeScenario.number + 1}) ←`
-                        : `Next Scenario (#${activeScenario.number + 1}) →`}
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() => setShowScenarioDrawer(true)}
-                    >
-                      📋 {isAr ? 'استعراض كل السيناريوهات' : 'Browse All Scenarios'}
-                    </button>
-                  )}
+                  {(() => {
+                    const nextExp = getNextExperience();
+                    if (nextExp) {
+                      return (
+                        <button
+                          type="button"
+                          className="btn"
+                          style={{ background: '#0284c7', borderColor: '#0284c7' }}
+                          onClick={() => startScenario(nextExp.id, true)}
+                        >
+                          🔓{' '}
+                          {isAr
+                            ? `الانتقال للمستوى التالي: ${pick(nextExp.title, lang)} ←`
+                            : `Play Unlocked Next Level: ${pick(nextExp.title, lang)} →`}
+                        </button>
+                      );
+                    }
+                    return (
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => setShowScenarioDrawer(true)}
+                      >
+                        🗺️ {isAr ? 'استعراض خريطة المستويات والسيناريوهات' : 'Open Level & Scenario Map'}
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Mobile & Touch HUD Controls (Virtual Joystick + Directional Pad + Large Interact Button) */}
+          {/* Mobile & Touch HUD Controls */}
           <div className="ms-hud-controls">
-            {/* Virtual Touch Joystick */}
             <div className="ms-joystick-zone">
               <div
                 ref={joyBaseRef}
@@ -1115,7 +1667,6 @@ export default function MedicalSimulator() {
               </span>
             </div>
 
-            {/* Right-hand Action Cluster: Camera Reset + Prominent Interact Button */}
             <div className="ms-action-zone">
               <button
                 type="button"
@@ -1131,39 +1682,52 @@ export default function MedicalSimulator() {
 
               <button
                 type="button"
-                className={`ms-interact-btn ${nearestNpc ? 'ready' : ''}`}
-                disabled={!nearestNpc || dialogueOpen || scenarioFinished}
+                className={`ms-interact-btn ${nearestNpc || nearestPropDef ? 'ready' : ''}`}
+                disabled={(!nearestNpc && !nearestPropDef) || modalOpen || scenarioFinished}
                 onClick={handleInteract}
               >
-                <span className="ms-interact-icon">💬</span>
+                <span className="ms-interact-icon">
+                  {nearestPropDef && (!nearestNpc || !solvedPropIds.includes(nearestPropDef.id))
+                    ? '🔍'
+                    : '💬'}
+                </span>
                 <span>
-                  {nearestNpc
+                  {nearestPropDef && (!nearestNpc || !solvedPropIds.includes(nearestPropDef.id))
+                    ? isAr
+                      ? `افحص (${nearestPropDef.iconEmoji})`
+                      : `Inspect (${nearestPropDef.iconEmoji})`
+                    : nearestNpc
                     ? isAr
                       ? `تحدّث (${SIMULATOR_NPCS[nearestNpc].avatarEmoji})`
                       : `Interact (${SIMULATOR_NPCS[nearestNpc].avatarEmoji})`
                     : isAr
-                    ? 'اقترب للتحدث'
-                    : 'Walk Near NPC'}
+                    ? 'اقترب للتفاعل'
+                    : 'Walk Near Station'}
                 </span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Session Progress & Non-Clinical Educational Badges Footer */}
+        {/* Session & Campaign Progress Footer */}
         <section className="ms-session-bar">
           <div className="ms-badges-row">
-            <strong>🏅 {isAr ? 'شارات الجلسة التعليمية:' : 'Session Educational Badges:'}</strong>
-            {MEDICAL_SIMULATOR_SCENARIOS.map((scen) => {
-              const earned = earnedBadges.includes(scen.id);
+            <strong>
+              🏅{' '}
+              {isAr
+                ? `أوسمة الحملة التعليمية (${completedCampaignCount}/10 مستويات + ${completedOriginalCount}/5 سيناريوهات):`
+                : `Educational Badges (${completedCampaignCount}/10 Campaign Levels + ${completedOriginalCount}/5 Core Scenarios):`}
+            </strong>
+            {CAMPAIGN_TEN_LEVELS.map((lvl) => {
+              const earned = earnedBadges.includes(lvl.id) || completedScenarios.includes(lvl.id);
               return (
                 <span
-                  key={scen.id}
+                  key={lvl.id}
                   className={`ms-badge-chip ${earned ? 'earned' : ''}`}
-                  title={pick(scen.title, lang)}
+                  title={pick(lvl.title, lang)}
                 >
-                  <span>{scen.badgeIcon}</span>
-                  <span>{pick(scen.badgeTitle, lang)}</span>
+                  <span>{lvl.badgeIcon}</span>
+                  <span>L{lvl.campaignIndex}: {pick(lvl.badgeTitle, lang)}</span>
                 </span>
               );
             })}
@@ -1171,8 +1735,8 @@ export default function MedicalSimulator() {
 
           <p className="ms-medical-disclaimer">
             {isAr
-              ? '⚠️ تنبيه طبي وتعليمي: هذه المحاكاة ثلاثية الأبعاد تستخدم حالات خيالية للتدريب والتوعية فقط، ولا تقدم تشخيصاً طبياً أو وصفات علاجية أو جرعات دوائية، ولا تغني عن مراجعة الطبيب أو الصيدلي المؤهل. لا يتم حفظ أي بيانات صحية.'
-              : '⚠️ Educational Medical Notice: This 3D simulation uses fictional cases for educational stewardship training only. It does not diagnose, prescribe, provide dosages, or replace a licensed clinician. No personal health data is collected.'}
+              ? '⚠️ تنبيه طبي وتعليمي: هذه المحاكاة ثلاثية الأبعاد تستخدم حالات خيالية للتدريب والتوعية فقط، ولا تقدم تشخيصاً طبياً أو وصفات علاجية أو جرعات دوائية، ولا تغني عن مراجعة الطبيب أو الصيدلي المؤهل، ولا تُعد شهادة كفاءة سريرية. يُحفظ تقدم المراحل محلياً فقط دون أي بيانات صحية.'
+              : '⚠️ Educational Medical Notice: This 3D simulation uses fictional cases for educational stewardship training only. It does not diagnose, prescribe, provide dosages, certify clinical competence, or replace a licensed clinician. Level progression is stored locally with zero personal health data.'}
           </p>
         </section>
 
@@ -1185,8 +1749,8 @@ export default function MedicalSimulator() {
               </h2>
               <p>
                 {isAr
-                  ? 'لديك سيناريو قيد التقدم في هذه الجلسة. هل ترغب في المتابعة أم الخروج لمركز الألعاب؟'
-                  : 'You have an active scenario in progress. Continue playing or exit to the Game Center?'}
+                  ? 'لديك مستوى قيد التقدم حالياً. المستويات التي أكملتها محفوظة، ولكن التقدم داخل المستوى الحالي سيُعاد من بدايته عند العودة.'
+                  : 'You have an active level in progress. Completed levels remain saved, but current step progress will reset if you exit now.'}
               </p>
               <button
                 type="button"

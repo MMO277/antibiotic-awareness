@@ -33,34 +33,34 @@ export const GAME_CENTER_REGISTRY: GameRegistryItem[] = [
   {
     id: 'medical-life-simulator',
     route: '/medical-simulator',
-    badgeAr: 'جديد • WebGL 3D حقيقي',
-    badgeEn: 'NEW • Genuine WebGL 3D',
-    modeAr: 'محاكاة سريرية ثلاثية الأبعاد',
-    modeEn: '3D Clinical Roleplay Simulation',
-    titleAr: 'محاكي الحياة الطبية (Medical Life Simulator)',
+    badgeAr: 'محدّث • 10 مستويات متدرجة + 5 سيناريوهات 3D',
+    badgeEn: 'UPDATED • 10 Campaign Levels + 5 Scenarios 3D',
+    modeAr: 'محاكاة سريرية ثلاثية الأبعاد (WebGL 3D)',
+    modeEn: '3D Clinical Roleplay & Puzzle Simulation',
+    titleAr: 'محاكي الحياة الطبية (Medical Life Simulator 3D)',
     titleEn: 'Medical Life Simulator 3D',
-    subtitleAr: 'تجول داخل جناح المستشفى والصيدلية ثلاثي الأبعاد واتخذ قرارات سريرية آمنة',
-    subtitleEn: 'Explore a 3D cartoon hospital ward & pharmacy and make safe clinical decisions',
+    subtitleAr: 'تجول داخل المستشفى والمختبر والبيئة المجهرية 3D عبر 10 مستويات متدرجة و5 سيناريوهات سريرية',
+    subtitleEn: 'Explore the 3D ward, ER, lab, and microscopic arena across 10 progressive levels & 5 clinical scenarios',
     descriptionAr:
-      'عالم ثلاثي الأبعاد بالكامل (WebGL 3D) بأسلوب كرتوني منخفض المضلعات (Low-Poly). تحكّم بشخصيتك في منظور الشخص الثالث، وتفاعل مع الممرضة والطبيب والمريض والصيدلي عبر 5 سيناريوهات تفاعلية متفرعة لتعلّم ترشيد المضادات الحيوية، فحص الحساسية المتصالبة، والالتزام بقوائم الأمان التمريضية.',
+      'عالم ثلاثي الأبعاد بالكامل (WebGL 3D) بأسلوب كرتوني منخفض المضلعات. تحكّم بشخصيتك في منظور الشخص الثالث، افحص منصات الأدلة والألغاز ثلاثية الأبعاد، وتفاعل مع الممرضة والطبيب والمريض والصيدلي عبر 10 مستويات متدرجة (تُفتح تباعاً) بالإضافة إلى الـ 5 سيناريوهات الأساسية.',
     descriptionEn:
-      'A genuine 3D cartoon hospital environment built with WebGL perspective rendering. Control your third-person avatar, approach NPCs (Nurse, Doctor, Patient, Pharmacist), and navigate 5 branching clinical scenarios covering antibiotic stewardship, allergy cross-reactivity, and nursing safety checks.',
+      'A genuine 3D cartoon medical world built with WebGL perspective rendering. Control your third-person avatar, inspect 3D clue/puzzle stations, interact with 4 NPCs, and progress through 10 unlockable campaign levels (ER, Allergy Clue, Pharmacy, Home Mystery, Nursing Checklist, Lab, Ward Round, IPC Escape, AMR Microscopic Arena, and Final Mission) plus the 5 core scenarios.',
     featuresAr: [
-      'بيئة مستشفى وصيدلية 3D حقيقية بالكامل مع إضاءة وكاميرا تتبع ذكية',
-      '5 سيناريوهات سريرية متفرعة ثنائية اللغة (العربية والإنجليزية) مع تغذية راجعة فورية',
-      'تحكم كامل للهاتف (عصا تحكم افتراضية + زر تفاعل + تدوير الكاميرا باللمس) وللكمبيوتر (WASD + E)',
-      'وضع رسوميات منخفضة (Low Graphics) للأجهزة الضعيفة ووضع ملء الشاشة الغامر',
+      '10 مستويات حملة متدرجة القفل (Progressive Unlocking) + 5 سيناريوهات سريرية مفتوحة دائماً',
+      'ألغاز وأدلة ثلاثية الأبعاد تفاعلية: شاشة الطوارئ، سجل الحساسية، خزانة المنزل، المختبر، والبيئة المجهرية',
+      'تحكم كامل للهاتف (عصا تحكم افتراضية + زر فحص/تفاعل + تدوير الكاميرا باللمس) وللكمبيوتر (WASD + E)',
+      'حفظ تلقائي لتقدم المستويات والأوسمة محلياً على جهازك دون جمع أي بيانات صحية أو المساس بـ Firebase',
     ],
     featuresEn: [
-      'Genuine 3D procedural low-poly hospital ward with follow camera & collision bounds',
-      '5 branching bilingual clinical scenarios with immediate educational feedback & replay',
-      'Mobile-first virtual joystick, touch camera orbit, & desktop WASD + E controls',
-      'Configurable Low Graphics mode for weaker devices and immersive fullscreen support',
+      '10 progressive campaign levels with automatic unlock persistence + 5 permanently unlocked core scenarios',
+      'Interactive 3D clue & workflow puzzles: ER vitals monitor, allergy chart, home cabinet, lab matching, IPC, & 3D microbe scanner',
+      'Mobile-first virtual joystick, touch camera orbit, & desktop WASD + E controls with Low Graphics mode',
+      'Safe local progress saving with zero personal health data collection and zero Firebase changes',
     ],
-    controlsAr: 'الموبايل: عصا التحكم الافتراضية + زر التفاعل | الكمبيوتر: WASD أو الأسهم + مفتاح E',
-    controlsEn: 'Mobile: Virtual Joystick + Interact Button | Desktop: WASD / Arrows + E Key',
-    ctaAr: 'ابدأ المحاكاة ثلاثية الأبعاد 🏥',
-    ctaEn: 'Launch 3D Simulator 🏥',
+    controlsAr: 'الموبايل: عصا التحكم الافتراضية + زر التفاعل/الفحص | الكمبيوتر: WASD أو الأسهم + مفتاح E',
+    controlsEn: 'Mobile: Virtual Joystick + Interact/Inspect Button | Desktop: WASD / Arrows + E Key',
+    ctaAr: 'ابدأ المحاكاة والمستويات العشرة 🏥',
+    ctaEn: 'Launch 3D Simulator (10 Levels + 5 Scenarios) 🏥',
     accentColor: '#0e9aa7',
     secondaryColor: '#0284c7',
     visualType: 'simulator3d',
@@ -135,11 +135,11 @@ export default function GameCenter() {
 
         <p className="gc-hero-sub">
           {isAr
-            ? 'اختر بين محاكي المستشفى الكرتوني ثلاثي الأبعاد (3D WebGL) للتدريب على المواقف السريرية والتمريضية الواقعية، أو لعبة الأركيد السريعة «صائد البكتيريا» لاختبار سرعة تمييز العدوى البكتيرية عن الفيروسية.'
-            : 'Choose between our genuine 3D WebGL cartoon hospital roleplay simulator for realistic clinical decision-making, or the fast-paced 2D Bacteria Hunter arcade game.'}
+            ? 'اختر بين محاكي المستشفى الكرتوني ثلاثي الأبعاد (3D WebGL) المزود بـ 10 مستويات متدرجة القفل و5 سيناريوهات سريرية، أو لعبة الأركيد السريعة «صائد البكتيريا».'
+            : 'Choose between our genuine 3D WebGL cartoon hospital simulator featuring 10 progressive campaign levels & 5 clinical scenarios, or the fast-paced 2D Bacteria Hunter arcade game.'}
         </p>
 
-        {/* Filter Pills (Extensible for future games) */}
+        {/* Filter Pills */}
         <div className="gc-filter-bar" role="tablist" aria-label={isAr ? 'تصنيف الألعاب' : 'Game categories'}>
           <button
             type="button"
@@ -157,7 +157,7 @@ export default function GameCenter() {
             className={`gc-filter-btn ${filter === '3d-simulation' ? 'active' : ''}`}
             onClick={() => setFilter('3d-simulation')}
           >
-            🏥 {isAr ? 'محاكاة 3D سريرية' : '3D Clinical Simulation'}
+            🏥 {isAr ? 'محاكاة 3D سريرية (10 مستويات)' : '3D Clinical Simulation (10 Levels)'}
           </button>
           <button
             type="button"
@@ -204,41 +204,36 @@ export default function GameCenter() {
                         <stop offset="100%" stopColor="#0284c7" />
                       </linearGradient>
                     </defs>
-                    {/* Isometric 3D Hospital Ward Floor Grid */}
                     <polygon points="180,15 330,75 180,138 30,75" fill="url(#gcFloorGrad)" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.45" />
                     <line x1="105" y1="45" x2="255" y2="106" stroke="#38bdf8" strokeOpacity="0.2" strokeWidth="1" />
                     <line x1="255" y1="45" x2="105" y2="106" stroke="#38bdf8" strokeOpacity="0.2" strokeWidth="1" />
-                    {/* 3D Low-Poly Hospital Bed */}
                     <g transform="translate(88, 46)">
                       <polygon points="0,24 38,8 62,18 24,34" fill="#e0f2fe" stroke="#0284c7" strokeWidth="1.2" />
                       <polygon points="0,24 24,34 24,46 0,36" fill="#0369a1" />
                       <polygon points="24,34 62,18 62,30 24,46" fill="#0284c7" />
                       <rect x="6" y="10" width="14" height="14" rx="3" fill="#ffffff" stroke="#0284c7" strokeWidth="1" />
                     </g>
-                    {/* 3D Nurse Station Desk */}
                     <g transform="translate(208, 52)">
                       <polygon points="0,18 34,4 58,14 24,28" fill="#5eead4" stroke="#0f766e" strokeWidth="1.2" />
                       <polygon points="0,18 24,28 24,44 0,34" fill="#0f766e" />
                       <polygon points="24,28 58,14 58,30 24,44" fill="#14b8a6" />
                     </g>
-                    {/* 3D Cartoon Characters (Doctor, Nurse, Player) */}
                     <g transform="translate(166, 48)">
                       <ellipse cx="14" cy="52" rx="14" ry="6" fill="rgba(14,165,233,0.35)" />
                       <rect x="7" y="24" width="14" height="22" rx="5" fill="#38bdf8" stroke="#fff" strokeWidth="1.2" />
                       <circle cx="14" cy="14" r="9" fill="#fde68a" stroke="#fff" strokeWidth="1.2" />
                       <rect x="8" y="3" width="12" height="5" rx="2" fill="#0284c7" />
                     </g>
-                    {/* Floating Medical Cross Emblem */}
                     <g transform="translate(165, 8)">
                       <rect x="11" y="0" width="8" height="22" rx="2" fill="url(#gcCrossGrad)" />
                       <rect x="4" y="7" width="22" height="8" rx="2" fill="url(#gcCrossGrad)" />
                     </g>
                   </svg>
                   <div className="gc-visual-floating-chips">
-                    <span>👩‍⚕️ {isAr ? 'ممرضة' : 'Nurse'}</span>
-                    <span>👨‍⚕️ {isAr ? 'طبيب' : 'Doctor'}</span>
-                    <span>🧑‍⚕️ {isAr ? 'صيدلي' : 'Pharmacist'}</span>
-                    <span>🛌 {isAr ? 'مريض' : 'Patient'}</span>
+                    <span>🚑 {isAr ? 'طوارئ ومختبر' : 'ER & Lab'}</span>
+                    <span>🔍 {isAr ? 'ألغاز وأدلة 3D' : '3D Clues'}</span>
+                    <span>🦠 {isAr ? 'تحقيق مجهري' : 'Micro-AMR'}</span>
+                    <span>🏆 {isAr ? '10 مستويات' : '10 Levels'}</span>
                   </div>
                 </div>
               ) : (
@@ -248,13 +243,11 @@ export default function GameCenter() {
                     <circle cx="83" cy="63" r="4" fill="#fca5a5" />
                     <circle cx="98" cy="63" r="4" fill="#fca5a5" />
                     <path d="M 80 77 Q 90 70 100 77" stroke="#fca5a5" strokeWidth="2.5" fill="none" />
-                    {/* Antibiotic Capsule Projectile */}
                     <g transform="translate(155, 58)">
                       <rect x="0" y="0" width="38" height="16" rx="8" fill="#ffffff" stroke="#22d3ee" strokeWidth="2" />
                       <rect x="19" y="0" width="19" height="16" rx="8" fill="#06b6d4" />
                       <line x1="-22" y1="8" x2="-6" y2="8" stroke="#22d3ee" strokeWidth="2.5" strokeDasharray="4 3" />
                     </g>
-                    {/* Player Shield Ship */}
                     <g transform="translate(248, 45)">
                       <polygon points="0,22 36,6 28,22 36,38" fill="#10b981" stroke="#a7f3d0" strokeWidth="1.8" />
                     </g>
