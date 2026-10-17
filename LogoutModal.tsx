@@ -188,6 +188,8 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
     }, 4800);
 
     function checkCompletion() {
+      // Ignore late callbacks after the user skipped/cancelled (prevents a second navigation)
+      if (!isLoggingOutRef.current) return;
       if (isSignOutDone && isAnimationDone && !signOutFailedError) {
         setStage('success');
         setBusy(false);
@@ -257,80 +259,66 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
 
   const isReduced = prefersReducedMotion();
 
-  const sceneCaption = () => {
-    if (stage === 'error') {
-      return isAr ? 'تعذر تسجيل الخروج' : 'Logout Failed';
-    }
-    if (sceneIndex === 1) {
-      return isAr ? 'فتح باب المغادرة...' : 'Opening the exit door...';
-    }
-    if (sceneIndex === 2) {
-      return isAr ? 'مفاجأة غير متوقعة! 😲' : 'A sudden surprise push! 😲';
-    }
-    if (sceneIndex === 3) {
-      return isAr ? 'سقوط درامي في الهاوية الفيروزية! 🌀' : 'Tumbling into the cyan abyss! 🌀';
-    }
-    return isAr ? 'نراك قريباً! 👋' : 'See you soon! 👋';
-  };
+  const statusText =
+    stage === 'error'
+      ? errorMessage || (isAr ? 'تعذر تسجيل الخروج' : 'Logout Failed')
+      : sceneIndex === 4 || stage === 'success'
+      ? isAr
+        ? 'تم تسجيل الخروج بنجاح! نراك قريباً'
+        : 'Logged out successfully. See you soon!'
+      : isAr
+      ? 'جارٍ تسجيل الخروج...'
+      : 'Logging out...';
+
+  const dialogLabelProps =
+    stage === 'error'
+      ? { 'aria-labelledby': 'logout-title' }
+      : { 'aria-label': isAr ? 'تسجيل الخروج' : 'Logging out' };
 
   return (
     <div
       className={`logout-backdrop${fadingOut ? ' is-fading-out' : ''}`}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="logout-title"
+      {...dialogLabelProps}
       ref={modalRef}
     >
-      <div className="logout-card">
-        {/* Top utility row: Sound toggle & Skip animation */}
-        <div className="logout-top-bar">
-          <button
-            type="button"
-            className="logout-tool-btn"
-            onClick={toggleSound}
-            aria-label={
-              soundOn
-                ? isAr
-                  ? 'كتم صوت الرسوم المتحركة'
-                  : 'Mute cartoon sound'
-                : isAr
-                ? 'تشغيل صوت الرسوم المتحركة'
-                : 'Enable cartoon sound'
-            }
-            title={soundOn ? (isAr ? 'كتم الصوت' : 'Mute') : isAr ? 'تشغيل الصوت' : 'Unmute'}
-          >
-            <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
-            <span>{soundOn ? (isAr ? 'الصوت مفعّل' : 'Sound On') : isAr ? 'صامت' : 'Muted'}</span>
-          </button>
+      {/* Screen-reader-only status (nothing visible around the scene) */}
+      <p className="logout-sr-only" role="status" aria-live="polite">
+        {stage === 'error' ? '' : statusText}
+      </p>
 
-          <button
-            type="button"
-            ref={skipBtnRef}
-            className="logout-tool-btn"
-            onClick={handleSkip}
-            aria-label={isAr ? 'تخطي الرسوم المتحركة' : 'Skip animation'}
-          >
-            <span aria-hidden="true">⏩</span>
-            <span>{isAr ? 'تخطي' : 'Skip'}</span>
-          </button>
-        </div>
+      {/* Icon-only, unobtrusive controls (keyboard: Esc also skips) */}
+      <div className="logout-corner-controls">
+        <button
+          type="button"
+          className="logout-icon-btn"
+          onClick={toggleSound}
+          aria-pressed={soundOn}
+          aria-label={
+            soundOn
+              ? isAr
+                ? 'كتم صوت الرسوم المتحركة'
+                : 'Mute cartoon sound'
+              : isAr
+              ? 'تشغيل صوت الرسوم المتحركة'
+              : 'Enable cartoon sound'
+          }
+        >
+          <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
+        </button>
+        <button
+          type="button"
+          ref={skipBtnRef}
+          className="logout-icon-btn"
+          onClick={handleSkip}
+          aria-label={isAr ? 'تخطي الرسوم المتحركة' : 'Skip animation'}
+        >
+          <span aria-hidden="true">⏩</span>
+        </button>
+      </div>
 
-        {/* 4-Scene Progress Indicator */}
-        <div className="logout-scene-pills" aria-hidden="true">
-          <span className={`logout-scene-pill${sceneIndex === 1 ? ' is-active' : ''}`}>
-            1. {isAr ? 'الباب' : 'The Door'}
-          </span>
-          <span className={`logout-scene-pill${sceneIndex === 2 ? ' is-active' : ''}`}>
-            2. {isAr ? 'المفاجأة' : 'The Push'}
-          </span>
-          <span className={`logout-scene-pill${sceneIndex === 3 ? ' is-active' : ''}`}>
-            3. {isAr ? 'السقوط' : 'The Fall'}
-          </span>
-          <span className={`logout-scene-pill${sceneIndex === 4 ? ' is-active' : ''}`}>
-            4. {isAr ? 'نراك قريباً' : 'Farewell'}
-          </span>
-        </div>
-
+      <div className="logout-scene">
         {/* 2D Cartoon Stage: Two Characters, Door & Glowing Cyan Abyss */}
         <div className={`logout-stage${!isReduced ? ' logout-animated' : ''}`}>
           <svg
@@ -354,6 +342,12 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
                 <stop offset="100%" stopColor="#082838" />
               </linearGradient>
 
+              {/* Light spilling from the open doorway onto the floor */}
+              <linearGradient id="spillGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.32" />
+                <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+              </linearGradient>
+
               {/* Clip path for inside the open doorway (x=216..298, y=36..188) */}
               <clipPath id="doorwayClip">
                 <rect x="216" y="36" width="82" height="152" rx="4" />
@@ -370,6 +364,8 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
             <line x1="125" y1="188" x2="110" y2="225" stroke="#17b8c4" strokeWidth="1" strokeOpacity="0.18" />
             <line x1="210" y1="188" x2="210" y2="225" stroke="#17b8c4" strokeWidth="1" strokeOpacity="0.22" />
             <line x1="305" y1="188" x2="325" y2="225" stroke="#17b8c4" strokeWidth="1" strokeOpacity="0.18" />
+
+            <path className="doorway-light-spill" d="M216 188 H298 L336 225 H182 Z" fill="url(#spillGrad)" />
 
             {/* ── THE DOORWAY & DEEP CYAN ABYSS (x=212..302, y=32..188) ── */}
             {/* Outer Doorframe with subtle cyan glow */}
@@ -448,11 +444,13 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
               </g>
             </g>
 
+            {/* Ground shadows live outside the character groups so they stay on the floor
+                (they don't rotate or fall with the characters) */}
+            <ellipse className="char1-shadow" cx="165" cy="187" rx="22" ry="5" fill="rgba(0,0,0,0.38)" />
+            <ellipse className="char2-shadow" cx="95" cy="187" rx="22" ry="5" fill="rgba(0,0,0,0.38)" />
+
             {/* ── CHARACTER 1: THE HERO CAPSULE PILL (Approaches, gets pushed & falls into abyss) ── */}
             <g className="char1-group">
-              {/* Capsule Shadow */}
-              <ellipse cx="165" cy="187" rx="22" ry="5" fill="rgba(0,0,0,0.35)" />
-
               {/* Left Arm (back arm) */}
               <path
                 d="M145 140 C134 142 128 150 131 156"
@@ -541,9 +539,6 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
 
             {/* ── CHARACTER 2: CHEEKY GOLDEN TABLET BUDDY (Sneaks up, pushes, peers into abyss & closes door) ── */}
             <g className="char2-group">
-              {/* Shadow */}
-              <ellipse cx="95" cy="187" rx="22" ry="5" fill="rgba(0,0,0,0.35)" />
-
               {/* Round Golden Tablet Body */}
               <circle
                 cx="95"
@@ -647,63 +642,36 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
           </svg>
         </div>
 
-        {/* Friendly Farewell Pill Badge ("See you soon!" / "نراك قريباً!") */}
-        <div className="logout-farewell-pill" aria-live="polite">
-          <span aria-hidden="true">{sceneIndex === 4 || stage === 'success' ? '👋' : '🚪'}</span>
-          <span>
-            {sceneIndex === 4 || stage === 'success'
-              ? isAr
-                ? 'نراك قريباً! دمتم بصحة وعافية'
-                : 'See you soon! Stay healthy & safe'
-              : sceneCaption()}
-          </span>
-        </div>
-
-        {/* Informational Title & Subtitle */}
-        <h3 id="logout-title" className="logout-title">
-          {stage === 'error'
-            ? isAr
-              ? 'تعذر تسجيل الخروج'
-              : 'Logout Failed'
-            : sceneIndex === 4 || stage === 'success'
-            ? isAr
-              ? 'تم تسجيل الخروج بنجاح!'
-              : 'See You Soon!'
-            : isAr
-            ? 'جارٍ تسجيل الخروج...'
-            : 'Logging Out...'}
-        </h3>
-
-        <p className="logout-subtitle">
-          {stage === 'error'
-            ? errorMessage ||
-              (isAr
-                ? 'حدث خطأ غير متوقع أثناء تسجيل الخروج. يُرجى التحقق من اتصالك بالإنترنت.'
-                : 'An unexpected error occurred while logging out. Please check your internet connection.')
-            : isAr
-            ? 'تم تأمين حسابك وحفظ بياناتك بنجاح. نراك قريباً!'
-            : 'Your session has been safely closed. See you soon!'}
-        </p>
-
-        {/* Error Recovery Action Buttons */}
+        {/* Error recovery: kept as authentication feedback; only shown on failure */}
         {stage === 'error' && (
-          <div className="logout-actions">
-            <button
-              type="button"
-              className="logout-btn-primary"
-              onClick={handleRetry}
-              disabled={busy}
-            >
-              🔄 {isAr ? 'إعادة المحاولة' : 'Try Again'}
-            </button>
-            <button
-              type="button"
-              className="logout-btn-secondary"
-              onClick={handleCancel}
-              disabled={busy}
-            >
-              {isAr ? 'إلغاء' : 'Cancel'}
-            </button>
+          <div className="logout-card logout-error-panel">
+            <h3 id="logout-title" className="logout-title">
+              {isAr ? 'تعذر تسجيل الخروج' : 'Logout Failed'}
+            </h3>
+            <p className="logout-subtitle" role="alert">
+              {errorMessage ||
+                (isAr
+                  ? 'حدث خطأ غير متوقع أثناء تسجيل الخروج. يُرجى التحقق من اتصالك بالإنترنت.'
+                  : 'An unexpected error occurred while logging out. Please check your internet connection.')}
+            </p>
+            <div className="logout-actions">
+              <button
+                type="button"
+                className="logout-btn-primary"
+                onClick={handleRetry}
+                disabled={busy}
+              >
+                🔄 {isAr ? 'إعادة المحاولة' : 'Try Again'}
+              </button>
+              <button
+                type="button"
+                className="logout-btn-secondary"
+                onClick={handleCancel}
+                disabled={busy}
+              >
+                {isAr ? 'إلغاء' : 'Cancel'}
+              </button>
+            </div>
           </div>
         )}
       </div>

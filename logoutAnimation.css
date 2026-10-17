@@ -37,114 +37,88 @@
   to { opacity: 0; transform: scale(0.97); }
 }
 
-.logout-card {
-  position: relative;
+/* Scene container: the animation itself is the only visible content */
+.logout-scene {
   width: 100%;
-  max-width: 460px;
-  max-height: calc(100dvh - 24px);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
   margin: auto;
+  animation: logoutCardPop 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes logoutCardPop {
+  0% { transform: scale(0.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Visually hidden status text for screen readers */
+.logout-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Icon-only corner controls (sound / skip) */
+.logout-corner-controls {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  inset-inline-end: max(10px, env(safe-area-inset-right));
+  display: flex;
+  gap: 8px;
+  z-index: 2;
+}
+
+.logout-icon-btn {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(94, 234, 212, 0.25);
+  background: rgba(4, 19, 29, 0.55);
+  color: #e2f8fa;
+  font-size: 1.05rem;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity 0.16s ease, background 0.16s ease;
+}
+
+.logout-icon-btn:hover {
+  opacity: 1;
+  background: rgba(23, 184, 196, 0.25);
+}
+
+.logout-icon-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
+}
+
+/* Error recovery panel (only rendered when sign-out fails) */
+.logout-card {
+  width: 100%;
+  max-width: 400px;
   background: linear-gradient(165deg, #ffffff 0%, #f1f8fa 100%);
   color: #0f172a;
-  border-radius: 24px;
-  padding: 20px 18px 18px;
-  box-shadow:
-    0 24px 55px -10px rgba(0, 0, 0, 0.55),
-    0 0 32px rgba(23, 184, 196, 0.22),
-    0 0 0 1px rgba(23, 184, 196, 0.28);
+  border-radius: 20px;
+  padding: 16px 18px;
   text-align: center;
-  animation: logoutCardPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-shadow: 0 18px 44px -10px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(23, 184, 196, 0.3);
 }
 
 [data-theme='dark'] .logout-card {
   background: linear-gradient(165deg, #0d2636 0%, #071622 100%);
   color: #f8fafc;
-  box-shadow:
-    0 24px 55px -10px rgba(0, 0, 0, 0.78),
-    0 0 36px rgba(23, 184, 196, 0.24),
-    0 0 0 1px rgba(23, 184, 196, 0.34);
-}
-
-@keyframes logoutCardPop {
-  0% { transform: scale(0.92) translateY(12px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-/* Top utility bar (Sound & Skip) */
-.logout-top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  gap: 8px;
-}
-
-.logout-tool-btn {
-  background: rgba(14, 154, 167, 0.10);
-  border: 1px solid rgba(14, 154, 167, 0.28);
-  color: inherit;
-  border-radius: 11px;
-  padding: 6px 12px;
-  font-size: 0.81rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 36px;
-  transition: all 0.16s ease;
-}
-
-.logout-tool-btn:hover {
-  background: rgba(23, 184, 196, 0.20);
-  border-color: rgba(23, 184, 196, 0.55);
-  transform: translateY(-1px);
-}
-
-.logout-tool-btn:focus-visible {
-  outline: 2px solid #17b8c4;
-  outline-offset: 2px;
-}
-
-[data-theme='dark'] .logout-tool-btn {
-  background: rgba(23, 184, 196, 0.12);
-  border-color: rgba(23, 184, 196, 0.32);
-}
-
-/* 4-Scene Stepper Pills */
-.logout-scene-pills {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.logout-scene-pill {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 2px 9px;
-  border-radius: 999px;
-  background: rgba(100, 116, 139, 0.12);
-  color: #64748b;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
-}
-
-[data-theme='dark'] .logout-scene-pill {
-  background: rgba(255, 255, 255, 0.06);
-  color: #94a3b8;
-}
-
-.logout-scene-pill.is-active {
-  background: rgba(23, 184, 196, 0.18);
-  color: #0e9aa7;
-  border-color: rgba(23, 184, 196, 0.45);
-  box-shadow: 0 0 10px rgba(23, 184, 196, 0.2);
-}
-
-[data-theme='dark'] .logout-scene-pill.is-active {
-  color: #5eead4;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -154,16 +128,16 @@
    ────────────────────────────────────────────────────────── */
 .logout-stage {
   position: relative;
-  width: 100%;
+  width: min(94vw, 760px);
+  max-height: 78dvh;
   aspect-ratio: 380 / 225;
-  max-height: 235px;
-  margin: 0 auto 14px;
+  margin: 0 auto;
   direction: ltr;
-  background: radial-gradient(circle at 68% 48%, rgba(23, 184, 196, 0.16) 0%, rgba(8, 35, 50, 0.94) 78%, #04131d 100%);
-  border-radius: 18px;
+  background: radial-gradient(ellipse at 68% 48%, rgba(23, 184, 196, 0.18) 0%, rgba(8, 35, 50, 0.9) 62%, rgba(4, 19, 29, 0) 100%);
   overflow: hidden;
-  border: 1.5px solid rgba(23, 184, 196, 0.35);
-  box-shadow: inset 0 0 32px rgba(0, 0, 0, 0.55);
+  /* soft vignette edges instead of a bordered box */
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 62%, transparent 100%);
+  mask-image: radial-gradient(ellipse at 50% 50%, #000 62%, transparent 100%);
 }
 
 .logout-stage-svg {
@@ -320,15 +294,19 @@
   48% {
     transform: translate(70px, -2px) rotate(42deg) scale(0.98);
     opacity: 1;
+    /* gravity: accelerate once the grip is lost */
+    animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6);
   }
   /* Scene 3 Part B (1.47s - 2.2s | 49% - 73.3%): Loses grip & plunges into the abyss! */
   56% {
     transform: translate(84px, -14px) rotate(145deg) scale(0.76);
     opacity: 1;
+    animation-timing-function: cubic-bezier(0.45, 0, 0.85, 0.7);
   }
   65% {
     transform: translate(92px, 6px) rotate(320deg) scale(0.42);
     opacity: 0.92;
+    animation-timing-function: ease-in;
   }
   73% {
     /* Deep inside the abyss */
@@ -479,30 +457,7 @@
   41%, 100% { opacity: 0; transform: scale(1.6); }
 }
 
-/* ──────────────────────────────────────────────────────────
-   SCENE 4 FRIENDLY FAREWELL BANNER ("See you soon!" / "نراك قريباً!")
-   ────────────────────────────────────────────────────────── */
-.logout-farewell-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(23, 184, 196, 0.18), rgba(14, 154, 167, 0.28));
-  border: 1px solid rgba(23, 184, 196, 0.5);
-  color: #0e7490;
-  font-weight: 800;
-  font-size: 0.95rem;
-  margin-bottom: 8px;
-  box-shadow: 0 4px 14px rgba(23, 184, 196, 0.18);
-  transition: all 0.25s ease;
-}
-
-[data-theme='dark'] .logout-farewell-pill {
-  color: #5eead4;
-  background: linear-gradient(135deg, rgba(23, 184, 196, 0.22), rgba(11, 60, 93, 0.45));
-}
-
+/* Error panel text */
 .logout-title {
   font-size: 1.22rem;
   font-weight: 800;
@@ -566,11 +521,16 @@
   background: rgba(100, 116, 139, 0.12);
 }
 
-/* Responsive Mobile Refinements (320px – 430px) */
+/* Responsive Mobile Refinements */
 @media (max-width: 480px) {
+  .logout-stage {
+    width: 100vw;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 70%, transparent 100%);
+    mask-image: radial-gradient(ellipse at 50% 50%, #000 70%, transparent 100%);
+  }
   .logout-card {
-    padding: 16px 14px 14px;
-    border-radius: 20px;
+    padding: 14px;
+    border-radius: 18px;
   }
   .logout-title {
     font-size: 1.12rem;
@@ -579,39 +539,71 @@
     font-size: 0.84rem;
     margin-bottom: 8px;
   }
-  .logout-tool-btn {
-    padding: 5px 10px;
-    font-size: 0.76rem;
-    min-height: 34px;
-  }
-  .logout-scene-pill {
-    font-size: 0.68rem;
-    padding: 2px 7px;
-  }
-}
-
-@media (max-width: 350px) {
-  .logout-card {
-    padding: 12px 10px;
-  }
-  .logout-scene-pills {
-    gap: 4px;
-  }
 }
 
 @media (max-height: 540px) {
   .logout-stage {
-    max-height: 160px;
-    margin-bottom: 8px;
+    max-height: 70dvh;
   }
-  .logout-scene-pills {
-    display: none;
-  }
+}
+
+/* ──────────────────────────────────────────────────────────
+   DEPTH: ground shadows that stay on the floor, and light spilling
+   from the doorway. Timings mirror the character/door keyframes.
+   ────────────────────────────────────────────────────────── */
+.char1-shadow {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.char2-shadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+}
+
+.logout-animated .char1-shadow {
+  animation: char1ShadowTrack 3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+}
+.logout-animated .char2-shadow {
+  animation: char2ShadowTrack 3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes char1ShadowTrack {
+  0% { transform: translateX(-34px); opacity: 1; }
+  8% { transform: translateX(-14px); opacity: 1; }
+  16%, 24% { transform: translateX(8px); opacity: 1; }
+  29% { transform: translateX(34px) scale(0.82); opacity: 0.7; } /* airborne from the push */
+  38% { transform: translateX(58px) scale(0.9); opacity: 0.85; }
+  48% { transform: translateX(70px) scale(0.9); opacity: 0.85; }
+  58%, 100% { transform: translateX(84px) scale(0.3); opacity: 0; } /* gone over the edge */
+}
+
+@keyframes char2ShadowTrack {
+  0%, 17% { transform: translateX(-95px); opacity: 0; }
+  23% { transform: translateX(12px); opacity: 1; }
+  28%, 35% { transform: translateX(48px) scale(1.06, 0.95); opacity: 1; }
+  40% { transform: translateX(56px); opacity: 1; }
+  50%, 72% { transform: translateX(92px); opacity: 1; }
+  82%, 100% { transform: translateX(76px); opacity: 1; }
+}
+
+.doorway-light-spill {
+  opacity: 0;
+}
+
+.logout-animated .doorway-light-spill {
+  animation: doorwaySpill 3s ease-in-out forwards;
+}
+
+@keyframes doorwaySpill {
+  0%, 6% { opacity: 0; }
+  19%, 77% { opacity: 1; }
+  91%, 100% { opacity: 0; }
 }
 
 /* Reduced Motion Preference: Short, calm transition without spinning/falling */
 @media (prefers-reduced-motion: reduce) {
-  .logout-card,
+  .logout-scene,
   .logout-backdrop,
   .logout-animated .abyss-portal-glow,
   .logout-animated .abyss-ring-1,
@@ -624,6 +616,9 @@
   .logout-animated .char2-group,
   .logout-animated .char1-right-arm,
   .logout-animated .char2-arms,
+  .logout-animated .char1-shadow,
+  .logout-animated .char2-shadow,
+  .logout-animated .doorway-light-spill,
   .logout-animated .push-impact-burst {
     animation: none !important;
     transition: none !important;
