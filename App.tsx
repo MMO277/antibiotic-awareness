@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import PrescriptionRadar from "./PrescriptionRadar";
 import AwarenessWeek from './AwarenessWeek';
 import GreenPrescription from './GreenPrescription';
@@ -30,7 +31,11 @@ import Methodology from './Methodology';
 import Research from './Research';
 import Dashboard from './Dashboard';
 import BacteriaHunter from './BacteriaHunter';
+import GameCenter from './GameCenter';
 import Editor from './Editor';
+
+// Lazy-load the 3D Medical Life Simulator so Three.js / WebGL code stays out of the initial application bundle
+const MedicalSimulator = lazy(() => import('./MedicalSimulator'));
 
 function ConfigMissing() {
   const { t } = useLang();
@@ -47,6 +52,26 @@ function ConfigMissing() {
         </p>
         <p style={{ marginTop: '1rem' }}>
           <Link to="/" className="btn">{t('navHome')}</Link>
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function SimulatorLoadingFallback() {
+  const { lang } = useLang();
+  const isAr = lang === 'ar';
+  return (
+    <main className="wrap narrow" dir={isAr ? 'rtl' : 'ltr'}>
+      <div className="card center" style={{ padding: '42px 20px' }}>
+        <div style={{ fontSize: '2.4rem', marginBottom: '10px' }} aria-hidden="true">🏥</div>
+        <h2 style={{ marginBottom: '6px' }}>
+          {isAr ? 'جارٍ تجهيز جناح المستشفى ثلاثي الأبعاد (3D)...' : 'Loading 3D Hospital Ward Simulator...'}
+        </h2>
+        <p className="small muted" style={{ margin: 0 }}>
+          {isAr
+            ? 'يتم الآن تحميل المشهد ثلاثي الأبعاد والشخصيات والسيناريوهات السريرية.'
+            : 'Initializing WebGL 3D scene, cartoon avatars, and clinical dialogue scenarios.'}
         </p>
       </div>
     </main>
@@ -92,6 +117,15 @@ export default function App() {
           <Route path="/myth" element={<MythFact />} />
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/research" element={<Research />} />
+          <Route path="/games" element={<GameCenter />} />
+          <Route
+            path="/medical-simulator"
+            element={
+              <Suspense fallback={<SimulatorLoadingFallback />}>
+                <MedicalSimulator />
+              </Suspense>
+            }
+          />
           <Route path="/game" element={<BacteriaHunter />} />
           <Route path="/admin" element={configured ? <Dashboard /> : <ConfigMissing />} />
           <Route path="/admin/new" element={configured ? <Editor /> : <ConfigMissing />} />

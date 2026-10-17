@@ -173,12 +173,13 @@ export default function Layout({ children }: { children: ReactNode }) {
     { to: '/articles', key: 'navArticles', icon: '📰' },
     { to: '/research', key: 'navResearch', icon: '📊' },
     { to: '/methodology', key: 'navMethod', icon: '🔬' },
-    { to: '/game', key: 'navGame', icon: '🎮' },
+    { to: '/games', key: 'navGames', icon: '🎮' },
   ];
 
   const quickBarItems = [
     { to: '/', label: isAr ? 'الرئيسية' : 'Home', icon: '🏠' },
     { to: '/medicines', label: isAr ? 'السجل الدوائي (206)' : 'Registry (206)', icon: '💊' },
+    { to: '/games', label: isAr ? 'الألعاب والمحاكاة 3D' : 'Games & 3D Sim', icon: '🎮' },
     { to: '/green-prescription', label: isAr ? 'الروشتة الخضرا' : 'Green Rx', icon: '🌿' },
     { to: '/awareness-week', label: isAr ? 'حملة نوفمبر العالمية' : 'WAAW Campaign', icon: '🌍' },
     { to: '/compare', label: isAr ? 'مقارنة دواءين' : 'Compare Drugs', icon: '⚖️' },
@@ -456,6 +457,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </h4>
             <ul className="pro-footer-links">
               <li><Link to="/medicines">{isAr ? 'السجل الدوائي المصري (206 عبوات)' : 'Egyptian Drug Registry (206)'}</Link></li>
+              <li><Link to="/games">{isAr ? 'مركز الألعاب والمحاكاة الطبية 3D' : 'Game Center & 3D Medical Simulator'}</Link></li>
               <li><Link to="/scan">{isAr ? 'ماسح الباركود الخطي ورموز QR' : 'Barcode & QR Scanner'}</Link></li>
               <li><Link to="/allergy-checker">{isAr ? 'فاحص الحساسية الدوائية المتقاطعة' : 'Drug Allergy Safety Checker'}</Link></li>
               <li><Link to="/pediatric-helper">{isAr ? 'حاسبة جرعات شراب الأطفال' : 'Pediatric Dosage Calculator'}</Link></li>

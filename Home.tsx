@@ -38,6 +38,16 @@ export default function Home() {
 
   const clinicalTools = [
     {
+      to: '/games',
+      icon: '🎮',
+      badge: isAr ? 'جديد • 3D & 2D' : 'NEW • 3D & 2D',
+      title: isAr ? 'مركز الألعاب ومحاكي الحياة الطبية ثلاثي الأبعاد (3D)' : 'Game Center & 3D Medical Life Simulator',
+      desc: isAr
+        ? 'تجول داخل جناح المستشفى ثلاثي الأبعاد (WebGL 3D) وتفاعل مع الطبيب والممرضة والصيدلي في 5 سيناريوهات سريرية، أو العب صائد البكتيريا.'
+        : 'Explore a genuine 3D cartoon hospital ward with 5 branching clinical stewardship scenarios, or play Bacteria Hunter.',
+      color: '#0e9aa7',
+    },
+    {
       to: '/prescription-radar',
       icon: '📡',
       badge: isAr ? 'رادار ومواعيد 24س' : 'Rx Radar 24h',
@@ -242,6 +252,9 @@ export default function Home() {
 
           {/* Hero Quick CTA Pills */}
           <div className="pro-hero-actions">
+            <Link to="/games" className="pro-cta-btn primary-cta" style={{ background: "#0e9aa7", color: "#ffffff" }}>
+              🎮 {isAr ? "مركز الألعاب ومحاكي المستشفى 3D" : "Game Center & 3D Simulator"}
+            </Link>
             <Link to="/green-prescription" className="pro-cta-btn primary-cta" style={{ background: "#10b981", color: "#052e16" }}>
               🌿 {isAr ? "الروشتة الخضرا الذكية" : "Green Prescription"}
             </Link>
@@ -282,7 +295,7 @@ export default function Home() {
       </section>
 
       <div className="wrap stack" style={{ marginTop: '28px' }}>
-        {/* Clinical Command Center: 8 Interactive Modules */}
+        {/* Clinical Command Center: Interactive Modules */}
         <section>
           <div className="head" style={{ marginBottom: '14px' }}>
             <div>
