@@ -4,7 +4,7 @@ import { useLang } from './i18n';
 import { useApproved } from './medicinesApi';
 import { pick } from './types';
 import {
-  loadProfile,
+  useSyncedHealthProfile,
   checkDrugAllergySafety,
   DRUG_ALLERGEN_MAP,
   AllergyRecord,
@@ -16,7 +16,7 @@ export default function AllergyChecker() {
   const { items } = useApproved();
   const meds = items ?? [];
 
-  const [profile] = useState(() => loadProfile());
+  const { profile } = useSyncedHealthProfile();
   const [selectedDrugId, setSelectedDrugId] = useState('amoxicillin-clavulanic-acid');
   const [simulatedAllergy, setSimulatedAllergy] = useState<string | null>(null);
 

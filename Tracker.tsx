@@ -6,8 +6,7 @@ import { pick } from './types';
 import {
   TreatmentSchedule,
   ScheduledDose,
-  loadSchedules,
-  saveSchedules,
+  useSyncedSchedules,
   generateScheduleDoses,
   getDoseStatus,
 } from './trackerData';
@@ -17,7 +16,7 @@ export default function Tracker() {
   const { items } = useApproved();
   const meds = items ?? [];
 
-  const [schedules, setSchedules] = useState<TreatmentSchedule[]>(() => loadSchedules());
+  const { schedules, setSchedules, syncing } = useSyncedSchedules();
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
 
@@ -35,10 +34,6 @@ export default function Tracker() {
   // Notification state
   const [notifSupported, setNotifSupported] = useState(false);
   const [notifPermission, setNotifPermission] = useState('default');
-
-  useEffect(() => {
-    saveSchedules(schedules);
-  }, [schedules]);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -189,7 +184,8 @@ export default function Tracker() {
         if (sch.id !== schId) return sch;
         const updatedDoses = sch.doses.map((d) => {
           if (d.id === doseId) {
-            return { ...d, status: 'upcoming' as const, takenAt: undefined };
+            const { takenAt: _removed, ...rest } = d;
+            return { ...rest, status: 'upcoming' as const };
           }
           return d;
         });
@@ -206,6 +202,11 @@ export default function Tracker() {
           {lang === 'ar'
             ? 'أداة شخصية لمساعدتك في تنظيم ومتابعة مواعيد جرعات المضاد الحيوي الموصوفة لك، وإكمال الكورس العلاجي بالكامل لمنع مقاومة البكتيريا.'
             : 'A personal patient-friendly tool to help you organize and track your prescribed antibiotic doses and finish your full course.'}
+          {syncing && (
+            <span style={{ marginInlineStart: '8px', fontSize: '0.85em' }}>
+              ({lang === 'ar' ? 'جارٍ مزامنة جداولك السحابية...' : 'Syncing cloud schedules...'})
+            </span>
+          )}
         </p>
       </header>
 

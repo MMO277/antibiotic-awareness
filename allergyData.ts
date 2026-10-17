@@ -1,3 +1,7 @@
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+import { auth, db, configured } from './firebase';
+import { useAuth } from './authContext';
 import { Bi } from './types';
 
 export type AllergySeverity = 'mild' | 'moderate' | 'severe' | 'life_threatening';
@@ -40,7 +44,162 @@ export interface UserHealthProfile {
   medications: MedicationRecord[];
 }
 
-const STORAGE_KEY = 'antibiotic_awareness_health_profile';
+export const STORAGE_KEY = 'antibiotic_awareness_health_profile';
+const MIGRATED_LEGACY_PREFIX = 'aa_migrated_legacy_profile_';
+const PROFILE_EVENT = 'aa-health-profile-updated';
+
+export function emptyHealthProfile(): UserHealthProfile {
+  return {
+    displayName: '',
+    age: '',
+    gender: '',
+    bloodType: '',
+    emergencyContact: '',
+    notes: '',
+    allergies: [],
+    medications: [],
+  };
+}
+
+export function getProfileStorageKey(uid?: string | null): string {
+  return uid ? `${STORAGE_KEY}_${uid}` : STORAGE_KEY;
+}
+
+/** Strips undefined properties recursively so Firestore setDoc never rejects an object */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function stripUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefined(item)) as unknown as T;
+  }
+  if (value !== null && typeof value === 'object') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) {
+        out[k] = stripUndefined(v);
+      }
+    }
+    return out as T;
+  }
+  return value;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function normalizeProfile(raw: any): UserHealthProfile {
+  if (!raw || typeof raw !== 'object') return emptyHealthProfile();
+  return {
+    displayName: typeof raw.displayName === 'string' ? raw.displayName : '',
+    age: typeof raw.age === 'string' ? raw.age : '',
+    gender: typeof raw.gender === 'string' ? raw.gender : '',
+    bloodType: typeof raw.bloodType === 'string' ? raw.bloodType : '',
+    emergencyContact: typeof raw.emergencyContact === 'string' ? raw.emergencyContact : '',
+    notes: typeof raw.notes === 'string' ? raw.notes : '',
+    allergies: Array.isArray(raw.allergies)
+      ? raw.allergies
+          .filter((a: unknown) => a !== null && typeof a === 'object')
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((a: any) => ({
+            id: typeof a.id === 'string' && a.id ? a.id : `all-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            drugName: typeof a.drugName === 'string' ? a.drugName : '',
+            allergenKey: typeof a.allergenKey === 'string' ? a.allergenKey : 'other',
+            reportedSymptoms: typeof a.reportedSymptoms === 'string' ? a.reportedSymptoms : '',
+            severity: (['mild', 'moderate', 'severe', 'life_threatening'].includes(a.severity)
+              ? a.severity
+              : 'severe') as AllergySeverity,
+            ...(typeof a.reactionDate === 'string' ? { reactionDate: a.reactionDate } : {}),
+            evidenceStatus: (['patient_reported', 'suspected', 'clinically_verified'].includes(a.evidenceStatus)
+              ? a.evidenceStatus
+              : 'patient_reported') as EvidenceStatus,
+            ...(typeof a.notes === 'string' ? { notes: a.notes } : {}),
+            createdAt: typeof a.createdAt === 'string' ? a.createdAt : new Date().toISOString(),
+          }))
+      : [],
+    medications: Array.isArray(raw.medications)
+      ? raw.medications
+          .filter((m: unknown) => m !== null && typeof m === 'object')
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((m: any) => ({
+            id: typeof m.id === 'string' && m.id ? m.id : `med-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            drugName: typeof m.drugName === 'string' ? m.drugName : '',
+            activeIngredients: typeof m.activeIngredients === 'string' ? m.activeIngredients : '',
+            prescribedDose: typeof m.prescribedDose === 'string' ? m.prescribedDose : '',
+            route: typeof m.route === 'string' ? m.route : 'oral',
+            frequency: typeof m.frequency === 'string' ? m.frequency : 'twice_daily',
+            startDate: typeof m.startDate === 'string' ? m.startDate : new Date().toISOString().split('T')[0],
+            ...(typeof m.endDate === 'string' ? { endDate: m.endDate } : {}),
+            status: (['active', 'completed', 'discontinued'].includes(m.status) ? m.status : 'active') as
+              | 'active'
+              | 'completed'
+              | 'discontinued',
+            ...(typeof m.notes === 'string' ? { notes: m.notes } : {}),
+          }))
+      : [],
+  };
+}
+
+export function isProfileNonEmpty(p: UserHealthProfile | null | undefined): boolean {
+  if (!p) return false;
+  return Boolean(
+    p.displayName.trim() ||
+      p.age.trim() ||
+      p.gender.trim() ||
+      p.bloodType.trim() ||
+      p.emergencyContact.trim() ||
+      p.notes.trim() ||
+      p.allergies.length > 0 ||
+      p.medications.length > 0
+  );
+}
+
+/**
+ * Non-destructively merges a primary (cloud) profile with a secondary (local/guest) profile
+ * so neither cloud data nor pre-login local entries are lost during initial migration.
+ */
+export function mergeProfiles(primary: UserHealthProfile, secondary: UserHealthProfile): UserHealthProfile {
+  const allergyMap = new Map<string, AllergyRecord>();
+  for (const a of primary.allergies) {
+    allergyMap.set(a.id, a);
+  }
+  for (const a of secondary.allergies) {
+    const duplicateByContent = Array.from(allergyMap.values()).some(
+      (existing) =>
+        existing.id === a.id ||
+        (existing.drugName.trim().toLowerCase() === a.drugName.trim().toLowerCase() &&
+          existing.allergenKey === a.allergenKey)
+    );
+    if (!duplicateByContent) {
+      allergyMap.set(a.id, a);
+    }
+  }
+
+  const medMap = new Map<string, MedicationRecord>();
+  for (const m of primary.medications) {
+    medMap.set(m.id, m);
+  }
+  for (const m of secondary.medications) {
+    const duplicateByContent = Array.from(medMap.values()).some(
+      (existing) =>
+        existing.id === m.id ||
+        (existing.drugName.trim().toLowerCase() === m.drugName.trim().toLowerCase() &&
+          existing.prescribedDose.trim().toLowerCase() === m.prescribedDose.trim().toLowerCase() &&
+          existing.status === m.status)
+    );
+    if (!duplicateByContent) {
+      medMap.set(m.id, m);
+    }
+  }
+
+  return normalizeProfile({
+    displayName: primary.displayName.trim() || secondary.displayName.trim(),
+    age: primary.age.trim() || secondary.age.trim(),
+    gender: primary.gender.trim() || secondary.gender.trim(),
+    bloodType: primary.bloodType.trim() || secondary.bloodType.trim(),
+    emergencyContact: primary.emergencyContact.trim() || secondary.emergencyContact.trim(),
+    notes: primary.notes.trim() || secondary.notes.trim(),
+    allergies: Array.from(allergyMap.values()),
+    medications: Array.from(medMap.values()),
+  });
+}
 
 export const ALLERGEN_CATEGORIES: { id: string; name: Bi; examples: Bi }[] = [
   {
@@ -85,29 +244,249 @@ export const ALLERGEN_CATEGORIES: { id: string; name: Bi; examples: Bi }[] = [
   },
 ];
 
-export function loadProfile(): UserHealthProfile {
+export function loadProfile(uid?: string | null): UserHealthProfile {
   if (typeof window === 'undefined') {
-    return { displayName: '', age: '', gender: '', bloodType: '', emergencyContact: '', notes: '', allergies: [], medications: [] };
+    return emptyHealthProfile();
   }
+  const effectiveUid = uid !== undefined ? uid : auth?.currentUser?.uid ?? null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return { displayName: '', age: '', gender: '', bloodType: '', emergencyContact: '', notes: '', allergies: [], medications: [] };
+    const scopedRaw = localStorage.getItem(getProfileStorageKey(effectiveUid));
+    if (scopedRaw) {
+      return normalizeProfile(JSON.parse(scopedRaw));
     }
-    return JSON.parse(raw);
+    // If signed in and no UID-scoped cache exists yet, check if legacy un-scoped local data exists
+    if (effectiveUid && !localStorage.getItem(`${MIGRATED_LEGACY_PREFIX}${effectiveUid}`)) {
+      const legacyRaw = localStorage.getItem(STORAGE_KEY);
+      if (legacyRaw) {
+        return normalizeProfile(JSON.parse(legacyRaw));
+      }
+    }
+    return emptyHealthProfile();
   } catch (err) {
     console.error('Failed to load profile:', err);
-    return { displayName: '', age: '', gender: '', bloodType: '', emergencyContact: '', notes: '', allergies: [], medications: [] };
+    return emptyHealthProfile();
   }
 }
 
-export function saveProfile(profile: UserHealthProfile): void {
+export function saveProfile(profile: UserHealthProfile, uid?: string | null): void {
   if (typeof window === 'undefined') return;
+  const effectiveUid = uid !== undefined ? uid : auth?.currentUser?.uid ?? null;
+  const clean = stripUndefined(normalizeProfile(profile));
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+    localStorage.setItem(getProfileStorageKey(effectiveUid), JSON.stringify(clean));
+    window.dispatchEvent(new CustomEvent(PROFILE_EVENT, { detail: { uid: effectiveUid, profile: clean } }));
   } catch (err) {
-    console.error('Failed to save profile:', err);
+    console.error('Failed to save profile locally:', err);
   }
+  if (effectiveUid && configured && db) {
+    setDoc(
+      doc(db, 'users', effectiveUid),
+      {
+        healthProfile: clean,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    ).catch((err) => {
+      console.error('Failed to sync health profile to Cloud Firestore:', err);
+    });
+  }
+}
+
+/**
+ * Reactive hook that synchronizes the user's Health Profile & Allergies across devices
+ * via Cloud Firestore (`users/{uid}`) when signed in, while preserving Guest Mode offline storage.
+ */
+export function useSyncedHealthProfile() {
+  const { user, loading: authLoading } = useAuth();
+  const uid = user?.uid ?? null;
+
+  const [profile, setProfileState] = useState<UserHealthProfile>(() => loadProfile(uid));
+  const [syncing, setSyncing] = useState<boolean>(false);
+  const hydratedUidRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    // Guest / Logged-out mode: load from guest localStorage
+    if (!uid) {
+      hydratedUidRef.current = null;
+      setProfileState(loadProfile(null));
+      setSyncing(false);
+      return;
+    }
+
+    // Immediate local cache display while cloud fetch is in flight
+    const cachedScopedRaw = localStorage.getItem(getProfileStorageKey(uid));
+    const cachedScoped = cachedScopedRaw ? normalizeProfile(JSON.parse(cachedScopedRaw)) : null;
+    if (cachedScoped) {
+      setProfileState(cachedScoped);
+    }
+
+    if (!configured || !db) {
+      hydratedUidRef.current = uid;
+      setSyncing(false);
+      return;
+    }
+
+    let cancelled = false;
+    setSyncing(true);
+    const userDocRef = doc(db, 'users', uid);
+
+    // 1. Initial hydration & non-destructive migration of any pre-existing local/guest profile
+    getDoc(userDocRef)
+      .then(async (snap) => {
+        if (cancelled) return;
+        const cloudRaw = snap.exists() ? snap.data()?.healthProfile : undefined;
+        const hasCloudProfile = cloudRaw !== undefined && cloudRaw !== null;
+        const cloudProfile = hasCloudProfile ? normalizeProfile(cloudRaw) : emptyHealthProfile();
+
+        // Check if there is un-migrated guest/legacy local data on this device
+        const migrationKey = `${MIGRATED_LEGACY_PREFIX}${uid}`;
+        const alreadyMigrated = localStorage.getItem(migrationKey) === '1';
+        let legacyProfile = emptyHealthProfile();
+        if (!alreadyMigrated) {
+          try {
+            const rawLegacy = localStorage.getItem(STORAGE_KEY);
+            if (rawLegacy) {
+              legacyProfile = normalizeProfile(JSON.parse(rawLegacy));
+            }
+          } catch {}
+        }
+
+        const localCandidate = cachedScoped
+          ? isProfileNonEmpty(legacyProfile) && !alreadyMigrated
+            ? mergeProfiles(cachedScoped, legacyProfile)
+            : cachedScoped
+          : legacyProfile;
+
+        let resolved: UserHealthProfile;
+        let shouldWriteToCloud = false;
+
+        if (hasCloudProfile) {
+          if (!alreadyMigrated && isProfileNonEmpty(localCandidate)) {
+            resolved = mergeProfiles(cloudProfile, localCandidate);
+            if (JSON.stringify(resolved) !== JSON.stringify(cloudProfile)) {
+              shouldWriteToCloud = true;
+            }
+          } else {
+            resolved = cloudProfile;
+          }
+        } else {
+          // No cloud profile exists yet: seed from local candidate or Google account displayName
+          resolved = isProfileNonEmpty(localCandidate)
+            ? localCandidate
+            : normalizeProfile({ displayName: user?.displayName || '' });
+          if (isProfileNonEmpty(resolved)) {
+            shouldWriteToCloud = true;
+          }
+        }
+
+        if (!resolved.displayName.trim() && user?.displayName) {
+          resolved = { ...resolved, displayName: user.displayName };
+        }
+
+        try {
+          localStorage.setItem(getProfileStorageKey(uid), JSON.stringify(stripUndefined(resolved)));
+          if (!alreadyMigrated && isProfileNonEmpty(legacyProfile)) {
+            localStorage.setItem(migrationKey, '1');
+            // Clear un-scoped legacy key after migrating to user's UID-scoped storage for shared-device privacy
+            localStorage.removeItem(STORAGE_KEY);
+          }
+        } catch {}
+
+        hydratedUidRef.current = uid;
+        setProfileState(resolved);
+        setSyncing(false);
+
+        if (shouldWriteToCloud) {
+          await setDoc(
+            userDocRef,
+            {
+              healthProfile: stripUndefined(resolved),
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        }
+      })
+      .catch((err) => {
+        console.error('Error hydrating health profile from Firestore:', err);
+        if (!cancelled) {
+          hydratedUidRef.current = uid;
+          setSyncing(false);
+        }
+      });
+
+    // 2. Real-time cross-device listener
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (snap) => {
+        if (cancelled || hydratedUidRef.current !== uid) return;
+        if (snap.exists() && snap.data()?.healthProfile) {
+          const remoteProfile = normalizeProfile(snap.data()?.healthProfile);
+          try {
+            localStorage.setItem(getProfileStorageKey(uid), JSON.stringify(stripUndefined(remoteProfile)));
+          } catch {}
+          setProfileState((prev) =>
+            JSON.stringify(prev) === JSON.stringify(remoteProfile) ? prev : remoteProfile
+          );
+        }
+      },
+      (err) => {
+        console.warn('Firestore profile listener warning:', err);
+      }
+    );
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [uid, authLoading, user?.displayName]);
+
+  // Listen for same-tab updates from other components
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.uid === uid && detail.profile) {
+        setProfileState((prev) =>
+          JSON.stringify(prev) === JSON.stringify(detail.profile) ? prev : detail.profile
+        );
+      }
+    };
+    window.addEventListener(PROFILE_EVENT, handler);
+    return () => window.removeEventListener(PROFILE_EVENT, handler);
+  }, [uid]);
+
+  const updateProfile = useCallback(
+    (updater: UserHealthProfile | ((prev: UserHealthProfile) => UserHealthProfile)) => {
+      setProfileState((prev) => {
+        const nextRaw = typeof updater === 'function' ? updater(prev) : updater;
+        const next = stripUndefined(normalizeProfile(nextRaw));
+        try {
+          localStorage.setItem(getProfileStorageKey(uid), JSON.stringify(next));
+          window.dispatchEvent(new CustomEvent(PROFILE_EVENT, { detail: { uid, profile: next } }));
+        } catch (err) {
+          console.error('Failed to save profile locally:', err);
+        }
+        if (uid && configured && db) {
+          setDoc(
+            doc(db, 'users', uid),
+            {
+              healthProfile: next,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          ).catch((err) => {
+            console.error('Failed to save health profile to Firestore:', err);
+          });
+        }
+        return next;
+      });
+    },
+    [uid]
+  );
+
+  return { profile, setProfile: updateProfile, syncing, isAuthenticated: Boolean(uid) };
 }
 
 export interface DrugProfileCheckResult {

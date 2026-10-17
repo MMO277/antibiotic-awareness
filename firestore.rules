@@ -71,6 +71,14 @@ service cloud.firestore {
       allow write: if hasRole(['admin']);
     }
 
+    // ---------- personal patient data (strictly owner-only) ----------
+    match /users/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      match /{subcollection=**} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
+    }
+
     // ---------- optional research survey ----------
     match /researchConfig/{doc} {
       allow read: if true;

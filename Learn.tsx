@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+import { db, configured } from './firebase';
+import { useAuth } from './authContext';
 import { useLang } from './i18n';
 import { STEPS } from './contentData';
 import { pick } from './types';
@@ -7,9 +10,14 @@ import Disclaimer from './Disclaimer';
 
 const KEY = 'amr-learn-done';
 
-function loadDone(): string[] {
+function getStorageKey(uid?: string | null): string {
+  return uid ? `${KEY}_${uid}` : KEY;
+}
+
+function loadDone(uid?: string | null): string[] {
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? '[]');
+    const raw = localStorage.getItem(getStorageKey(uid)) ?? (uid ? localStorage.getItem(KEY) : null) ?? '[]';
+    const v = JSON.parse(raw);
     return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
   } catch {
     return [];
@@ -18,34 +26,120 @@ function loadDone(): string[] {
 
 export default function Learn() {
   const { lang } = useLang();
+  const { user, loading: authLoading } = useAuth();
+  const uid = user?.uid ?? null;
+
   const L = (ar: string, en: string) => (lang === 'ar' ? ar : en);
   const [idx, setIdx] = useState(0);
   const [sel, setSel] = useState<number | null>(null);
-  const [done, setDone] = useState<string[]>(loadDone);
+  const [done, setDone] = useState<string[]>(() => loadDone(uid));
+  const hydratedUidRef = useRef<string | null>(null);
   const step = STEPS[idx];
 
   useEffect(() => {
     setSel(null);
   }, [idx]);
 
+  useEffect(() => {
+    if (authLoading) return;
+    if (!uid) {
+      hydratedUidRef.current = null;
+      setDone(loadDone(null));
+      return;
+    }
+
+    const localList = loadDone(uid);
+    setDone(localList);
+
+    if (!configured || !db) {
+      hydratedUidRef.current = uid;
+      return;
+    }
+
+    let cancelled = false;
+    const userDocRef = doc(db, 'users', uid);
+
+    getDoc(userDocRef)
+      .then(async (snap) => {
+        if (cancelled) return;
+        const cloudDoneRaw = snap.exists() ? snap.data()?.learnDone : undefined;
+        const cloudDone = Array.isArray(cloudDoneRaw)
+          ? cloudDoneRaw.filter((x: unknown): x is string => typeof x === 'string')
+          : [];
+        const merged = Array.from(new Set([...cloudDone, ...localList]));
+
+        try {
+          localStorage.setItem(getStorageKey(uid), JSON.stringify(merged));
+        } catch {}
+
+        hydratedUidRef.current = uid;
+        setDone(merged);
+
+        if (merged.length > cloudDone.length) {
+          await setDoc(
+            userDocRef,
+            { learnDone: merged, updatedAt: serverTimestamp() },
+            { merge: true }
+          );
+        }
+      })
+      .catch(() => {
+        if (!cancelled) hydratedUidRef.current = uid;
+      });
+
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (snap) => {
+        if (cancelled || hydratedUidRef.current !== uid) return;
+        if (snap.exists() && Array.isArray(snap.data()?.learnDone)) {
+          const remoteDone = snap
+            .data()!
+            .learnDone.filter((x: unknown): x is string => typeof x === 'string');
+          try {
+            localStorage.setItem(getStorageKey(uid), JSON.stringify(remoteDone));
+          } catch {}
+          setDone((prev) => (JSON.stringify(prev) === JSON.stringify(remoteDone) ? prev : remoteDone));
+        }
+      },
+      () => {}
+    );
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [uid, authLoading]);
+
+  const saveProgress = (nextDone: string[]) => {
+    setDone(nextDone);
+    try {
+      localStorage.setItem(getStorageKey(uid), JSON.stringify(nextDone));
+    } catch {
+      /* storage unavailable */
+    }
+    if (uid && configured && db) {
+      setDoc(
+        doc(db, 'users', uid),
+        { learnDone: nextDone, updatedAt: serverTimestamp() },
+        { merge: true }
+      ).catch(() => {});
+    }
+  };
+
   const choose = (k: number) => {
     if (sel !== null) return;
     setSel(k);
     if (!done.includes(step.id)) {
       const nd = [...done, step.id];
-      setDone(nd);
-      try {
-        localStorage.setItem(KEY, JSON.stringify(nd));
-      } catch {
-        /* storage unavailable: progress just won't be remembered */
-      }
+      saveProgress(nd);
     }
   };
+
   const reset = () => {
-    setDone([]);
     setIdx(0);
+    saveProgress([]);
     try {
-      localStorage.removeItem(KEY);
+      localStorage.removeItem(getStorageKey(uid));
     } catch {
       /* ignore */
     }

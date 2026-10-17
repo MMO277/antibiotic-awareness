@@ -3,19 +3,17 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import {
-  UserHealthProfile,
   AllergyRecord,
   MedicationRecord,
   ALLERGEN_CATEGORIES,
-  loadProfile,
-  saveProfile,
+  useSyncedHealthProfile,
   AllergySeverity,
   EvidenceStatus,
 } from './allergyData';
 
 export default function HealthProfile() {
   const { lang } = useLang();
-  const [profile, setProfile] = useState<UserHealthProfile>(() => loadProfile());
+  const { profile, setProfile, syncing } = useSyncedHealthProfile();
 
   // Personal info edit state
   const [editingPersonal, setEditingPersonal] = useState(false);
@@ -44,9 +42,15 @@ export default function HealthProfile() {
   const medFreq = 'twice_daily';
   const [medStatus, setMedStatus] = useState<'active' | 'completed' | 'discontinued'>('active');
 
+  // Keep form inputs in sync when cloud profile finishes hydrating or updates from another device
   useEffect(() => {
-    saveProfile(profile);
-  }, [profile]);
+    if (!editingPersonal) {
+      setNameInput(profile.displayName);
+      setAgeInput(profile.age);
+      setBloodInput(profile.bloodType);
+      setContactInput(profile.emergencyContact);
+    }
+  }, [profile.displayName, profile.age, profile.bloodType, profile.emergencyContact, editingPersonal]);
 
   const savePersonalInfo = (e: FormEvent) => {
     e.preventDefault();
@@ -123,7 +127,7 @@ export default function HealthProfile() {
   };
 
   const clearAllData = () => {
-    if (window.confirm(lang === 'ar' ? 'تحذير: سيتم مسح جميع بيانات الحساسية والأدوية المسجلة على هذا الجهاز. هل توافق؟' : 'Warning: All locally stored health data will be deleted. Proceed?')) {
+    if (window.confirm(lang === 'ar' ? 'تحذير: سيتم مسح جميع بيانات الحساسية والأدوية المسجلة. هل توافق؟' : 'Warning: All stored health data will be deleted. Proceed?')) {
       setProfile({ displayName: '', age: '', gender: '', bloodType: '', emergencyContact: '', notes: '', allergies: [], medications: [] });
     }
   };
@@ -149,6 +153,11 @@ export default function HealthProfile() {
           {lang === 'ar'
             ? 'سجل شخصي متكامل لتوثيق حساسيتك الدوائية وأدويتك الحالية، لحمايتك من الأخطاء العلاجية وفحص أمان أي دواء قبل تناوله.'
             : 'Personal health dashboard documenting your drug allergies and medication history to prevent adverse drug events.'}
+          {syncing && (
+            <span style={{ marginInlineStart: '8px', fontSize: '0.85em' }}>
+              ({lang === 'ar' ? 'جارٍ مزامنة بياناتك السحابية...' : 'Syncing cloud data...'})
+            </span>
+          )}
         </p>
       </header>
 
@@ -342,7 +351,7 @@ export default function HealthProfile() {
           📥 {lang === 'ar' ? 'تصدير وحفظ الملف (JSON)' : 'Export Profile (JSON)'}
         </button>
         <button type="button" className="btn-secondary danger" onClick={clearAllData}>
-          🗑️ {lang === 'ar' ? 'مسح بيانات الملف من هذا الجهاز' : 'Reset Local Profile'}
+          🗑️ {lang === 'ar' ? 'مسح بيانات الملف' : 'Reset Profile'}
         </button>
       </div>
 
