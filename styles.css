@@ -3640,3 +3640,90 @@ label,
     padding: 4px 7px !important;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UPDATE 55 — HEADER OUTER CONTROLS POSITIONING (RTL & LTR)
+   - Arabic (RTL): Hamburger menu ☰ at absolute far RIGHT, Logout 🚪 at absolute far LEFT
+   - English (LTR): Logout 🚪 at absolute far LEFT, Hamburger menu ☰ at absolute far RIGHT
+   - Inner controls (Account Name/Login, Light/Dark Mode, Language) stay in exact relative order between them
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Arabic (RTL): Flex flows Right -> Left (order 1 = far RIGHT, order 5 = far LEFT) */
+:root[dir="rtl"] .header-actions > .hamburger-btn,
+[dir="rtl"] .header-actions > .hamburger-btn {
+  order: 1;
+}
+
+:root[dir="rtl"] .header-actions > .header-auth-group,
+[dir="rtl"] .header-actions > .header-auth-group {
+  order: 2;
+}
+
+:root[dir="rtl"] .header-actions > .dark-toggle,
+[dir="rtl"] .header-actions > .dark-toggle {
+  order: 3;
+}
+
+:root[dir="rtl"] .header-actions > .lang,
+[dir="rtl"] .header-actions > .lang {
+  order: 4;
+}
+
+:root[dir="rtl"] .header-actions > .header-logout-btn,
+[dir="rtl"] .header-actions > .header-logout-btn {
+  order: 5;
+}
+
+/* English (LTR): Flex flows Left -> Right (order 1 = far LEFT, order 5 = far RIGHT) */
+:root[dir="ltr"] .header-actions > .header-logout-btn,
+[dir="ltr"] .header-actions > .header-logout-btn {
+  order: 1;
+}
+
+:root[dir="ltr"] .header-actions > .header-auth-group,
+[dir="ltr"] .header-actions > .header-auth-group {
+  order: 2;
+}
+
+:root[dir="ltr"] .header-actions > .dark-toggle,
+[dir="ltr"] .header-actions > .dark-toggle {
+  order: 3;
+}
+
+:root[dir="ltr"] .header-actions > .lang,
+[dir="ltr"] .header-actions > .lang {
+  order: 4;
+}
+
+:root[dir="ltr"] .header-actions > .hamburger-btn,
+[dir="ltr"] .header-actions > .hamburger-btn {
+  order: 5;
+}
+
+/* Mobile & Wrapped Header Row: Pin the two outer controls to opposite physical edges */
+@media (max-width: 680px) {
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  :root[dir="rtl"] .header-actions > .hamburger-btn,
+  [dir="rtl"] .header-actions > .hamburger-btn {
+    margin-inline-end: auto;
+  }
+
+  :root[dir="rtl"] .header-actions > .header-logout-btn,
+  [dir="rtl"] .header-actions > .header-logout-btn {
+    margin-inline-start: auto;
+  }
+
+  :root[dir="ltr"] .header-actions > .header-logout-btn,
+  [dir="ltr"] .header-actions > .header-logout-btn {
+    margin-inline-end: auto;
+  }
+
+  :root[dir="ltr"] .header-actions > .hamburger-btn,
+  [dir="ltr"] .header-actions > .hamburger-btn {
+    margin-inline-start: auto;
+  }
+}

@@ -241,17 +241,20 @@ export default function Layout({ children }: { children: ReactNode }) {
                   <span aria-hidden="true">👤</span>
                   <span className="header-username">{user.displayName || user.email?.split('@')[0]}</span>
                 </Link>
-                <button
-                  type="button"
-                  className="btn small ghost header-logout-btn"
-                  onClick={() => setShowLogoutModal(true)}
-                  title={isAr ? 'تسجيل الخروج' : 'Log out'}
-                  aria-label={isAr ? 'تسجيل الخروج' : 'Log out'}
-                >
-                  <span aria-hidden="true">🚪</span>
-                  <span className="header-logout-text">{isAr ? 'خروج' : 'Logout'}</span>
-                </button>
               </div>
+            )}
+
+            {user && (
+              <button
+                type="button"
+                className="btn small ghost header-logout-btn"
+                onClick={() => setShowLogoutModal(true)}
+                title={isAr ? 'تسجيل الخروج' : 'Log out'}
+                aria-label={isAr ? 'تسجيل الخروج' : 'Log out'}
+              >
+                <span aria-hidden="true">🚪</span>
+                <span className="header-logout-text">{isAr ? 'خروج' : 'Logout'}</span>
+              </button>
             )}
 
             {/* Dark mode toggle */}
