@@ -122,6 +122,21 @@
   border-bottom: 2px solid rgba(56, 189, 248, 0.3);
 }
 
+.gc-card-visual.lab3d {
+  background: radial-gradient(circle at 50% 35%, #1e295b 0%, #091326 100%);
+  border-bottom: 2px solid rgba(96, 165, 250, 0.35);
+}
+
+.gc-card-visual.er3d {
+  background: radial-gradient(circle at 50% 35%, #4c111b 0%, #19070c 100%);
+  border-bottom: 2px solid rgba(248, 113, 113, 0.35);
+}
+
+.gc-card-visual.escape3d {
+  background: radial-gradient(circle at 50% 35%, #0d3b38 0%, #05191a 100%);
+  border-bottom: 2px solid rgba(52, 211, 153, 0.35);
+}
+
 .gc-card-visual.arcade2d {
   background: radial-gradient(circle at 50% 35%, #0f392b 0%, #061814 100%);
   border-bottom: 2px solid rgba(16, 185, 129, 0.3);
@@ -146,6 +161,13 @@
   border-radius: 999px;
 }
 
+.gc-card-visual.er3d .gc-badge-pill {
+  background: rgba(239, 68, 68, 0.24);
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #fecaca;
+}
+
+.gc-card-visual.escape3d .gc-badge-pill,
 .gc-card-visual.arcade2d .gc-badge-pill {
   background: rgba(16, 185, 129, 0.22);
   border-color: rgba(52, 211, 153, 0.55);

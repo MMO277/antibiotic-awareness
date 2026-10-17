@@ -25,7 +25,7 @@ export interface GameRegistryItem {
   ctaEn: string;
   accentColor: string;
   secondaryColor: string;
-  visualType: 'simulator3d' | 'arcade2d';
+  visualType: 'simulator3d' | 'lab3d' | 'er3d' | 'escape3d' | 'arcade2d';
   category: 'all' | '3d-simulation' | '2d-arcade';
 }
 
@@ -44,18 +44,18 @@ export const GAME_CENTER_REGISTRY: GameRegistryItem[] = [
     descriptionAr:
       'عالم ثلاثي الأبعاد بالكامل (WebGL 3D) بأسلوب كرتوني منخفض المضلعات. تحكّم بشخصيتك في منظور الشخص الثالث، افحص منصات الأدلة والألغاز ثلاثية الأبعاد، وتفاعل مع الممرضة والطبيب والمريض والصيدلي عبر 10 مستويات متدرجة (تُفتح تباعاً) بالإضافة إلى الـ 5 سيناريوهات الأساسية.',
     descriptionEn:
-      'A genuine 3D cartoon medical world built with WebGL perspective rendering. Control your third-person avatar, inspect 3D clue/puzzle stations, interact with 4 NPCs, and progress through 10 unlockable campaign levels (ER, Allergy Clue, Pharmacy, Home Mystery, Nursing Checklist, Lab, Ward Round, IPC Escape, AMR Microscopic Arena, and Final Mission) plus the 5 core scenarios.',
+      'A genuine 3D cartoon medical world built with WebGL perspective rendering. Control your third-person avatar, inspect 3D clue/puzzle stations, interact with 4 NPCs, and progress through 10 unlockable campaign levels plus the 5 core scenarios.',
     featuresAr: [
       '10 مستويات حملة متدرجة القفل (Progressive Unlocking) + 5 سيناريوهات سريرية مفتوحة دائماً',
       'ألغاز وأدلة ثلاثية الأبعاد تفاعلية: شاشة الطوارئ، سجل الحساسية، خزانة المنزل، المختبر، والبيئة المجهرية',
       'تحكم كامل للهاتف (عصا تحكم افتراضية + زر فحص/تفاعل + تدوير الكاميرا باللمس) وللكمبيوتر (WASD + E)',
-      'حفظ تلقائي لتقدم المستويات والأوسمة محلياً على جهازك دون جمع أي بيانات صحية أو المساس بـ Firebase',
+      'حفظ سحابي آمن لتقدم المستويات عبر أجهزتك عند تسجيل الدخول (أو محلياً في وضع الزائر)',
     ],
     featuresEn: [
       '10 progressive campaign levels with automatic unlock persistence + 5 permanently unlocked core scenarios',
       'Interactive 3D clue & workflow puzzles: ER vitals monitor, allergy chart, home cabinet, lab matching, IPC, & 3D microbe scanner',
       'Mobile-first virtual joystick, touch camera orbit, & desktop WASD + E controls with Low Graphics mode',
-      'Safe local progress saving with zero personal health data collection and zero Firebase changes',
+      'Cloud progress sync across devices when signed in (with safe local guest fallback)',
     ],
     controlsAr: 'الموبايل: عصا التحكم الافتراضية + زر التفاعل/الفحص | الكمبيوتر: WASD أو الأسهم + مفتاح E',
     controlsEn: 'Mobile: Virtual Joystick + Interact/Inspect Button | Desktop: WASD / Arrows + E Key',
@@ -64,6 +64,114 @@ export const GAME_CENTER_REGISTRY: GameRegistryItem[] = [
     accentColor: '#0e9aa7',
     secondaryColor: '#0284c7',
     visualType: 'simulator3d',
+    category: '3d-simulation',
+  },
+  {
+    id: 'bacteria-lab',
+    route: '/bacteria-lab',
+    badgeAr: 'جديد • 4 مهام تحقيق معملي 3D + مجهر تفاعلي',
+    badgeEn: 'NEW • 4 Lab Missions 3D + Microscope & AST',
+    modeAr: 'تحقيق ميكروبيولوجي ثلاثي الأبعاد (WebGL 3D)',
+    modeEn: '3D Microbiology Lab Investigation',
+    titleAr: 'مختبر البكتيريا 3D (Bacteria Lab)',
+    titleEn: 'Bacteria Lab 3D',
+    subtitleAr: 'استكشف محطات المختبر 3D، اضبط عدسة المجهر الضوئي، واقرأ تقارير المزرعة والحساسية الدوائية (S / I / R)',
+    subtitleEn: 'Explore 3D lab benches, focus the optical microscope mini-game, and solve fictional AST (S / I / R) reports',
+    descriptionAr:
+      'تجربة استكشاف حر ثلاثية الأبعاد داخل مختبر ميكروبيولوجيا كرتوني تفاعلي. اجمع قرائن العينات الخيالية، افحص شرائح صبغة جرام بالمجهر التفاعلي (مع ضبط التكبير 10x/40x/100x والبؤرة)، وحلل جداول الحساسية الدوائية (AST) وتصنيف WHO AWaRe بالتعاون مع أخصائيي المختبر.',
+    descriptionEn:
+      'Free-roam 3D cartoon microbiology laboratory investigation. Collect sample clues, operate an interactive microscope mini-game (with lens magnification & fine focus controls), interpret fictional culture & susceptibility (AST) reports, and learn why antibiotic selection requires clinical assessment plus valid lab evidence.',
+    featuresAr: [
+      '4 مهام متدرجة القفل: مسحة البلعوم الفيروسية، تضييق الطيف (AST S/I/R)، كشف تلوث العينة، والبكتيريا المقاومة (ESBL)',
+      'لعبة مجهر ضوئي تفاعلية داخل الشاشة مع تبديل العدسات (10x / 40x / 100x) وضبط شريط البؤرة (Focus)',
+      'جداول مزرعة وحساسية خيالية (S / I / R) مربوطة بتصنيف منظمة الصحة العالمية (Access / Watch / Reserve)',
+      'حفظ سحابي مستقل لتقدم المهام والأوسمة عبر حسابك على جميع الأجهزة',
+    ],
+    featuresEn: [
+      '4 progressive missions: Viral vs. Bacterial Swab, AST S/I/R De-escalation, Sample Contamination, and ESBL Stewardship',
+      'Built-in interactive optical microscope mini-game with 10x/40x/100x lenses and live focus slider',
+      'Fictional educational culture & susceptibility (AST) tables with WHO AWaRe classification badges',
+      'Independent cloud progress synchronization across devices under your account',
+    ],
+    controlsAr: 'الموبايل: عصا التحكم 3D + زر الفحص/التفاعل | الكمبيوتر: WASD أو الأسهم + مفتاح E',
+    controlsEn: 'Mobile: 3D Touch Joystick + Inspect/Interact Button | Desktop: WASD / Arrows + E Key',
+    ctaAr: 'ادخل مختبر البكتيريا 3D 🔬',
+    ctaEn: 'Launch Bacteria Lab 3D 🔬',
+    accentColor: '#0284c7',
+    secondaryColor: '#4f46e5',
+    visualType: 'lab3d',
+    category: '3d-simulation',
+  },
+  {
+    id: 'emergency-shift',
+    route: '/emergency-shift',
+    badgeAr: 'جديد • 4 سيناريوهات طوارئ وفرز 3D',
+    badgeEn: 'NEW • 4 ED Triage & Safety Scenarios 3D',
+    modeAr: 'محاكاة قسم الطوارئ ثلاثية الأبعاد (WebGL 3D)',
+    modeEn: '3D Emergency Department Roleplay',
+    titleAr: 'مناوبة الطوارئ 3D (Emergency Shift)',
+    titleEn: 'Emergency Shift 3D',
+    subtitleAr: 'تحرك داخل قسم الطوارئ 3D، حدد أولويات الفرز وعلامات الإنذار (Red Flags)، وتحقق من الحساسية الدوائية',
+    subtitleEn: 'Roam the 3D Emergency Department, prioritize red-flag triage, verify drug allergies, and escalate safely',
+    descriptionAr:
+      'محاكاة كرتونية ثلاثية الأبعاد لقسم الطوارئ الطبية. تحدث مع المرضى والمرافقين وطاقم التمريض والأطباء والصيادلة، افحص شاشات العلامات الحيوية ولوحة الفرز، رصد علامات الإنذار الحرجة (نقص الأكسجين، هبوط الضغط، صرير الأطفال)، وامنع حوادث حساسية البنسلين والعدوى المكتسبة.',
+    descriptionEn:
+      'Free-roam 3D cartoon emergency department scenario. Interview fictional patients and staff, inspect bedside vitals and triage boards, recognize critical red flags, enforce allergy-check and hand-hygiene workflows, and escalate appropriately to qualified clinicians.',
+    featuresAr: [
+      '4 سيناريوهات طوارئ متدرجة: فرز علامات الإنتان، منع صدمة حساسية البنسلين، طوارئ تنفس الأطفال، ومكافحة العدوى',
+      'شاشات فرز وعلامات حيوية تفاعلية تعرض النبض، الأكسجين (SpO2)، الضغط، التنفس، وتنبيهات السوار الأحمر',
+      'حوارات متفرعة القرارات تؤثر في مسار السيناريو مع ملخص علمي مفصل (Debrief) بعد كل حالة',
+      'حفظ سحابي مستقل لتقدم المهام والأوسمة عبر حسابك على جميع الأجهزة',
+    ],
+    featuresEn: [
+      '4 progressive ED scenarios: Sepsis Red-Flag Triage, Penicillin Anaphylaxis Prevention, Pediatric Airway Red Flags, & IPC Handoff',
+      'Interactive ED Triage & Vitals cards displaying SpO2, BP, RR, HR, and red allergy wristband alerts',
+      'Branching dialogue choices with immediate clinical rationale and end-of-shift educational debriefs',
+      'Independent cloud progress synchronization across devices under your account',
+    ],
+    controlsAr: 'الموبايل: عصا التحكم 3D + زر التفاعل | الكمبيوتر: WASD أو الأسهم + مفتاح E',
+    controlsEn: 'Mobile: 3D Touch Joystick + Interact Button | Desktop: WASD / Arrows + E Key',
+    ctaAr: 'ابدأ مناوبة الطوارئ 3D 🚑',
+    ctaEn: 'Start Emergency Shift 3D 🚑',
+    accentColor: '#dc2626',
+    secondaryColor: '#d97706',
+    visualType: 'er3d',
+    category: '3d-simulation',
+  },
+  {
+    id: 'escape-the-lab',
+    route: '/escape-the-lab',
+    badgeAr: 'جديد • 3 غرف هروب متصلة + بوابة الخروج 3D',
+    badgeEn: 'NEW • 3 Connected Escape Rooms + Master Vault 3D',
+    modeAr: 'غرفة هروب وألغاز سلامة ثلاثية الأبعاد (WebGL 3D)',
+    modeEn: '3D Safety & IPC Escape Room Adventure',
+    titleAr: 'الهروب من المختبر 3D (Escape the Lab)',
+    titleEn: 'Escape the Lab 3D',
+    subtitleAr: 'حل ألغاز نظافة اليدين، معدات الوقاية (PPE)، سلامة العينات، وفرز النفايات لجمع بطاقات المرور وفتح الحواجز الليزرية',
+    subtitleEn: 'Solve hand hygiene, PPE, specimen integrity, and waste segregation puzzles to unlock laser gates and escape',
+    descriptionAr:
+      'مغامرة غرفة هروب (Escape Room) كرتونية ثلاثية الأبعاد مكونة من ٣ غرف متصلة تفصل بينها حواجز ليزرية ذكية وبوابة خروج كبرى. افحص ماسح الأشعة فوق البنفسجية لليدين، خزانة الوقاية، كبسولات العينات، وحاويات فرز النفايات الملونة لجمع بطاقات الأمان (Keycards) والهروب بنجاح.',
+    descriptionEn:
+      'Free-roam 3D cartoon escape-room adventure spanning 3 connected laboratory chambers separated by animated security laser gates. Collect security keycards by solving educational puzzles on hand hygiene, PPE donning/doffing, specimen labeling, and One Health waste segregation.',
+    featuresAr: [
+      '4 مراحل متدرجة عبر 3 غرف ثلاثية الأبعاد بحواجز ليزرية تفتح تدريجياً عند حل الألغاز',
+      'شريط مقتنيات (Inventory Bar) يعرض بطاقات الأمان والمفاتيح المفتوحة + زر «💡 طلب تلميح» في كل لغز',
+      'محتوى تعليمي آمن 100% يركز على نظافة اليدين، الوقاية القياسية، التخلص الآمن من الأدوية، ومفهوم الصحة الواحدة',
+      'حفظ سحابي مستقل لتقدم الغرف والأوسمة عبر حسابك على جميع الأجهزة',
+    ],
+    featuresEn: [
+      '4 progressive stages across 3 connected 3D rooms with animated laser security barriers',
+      'Built-in Keycard & Safety Seal inventory bar + on-demand "💡 Need a Hint?" system on puzzle steps',
+      '100% safe high-level IPC & One Health education (hand hygiene, PPE order, waste sorting, eco-disposal)',
+      'Independent cloud progress synchronization across devices under your account',
+    ],
+    controlsAr: 'الموبايل: عصا التحكم 3D + زر فحص القفل | الكمبيوتر: WASD أو الأسهم + مفتاح E',
+    controlsEn: 'Mobile: 3D Touch Joystick + Inspect Lock Button | Desktop: WASD / Arrows + E Key',
+    ctaAr: 'ابدأ تحدي الهروب من المختبر 3D 🔐',
+    ctaEn: 'Play Escape the Lab 3D 🔐',
+    accentColor: '#059669',
+    secondaryColor: '#0d9488',
+    visualType: 'escape3d',
     category: '3d-simulation',
   },
   {
@@ -114,6 +222,11 @@ export default function GameCenter() {
     return GAME_CENTER_REGISTRY.filter((g) => g.category === filter);
   }, [filter]);
 
+  const count3D = useMemo(
+    () => GAME_CENTER_REGISTRY.filter((g) => g.category === '3d-simulation').length,
+    []
+  );
+
   return (
     <main className="wrap gc-page" dir={isAr ? 'rtl' : 'ltr'}>
       {/* Hero Banner */}
@@ -122,21 +235,21 @@ export default function GameCenter() {
           <span aria-hidden="true">🎮</span>
           <span>
             {isAr
-              ? 'مركز الألعاب والمحاكاة السريرية التفاعلية'
-              : 'Interactive Clinical Games & Simulation Hub'}
+              ? 'مركز الألعاب والمحاكاة السريرية التفاعلية (5 تجارب تعليمية)'
+              : 'Interactive Clinical Games & 3D Simulation Hub (5 Educational Games)'}
           </span>
         </div>
 
         <h1 className="gc-hero-title">
           {isAr
-            ? 'تعلّم الاستخدام الآمن للمضادات الحيوية باللعب والمحاكاة'
-            : 'Master Antibiotic Stewardship Through Play & 3D Simulation'}
+            ? 'تعلّم الاستخدام الآمن للمضادات الحيوية باللعب والمحاكاة ثلاثية الأبعاد'
+            : 'Master Antibiotic Stewardship Through Play & 3D Cartoon Simulation'}
         </h1>
 
         <p className="gc-hero-sub">
           {isAr
-            ? 'اختر بين محاكي المستشفى الكرتوني ثلاثي الأبعاد (3D WebGL) المزود بـ 10 مستويات متدرجة القفل و5 سيناريوهات سريرية، أو لعبة الأركيد السريعة «صائد البكتيريا».'
-            : 'Choose between our genuine 3D WebGL cartoon hospital simulator featuring 10 progressive campaign levels & 5 clinical scenarios, or the fast-paced 2D Bacteria Hunter arcade game.'}
+            ? 'استكشف 4 عوالم كرتونية ثلاثية الأبعاد (WebGL 3D) مستقلة — محاكي الحياة الطبية، مختبر البكتيريا، مناوبة الطوارئ، والهروب من المختبر — بالإضافة إلى لعبة الأركيد الكلاسيكية «صائد البكتيريا».'
+            : 'Explore 4 independent 3D WebGL cartoon worlds — Medical Life Simulator, Bacteria Lab, Emergency Shift, and Escape the Lab — alongside our classic 2D Bacteria Hunter arcade game.'}
         </p>
 
         {/* Filter Pills */}
@@ -157,7 +270,7 @@ export default function GameCenter() {
             className={`gc-filter-btn ${filter === '3d-simulation' ? 'active' : ''}`}
             onClick={() => setFilter('3d-simulation')}
           >
-            🏥 {isAr ? 'محاكاة 3D سريرية (10 مستويات)' : '3D Clinical Simulation (10 Levels)'}
+            🏥 {isAr ? `ألعاب المحاكاة ثلاثية الأبعاد 3D (${count3D})` : `3D Cartoon Simulations (${count3D})`}
           </button>
           <button
             type="button"
@@ -166,7 +279,7 @@ export default function GameCenter() {
             className={`gc-filter-btn ${filter === '2d-arcade' ? 'active' : ''}`}
             onClick={() => setFilter('2d-arcade')}
           >
-            🦠 {isAr ? 'أركيد 2D تفاعلي' : '2D Action Arcade'}
+            🦠 {isAr ? 'أركيد 2D تفاعلي (1)' : '2D Action Arcade (1)'}
           </button>
         </div>
       </section>
@@ -191,7 +304,7 @@ export default function GameCenter() {
                 <span className="gc-mode-tag">{isAr ? game.modeAr : game.modeEn}</span>
               </div>
 
-              {game.visualType === 'simulator3d' ? (
+              {game.visualType === 'simulator3d' && (
                 <div className="gc-art-3d" aria-hidden="true">
                   <svg viewBox="0 0 360 150" className="gc-svg-illustration">
                     <defs>
@@ -236,7 +349,97 @@ export default function GameCenter() {
                     <span>🏆 {isAr ? '10 مستويات' : '10 Levels'}</span>
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {game.visualType === 'lab3d' && (
+                <div className="gc-art-3d" aria-hidden="true">
+                  <svg viewBox="0 0 360 150" className="gc-svg-illustration">
+                    <polygon points="180,15 330,75 180,138 30,75" fill="#0b1f38" stroke="#60a5fa" strokeWidth="1.5" strokeOpacity="0.5" />
+                    {/* 3D Microscope & Petri Dish */}
+                    <g transform="translate(96, 44)">
+                      <ellipse cx="26" cy="52" rx="24" ry="10" fill="#1e3a8a" stroke="#38bdf8" strokeWidth="1.5" />
+                      <circle cx="18" cy="50" r="4" fill="#f43f5e" />
+                      <circle cx="32" cy="53" r="4" fill="#22c55e" />
+                      <circle cx="26" cy="46" r="4" fill="#facc15" />
+                    </g>
+                    <g transform="translate(162, 30)">
+                      <rect x="4" y="54" width="28" height="8" rx="3" fill="#e0f2fe" />
+                      <path d="M 24 54 L 24 24 L 12 24" stroke="#38bdf8" strokeWidth="5" fill="none" strokeLinecap="round" />
+                      <rect x="6" y="14" width="10" height="18" rx="3" fill="#818cf8" transform="rotate(-20 11 23)" />
+                      <rect x="6" y="38" width="18" height="4" rx="2" fill="#facc15" />
+                    </g>
+                    <g transform="translate(226, 46)">
+                      <rect x="0" y="6" width="48" height="34" rx="6" fill="#0f172a" stroke="#34d399" strokeWidth="1.5" />
+                      <text x="24" y="27" textAnchor="middle" fill="#34d399" fontSize="12" fontWeight="bold">S / I / R</text>
+                    </g>
+                  </svg>
+                  <div className="gc-visual-floating-chips">
+                    <span>🔬 {isAr ? 'مجهر تفاعلي' : 'Interactive Microscope'}</span>
+                    <span>🧫 {isAr ? 'مزارع بكتيرية' : 'Agar Cultures'}</span>
+                    <span>📊 {isAr ? 'تقرير حساسية AST' : 'AST Reports'}</span>
+                  </div>
+                </div>
+              )}
+
+              {game.visualType === 'er3d' && (
+                <div className="gc-art-3d" aria-hidden="true">
+                  <svg viewBox="0 0 360 150" className="gc-svg-illustration">
+                    <polygon points="180,15 330,75 180,138 30,75" fill="#280d15" stroke="#f87171" strokeWidth="1.5" strokeOpacity="0.5" />
+                    {/* 3D ER Stretcher, Vitals Monitor & Red Flag */}
+                    <g transform="translate(82, 48)">
+                      <polygon points="0,24 42,8 68,18 26,34" fill="#fed7aa" stroke="#ea580c" strokeWidth="1.3" />
+                      <polygon points="0,24 26,34 26,46 0,36" fill="#9a3412" />
+                      <polygon points="26,34 68,18 68,30 26,46" fill="#c2410c" />
+                    </g>
+                    <g transform="translate(162, 34)">
+                      <rect x="0" y="10" width="44" height="32" rx="6" fill="#0f172a" stroke="#f87171" strokeWidth="1.8" />
+                      <polyline points="6,28 14,28 18,18 23,35 28,24 38,24" fill="none" stroke="#4ade80" strokeWidth="2.2" />
+                    </g>
+                    <g transform="translate(228, 44)">
+                      <circle cx="20" cy="24" r="16" fill="rgba(239,68,68,0.28)" stroke="#ef4444" strokeWidth="1.8" />
+                      <rect x="17" y="13" width="6" height="14" rx="2" fill="#fca5a5" />
+                      <circle cx="20" cy="32" r="3" fill="#fca5a5" />
+                    </g>
+                  </svg>
+                  <div className="gc-visual-floating-chips">
+                    <span>🚨 {isAr ? 'فرز الطوارئ' : 'ED Triage'}</span>
+                    <span>🛑 {isAr ? 'فحص الحساسية' : 'Allergy Safety'}</span>
+                    <span>👩‍⚕️ {isAr ? 'قرارات متفرعة' : 'Branching ER'}</span>
+                  </div>
+                </div>
+              )}
+
+              {game.visualType === 'escape3d' && (
+                <div className="gc-art-3d" aria-hidden="true">
+                  <svg viewBox="0 0 360 150" className="gc-svg-illustration">
+                    <polygon points="180,15 330,75 180,138 30,75" fill="#082220" stroke="#34d399" strokeWidth="1.5" strokeOpacity="0.5" />
+                    {/* Laser Gate, Keycard & Exit Vault */}
+                    <line x1="115" y1="35" x2="245" y2="95" stroke="#22c55e" strokeWidth="2.5" strokeDasharray="6 4" />
+                    <g transform="translate(88, 46)">
+                      <rect x="0" y="8" width="42" height="28" rx="5" fill="#065f46" stroke="#34d399" strokeWidth="1.6" />
+                      <circle cx="14" cy="22" r="5" fill="#facc15" />
+                      <rect x="23" y="19" width="12" height="6" rx="2" fill="#a7f3d0" />
+                    </g>
+                    <g transform="translate(164, 34)">
+                      <rect x="2" y="6" width="34" height="44" rx="6" fill="#0f172a" stroke="#facc15" strokeWidth="1.8" />
+                      <circle cx="19" cy="26" r="9" fill="none" stroke="#34d399" strokeWidth="2.2" />
+                      <circle cx="19" cy="26" r="3" fill="#facc15" />
+                    </g>
+                    <g transform="translate(228, 48)">
+                      <rect x="0" y="6" width="16" height="28" rx="3" fill="#eab308" />
+                      <rect x="20" y="6" width="16" height="28" rx="3" fill="#ef4444" />
+                      <rect x="40" y="6" width="16" height="28" rx="3" fill="#38bdf8" />
+                    </g>
+                  </svg>
+                  <div className="gc-visual-floating-chips">
+                    <span>🔐 {isAr ? '3 غرف متصلة' : '3 Escape Rooms'}</span>
+                    <span>🪪 {isAr ? 'بطاقات مرور' : 'Keycards'}</span>
+                    <span>🧤 {isAr ? 'وقاية ونفايات' : 'PPE & Waste'}</span>
+                  </div>
+                </div>
+              )}
+
+              {game.visualType === 'arcade2d' && (
                 <div className="gc-art-2d" aria-hidden="true">
                   <svg viewBox="0 0 360 150" className="gc-svg-illustration">
                     <circle cx="90" cy="68" r="24" fill="rgba(239,68,68,0.22)" stroke="#ef4444" strokeWidth="2" />
@@ -312,7 +515,7 @@ export default function GameCenter() {
                 {isAr ? '✓ حالات تعليمية خيالية آمنة' : '✓ Safe Fictional Educational Cases'}
               </span>
               <span className="badge approved">
-                {isAr ? '✓ لا يتم جمع أي بيانات صحية أو شخصية' : '✓ Zero Personal or Health Data Collected'}
+                {isAr ? '✓ حفظ سحابي لتقدم كل لعبة عبر أجهزتك' : '✓ Cloud Progress Sync Across Devices'}
               </span>
               <span className="badge approved">
                 {isAr ? '✓ متوافق مع الهواتف والكمبيوتر' : '✓ Mobile & Desktop Ready'}

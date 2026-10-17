@@ -1,0 +1,345 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   SHARED 3D CARTOON GAME SHELL EXTENSIONS (Bacteria Lab, Emergency Shift, Escape the Lab)
+   Builds on top of MedicalSimulator.css
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.c3d-fictional-ribbon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid rgba(251, 191, 36, 0.55);
+  color: #fde68a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+/* Inventory / Keycard Bar (Escape the Lab & Clues) */
+.c3d-inventory-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  padding: 6px 12px;
+  border-radius: 11px;
+  font-size: 0.8rem;
+}
+
+.c3d-inv-label {
+  font-weight: 700;
+  color: #5eead4;
+}
+
+.c3d-inv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  color: #94a3b8;
+}
+
+.c3d-inv-chip.collected {
+  background: rgba(16, 185, 129, 0.24);
+  border: 1px solid #34d399;
+  color: #d1fae5;
+}
+
+/* Interactive Microscope Mini-Game Widget */
+.c3d-microscope-box {
+  background: #071320;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.c3d-micro-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.c3d-micro-viewport-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.c3d-micro-lens {
+  width: 176px;
+  height: 176px;
+  border-radius: 50%;
+  border: 4px solid #38bdf8;
+  box-shadow: 0 0 24px rgba(56, 189, 248, 0.35), inset 0 0 18px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+  background: radial-gradient(circle, #fdf2f8 0%, #f3e8ff 72%, #1e1b4b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.c3d-micro-svg {
+  width: 100%;
+  height: 100%;
+  transition: filter 0.15s ease, transform 0.2s ease;
+}
+
+.c3d-micro-controls {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+
+.c3d-mag-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.c3d-mag-btn {
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #cbd5e1;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.c3d-mag-btn.active {
+  background: #0284c7;
+  border-color: #38bdf8;
+  color: #ffffff;
+}
+
+.c3d-focus-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: #bae6fd;
+}
+
+.c3d-focus-row input[type='range'] {
+  flex: 1;
+  accent-color: #38bdf8;
+}
+
+.c3d-focus-status {
+  text-align: center;
+  font-size: 0.8rem;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.c3d-focus-status.sharp {
+  background: rgba(22, 163, 74, 0.25);
+  border: 1px solid #4ade80;
+  color: #bbf7d0;
+}
+
+.c3d-focus-status.blurry {
+  background: rgba(234, 179, 8, 0.2);
+  border: 1px solid #facc15;
+  color: #fef08a;
+}
+
+/* Fictional Culture & AST Susceptibility Report Table */
+.c3d-ast-card {
+  background: #071524;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.c3d-ast-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+}
+
+.c3d-ast-table-wrap {
+  overflow-x: auto;
+}
+
+.c3d-ast-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.c3d-ast-table th,
+.c3d-ast-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  text-align: start;
+}
+
+.c3d-ast-table th {
+  color: #7dd3fc;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.7);
+}
+
+.c3d-sir-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.76rem;
+}
+
+.c3d-sir-pill.S {
+  background: rgba(22, 163, 74, 0.28);
+  border: 1px solid #4ade80;
+  color: #bbf7d0;
+}
+
+.c3d-sir-pill.I {
+  background: rgba(234, 179, 8, 0.28);
+  border: 1px solid #facc15;
+  color: #fef08a;
+}
+
+.c3d-sir-pill.R {
+  background: rgba(220, 38, 38, 0.3);
+  border: 1px solid #f87171;
+  color: #fecaca;
+}
+
+.c3d-aware-pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.c3d-aware-pill.Access {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+}
+
+.c3d-aware-pill.Watch {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fcd34d;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+}
+
+.c3d-aware-pill.Reserve {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+}
+
+/* ER Triage & Vitals Card */
+.c3d-triage-card {
+  background: #160b14;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.c3d-vitals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 6px;
+}
+
+.c3d-vital-cell {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  padding: 5px 8px;
+  text-align: center;
+}
+
+.c3d-vital-cell small {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
+.c3d-vital-cell strong {
+  color: #38bdf8;
+  font-size: 0.88rem;
+}
+
+.c3d-redflag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.c3d-redflag-chip {
+  background: rgba(220, 38, 38, 0.25);
+  border: 1px solid #f87171;
+  color: #fecaca;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+/* Puzzle Hint Toggle */
+.c3d-hint-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.c3d-hint-btn {
+  align-self: flex-start;
+  background: rgba(234, 179, 8, 0.18);
+  border: 1px solid rgba(250, 204, 21, 0.5);
+  color: #fef08a;
+  padding: 4px 11px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.c3d-hint-box {
+  background: rgba(234, 179, 8, 0.14);
+  border-inline-start: 3px solid #facc15;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #fef9c3;
+}

@@ -7,11 +7,18 @@ import {
   sameSets,
   SimulatorProgress,
 } from './simulatorProgressModel';
-import { writeCloudProgress, writeUidCache } from './simulatorProgressCloud';
+import {
+  CLOUD_PROGRESS_DOC_ID,
+  writeCloudProgress,
+  writeGuestProgress,
+  writeUidCache,
+} from './simulatorProgressCloud';
 
 export type ProgressSyncState = 'local' | 'saved' | 'saving' | 'error';
 
 interface Options {
+  /** Stable game identifier (defaults to 'medicalSimulator' for backward compatibility). */
+  gameId?: string;
   /** Firebase UID of the signed-in user, or null for guest / unconfigured Firebase (local only). */
   uid: string | null;
   /** Last progress known to be in the cloud (null = no document yet / guest). */
@@ -23,13 +30,18 @@ interface Options {
 const DEBOUNCE_MS = 1500;
 
 /**
- * Saves simulator progress.
- *  - Guest: legacy local key only (unchanged behaviour).
+ * Saves simulator / 3D game progress.
+ *  - Guest: game-specific local key only (unchanged legacy key for medicalSimulator).
  *  - Signed in: per-account local cache immediately + debounced, transaction-based Firestore write.
  *    Changes to completed/badge sets are written right away; `lastPlayedId`-only changes are debounced
  *    to avoid excessive writes. Failed writes keep progress cached and are retried on reconnect / next change.
  */
-export function useSimulatorProgressSync({ uid, remote, onMerged }: Options) {
+export function useSimulatorProgressSync({
+  gameId = CLOUD_PROGRESS_DOC_ID,
+  uid,
+  remote,
+  onMerged,
+}: Options) {
   const [state, setState] = useState<ProgressSyncState>(uid ? 'saved' : 'local');
   const lastSynced = useRef<SimulatorProgress | null>(remote);
   const latest = useRef<SimulatorProgress | null>(null);
@@ -58,7 +70,7 @@ export function useSimulatorProgressSync({ uid, remote, onMerged }: Options) {
         const snapshot = latest.current;
         if (!snapshot || !needsWrite(snapshot)) break;
         setState('saving');
-        const merged = await writeCloudProgress(uid, snapshot);
+        const merged = await writeCloudProgress(uid, snapshot, gameId);
         lastSynced.current = merged;
         if (hasExtraIds(merged, snapshot)) onMergedRef.current(merged);
       } while (rerun.current);
@@ -69,7 +81,7 @@ export function useSimulatorProgressSync({ uid, remote, onMerged }: Options) {
       running.current = false;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uid]);
+  }, [uid, gameId]);
 
   const flushNow = useCallback(() => {
     window.clearTimeout(timer.current);
@@ -80,10 +92,14 @@ export function useSimulatorProgressSync({ uid, remote, onMerged }: Options) {
     (p: SimulatorProgress) => {
       latest.current = p;
       if (!uid) {
-        saveSimulatorProgress(p); // guest: existing local-only behaviour
+        if (gameId === CLOUD_PROGRESS_DOC_ID) {
+          saveSimulatorProgress(p); // guest: existing local-only behaviour
+        } else {
+          writeGuestProgress(p, gameId);
+        }
         return;
       }
-      writeUidCache(uid, p);
+      writeUidCache(uid, p, gameId);
       if (!needsWrite(p)) return;
       const prev = lastSynced.current;
       const setsChanged = !prev || !sameSets(prev, p);
@@ -91,7 +107,7 @@ export function useSimulatorProgressSync({ uid, remote, onMerged }: Options) {
       timer.current = window.setTimeout(() => void doFlush(), setsChanged ? 0 : DEBOUNCE_MS);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [uid, doFlush]
+    [uid, gameId, doFlush]
   );
 
   useEffect(() => {

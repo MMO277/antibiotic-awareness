@@ -34,8 +34,11 @@ import BacteriaHunter from './BacteriaHunter';
 import GameCenter from './GameCenter';
 import Editor from './Editor';
 
-// Lazy-load the 3D Medical Life Simulator so Three.js / WebGL code stays out of the initial application bundle
+// Lazy-load 3D WebGL games so Three.js / WebGL code stays out of the initial application bundle
 const MedicalSimulator = lazy(() => import('./MedicalSimulator'));
+const BacteriaLab = lazy(() => import('./BacteriaLab'));
+const EmergencyShift = lazy(() => import('./EmergencyShift'));
+const EscapeTheLab = lazy(() => import('./EscapeTheLab'));
 
 function ConfigMissing() {
   const { t } = useLang();
@@ -66,12 +69,12 @@ function SimulatorLoadingFallback() {
       <div className="card center" style={{ padding: '42px 20px' }}>
         <div style={{ fontSize: '2.4rem', marginBottom: '10px' }} aria-hidden="true">🏥</div>
         <h2 style={{ marginBottom: '6px' }}>
-          {isAr ? 'جارٍ تجهيز جناح المستشفى ثلاثي الأبعاد (3D)...' : 'Loading 3D Hospital Ward Simulator...'}
+          {isAr ? 'جارٍ تجهيز المشهد التفاعلي ثلاثي الأبعاد (3D)...' : 'Loading 3D Interactive Game Scene...'}
         </h2>
         <p className="small muted" style={{ margin: 0 }}>
           {isAr
-            ? 'يتم الآن تحميل المشهد ثلاثي الأبعاد والشخصيات والسيناريوهات السريرية.'
-            : 'Initializing WebGL 3D scene, cartoon avatars, and clinical dialogue scenarios.'}
+            ? 'يتم الآن تحميل المشهد ثلاثي الأبعاد والشخصيات والمحطات التفاعلية.'
+            : 'Initializing WebGL 3D scene, cartoon avatars, and interactive stations.'}
         </p>
       </div>
     </main>
@@ -123,6 +126,30 @@ export default function App() {
             element={
               <Suspense fallback={<SimulatorLoadingFallback />}>
                 <MedicalSimulator />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/bacteria-lab"
+            element={
+              <Suspense fallback={<SimulatorLoadingFallback />}>
+                <BacteriaLab />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/emergency-shift"
+            element={
+              <Suspense fallback={<SimulatorLoadingFallback />}>
+                <EmergencyShift />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/escape-the-lab"
+            element={
+              <Suspense fallback={<SimulatorLoadingFallback />}>
+                <EscapeTheLab />
               </Suspense>
             }
           />
