@@ -30,6 +30,7 @@ interface NavItem {
 export default function Layout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useLang();
   const isAr = lang === 'ar';
+  const pageDir: 'rtl' | 'ltr' = isAr ? 'rtl' : 'ltr';
   const { pathname } = useLocation();
   const { dark, toggle } = useDarkMode();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -190,7 +191,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   ];
 
   return (
-    <div className="app">
+    <div className="app" dir={pageDir}>
       <header className="top">
         <div className="wrap bar">
           <div className="brand-group">
@@ -203,83 +204,59 @@ export default function Layout({ children }: { children: ReactNode }) {
                   </g>
                 </svg>
               </div>
-              <span>
+              <span className="brand-title-wrap">
                 <b>{t('appName')}</b>
               </span>
             </Link>
           </div>
 
           <div className="header-actions">
-            {/* User Account / Auth button */}
+            {/* User Account / Auth controls */}
             {!user ? (
-              <div className="row" style={{ gap: '6px', alignItems: 'center' }}>
+              <div className="header-auth-group">
                 <span
                   className="chip guest-indicator"
-                  style={{
-                    background: 'rgba(255,255,255,0.12)',
-                    color: '#e2e8f0',
-                    borderColor: 'rgba(255,255,255,0.25)',
-                    fontSize: '0.78rem',
-                    padding: '3px 8px',
-                    fontWeight: 600,
-                  }}
                   title={isAr ? 'أنت تتصفح الموقع حالياً كزائر' : 'You are currently browsing as a guest'}
                 >
-                  👀 {isAr ? 'وضع الزائر' : 'Guest'}
+                  <span aria-hidden="true">👀</span>
+                  <span>{isAr ? 'وضع الزائر' : 'Guest'}</span>
                 </span>
                 <button
                   type="button"
-                  className="btn small ghost"
+                  className="btn small ghost header-signin-btn"
                   onClick={handleExitGuestMode}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '0.86rem',
-                    borderColor: 'rgba(255,255,255,0.4)',
-                    color: '#ffffff',
-                  }}
                   title={isAr ? 'الخروج من وضع الزائر والعودة لشاشة الدخول' : 'Exit Guest Mode and return to sign in screen'}
                 >
-                  👤 {isAr ? 'تسجيل الدخول' : 'Sign In'}
+                  <span aria-hidden="true">👤</span>
+                  <span>{isAr ? 'تسجيل الدخول' : 'Sign In'}</span>
                 </button>
               </div>
             ) : (
-              <div className="row" style={{ gap: '6px', alignItems: 'center' }}>
+              <div className="header-auth-group">
                 <Link
                   to="/health-profile"
-                  className="chip"
-                  style={{
-                    background: 'rgba(255,255,255,0.15)',
-                    color: '#ffffff',
-                    borderColor: 'rgba(255,255,255,0.3)',
-                    fontSize: '0.82rem',
-                    textDecoration: 'none',
-                    fontWeight: 700,
-                  }}
+                  className="chip header-user-chip"
                   title={user.email || ''}
                 >
-                  👤 {user.displayName || user.email?.split('@')[0]}
+                  <span aria-hidden="true">👤</span>
+                  <span className="header-username">{user.displayName || user.email?.split('@')[0]}</span>
                 </Link>
                 <button
                   type="button"
-                  className="btn small ghost"
+                  className="btn small ghost header-logout-btn"
                   onClick={() => setShowLogoutModal(true)}
-                  style={{
-                    padding: '3px 8px',
-                    fontSize: '0.8rem',
-                    borderColor: 'rgba(255,255,255,0.25)',
-                    color: '#fca5a5',
-                    cursor: 'pointer',
-                  }}
                   title={isAr ? 'تسجيل الخروج' : 'Log out'}
                   aria-label={isAr ? 'تسجيل الخروج' : 'Log out'}
                 >
-                  🚪 {isAr ? 'خروج' : 'Logout'}
+                  <span aria-hidden="true">🚪</span>
+                  <span className="header-logout-text">{isAr ? 'خروج' : 'Logout'}</span>
                 </button>
               </div>
             )}
 
             {/* Dark mode toggle */}
             <button
+              type="button"
               className="dark-toggle"
               onClick={toggle}
               aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -289,7 +266,13 @@ export default function Layout({ children }: { children: ReactNode }) {
             </button>
 
             {/* Language toggle */}
-            <button className="lang" onClick={() => setLang(isAr ? 'en' : 'ar')} aria-label="Language">
+            <button
+              type="button"
+              className="lang"
+              onClick={() => setLang(isAr ? 'en' : 'ar')}
+              aria-label="Language"
+              title={isAr ? 'Switch to English' : 'التبديل إلى العربية'}
+            >
               {isAr ? 'EN' : 'عربي'}
             </button>
 
@@ -320,7 +303,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 end={qItem.to === '/'}
                 className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
               >
-                <span>{qItem.icon}</span>
+                <span aria-hidden="true">{qItem.icon}</span>
                 <span>{qItem.label}</span>
               </NavLink>
             ))}
@@ -328,15 +311,18 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Slide-out Dark Teal Glassmorphism Navigation Drawer */}
+      {/* Edge-Attached Dark Teal Glassmorphism Navigation Sidebar */}
       {drawerOpen && (
         <div
           className={`drawer-backdrop${drawerClosing ? ' is-closing' : ''}`}
+          dir={pageDir}
           onClick={() => closeDrawer(true)}
           role="presentation"
         >
           <nav
             id="site-sections-drawer"
+            key={pageDir}
+            dir={pageDir}
             className={`drawer-panel${drawerClosing ? ' is-closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
             aria-label={isAr ? 'القائمة الجانبية لجميع الأقسام' : 'Side menu'}
@@ -374,7 +360,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 >
                   <span className="item-icon" aria-hidden="true">{item.icon}</span>
                   <span className="item-title">{t(item.key)}</span>
-                  <span className="item-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
+                  <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                 </NavLink>
               ))}
 
@@ -387,7 +373,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               >
                 <span className="item-icon" aria-hidden="true">⚙️</span>
                 <span className="item-title">{t('navAdmin')}</span>
-                <span className="item-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
+                <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
               </NavLink>
 
               {!user && (
@@ -405,7 +391,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     <span className="item-title">
                       {isAr ? 'تسجيل الدخول (الخروج من وضع الزائر)' : 'Sign In (Exit Guest Mode)'}
                     </span>
-                    <span className="item-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
+                    <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
                 </>
               )}
@@ -423,7 +409,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   >
                     <span className="item-icon" aria-hidden="true">🚪</span>
                     <span className="item-title">{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
-                    <span className="item-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
+                    <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
                 </>
               )}
