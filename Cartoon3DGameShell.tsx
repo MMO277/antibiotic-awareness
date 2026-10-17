@@ -30,7 +30,10 @@ import {
   CustomNpcDef,
   CustomPropDef,
   CustomSceneAssets,
+  lerpAngle,
   MicroscopeMiniGameConfig,
+  MysteryClueCardConfig,
+  NursingChecklistConfig,
   TriageCardConfig,
   updateCustomSceneAnimations,
   WorldPreset,
@@ -85,6 +88,7 @@ export interface Cartoon3DGameConfig {
   npcs: Record<string, CustomNpcDef>;
   missions: CustomMissionLevel[];
   showInventoryBar?: boolean;
+  enableEvidenceJournal?: boolean;
 }
 
 interface DecisionLogItem {
@@ -95,7 +99,7 @@ interface DecisionLogItem {
 
 const INTERACT_DISTANCE = 2.5;
 const PROP_INTERACT_DISTANCE = 2.3;
-const PLAYER_SPEED = 4.3;
+const PLAYER_SPEED = 4.35;
 const PLAYER_RADIUS = 0.42;
 
 function detectDefaultLowGraphics(): boolean {
@@ -103,6 +107,59 @@ function detectDefaultLowGraphics(): boolean {
     return navigator.hardwareConcurrency <= 4;
   }
   return false;
+}
+
+function detectPrefersReducedMotion(): boolean {
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+  return false;
+}
+
+/** Synthesizes gentle WebAudio UI feedback chimes with zero external network assets */
+function playGameSoundEffect(type: 'clue' | 'optimal' | 'caution' | 'complete', muted: boolean) {
+  if (muted || typeof window === 'undefined') return;
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    const now = ctx.currentTime;
+    gain.gain.setValueAtTime(0.05, now);
+
+    if (type === 'optimal' || type === 'clue') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); // C5
+      osc.frequency.setValueAtTime(659.25, now + 0.09); // E5
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+      osc.start(now);
+      osc.stop(now + 0.25);
+    } else if (type === 'complete') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.setValueAtTime(659.25, now + 0.1);
+      osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+      osc.start(now);
+      osc.stop(now + 0.44);
+    } else {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(349.23, now); // F4
+      osc.frequency.setValueAtTime(311.13, now + 0.1); // D#4
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+      osc.start(now);
+      osc.stop(now + 0.25);
+    }
+    window.setTimeout(() => {
+      void ctx.close().catch(() => {});
+    }, 550);
+  } catch {
+    /* ignore audio context restrictions */
+  }
 }
 
 function collidesWithObstacles(x: number, z: number, obstacles: BoxObstacle[]): boolean {
@@ -149,11 +206,10 @@ function MicroscopeMiniGameWidget({
   const [focus, setFocus] = useState<number>(25);
 
   const [minF, maxF] = config.targetFocusRange;
-  const focusDiff =
-    focus < minF ? minF - focus : focus > maxF ? focus - maxF : 0;
+  const focusDiff = focus < minF ? minF - focus : focus > maxF ? focus - maxF : 0;
   const magReady = mag === config.targetMagnification || mag === '100x';
   const isSharp = focusDiff === 0 && magReady;
-  const blurPx = Math.min(6, (focusDiff / 12) + (mag === '10x' ? 1.8 : 0));
+  const blurPx = Math.min(6, focusDiff / 12 + (mag === '10x' ? 1.8 : 0));
   const scaleFactor = mag === '10x' ? 0.72 : mag === '40x' ? 1.0 : 1.28;
 
   return (
@@ -175,7 +231,6 @@ function MicroscopeMiniGameWidget({
               transform: `scale(${scaleFactor})`,
             }}
           >
-            {/* Crosshair reticle */}
             <line x1="80" y1="10" x2="80" y2="150" stroke="rgba(15,23,42,0.18)" strokeDasharray="3 3" />
             <line x1="10" y1="80" x2="150" y2="80" stroke="rgba(15,23,42,0.18)" strokeDasharray="3 3" />
 
@@ -345,7 +400,7 @@ function AstReportWidget({
   );
 }
 
-// ── ER Triage & Vitals Monitor Widget (Emergency Shift) ─────────────────────────────────────
+// ── ER Triage & Vitals Monitor Widget (Emergency Shift & Nurse Academy) ─────────────────────
 function TriageCardWidget({
   config,
   lang,
@@ -407,6 +462,84 @@ function TriageCardWidget({
   );
 }
 
+// ── Nursing Academy Protocol Checklist Widget ──────────────────────────────────────────────
+function NursingChecklistWidget({
+  config,
+  lang,
+}: {
+  config: NursingChecklistConfig;
+  lang: 'ar' | 'en';
+}) {
+  const isAr = lang === 'ar';
+  return (
+    <div className="c3d-nursing-card" role="region" aria-label={isAr ? 'قائمة الفحص التمريضي القياسي' : 'Standard Nursing Protocol Checklist'}>
+      <div className="c3d-micro-header">
+        <strong>📋 {pick(config.protocolTitle, lang)} ({config.protocolCode})</strong>
+        <span className="c3d-fictional-ribbon">
+          {isAr ? 'تدريب تمريضي خيالي آمن' : 'Fictional Nursing Simulation'}
+        </span>
+      </div>
+
+      <div className="small" style={{ color: '#e0f2fe' }}>
+        <strong>{isAr ? 'سياق الحالة التدريبية:' : 'Clinical Scenario Context:'}</strong>{' '}
+        {pick(config.patientContext, lang)}
+      </div>
+
+      <div className="c3d-nursing-list">
+        {config.checklistItems.map((item, idx) => (
+          <div key={idx} className="c3d-nursing-item">
+            <span className="c3d-nursing-item-icon" aria-hidden="true">{item.icon}</span>
+            <div>
+              <strong>{pick(item.label, lang)}</strong>
+              <span>{pick(item.detail, lang)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="small" style={{ color: '#a7f3d0' }}>
+        🛡️ <strong>{isAr ? 'القاعدة المهنية:' : 'Safety Standard:'}</strong>{' '}
+        {pick(config.safetyPrinciple, lang)}
+      </div>
+    </div>
+  );
+}
+
+// ── Medical Mystery Clue Card Widget ────────────────────────────────────────────────────────
+function MysteryClueCardWidget({
+  config,
+  lang,
+}: {
+  config: MysteryClueCardConfig;
+  lang: 'ar' | 'en';
+}) {
+  const isAr = lang === 'ar';
+  return (
+    <div className="c3d-mystery-clue-card" role="region" aria-label={isAr ? 'بطاقة دليل التحقيق الطبي' : 'Medical Investigation Clue Card'}>
+      <div className="c3d-micro-header">
+        <strong>🕵️ {pick(config.clueTitle, lang)} ({config.clueCode})</strong>
+        <span className="c3d-fictional-ribbon">
+          {isAr ? 'دليل تحقيق خيالي' : 'Fictional Case Evidence'}
+        </span>
+      </div>
+
+      <div className="c3d-mystery-meta">
+        <span>📍 <strong>{isAr ? 'المصدر:' : 'Location:'}</strong> {pick(config.sourceLocation, lang)}</span>
+        <span>🕒 <strong>{isAr ? 'التوقيت:' : 'Timestamp:'}</strong> {pick(config.timestampLabel, lang)}</span>
+      </div>
+
+      <div className="c3d-mystery-evidence">
+        {pick(config.evidenceSummary, lang)}
+      </div>
+
+      <div className="small" style={{ color: '#fde68a' }}>
+        💡 <strong>{isAr ? 'مفتاح الاستنتاج:' : 'Deduction Key:'}</strong>{' '}
+        {pick(config.deductionNote, lang)}
+      </div>
+    </div>
+  );
+}
+
 interface InnerGameProps {
   config: Cartoon3DGameConfig;
   uid: string | null;
@@ -426,13 +559,23 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
   const sceneAssetsRef = useRef<CustomSceneAssets | null>(null);
 
   const [lowGraphics, setLowGraphics] = useState<boolean>(detectDefaultLowGraphics);
+  const [reducedMotion] = useState<boolean>(detectPrefersReducedMotion);
+  const [soundMuted, setSoundMuted] = useState<boolean>(false);
+  const soundMutedRef = useRef<boolean>(soundMuted);
+  soundMutedRef.current = soundMuted;
+
   const [sceneStatus, setSceneStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [webglErrorMsg, setWebglErrorMsg] = useState<string>('');
   const [paused, setPaused] = useState<boolean>(false);
   const [showControlsHint, setShowControlsHint] = useState<boolean>(true);
   const [showMissionDrawer, setShowMissionDrawer] = useState<boolean>(false);
+  const [showEvidenceJournal, setShowEvidenceJournal] = useState<boolean>(false);
   const [lockedToastMsg, setLockedToastMsg] = useState<string>('');
   const [confirmExit, setConfirmExit] = useState<boolean>(false);
+
+  // Skippable Cinematic Camera Fly-In State (0 -> 1 over ~2.2s at mission start)
+  const [cinematicActive, setCinematicActive] = useState<boolean>(() => !detectPrefersReducedMotion());
+  const cinematicProgressRef = useRef<number>(detectPrefersReducedMotion() ? 1 : 0);
 
   const [activeMissionId, setActiveMissionId] = useState<string>(() => {
     if (
@@ -452,10 +595,20 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
   const [currentNodeId, setCurrentNodeId] = useState<string>(activeMission.initialNodeId);
   const [dialogueOpen, setDialogueOpen] = useState<boolean>(false);
   const [activeSpeaker, setActiveSpeaker] = useState<string | null>(null);
+  const activeSpeakerRef = useRef<string | null>(null);
+  activeSpeakerRef.current = activeSpeaker;
+
   const [pendingFeedback, setPendingFeedback] = useState<{
     choice: ScenarioChoice;
     nextNodeId: string;
   } | null>(null);
+  const npcReactionRef = useRef<'idle' | 'optimal' | 'caution'>('idle');
+  npcReactionRef.current = pendingFeedback
+    ? pendingFeedback.choice.quality === 'optimal'
+      ? 'optimal'
+      : 'caution'
+    : 'idle';
+
   const [missionFinished, setMissionFinished] = useState<boolean>(false);
   const [decisionLog, setDecisionLog] = useState<DecisionLogItem[]>([]);
   const [completedMissions, setCompletedMissions] = useState<string[]>(initial.completedIds);
@@ -510,7 +663,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
   const pausedRef = useRef<boolean>(paused);
   pausedRef.current = paused;
 
-  const modalOpen = dialogueOpen || activePropModalId !== null;
+  const modalOpen = dialogueOpen || activePropModalId !== null || showEvidenceJournal;
   const modalOpenRef = useRef<boolean>(modalOpen);
   modalOpenRef.current = modalOpen;
 
@@ -585,7 +738,11 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
     );
     assets.playerRig.root.position.set(0, 0, config.worldPreset === 'escape_lab' ? 5.2 : 1.5);
     assets.playerRig.root.rotation.y = Math.PI;
-  }, [activeMission, lowGraphics, config.worldPreset]);
+    if (!reducedMotion) {
+      cinematicProgressRef.current = 0;
+      setCinematicActive(true);
+    }
+  }, [activeMission, lowGraphics, config.worldPreset, reducedMotion]);
 
   useEffect(() => {
     if (!activeMission.gentleTimerSeconds || missionFinished || paused || modalOpen) return;
@@ -625,6 +782,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
       setDialogueOpen(false);
       setActiveSpeaker(null);
       setShowMissionDrawer(false);
+      setShowEvidenceJournal(false);
     },
     [completedMissions, config.missions, lang]
   );
@@ -633,13 +791,28 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
     startMission(activeMission.id, true);
   }, [activeMission.id, startMission]);
 
-  const openPropModal = useCallback((propId: string) => {
-    setActivePropModalId(propId);
-    setPropStepIndex(0);
-    setShowStepHint(false);
-    setPropFeedback(null);
-    setDialogueOpen(false);
-  }, []);
+  const openPropModal = useCallback(
+    (propId: string) => {
+      const prop = levelInteractiveProps.find((p) => p.id === propId);
+      if (prop?.requiresPropId && !solvedPropIdsRef.current.includes(prop.requiresPropId)) {
+        const prereq = levelInteractiveProps.find((p) => p.id === prop.requiresPropId);
+        const prereqName = prereq ? pick(prereq.name, lang) : '';
+        setLockedToastMsg(
+          isAr
+            ? `🔒 سلسلة الأدلة: افحص أولاً «${prereqName}» لفك قفل هذا الدليل!`
+            : `🔒 Clue Chain: Inspect "${prereqName}" first to unlock this evidence station!`
+        );
+        window.setTimeout(() => setLockedToastMsg(''), 3800);
+        return;
+      }
+      setActivePropModalId(propId);
+      setPropStepIndex(0);
+      setShowStepHint(false);
+      setPropFeedback(null);
+      setDialogueOpen(false);
+    },
+    [isAr, lang, levelInteractiveProps]
+  );
 
   const handleInteract = useCallback(() => {
     if (pausedRef.current || missionFinished) return;
@@ -674,6 +847,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
     feedback: Bilingual;
   }) => {
     if (!activePropDef) return;
+    playGameSoundEffect(opt.isCorrect ? 'clue' : 'caution', soundMutedRef.current);
     setPropFeedback({
       isCorrect: opt.isCorrect,
       text: pick(opt.feedback, lang),
@@ -703,6 +877,11 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
     if (choiceLockRef.current || !currentNode || pendingFeedback) return;
     choiceLockRef.current = true;
 
+    playGameSoundEffect(
+      choice.quality === 'optimal' ? 'optimal' : 'caution',
+      soundMutedRef.current
+    );
+
     setDecisionLog((prev) => [
       ...prev,
       {
@@ -728,6 +907,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
     setPendingFeedback(null);
 
     if (nextId === 'END') {
+      playGameSoundEffect('complete', soundMutedRef.current);
       setDialogueOpen(false);
       setMissionFinished(true);
       setCompletedMissions((prev) =>
@@ -944,6 +1124,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
         npcRigs,
         propRigs,
         doorRigs,
+        ambientParticles,
         obstacles,
         worldBounds,
       } = sceneAssets;
@@ -952,6 +1133,14 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
 
       if (!pausedRef.current && !modalOpenRef.current) {
         elapsedTime += dt;
+
+        // Advance skippable cinematic intro fly-in
+        if (cinematicProgressRef.current < 1) {
+          cinematicProgressRef.current = Math.min(1, cinematicProgressRef.current + dt * 0.48);
+          if (cinematicProgressRef.current >= 1 && mounted) {
+            setCinematicActive(false);
+          }
+        }
 
         const k = keysRef.current;
         let inputX = joyVecRef.current.x;
@@ -965,6 +1154,10 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
         const len = Math.hypot(inputX, inputZ);
         if (len > 0.08) {
           isMoving = true;
+          if (cinematicProgressRef.current < 1) {
+            cinematicProgressRef.current = 1;
+            setCinematicActive(false);
+          }
           const normX = inputX / Math.max(1, len);
           const normZ = inputZ / Math.max(1, len);
 
@@ -996,7 +1189,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
           }
 
           const targetAngle = Math.atan2(worldDx, worldDz);
-          playerRig.root.rotation.y = targetAngle;
+          playerRig.root.rotation.y = lerpAngle(playerRig.root.rotation.y, targetAngle, 0.22);
         }
       } else {
         elapsedTime += dt * 0.5;
@@ -1042,18 +1235,24 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
         npcRigs,
         propRigs,
         doorRigs,
+        ambientParticles,
         solvedPropIdsRef.current,
         Object.keys(propRigs).length,
         targetNpcRef.current,
         closestNpcId,
         closestPropId,
+        activeSpeakerRef.current,
+        npcReactionRef.current,
         isMoving,
+        reducedMotion,
         elapsedTime
       );
 
-      const camDist = 6.2;
-      const pitch = camPitchRef.current;
-      const yaw = camYawRef.current;
+      // Camera: blend between cinematic overview and third-person follow camera
+      const cProg = cinematicProgressRef.current;
+      const camDist = 6.2 + (1 - cProg) * 3.2;
+      const pitch = camPitchRef.current + (1 - cProg) * 0.25;
+      const yaw = camYawRef.current + (1 - cProg) * 0.45;
       const desiredCamX = px + Math.sin(yaw) * Math.cos(pitch) * camDist;
       const desiredCamZ = pz + Math.cos(yaw) * Math.cos(pitch) * camDist;
       const desiredCamY = Math.max(2.2, 1.4 + Math.sin(pitch) * camDist);
@@ -1072,9 +1271,9 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
+      window.clearTimeout(orientTimer);
       canvas.removeEventListener('webglcontextlost', onContextLost);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.clearTimeout(orientTimer);
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
@@ -1250,6 +1449,26 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                 : '☁️✓'}
             </span>
 
+            {config.enableEvidenceJournal && (
+              <button
+                type="button"
+                className="ms-top-btn"
+                onClick={() => setShowEvidenceJournal((j) => !j)}
+                title={isAr ? 'فتح سجل الأدلة وسلسلة الاستنتاج' : 'Open Evidence Journal & Clue Chain'}
+                aria-label={isAr ? 'سجل الأدلة' : 'Evidence Journal'}
+              >
+                📓{' '}
+                <span className="ms-btn-label">
+                  {isAr
+                    ? `سجل الأدلة (${solvedPropIds.length}/${levelInteractiveProps.length})`
+                    : `Journal (${solvedPropIds.length}/${levelInteractiveProps.length})`}
+                </span>
+                <span className="ms-btn-short">
+                  {solvedPropIds.length}/{levelInteractiveProps.length}
+                </span>
+              </button>
+            )}
+
             <button
               type="button"
               className="ms-top-btn active"
@@ -1265,6 +1484,16 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
               <span className="ms-btn-short">
                 {completedCount}/{totalMissions}
               </span>
+            </button>
+
+            <button
+              type="button"
+              className={`ms-top-btn ${soundMuted ? '' : 'active'}`}
+              onClick={() => setSoundMuted((m) => !m)}
+              aria-label={soundMuted ? (isAr ? 'تفعيل الصوت' : 'Unmute audio') : isAr ? 'كتم الصوت' : 'Mute audio'}
+              title={soundMuted ? (isAr ? 'الصوت مكتوم' : 'Audio muted') : isAr ? 'المؤثرات الصوتية مفعلة' : 'Audio effects on'}
+            >
+              {soundMuted ? '🔇' : '🔊'}
             </button>
 
             <button
@@ -1375,8 +1604,8 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
               <strong>
                 {config.gameIcon} {pick(config.gameTitle, lang)} —{' '}
                 {isAr
-                  ? `المهام المتدرجة (${completedCount}/${totalMissions})`
-                  : `Progressive Missions (${completedCount}/${totalMissions})`}
+                  ? `السيناريوهات والمهام المتدرجة (${completedCount}/${totalMissions})`
+                  : `Progressive Scenarios & Cases (${completedCount}/${totalMissions})`}
               </strong>
               <button
                 type="button"
@@ -1394,7 +1623,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                       ? 'يُحفظ تقدمك في حسابك سحابياً عبر أجهزتك.'
                       : 'يُحفظ تقدمك على هذا الجهاز — سجّل الدخول للمزامنة السحابية.'
                   }`
-                : `Mission 1 is unlocked by default; subsequent missions unlock progressively. ${
+                : `Scenario 1 is unlocked by default; subsequent scenarios unlock progressively. ${
                     uid
                       ? 'Your progress syncs to your cloud account across devices.'
                       : 'Progress is saved locally on this device — sign in to sync across devices.'
@@ -1417,7 +1646,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                   >
                     <div className="ms-scen-card-top">
                       <span className="ms-scen-num">
-                        {isUnlocked ? `${m.badgeIcon} M${m.missionIndex}` : `🔒 M${m.missionIndex}`}
+                        {isUnlocked ? `${m.badgeIcon} #${m.missionIndex}` : `🔒 #${m.missionIndex}`}
                       </span>
                       <span className="ms-scen-badge">{pick(m.categoryBadge, lang)}</span>
                       {isDone ? (
@@ -1471,6 +1700,8 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
 
             {levelInteractiveProps.map((prop) => {
               const solved = solvedPropIds.includes(prop.id);
+              const lockedByChain =
+                Boolean(prop.requiresPropId) && !solvedPropIds.includes(prop.requiresPropId!);
               return (
                 <button
                   key={prop.id}
@@ -1478,9 +1709,19 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                   className={`ms-prop-status-chip ${solved ? 'solved' : 'pending'}`}
                   onClick={() => openPropModal(prop.id)}
                 >
-                  <span>{prop.iconEmoji}</span>
+                  <span>{lockedByChain ? '🔒' : prop.iconEmoji}</span>
                   <span>{pick(prop.stationLabel, lang)}</span>
-                  <b>{solved ? '✓' : isAr ? 'افحص المحطة' : 'Inspect'}</b>
+                  <b>
+                    {solved
+                      ? '✓'
+                      : lockedByChain
+                      ? isAr
+                        ? 'مرتبط بدليل سابق'
+                        : 'Locked Clue'
+                      : isAr
+                      ? 'افحص المحطة'
+                      : 'Inspect'}
+                  </b>
                 </button>
               );
             })}
@@ -1497,11 +1738,17 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
           </div>
         </div>
 
-        {/* Optional Inventory / Keycards Bar (Escape the Lab & Lab Clues) */}
+        {/* Optional Inventory / Keycards / Evidence Chain Bar */}
         {config.showInventoryBar && (
           <div className="c3d-inventory-bar" role="status">
             <span className="c3d-inv-label">
-              🗝️ {isAr ? 'المقتنيات وبطاقات الأمان المفتوحة:' : 'Collected Keycards & Safety Seals:'}
+              {config.enableEvidenceJournal
+                ? isAr
+                  ? '🕵️ سلسلة الأدلة المكتشفة:'
+                  : '🕵️ Evidence Chain:'
+                : isAr
+                ? '🗝️ المقتنيات وبطاقات الأمان:'
+                : '🗝️ Keycards & Safety Seals:'}
             </span>
             {levelInteractiveProps.map((p) => {
               if (!p.rewardItem) return null;
@@ -1516,6 +1763,15 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                 </span>
               );
             })}
+            {config.enableEvidenceJournal && (
+              <button
+                type="button"
+                className="c3d-journal-btn"
+                onClick={() => setShowEvidenceJournal(true)}
+              >
+                📓 {isAr ? 'لوحة الأدلة' : 'Evidence Board'}
+              </button>
+            )}
           </div>
         )}
 
@@ -1529,6 +1785,25 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
           onPointerCancel={handleViewportPointerUp}
         >
           <canvas ref={canvasRef} className="ms-canvas" />
+
+          {/* Skippable Cinematic Camera Fly-In Indicator */}
+          {cinematicActive && sceneStatus === 'ready' && !modalOpen && !missionFinished && (
+            <div className="c3d-cinematic-banner">
+              <span>
+                🎥 {pick(activeMission.title, lang)}
+              </span>
+              <button
+                type="button"
+                className="ms-hint-dismiss"
+                onClick={() => {
+                  cinematicProgressRef.current = 1;
+                  setCinematicActive(false);
+                }}
+              >
+                ⏭️ {isAr ? 'تخطي المقدمة' : 'Skip Intro'}
+              </button>
+            </div>
+          )}
 
           {sceneStatus === 'loading' && (
             <div className="ms-status-overlay">
@@ -1573,21 +1848,27 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
             </div>
           )}
 
-          {showControlsHint && sceneStatus === 'ready' && !modalOpen && !missionFinished && !nearestPropDef && !nearestNpc && (
-            <div className="ms-controls-hint-banner">
-              <div>
-                <strong>🎮 {pick(config.controlsHintTitle, lang)}</strong>
-                <span>{pick(config.controlsHintBody, lang)}</span>
+          {showControlsHint &&
+            !cinematicActive &&
+            sceneStatus === 'ready' &&
+            !modalOpen &&
+            !missionFinished &&
+            !nearestPropDef &&
+            !nearestNpc && (
+              <div className="ms-controls-hint-banner">
+                <div>
+                  <strong>🎮 {pick(config.controlsHintTitle, lang)}</strong>
+                  <span>{pick(config.controlsHintBody, lang)}</span>
+                </div>
+                <button
+                  type="button"
+                  className="ms-hint-dismiss"
+                  onClick={() => setShowControlsHint(false)}
+                >
+                  {isAr ? 'فهمت ✓' : 'Got it ✓'}
+                </button>
               </div>
-              <button
-                type="button"
-                className="ms-hint-dismiss"
-                onClick={() => setShowControlsHint(false)}
-              >
-                {isAr ? 'فهمت ✓' : 'Got it ✓'}
-              </button>
-            </div>
-          )}
+            )}
 
           {/* Proximity Floating Prompt */}
           {(nearestPropDef || (nearestNpc && config.npcs[nearestNpc])) &&
@@ -1666,6 +1947,79 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
             </div>
           )}
 
+          {/* Evidence Journal & Clue Chain Modal (Medical Mystery) */}
+          {showEvidenceJournal && (
+            <div className="ms-dialogue-backdrop" role="dialog" aria-modal="true">
+              <div className="ms-dialogue-modal">
+                <div className="ms-dialogue-header">
+                  <div className="ms-speaker-badge">
+                    <span className="ms-speaker-avatar" aria-hidden="true">📓</span>
+                    <div>
+                      <strong>
+                        {isAr ? 'سجل الأدلة ولوحة التحقيق السريري' : 'Clinical Evidence Journal & Clue Board'}
+                      </strong>
+                      <small>{pick(activeMission.title, lang)}</small>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="ms-dialogue-close"
+                    onClick={() => setShowEvidenceJournal(false)}
+                    aria-label={isAr ? 'إغلاق سجل الأدلة' : 'Close Evidence Journal'}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="ms-dialogue-body">
+                  <p className="ms-dialogue-speech">{pick(activeMission.briefing, lang)}</p>
+
+                  <div className="c3d-journal-chain">
+                    {levelInteractiveProps.map((prop, idx) => {
+                      const solved = solvedPropIds.includes(prop.id);
+                      return (
+                        <div
+                          key={prop.id}
+                          className={`c3d-journal-node ${solved ? 'unlocked' : 'locked'}`}
+                        >
+                          <div className="c3d-micro-header">
+                            <strong>
+                              {solved ? '✅' : '🔒'} {isAr ? `الدليل #${idx + 1}:` : `Clue #${idx + 1}:`}{' '}
+                              {pick(prop.name, lang)}
+                            </strong>
+                            <button
+                              type="button"
+                              className="c3d-hint-btn"
+                              onClick={() => {
+                                setShowEvidenceJournal(false);
+                                openPropModal(prop.id);
+                              }}
+                            >
+                              {solved
+                                ? isAr
+                                  ? 'مراجعة الدليل'
+                                  : 'Review Clue'
+                                : isAr
+                                ? 'افحص الآن'
+                                : 'Inspect Now'}
+                            </button>
+                          </div>
+                          <div className="small" style={{ color: solved ? '#bbf7d0' : '#94a3b8' }}>
+                            {solved
+                              ? pick(prop.completionClueSummary, lang)
+                              : isAr
+                              ? `توجه إلى «${pick(prop.stationLabel, lang)}» في الغرفة ثلاثية الأبعاد لفحص هذا الدليل.`
+                              : `Walk to "${pick(prop.stationLabel, lang)}" in the 3D scene to inspect this clue.`}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 3D Interactive Station / Prop Modal */}
           {activePropDef && (
             <div className="ms-dialogue-backdrop" role="dialog" aria-modal="true">
@@ -1700,7 +2054,6 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                   if (!step) return null;
                   return (
                     <div className="ms-dialogue-body">
-                      {/* Optional Interactive Microscope Mini-Game */}
                       {activePropDef.microscopeConfig && (
                         <MicroscopeMiniGameWidget
                           config={activePropDef.microscopeConfig}
@@ -1708,7 +2061,6 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                         />
                       )}
 
-                      {/* Optional Fictional Culture & Susceptibility (AST) Table */}
                       {activePropDef.astReportConfig && (
                         <AstReportWidget
                           config={activePropDef.astReportConfig}
@@ -1716,10 +2068,23 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                         />
                       )}
 
-                      {/* Optional ER Patient Triage & Vitals Monitor */}
                       {activePropDef.triageCardConfig && (
                         <TriageCardWidget
                           config={activePropDef.triageCardConfig}
+                          lang={lang}
+                        />
+                      )}
+
+                      {activePropDef.nursingChecklistConfig && (
+                        <NursingChecklistWidget
+                          config={activePropDef.nursingChecklistConfig}
+                          lang={lang}
+                        />
+                      )}
+
+                      {activePropDef.mysteryClueConfig && (
+                        <MysteryClueCardWidget
+                          config={activePropDef.mysteryClueConfig}
                           lang={lang}
                         />
                       )}
@@ -1733,7 +2098,14 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                             className="c3d-hint-btn"
                             onClick={() => setShowStepHint((h) => !h)}
                           >
-                            💡 {showStepHint ? (isAr ? 'إخفاء التلميح' : 'Hide Hint') : isAr ? 'طلب تلميح تعليمي' : 'Need a Hint?'}
+                            💡{' '}
+                            {showStepHint
+                              ? isAr
+                                ? 'إخفاء التلميح'
+                                : 'Hide Hint'
+                              : isAr
+                              ? 'طلب تلميح تعليمي'
+                              : 'Need a Hint?'}
                           </button>
                           {showStepHint && (
                             <div className="c3d-hint-box">
@@ -2188,7 +2560,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
                 >
                   <span>{m.badgeIcon}</span>
                   <span>
-                    M{m.missionIndex}: {pick(m.badgeTitle, lang)}
+                    #{m.missionIndex}: {pick(m.badgeTitle, lang)}
                   </span>
                 </span>
               );

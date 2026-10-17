@@ -1,6 +1,7 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   SHARED 3D CARTOON GAME SHELL EXTENSIONS (Bacteria Lab, Emergency Shift, Escape the Lab)
-   Builds on top of MedicalSimulator.css
+   SHARED 3D CARTOON GAME SHELL EXTENSIONS
+   (Nurse Academy, Medical Mystery, Bacteria Lab, Emergency Shift, Escape the Lab)
+   Builds on top of MedicalSimulator.css with full mobile responsiveness
    ══════════════════════════════════════════════════════════════════════════ */
 
 .c3d-fictional-ribbon {
@@ -33,7 +34,25 @@
   }
 }
 
-/* Inventory / Keycard Bar (Escape the Lab & Clues) — compact single-line horizontal scroll strip */
+/* Skippable Cinematic Intro Banner inside 3D Viewport */
+.c3d-cinematic-banner {
+  position: absolute;
+  top: 10px;
+  inset-inline: 10px;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.55);
+  border-radius: 10px;
+  padding: 6px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.78rem;
+  color: #e0f2fe;
+  z-index: 14;
+}
+
+/* Inventory / Keycard / Evidence Bar */
 .c3d-inventory-bar {
   flex: 0 0 auto;
   display: flex;
@@ -43,15 +62,11 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  scrollbar-width: none;
   background: rgba(15, 23, 42, 0.88);
   border: 1px solid rgba(45, 212, 191, 0.35);
   padding: 4px 10px;
   border-radius: 10px;
   font-size: 0.75rem;
-}
-.c3d-inventory-bar::-webkit-scrollbar {
-  display: none;
 }
 
 .c3d-inv-label {
@@ -73,13 +88,125 @@
   border: 1px dashed rgba(148, 163, 184, 0.4);
   color: #94a3b8;
   white-space: nowrap;
-  flex-shrink: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .c3d-inv-chip.collected {
   background: rgba(16, 185, 129, 0.24);
   border: 1px solid #34d399;
   color: #d1fae5;
+}
+
+.c3d-journal-btn {
+  margin-inline-start: auto;
+  background: linear-gradient(135deg, #4f46e5, #3730a3);
+  border: 1px solid #818cf8;
+  color: #ffffff;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Nursing Academy Protocol Checklist Widget */
+.c3d-nursing-card {
+  background: #061c24;
+  border: 1px solid rgba(45, 212, 191, 0.45);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.c3d-nursing-list {
+  display: grid;
+  gap: 6px;
+}
+
+.c3d-nursing-item {
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 9px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.c3d-nursing-item-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.c3d-nursing-item strong {
+  color: #5eead4;
+  display: block;
+}
+
+.c3d-nursing-item span {
+  color: #cbd5e1;
+}
+
+/* Medical Mystery Clue Card & Evidence Journal Board */
+.c3d-mystery-clue-card {
+  background: #11142d;
+  border: 1px solid rgba(129, 140, 248, 0.5);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.c3d-mystery-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #a5b4fc;
+}
+
+.c3d-mystery-evidence {
+  background: rgba(15, 23, 42, 0.85);
+  border-inline-start: 3px solid #818cf8;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #f1f5f9;
+}
+
+.c3d-journal-chain {
+  display: grid;
+  gap: 10px;
+}
+
+.c3d-journal-node {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 5px;
+}
+
+.c3d-journal-node.unlocked {
+  border-color: #34d399;
+  background: rgba(6, 78, 59, 0.28);
+}
+
+.c3d-journal-node.locked {
+  opacity: 0.72;
+  border-style: dashed;
 }
 
 /* Interactive Microscope Mini-Game Widget */

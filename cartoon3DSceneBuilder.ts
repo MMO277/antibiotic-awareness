@@ -1,7 +1,12 @@
 import * as THREE from 'three';
 import { Bilingual } from './types';
 
-export type WorldPreset = 'bacteria_lab' | 'emergency_shift' | 'escape_lab';
+export type WorldPreset =
+  | 'bacteria_lab'
+  | 'emergency_shift'
+  | 'escape_lab'
+  | 'nurse_academy'
+  | 'medical_mystery';
 
 export type CustomPropShape =
   | 'microscope_station'
@@ -20,7 +25,14 @@ export type CustomPropShape =
   | 'specimen_capsule'
   | 'spill_kit'
   | 'waste_sorter'
-  | 'exit_vault_console';
+  | 'exit_vault_console'
+  | 'nursing_id_scanner'
+  | 'med_safety_cart'
+  | 'fall_safety_bed'
+  | 'sbar_podium'
+  | 'evidence_board'
+  | 'mar_audit_terminal'
+  | 'equipment_uv_tracer';
 
 export interface BoxObstacle {
   minX: number;
@@ -39,7 +51,13 @@ export interface CustomNpcDef {
   outfitColor: number;
   accentColor: number;
   skinColor: number;
-  hatType: 'lab_goggles' | 'doctor_hair' | 'nurse_cap' | 'pharmacist_glasses' | 'patient_band' | 'safety_helmet';
+  hatType:
+    | 'lab_goggles'
+    | 'doctor_hair'
+    | 'nurse_cap'
+    | 'pharmacist_glasses'
+    | 'patient_band'
+    | 'safety_helmet';
   avatarEmoji: string;
   defaultGreeting: Bilingual;
 }
@@ -49,7 +67,7 @@ export interface MicroscopeMiniGameConfig {
   specimenTitle: Bilingual;
   gramStainType: 'gram_pos_cocci' | 'gram_neg_rods' | 'viral_no_bacteria' | 'skin_contaminant';
   targetMagnification: '40x' | '100x';
-  targetFocusRange: [number, number]; // e.g., [60, 85]
+  targetFocusRange: [number, number];
   findingSummary: Bilingual;
 }
 
@@ -87,6 +105,27 @@ export interface TriageCardConfig {
   redFlags: Bilingual[];
 }
 
+export interface NursingChecklistConfig {
+  protocolCode: string;
+  protocolTitle: Bilingual;
+  patientContext: Bilingual;
+  checklistItems: {
+    icon: string;
+    label: Bilingual;
+    detail: Bilingual;
+  }[];
+  safetyPrinciple: Bilingual;
+}
+
+export interface MysteryClueCardConfig {
+  clueCode: string;
+  clueTitle: Bilingual;
+  sourceLocation: Bilingual;
+  timestampLabel: Bilingual;
+  evidenceSummary: Bilingual;
+  deductionNote: Bilingual;
+}
+
 export interface CustomPropStep {
   id: string;
   prompt: Bilingual;
@@ -108,20 +147,20 @@ export interface CustomPropDef {
   accentColor: number;
   iconEmoji: string;
   shape: CustomPropShape;
+  /** Optional prerequisite prop ID that must be solved before this clue unlocks (for Clue Chains in Medical Mystery) */
+  requiresPropId?: string;
   puzzleSteps: CustomPropStep[];
   completionClueSummary: Bilingual;
-  /** Optional inventory item / keycard awarded when solved (used in Escape the Lab & Lab clues) */
   rewardItem?: {
     id: string;
     icon: string;
     label: Bilingual;
   };
-  /** Optional interactive microscope mini-game shown inside this station modal */
   microscopeConfig?: MicroscopeMiniGameConfig;
-  /** Optional fictional culture & susceptibility (AST) table shown inside this station modal */
   astReportConfig?: AstReportConfig;
-  /** Optional ER triage & vitals card shown inside this station modal */
   triageCardConfig?: TriageCardConfig;
+  nursingChecklistConfig?: NursingChecklistConfig;
+  mysteryClueConfig?: MysteryClueCardConfig;
 }
 
 export interface AvatarRig {
@@ -132,6 +171,7 @@ export interface AvatarRig {
   rightArmPivot: THREE.Group;
   leftLegPivot: THREE.Group;
   rightLegPivot: THREE.Group;
+  baseRotationY: number;
   highlightRing?: THREE.Mesh;
   questBeacon?: THREE.Mesh;
 }
@@ -159,6 +199,7 @@ export interface CustomSceneAssets {
   npcRigs: Record<string, AvatarRig>;
   propRigs: Record<string, PropRig>;
   doorRigs: SecurityDoorRig[];
+  ambientParticles: THREE.Points | null;
   obstacles: BoxObstacle[];
   worldBounds: { minX: number; maxX: number; minZ: number; maxZ: number };
   configureMissionEnvironment: (
@@ -167,6 +208,13 @@ export interface CustomSceneAssets {
     lowGraphics: boolean
   ) => void;
   disposeAll: () => void;
+}
+
+/** Shortest-path angle interpolation in radians */
+export function lerpAngle(current: number, target: number, alpha: number): number {
+  let diff = ((target - current + Math.PI) % (Math.PI * 2)) - Math.PI;
+  if (diff < -Math.PI) diff += Math.PI * 2;
+  return current + diff * alpha;
 }
 
 function createSignTexture(
@@ -192,7 +240,7 @@ function createSignTexture(
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    ctx.font = 'bold 32px "IBM Plex Sans Arabic", system-ui, sans-serif';
+    ctx.font = 'bold 30px "IBM Plex Sans Arabic", system-ui, sans-serif';
     ctx.fillText(`${iconText} ${titleAr}`, canvas.width / 2, 66);
 
     ctx.fillStyle = '#bae6fd';
@@ -209,6 +257,7 @@ function createCartoonCharacter(
   accentColor: number,
   skinColor: number,
   hatType: CustomNpcDef['hatType'] | 'player',
+  baseRotationY: number,
   lowGraphics: boolean
 ): AvatarRig {
   const seg = lowGraphics ? 8 : 14;
@@ -363,6 +412,7 @@ function createCartoonCharacter(
     rightArmPivot,
     leftLegPivot,
     rightLegPivot,
+    baseRotationY,
     highlightRing,
     questBeacon,
   };
@@ -378,7 +428,6 @@ function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean):
   const pedMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
   const whiteMat = new THREE.MeshLambertMaterial({ color: 0xf8fafc });
 
-  // Glowing ground ring
   const ringGeo = new THREE.RingGeometry(0.58, 0.82, lowGraphics ? 16 : 24);
   ringGeo.rotateX(-Math.PI / 2);
   const ringMat = new THREE.MeshBasicMaterial({
@@ -391,7 +440,6 @@ function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean):
   ring.position.y = 0.025;
   root.add(ring);
 
-  // Base pedestal
   const basePed = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.52, 0.85, seg), pedMat);
   basePed.position.y = 0.425;
   root.add(basePed);
@@ -401,7 +449,6 @@ function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean):
 
   switch (propDef.shape) {
     case 'microscope_station': {
-      // Stylized 3D Binocular Microscope
       const base = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.1, 0.45), whiteMat);
       base.position.y = -0.25;
       const arm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.55, 0.16), primaryMat);
@@ -420,7 +467,6 @@ function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean):
       break;
     }
     case 'agar_incubator': {
-      // Stylized 3D Petri Dish with Antibiotic Susceptibility Disks
       const dishOuter = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.12, seg), primaryMat);
       dishOuter.rotation.x = 0.55;
       const agar = new THREE.Mesh(new THREE.CylinderGeometry(0.37, 0.37, 0.14, seg), accentMat);
@@ -435,10 +481,52 @@ function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean):
       floatingPart.add(dishOuter, agar, d1, d2);
       break;
     }
+    case 'evidence_board': {
+      // 3D Detective Clue Board with connected nodes
+      const board = new THREE.Mesh(new THREE.BoxGeometry(0.96, 0.68, 0.12), primaryMat);
+      const card1 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.15), whiteMat);
+      card1.position.set(-0.24, 0.12, 0);
+      const card2 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.22, 0.15), accentMat);
+      card2.position.set(0.24, 0.12, 0);
+      const card3 = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.2, 0.15), whiteMat);
+      card3.position.set(0, -0.15, 0);
+      floatingPart.add(board, card1, card2, card3);
+      break;
+    }
+    case 'med_safety_cart': {
+      const cartBody = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.68, 0.48), primaryMat);
+      const drawer1 = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.16, 0.52), whiteMat);
+      drawer1.position.y = 0.15;
+      const drawer2 = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.16, 0.52), accentMat);
+      drawer2.position.y = -0.1;
+      floatingPart.add(cartBody, drawer1, drawer2);
+      break;
+    }
+    case 'nursing_id_scanner':
+    case 'equipment_uv_tracer': {
+      const bandRing = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.06, 10, 20), primaryMat);
+      const scannerBeam = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.45, seg), accentMat);
+      scannerBeam.position.y = 0.18;
+      floatingPart.add(bandRing, scannerBeam);
+      break;
+    }
+    case 'fall_safety_bed': {
+      const miniBed = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.22, 0.52), whiteMat);
+      const railL = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.24, 0.06), primaryMat);
+      railL.position.set(0, 0.18, 0.24);
+      const railR = railL.clone();
+      railR.position.set(0, 0.18, -0.24);
+      const bell = new THREE.Mesh(new THREE.SphereGeometry(0.11, seg, seg), accentMat);
+      bell.position.set(0.28, 0.26, 0);
+      floatingPart.add(miniBed, railL, railR, bell);
+      break;
+    }
     case 'ast_analyzer':
     case 'triage_board':
     case 'er_vitals_monitor':
-    case 'pediatric_airway_monitor': {
+    case 'pediatric_airway_monitor':
+    case 'sbar_podium':
+    case 'mar_audit_terminal': {
       const screenFrame = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.64, 0.14), primaryMat);
       const screenFace = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.52, 0.16), accentMat);
       const pulseBar = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.08, 0.18), whiteMat);
@@ -464,7 +552,6 @@ function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean):
       break;
     }
     case 'waste_sorter': {
-      // Three mini color-coded bins
       const b1 = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.48, seg), new THREE.MeshLambertMaterial({ color: 0xeab308 }));
       b1.position.x = -0.28;
       const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.48, 0.24), new THREE.MeshLambertMaterial({ color: 0xef4444 }));
@@ -520,6 +607,10 @@ export function buildCustomWorldScene(
       ? 0x071a2c
       : preset === 'emergency_shift'
       ? 0x1a0b12
+      : preset === 'nurse_academy'
+      ? 0x062028
+      : preset === 'medical_mystery'
+      ? 0x11152c
       : 0x091d24;
 
   scene.background = new THREE.Color(bgHex);
@@ -528,16 +619,16 @@ export function buildCustomWorldScene(
   }
 
   const camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 60);
-  camera.position.set(0, 4.8, 5.8);
+  camera.position.set(0, 7.2, 8.8);
 
   const disposableGeometries: THREE.BufferGeometry[] = [];
   const disposableMaterials: THREE.Material[] = [];
   const disposableTextures: THREE.Texture[] = [];
 
-  const ambientLight = new THREE.AmbientLight(0xe0f2fe, 0.74);
+  const ambientLight = new THREE.AmbientLight(0xe0f2fe, 0.75);
   scene.add(ambientLight);
 
-  const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x1e293b, 0.55);
+  const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x1e293b, 0.56);
   hemiLight.position.set(0, 10, 0);
   scene.add(hemiLight);
 
@@ -550,7 +641,6 @@ export function buildCustomWorldScene(
   const obstacles: BoxObstacle[] = [];
   const doorRigs: SecurityDoorRig[] = [];
 
-  // Floor & Grid
   const floorGeo = new THREE.PlaneGeometry(20, 16);
   floorGeo.rotateX(-Math.PI / 2);
   const floorMat = new THREE.MeshLambertMaterial({
@@ -559,6 +649,10 @@ export function buildCustomWorldScene(
         ? 0xe0f2fe
         : preset === 'emergency_shift'
         ? 0xfef2f2
+        : preset === 'nurse_academy'
+        ? 0xf0fdfa
+        : preset === 'medical_mystery'
+        ? 0xeef2ff
         : 0xecfeff,
   });
   const floorMesh = new THREE.Mesh(floorGeo, floorMat);
@@ -577,7 +671,6 @@ export function buildCustomWorldScene(
     scene.add(mesh);
   };
 
-  // Perimeter Walls
   const wallMat = new THREE.MeshLambertMaterial({ color: 0xf1f5f9 });
   const trimMat = new THREE.MeshLambertMaterial({
     color:
@@ -585,6 +678,10 @@ export function buildCustomWorldScene(
         ? 0x0284c7
         : preset === 'emergency_shift'
         ? 0xdc2626
+        : preset === 'nurse_academy'
+        ? 0x0d9488
+        : preset === 'medical_mystery'
+        ? 0x4f46e5
         : 0x0d9488,
   });
 
@@ -626,7 +723,6 @@ export function buildCustomWorldScene(
   };
 
   if (preset === 'bacteria_lab') {
-    // ── GAME 1: BACTERIA LAB 3D ENVIRONMENT ────────────────────────────────────
     addFloorZone(-4.6, -3.2, 5.2, 3.8, 0xbae6fd);
     addFloorZone(4.6, -3.2, 5.2, 3.8, 0xccfbf1);
     addFloorZone(-5.2, 3.2, 5.2, 4.2, 0xe0e7ff);
@@ -637,7 +733,6 @@ export function buildCustomWorldScene(
     addStationSign(-9.7, 3.1, 3.2, Math.PI / 2, 'استقبال العينات والسلامة الحيوية', 'Sample Reception & Biosafety', '#3730a3', '#818cf8', '🧪');
     addStationSign(9.7, 3.1, 3.2, -Math.PI / 2, 'تقارير الحساسية الدوائية AST', 'AST Susceptibility & Stewardship', '#065f46', '#34d399', '📊');
 
-    // Bench 1: Optical Microscope Bench (Top-Left)
     const microBench = new THREE.Mesh(
       new THREE.BoxGeometry(3.2, 0.95, 1.2),
       new THREE.MeshLambertMaterial({ color: 0x0284c7 })
@@ -651,7 +746,6 @@ export function buildCustomWorldScene(
     scene.add(microBench, microTop);
     baseObstacles.push({ minX: -6.3, maxX: -2.7, minZ: -4.9, maxZ: -3.5 });
 
-    // Bench 2: Incubator & Culture Reader (Top-Right)
     const incCabinet = new THREE.Mesh(
       new THREE.BoxGeometry(1.5, 2.3, 1.2),
       new THREE.MeshLambertMaterial({ color: 0x0f766e })
@@ -670,7 +764,6 @@ export function buildCustomWorldScene(
     scene.add(incCabinet, incGlass, cultureDesk);
     baseObstacles.push({ minX: 2.5, maxX: 6.3, minZ: -5.0, maxZ: -3.5 });
 
-    // Bench 3: Class II Biosafety Cabinet & Sample Reception (Bottom-Left)
     const hoodBase = new THREE.Mesh(
       new THREE.BoxGeometry(1.4, 2.2, 2.8),
       new THREE.MeshLambertMaterial({ color: 0x312e81 })
@@ -684,7 +777,6 @@ export function buildCustomWorldScene(
     scene.add(hoodBase, hoodSash);
     baseObstacles.push({ minX: -8.5, maxX: -6.7, minZ: 1.7, maxZ: 4.7 });
 
-    // Bench 4: AST Susceptibility & Stewardship Terminal (Bottom-Right)
     const astDesk = new THREE.Mesh(
       new THREE.BoxGeometry(1.4, 1.0, 3.0),
       new THREE.MeshLambertMaterial({ color: 0x047857 })
@@ -700,7 +792,6 @@ export function buildCustomWorldScene(
     scene.add(astDesk, astMonitor1, astMonitor2);
     baseObstacles.push({ minX: 6.3, maxX: 8.1, minZ: 1.6, maxZ: 4.8 });
   } else if (preset === 'emergency_shift') {
-    // ── GAME 2: EMERGENCY SHIFT 3D ENVIRONMENT ─────────────────────────────────
     addFloorZone(-4.5, -3.2, 5.2, 3.8, 0xfee2e2);
     addFloorZone(4.5, -3.2, 5.2, 3.8, 0xdbeafe);
     addFloorZone(-5.4, 3.2, 5.2, 4.4, 0xffedd5);
@@ -711,7 +802,6 @@ export function buildCustomWorldScene(
     addStationSign(-9.7, 3.1, 3.2, Math.PI / 2, 'عنبر الطوارئ وأسرّة الملاحظة', 'ER Patient Bays 1 & 2', '#9a3412', '#fb923c', '🛌');
     addStationSign(9.7, 3.1, 3.2, -Math.PI / 2, 'سلامة الحساسية ومكافحة العدوى', 'Allergy & IPC Safety Hub', '#065f46', '#34d399', '🛡️');
 
-    // Triage Reception Counter (Top-Left)
     const triageDesk = new THREE.Mesh(
       new THREE.BoxGeometry(3.0, 1.05, 1.2),
       new THREE.MeshLambertMaterial({ color: 0xb91c1c })
@@ -725,7 +815,6 @@ export function buildCustomWorldScene(
     scene.add(triageDesk, triageTop);
     baseObstacles.push({ minX: -6.2, maxX: -2.8, minZ: -4.8, maxZ: -3.2 });
 
-    // Attending Physician Command Desk (Top-Right)
     const erDocDesk = new THREE.Mesh(
       new THREE.BoxGeometry(2.8, 0.98, 1.2),
       new THREE.MeshLambertMaterial({ color: 0x1e40af })
@@ -734,7 +823,6 @@ export function buildCustomWorldScene(
     scene.add(erDocDesk);
     baseObstacles.push({ minX: 2.9, maxX: 6.1, minZ: -4.8, maxZ: -3.2 });
 
-    // ER Stretcher Beds 1 & 2 + Red Crash Cart (Bottom-Left)
     const buildStretcher = (zPos: number, blanketHex: number) => {
       const frame = new THREE.Mesh(
         new THREE.BoxGeometry(2.5, 0.58, 1.35),
@@ -764,7 +852,6 @@ export function buildCustomWorldScene(
     crashCart.position.set(-7.4, 0.575, 3.6);
     scene.add(crashCart);
 
-    // Allergy & IPC Pharmacy Safety Station (Bottom-Right)
     const safetyCounter = new THREE.Mesh(
       new THREE.BoxGeometry(1.35, 1.05, 3.1),
       new THREE.MeshLambertMaterial({ color: 0x059669 })
@@ -772,19 +859,136 @@ export function buildCustomWorldScene(
     safetyCounter.position.set(7.0, 0.525, 3.3);
     scene.add(safetyCounter);
     baseObstacles.push({ minX: 6.1, maxX: 7.9, minZ: 1.6, maxZ: 5.0 });
+  } else if (preset === 'nurse_academy') {
+    // ── NURSE ACADEMY 3D CLINICAL SIMULATION CENTER ──────────────────────────
+    addFloorZone(-4.5, -3.2, 5.2, 3.8, 0xccfbf1);
+    addFloorZone(4.5, -3.2, 5.2, 3.8, 0xe0f2fe);
+    addFloorZone(-5.4, 3.2, 5.2, 4.4, 0xfef3c7);
+    addFloorZone(5.4, 3.2, 5.2, 4.4, 0xd1fae5);
+
+    addStationSign(-4.5, 3.1, -7.7, 0, 'أكاديمية التمريض والتسليم SBAR', 'Nursing Station & SBAR Podium', '#0f766e', '#2dd4bf', '👩‍⚕️');
+    addStationSign(4.5, 3.1, -7.7, 0, 'نظافة اليدين ومعدات الوقاية PPE', 'Hand Hygiene & PPE Skills Zone', '#0369a1', '#38bdf8', '🧴');
+    addStationSign(-9.7, 3.1, 3.2, Math.PI / 2, 'سرير المحاكاة ومنع السقوط', 'Simulated Bed & Fall Safety', '#b45309', '#fbbf24', '🛌');
+    addStationSign(9.7, 3.1, 3.2, -Math.PI / 2, 'سلامة الدواء والحساسية والعينات', 'Med Safety, Allergy & Specimens', '#065f46', '#34d399', '💊');
+
+    // Nursing Reception & SBAR Podium (Top-Left)
+    const naDesk = new THREE.Mesh(
+      new THREE.BoxGeometry(3.0, 1.02, 1.15),
+      new THREE.MeshLambertMaterial({ color: 0x0d9488 })
+    );
+    naDesk.position.set(-4.5, 0.51, -4.0);
+    const naTop = new THREE.Mesh(
+      new THREE.BoxGeometry(3.15, 0.1, 1.28),
+      new THREE.MeshLambertMaterial({ color: 0xffffff })
+    );
+    naTop.position.set(-4.5, 1.07, -4.0);
+    scene.add(naDesk, naTop);
+    baseObstacles.push({ minX: -6.2, maxX: -2.8, minZ: -4.8, maxZ: -3.2 });
+
+    // Hygiene & PPE Training Counter (Top-Right)
+    const hygieneBench = new THREE.Mesh(
+      new THREE.BoxGeometry(2.8, 0.96, 1.15),
+      new THREE.MeshLambertMaterial({ color: 0x0284c7 })
+    );
+    hygieneBench.position.set(4.5, 0.48, -4.0);
+    scene.add(hygieneBench);
+    baseObstacles.push({ minX: 2.9, maxX: 6.1, minZ: -4.8, maxZ: -3.2 });
+
+    // Simulated Patient Bed with Side Rails (Bottom-Left)
+    const simBed = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 0.56, 1.4),
+      new THREE.MeshLambertMaterial({ color: 0x94a3b8 })
+    );
+    simBed.position.set(-6.9, 0.28, 3.2);
+    const simMat = new THREE.Mesh(
+      new THREE.BoxGeometry(2.35, 0.28, 1.3),
+      new THREE.MeshLambertMaterial({ color: 0xffffff })
+    );
+    simMat.position.set(-6.9, 0.66, 3.2);
+    const simBlanket = new THREE.Mesh(
+      new THREE.BoxGeometry(1.5, 0.3, 1.32),
+      new THREE.MeshLambertMaterial({ color: 0x14b8a6 })
+    );
+    simBlanket.position.set(-6.5, 0.68, 3.2);
+    scene.add(simBed, simMat, simBlanket);
+    baseObstacles.push({ minX: -8.3, maxX: -5.5, minZ: 2.3, maxZ: 4.1 });
+
+    // Medication Safety & Specimen Verification Counter (Bottom-Right)
+    const medCounter = new THREE.Mesh(
+      new THREE.BoxGeometry(1.35, 1.05, 3.1),
+      new THREE.MeshLambertMaterial({ color: 0x059669 })
+    );
+    medCounter.position.set(7.0, 0.525, 3.3);
+    scene.add(medCounter);
+    baseObstacles.push({ minX: 6.1, maxX: 7.9, minZ: 1.6, maxZ: 5.0 });
+  } else if (preset === 'medical_mystery') {
+    // ── MEDICAL MYSTERY 3D CLINICAL INVESTIGATION CENTER ─────────────────────
+    addFloorZone(-4.5, -3.2, 5.2, 3.8, 0xe0e7ff);
+    addFloorZone(4.5, -3.2, 5.2, 3.8, 0xbae6fd);
+    addFloorZone(-5.4, 3.2, 5.2, 4.4, 0xfef3c7);
+    addFloorZone(5.4, 3.2, 5.2, 4.4, 0xd1fae5);
+
+    addStationSign(-4.5, 3.1, -7.7, 0, 'لوحة الأدلة الجنائية الطبية', 'Clinical Evidence & Timeline Board', '#312e81', '#818cf8', '🕵️');
+    addStationSign(4.5, 3.1, -7.7, 0, 'أرشيف المختبر والعينات', 'Microbiology & Sample Archive', '#0369a1', '#38bdf8', '🔬');
+    addStationSign(-9.7, 3.1, 3.2, Math.PI / 2, 'مسرح الفحص السريري والأدوات', 'Ward Scene & Equipment Trace', '#9a3412', '#fbbf24', '🛏️');
+    addStationSign(9.7, 3.1, 3.2, -Math.PI / 2, 'تدقيق سجلات الأدوية والحساسية', 'MAR Chart & Allergy Audit', '#065f46', '#34d399', '📋');
+
+    // Detective Command Desk & Evidence Board (Top-Left)
+    const detDesk = new THREE.Mesh(
+      new THREE.BoxGeometry(3.0, 1.0, 1.2),
+      new THREE.MeshLambertMaterial({ color: 0x3730a3 })
+    );
+    detDesk.position.set(-4.5, 0.5, -4.0);
+    const detBoard = new THREE.Mesh(
+      new THREE.BoxGeometry(2.6, 1.3, 0.14),
+      new THREE.MeshLambertMaterial({ color: 0x1e1b4b })
+    );
+    detBoard.position.set(-4.5, 1.85, -4.45);
+    scene.add(detDesk, detBoard);
+    baseObstacles.push({ minX: -6.2, maxX: -2.8, minZ: -4.8, maxZ: -3.2 });
+
+    // Lab Archive Bench (Top-Right)
+    const archDesk = new THREE.Mesh(
+      new THREE.BoxGeometry(2.8, 0.98, 1.2),
+      new THREE.MeshLambertMaterial({ color: 0x0369a1 })
+    );
+    archDesk.position.set(4.5, 0.49, -4.0);
+    scene.add(archDesk);
+    baseObstacles.push({ minX: 2.9, maxX: 6.1, minZ: -4.8, maxZ: -3.2 });
+
+    // Ward Inspection Bed (Bottom-Left)
+    const wardBed = new THREE.Mesh(
+      new THREE.BoxGeometry(2.5, 0.56, 1.4),
+      new THREE.MeshLambertMaterial({ color: 0x64748b })
+    );
+    wardBed.position.set(-6.9, 0.28, 3.2);
+    const wardMat = new THREE.Mesh(
+      new THREE.BoxGeometry(2.35, 0.28, 1.3),
+      new THREE.MeshLambertMaterial({ color: 0xffffff })
+    );
+    wardMat.position.set(-6.9, 0.66, 3.2);
+    scene.add(wardBed, wardMat);
+    baseObstacles.push({ minX: -8.3, maxX: -5.5, minZ: 2.3, maxZ: 4.1 });
+
+    // Pharmacy & MAR Audit Counter (Bottom-Right)
+    const marCounter = new THREE.Mesh(
+      new THREE.BoxGeometry(1.35, 1.05, 3.1),
+      new THREE.MeshLambertMaterial({ color: 0x047857 })
+    );
+    marCounter.position.set(7.0, 0.525, 3.3);
+    scene.add(marCounter);
+    baseObstacles.push({ minX: 6.1, maxX: 7.9, minZ: 1.6, maxZ: 5.0 });
   } else {
-    // ── GAME 3: ESCAPE THE LAB 3D MULTI-ROOM ENVIRONMENT ───────────────────────
-    // Zone 1 (South/Front: Airlock & PPE), Zone 2 (Middle: Specimen & Containment), Zone 3 (North/Back: Waste & Exit Vault)
-    addFloorZone(0, 4.4, 17.5, 4.0, 0xcffafe); // Room 1: Airlock & PPE
-    addFloorZone(0, 0.0, 17.5, 4.2, 0xe0e7ff); // Room 2: Specimen & Spill Containment
-    addFloorZone(0, -4.6, 17.5, 4.2, 0xd1fae5); // Room 3: Waste Segregation & Master Exit
+    // ── ESCAPE THE LAB 3D MULTI-ROOM ENVIRONMENT ─────────────────────────────
+    addFloorZone(0, 4.4, 17.5, 4.0, 0xcffafe);
+    addFloorZone(0, 0.0, 17.5, 4.2, 0xe0e7ff);
+    addFloorZone(0, -4.6, 17.5, 4.2, 0xd1fae5);
 
     addStationSign(-4.6, 3.1, -7.7, 0, 'غرفة ٣: فرز النفايات وبوابة الخروج', 'Room 3: Waste & Exit Vault', '#065f46', '#34d399', '🚪');
     addStationSign(4.6, 3.1, -7.7, 0, 'بروتوكول أمان المختبر النهائي', 'Master Safety Protocol', '#0f766e', '#2dd4bf', '🔐');
     addStationSign(-9.7, 3.1, 0.0, Math.PI / 2, 'غرفة ٢: فحص العينات والاحتواء', 'Room 2: Specimen & Containment', '#3730a3', '#818cf8', '🧪');
     addStationSign(9.7, 3.1, 4.4, -Math.PI / 2, 'غرفة ١: غرفة التعقيم ومعدات الوقاية', 'Room 1: Hygiene & PPE Airlock', '#0369a1', '#38bdf8', '🧤');
 
-    // Interior Divider Partition Rows with 3D Security Laser Gates (walkable central doorway)
     const buildPartitionWithLaserGate = (zCoord: number) => {
       const partMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
       const leftWallSeg = new THREE.Mesh(new THREE.BoxGeometry(6.4, 2.6, 0.32), partMat);
@@ -796,7 +1000,6 @@ export function buildCustomWorldScene(
       baseObstacles.push({ minX: -9.8, maxX: -3.3, minZ: zCoord - 0.3, maxZ: zCoord + 0.3 });
       baseObstacles.push({ minX: 3.3, maxX: 9.8, minZ: zCoord - 0.3, maxZ: zCoord + 0.3 });
 
-      // Archway Frame over the central passage (-3.3 to +3.3)
       const archTop = new THREE.Mesh(
         new THREE.BoxGeometry(6.8, 0.45, 0.42),
         new THREE.MeshLambertMaterial({ color: 0x0f172a })
@@ -836,7 +1039,6 @@ export function buildCustomWorldScene(
     buildPartitionWithLaserGate(2.2);
     buildPartitionWithLaserGate(-2.3);
 
-    // Master Exit Vault Door on Back Wall (x=0, z=-7.85)
     const vaultFrame = new THREE.Mesh(
       new THREE.BoxGeometry(3.2, 3.3, 0.5),
       new THREE.MeshLambertMaterial({ color: 0x064e3b })
@@ -850,13 +1052,35 @@ export function buildCustomWorldScene(
     scene.add(vaultFrame, vaultDoor);
   }
 
-  // Create Player Avatar
-  const playerRig = createCartoonCharacter(0x0284c7, 0xffffff, 0xf6d0b1, 'player', lowGraphics);
-  playerRig.root.position.set(0, 0, 4.6);
+  // Restrained 3D Floating Clean-Air / Sparkle Particles (disabled in lowGraphics)
+  let ambientParticles: THREE.Points | null = null;
+  if (!lowGraphics) {
+    const pCount = 36;
+    const positions = new Float32Array(pCount * 3);
+    for (let i = 0; i < pCount; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 16;
+      positions[i * 3 + 1] = 0.6 + Math.random() * 2.8;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 12;
+    }
+    const pGeo = new THREE.BufferGeometry();
+    pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const pMat = new THREE.PointsMaterial({
+      color: 0x38bdf8,
+      size: 0.11,
+      transparent: true,
+      opacity: 0.55,
+    });
+    ambientParticles = new THREE.Points(pGeo, pMat);
+    scene.add(ambientParticles);
+    disposableGeometries.push(pGeo);
+    disposableMaterials.push(pMat);
+  }
+
+  const playerRig = createCartoonCharacter(0x0284c7, 0xffffff, 0xf6d0b1, 'player', Math.PI, lowGraphics);
+  playerRig.root.position.set(0, 0, preset === 'escape_lab' ? 4.8 : 1.5);
   playerRig.root.rotation.y = Math.PI;
   scene.add(playerRig.root);
 
-  // Create NPCs
   const npcRigs: Record<string, AvatarRig> = {};
   npcs.forEach((def) => {
     const rig = createCartoonCharacter(
@@ -864,6 +1088,7 @@ export function buildCustomWorldScene(
       def.accentColor,
       def.skinColor,
       def.hatType,
+      def.rotationY,
       lowGraphics
     );
     rig.root.position.set(def.position[0], def.position[1], def.position[2]);
@@ -948,6 +1173,7 @@ export function buildCustomWorldScene(
     npcRigs,
     propRigs,
     doorRigs,
+    ambientParticles,
     obstacles,
     worldBounds,
     configureMissionEnvironment,
@@ -960,50 +1186,97 @@ export function updateCustomSceneAnimations(
   npcRigs: Record<string, AvatarRig>,
   propRigs: Record<string, PropRig>,
   doorRigs: SecurityDoorRig[],
+  ambientParticles: THREE.Points | null,
   solvedPropIds: string[],
   totalPropsCount: number,
   targetNpcId: string | null,
   nearestNpcId: string | null,
   nearestPropId: string | null,
+  activeSpeakerId: string | null,
+  npcReaction: 'idle' | 'optimal' | 'caution',
   isPlayerMoving: boolean,
+  reducedMotion: boolean,
   elapsedTime: number
 ): void {
+  const animSpeed = reducedMotion ? 0.25 : 1.0;
+
   if (isPlayerMoving) {
-    const swing = Math.sin(elapsedTime * 10) * 0.55;
+    const swing = Math.sin(elapsedTime * 10 * animSpeed) * 0.58;
     playerRig.leftLegPivot.rotation.x = swing;
     playerRig.rightLegPivot.rotation.x = -swing;
-    playerRig.leftArmPivot.rotation.x = -swing * 0.8;
-    playerRig.rightArmPivot.rotation.x = swing * 0.8;
-    playerRig.headGroup.position.y = 1.66 + Math.abs(Math.sin(elapsedTime * 10)) * 0.04;
+    playerRig.leftArmPivot.rotation.x = -swing * 0.85;
+    playerRig.rightArmPivot.rotation.x = swing * 0.85;
+    playerRig.torso.position.y = 1.02 + Math.abs(Math.sin(elapsedTime * 10 * animSpeed)) * 0.03;
+    playerRig.headGroup.position.y = 1.66 + Math.abs(Math.sin(elapsedTime * 10 * animSpeed)) * 0.04;
   } else {
-    playerRig.leftLegPivot.rotation.x *= 0.85;
-    playerRig.rightLegPivot.rotation.x *= 0.85;
-    playerRig.leftArmPivot.rotation.x = Math.sin(elapsedTime * 2) * 0.05;
-    playerRig.rightArmPivot.rotation.x = -Math.sin(elapsedTime * 2) * 0.05;
-    playerRig.headGroup.position.y = 1.66 + Math.sin(elapsedTime * 2.5) * 0.015;
+    playerRig.leftLegPivot.rotation.x *= 0.82;
+    playerRig.rightLegPivot.rotation.x *= 0.82;
+    playerRig.leftArmPivot.rotation.x = Math.sin(elapsedTime * 2 * animSpeed) * 0.05;
+    playerRig.rightArmPivot.rotation.x = -Math.sin(elapsedTime * 2 * animSpeed) * 0.05;
+    playerRig.torso.position.y = 1.02 + Math.sin(elapsedTime * 2.5 * animSpeed) * 0.01;
+    playerRig.headGroup.position.y = 1.66 + Math.sin(elapsedTime * 2.5 * animSpeed) * 0.015;
   }
+
+  const px = playerRig.root.position.x;
+  const pz = playerRig.root.position.z;
 
   Object.keys(npcRigs).forEach((npcId, idx) => {
     const rig = npcRigs[npcId];
-    const phase = elapsedTime * 2.2 + idx * 1.3;
-    rig.headGroup.position.y = 1.66 + Math.sin(phase) * 0.02;
-    rig.headGroup.rotation.y = Math.sin(phase * 0.7) * 0.15;
-
+    const phase = elapsedTime * 2.2 * animSpeed + idx * 1.3;
     const isTarget = targetNpcId === npcId;
     const isNear = nearestNpcId === npcId;
+    const isSpeaking = activeSpeakerId === npcId;
 
-    if (isNear || isTarget) {
-      rig.rightArmPivot.rotation.z = -0.35 - Math.sin(elapsedTime * 5) * 0.2;
-      rig.rightArmPivot.rotation.x = -0.45;
+    // Smoothly orient NPC toward player when nearby or conversing
+    const dx = px - rig.root.position.x;
+    const dz = pz - rig.root.position.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist < 3.8 || isSpeaking) {
+      const angleToPlayer = Math.atan2(dx, dz);
+      rig.root.rotation.y = lerpAngle(rig.root.rotation.y, angleToPlayer, 0.12);
     } else {
+      rig.root.rotation.y = lerpAngle(rig.root.rotation.y, rig.baseRotationY, 0.08);
+    }
+
+    // Conversational and reactive head/arm gestures
+    if (isSpeaking && npcReaction === 'optimal') {
+      // Enthusiastic nod + both arms welcoming gesture
+      rig.headGroup.rotation.x = Math.sin(elapsedTime * 9 * animSpeed) * 0.18;
+      rig.headGroup.rotation.y = 0;
+      rig.rightArmPivot.rotation.x = -0.75 + Math.sin(elapsedTime * 7 * animSpeed) * 0.22;
+      rig.leftArmPivot.rotation.x = -0.55 - Math.sin(elapsedTime * 7 * animSpeed) * 0.18;
+    } else if (isSpeaking && npcReaction === 'caution') {
+      // Thoughtful head-shake + cautionary raised hand
+      rig.headGroup.rotation.x = 0;
+      rig.headGroup.rotation.y = Math.sin(elapsedTime * 8 * animSpeed) * 0.25;
+      rig.rightArmPivot.rotation.x = -0.85;
+      rig.leftArmPivot.rotation.x = 0;
+    } else if (isSpeaking) {
+      // Active speaking gestures
+      rig.headGroup.rotation.x = Math.sin(elapsedTime * 4 * animSpeed) * 0.06;
+      rig.headGroup.rotation.y = Math.sin(elapsedTime * 2.5 * animSpeed) * 0.12;
+      rig.rightArmPivot.rotation.x = -0.45 + Math.sin(elapsedTime * 5 * animSpeed) * 0.18;
+      rig.leftArmPivot.rotation.x = -0.25 - Math.sin(elapsedTime * 4 * animSpeed) * 0.14;
+    } else if (isNear || isTarget) {
+      rig.headGroup.position.y = 1.66 + Math.sin(phase) * 0.02;
+      rig.headGroup.rotation.x = 0;
+      rig.headGroup.rotation.y = Math.sin(phase * 0.7) * 0.12;
+      rig.rightArmPivot.rotation.z = -0.32 - Math.sin(elapsedTime * 5 * animSpeed) * 0.18;
+      rig.rightArmPivot.rotation.x = -0.45;
+      rig.leftArmPivot.rotation.x = Math.sin(phase) * 0.05;
+    } else {
+      rig.headGroup.position.y = 1.66 + Math.sin(phase) * 0.02;
+      rig.headGroup.rotation.x = 0;
+      rig.headGroup.rotation.y = Math.sin(phase * 0.7) * 0.15;
       rig.rightArmPivot.rotation.z = 0;
       rig.rightArmPivot.rotation.x = Math.sin(phase) * 0.06;
+      rig.leftArmPivot.rotation.x = -Math.sin(phase) * 0.06;
     }
 
     if (rig.questBeacon) {
       rig.questBeacon.visible = isTarget || isNear;
-      rig.questBeacon.rotation.y = elapsedTime * 2.5;
-      rig.questBeacon.position.y = 2.35 + Math.sin(elapsedTime * 4) * 0.08;
+      rig.questBeacon.rotation.y = elapsedTime * 2.5 * animSpeed;
+      rig.questBeacon.position.y = 2.35 + Math.sin(elapsedTime * 4 * animSpeed) * 0.08;
       const mat = rig.questBeacon.material as THREE.MeshBasicMaterial;
       mat.color.setHex(isNear ? 0x22c55e : 0x38bdf8);
     }
@@ -1020,11 +1293,11 @@ export function updateCustomSceneAnimations(
     const isSolved = solvedPropIds.includes(propId);
     const isNear = nearestPropId === propId;
 
-    pRig.floatingPart.rotation.y = elapsedTime * 1.2 + idx;
-    pRig.floatingPart.position.y = 1.26 + Math.sin(elapsedTime * 3 + idx) * 0.06;
+    pRig.floatingPart.rotation.y = elapsedTime * 1.2 * animSpeed + idx;
+    pRig.floatingPart.position.y = 1.26 + Math.sin(elapsedTime * 3 * animSpeed + idx) * 0.06;
 
-    pRig.beacon.rotation.y = -elapsedTime * 2.8;
-    pRig.beacon.position.y = 2.18 + Math.sin(elapsedTime * 4.5) * 0.08;
+    pRig.beacon.rotation.y = -elapsedTime * 2.8 * animSpeed;
+    pRig.beacon.position.y = 2.18 + Math.sin(elapsedTime * 4.5 * animSpeed) * 0.08;
 
     const beaconMat = pRig.beacon.material as THREE.MeshBasicMaterial;
     beaconMat.color.setHex(isSolved ? 0x22c55e : isNear ? 0x38bdf8 : 0xfacc15);
@@ -1034,15 +1307,20 @@ export function updateCustomSceneAnimations(
     ringMat.opacity = isNear ? 0.9 : isSolved ? 0.45 : 0.68;
   });
 
-  // Animate security laser doors in Escape the Lab as clues get solved
+  if (ambientParticles && !reducedMotion) {
+    ambientParticles.rotation.y = elapsedTime * 0.06;
+    ambientParticles.position.y = Math.sin(elapsedTime * 1.2) * 0.12;
+  }
+
   doorRigs.forEach((dRig, idx) => {
-    const unlocked = solvedPropIds.length > idx || (totalPropsCount > 0 && solvedPropIds.length >= totalPropsCount);
+    const unlocked =
+      solvedPropIds.length > idx ||
+      (totalPropsCount > 0 && solvedPropIds.length >= totalPropsCount);
     const lightMat = dRig.statusLight.material as THREE.MeshBasicMaterial;
     const barMat = dRig.laserBar.material as THREE.MeshBasicMaterial;
     lightMat.color.setHex(unlocked ? 0x22c55e : 0xfacc15);
     barMat.color.setHex(unlocked ? 0x22c55e : 0xef4444);
 
-    // Slide panels outward smoothly when unlocked
     const targetOffset = unlocked ? 2.75 : 2.1;
     dRig.leftPanel.position.x += (-targetOffset - dRig.leftPanel.position.x) * 0.1;
     dRig.rightPanel.position.x += (targetOffset - dRig.rightPanel.position.x) * 0.1;

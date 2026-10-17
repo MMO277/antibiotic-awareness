@@ -36,6 +36,8 @@ import Editor from './Editor';
 
 // Lazy-load 3D WebGL games so Three.js / WebGL code stays out of the initial application bundle
 const MedicalSimulator = lazy(() => import('./MedicalSimulator'));
+const NurseAcademy = lazy(() => import('./NurseAcademy'));
+const MedicalMystery = lazy(() => import('./MedicalMystery'));
 const BacteriaLab = lazy(() => import('./BacteriaLab'));
 const EmergencyShift = lazy(() => import('./EmergencyShift'));
 const EscapeTheLab = lazy(() => import('./EscapeTheLab'));
@@ -126,6 +128,22 @@ export default function App() {
             element={
               <Suspense fallback={<SimulatorLoadingFallback />}>
                 <MedicalSimulator />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/nurse-academy"
+            element={
+              <Suspense fallback={<SimulatorLoadingFallback />}>
+                <NurseAcademy />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/medical-mystery"
+            element={
+              <Suspense fallback={<SimulatorLoadingFallback />}>
+                <MedicalMystery />
               </Suspense>
             }
           />

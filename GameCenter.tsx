@@ -25,11 +25,83 @@ export interface GameRegistryItem {
   ctaEn: string;
   accentColor: string;
   secondaryColor: string;
-  visualType: 'simulator3d' | 'lab3d' | 'er3d' | 'escape3d' | 'arcade2d';
+  visualType: 'simulator3d' | 'nurse3d' | 'mystery3d' | 'lab3d' | 'er3d' | 'escape3d' | 'arcade2d';
   category: 'all' | '3d-simulation' | '2d-arcade';
 }
 
 export const GAME_CENTER_REGISTRY: GameRegistryItem[] = [
+  {
+    id: 'nurse-academy',
+    route: '/nurse-academy',
+    badgeAr: 'جديد • 10 سيناريوهات تدريبية 3D',
+    badgeEn: 'NEW • 10 Clinical Nursing Scenarios 3D',
+    modeAr: 'أكاديمية تدريب تمريضي ثلاثية الأبعاد (WebGL 3D)',
+    modeEn: '3D Nursing Education & Safety Academy',
+    titleAr: 'أكاديمية التمريض 3D (Nurse Academy)',
+    titleEn: 'Nurse Academy 3D',
+    subtitleAr: '10 سيناريوهات تفاعلية ثلاثية الأبعاد: التحقق من الهوية، نظافة اليدين، الوقاية، الحساسية، سلامة الدواء، الإنذار المبكر، منع السقوط، ترميز العينات، التوعية بالمضادات، وتسليم SBAR',
+    subtitleEn: '10 playable 3D scenarios: patient ID & rapport, WHO 5 Moments, PPE, allergy escalation, medication safety checks, red flags, fall prevention, specimen labeling, antibiotic education & SBAR handover',
+    descriptionAr:
+      'مركز تدريب تمريضي كرتوني ثلاثي الأبعاد بالكامل مع شخصيات تعبيرية متحركة، قوائم فحص سريرية تفاعلية، وحوارات متفرعة باللغتين العربية والإنجليزية. تدرب على مهارات سلامة المرضى وحوكمة المضادات الحيوية عبر 10 سيناريوهات متكاملة ومستقلة بحفظ سحابي خاص.',
+    descriptionEn:
+      'An interactive 3D cartoon nursing simulation center featuring expressive animated NPCs, clinical safety checklists, skippable camera fly-ins, and bilingual branching dialogue across 10 complete educational scenarios with independent cloud progress.',
+    featuresAr: [
+      '10 سيناريوهات قابلة للعب بالكامل تغطي المهارات التمريضية الأساسية وسلامة الأدوية والمضادات الحيوية',
+      'قوائم تحقق تمريضية تفاعلية (Checklists) وشاشات علامات حيوية مع تغذية راجعة فورية وملخص ختامي (Debrief)',
+      'حركات شخصيات سلسة (مشي، التفاف، إيماءات تفاعلية عند الإجابة)، مؤثرات صوتية اختيارية، ودعم تقليل الحركة',
+      'حفظ سحابي مستقل (nurseAcademy) عبر Firebase Auth/Firestore مع دعم وضع الزائر',
+    ],
+    featuresEn: [
+      '10 genuinely playable scenarios covering core nursing safety, IPC, and antimicrobial stewardship skills',
+      'Interactive bedside safety checklists, vital-sign red-flag monitors, immediate rationale feedback, and debriefs',
+      'Smooth 3D character locomotion, reactive NPC gestures, skippable camera intros, muteable audio & reduced-motion support',
+      'Independent cloud progress sync (nurseAcademy) per UID with safe merge and guest fallback',
+    ],
+    controlsAr: 'الموبايل: عصا التحكم 3D + زر الفحص/التفاعل | الكمبيوتر: WASD أو الأسهم + مفتاح E',
+    controlsEn: 'Mobile: 3D Touch Joystick + Inspect/Interact Button | Desktop: WASD / Arrows + E Key',
+    ctaAr: 'ادخل أكاديمية التمريض 3D (10 سيناريوهات) 🎓',
+    ctaEn: 'Launch Nurse Academy 3D (10 Scenarios) 🎓',
+    accentColor: '#0284c7',
+    secondaryColor: '#0d9488',
+    visualType: 'nurse3d',
+    category: '3d-simulation',
+  },
+  {
+    id: 'medical-mystery',
+    route: '/medical-mystery',
+    badgeAr: 'جديد • 10 قضايا تحقيق + سجل أدلة 3D',
+    badgeEn: 'NEW • 10 Investigation Cases + Evidence Journal 3D',
+    modeAr: 'لعبة تحقيق وألغاز سريرية ثلاثية الأبعاد (WebGL 3D)',
+    modeEn: '3D Story-Rich Clinical Investigation Game',
+    titleAr: 'الألغاز الطبية 3D (Medical Mystery)',
+    titleEn: 'Medical Mystery 3D',
+    subtitleAr: 'حقق في 10 قضايا سريرية متميزة: العينة الخاطئة، تنبيه الحساسية، تفصيلة التسليم المفقودة، ثغرة العدوى، التقرير المتناقض، الميكروب المقاوم، السجل المربك، خط التفشي، أثر المعدات، والقضية الختامية',
+    subtitleEn: 'Solve 10 distinct clinical cases: Mislabelled Sample, Allergy Alert, Missing Handover, IPC Gap, Contradictory Lab, Resistant Clue, Confusing MAR, Outbreak Timeline, Equipment Trail & Final Case',
+    descriptionAr:
+      'لعبة تحقيق قصصية ثلاثية الأبعاد داخل مركز تحقيقات سلامة المرضى. اجمع القرائن المتسلسلة (حيث تفتح القرينة الأولى قفل القرينة الثانية)، راجع «سجل الأدلة واللوحة الجنائية 📓»، استجوب أخصائي المختبر والصيدلي والتمريض، واكشف السبب الجذري في كل قضية.',
+    descriptionEn:
+      'A story-driven 3D clinical detective game. Follow chained 3D clues where initial findings unlock deeper forensic stations, review your interactive Evidence Journal (📓), interview specialists through branching dialogue, and reveal the systemic root cause in all 10 Season 1 cases.',
+    featuresAr: [
+      '10 قضايا تحقيق مستقلة ومتنوعة بالكامل (وليست مكررة) مع سلسلة قرائن مترابطة تفتح تباعاً',
+      'سجل أدلة تفاعلي (Evidence Journal 📓) يحفظ القرائن المكتشفة ورموز الأدلة واستنتاجات التحقيق',
+      'أجهزة فحص ثلاثية الأبعاد تشمل التتبع الفلوري بالأشعة فوق البنفسجية (UV)، تقارير AST، وتدقيق السجلات',
+      'حفظ سحابي مستقل (medicalMystery) لتقدم القضايا والقرائن والأوسمة عبر جميع أجهزتك',
+    ],
+    featuresEn: [
+      '10 genuinely distinct playable investigation cases with chained clues that unlock downstream evidence',
+      'Interactive Evidence Journal & Clue Board (📓) tracking collected forensic items and deduction hints',
+      '3D UV fluorescent surface tracers, barcode printer logs, AST susceptibility analyzers, and SBAR audits',
+      'Independent cloud progress sync (medicalMystery) across devices with safe merge and guest support',
+    ],
+    controlsAr: 'الموبايل: عصا التحكم 3D + زر فحص القرينة + سجل الأدلة 📓 | الكمبيوتر: WASD + E',
+    controlsEn: 'Mobile: 3D Touch Joystick + Inspect Clue + Evidence Journal 📓 | Desktop: WASD + E',
+    ctaAr: 'ابدأ التحقيق في القضايا العشر 3D 🕵️‍♂️',
+    ctaEn: 'Play Medical Mystery 3D (10 Cases) 🕵️‍♂️',
+    accentColor: '#7c3aed',
+    secondaryColor: '#0891b2',
+    visualType: 'mystery3d',
+    category: '3d-simulation',
+  },
   {
     id: 'medical-life-simulator',
     route: '/medical-simulator',
@@ -69,8 +141,8 @@ export const GAME_CENTER_REGISTRY: GameRegistryItem[] = [
   {
     id: 'bacteria-lab',
     route: '/bacteria-lab',
-    badgeAr: 'جديد • 4 مهام تحقيق معملي 3D + مجهر تفاعلي',
-    badgeEn: 'NEW • 4 Lab Missions 3D + Microscope & AST',
+    badgeAr: '4 مهام تحقيق معملي 3D + مجهر تفاعلي',
+    badgeEn: '4 Lab Missions 3D + Microscope & AST',
     modeAr: 'تحقيق ميكروبيولوجي ثلاثي الأبعاد (WebGL 3D)',
     modeEn: '3D Microbiology Lab Investigation',
     titleAr: 'مختبر البكتيريا 3D (Bacteria Lab)',
@@ -105,8 +177,8 @@ export const GAME_CENTER_REGISTRY: GameRegistryItem[] = [
   {
     id: 'emergency-shift',
     route: '/emergency-shift',
-    badgeAr: 'جديد • 4 سيناريوهات طوارئ وفرز 3D',
-    badgeEn: 'NEW • 4 ED Triage & Safety Scenarios 3D',
+    badgeAr: '4 سيناريوهات طوارئ وفرز 3D',
+    badgeEn: '4 ED Triage & Safety Scenarios 3D',
     modeAr: 'محاكاة قسم الطوارئ ثلاثية الأبعاد (WebGL 3D)',
     modeEn: '3D Emergency Department Roleplay',
     titleAr: 'مناوبة الطوارئ 3D (Emergency Shift)',
@@ -141,8 +213,8 @@ export const GAME_CENTER_REGISTRY: GameRegistryItem[] = [
   {
     id: 'escape-the-lab',
     route: '/escape-the-lab',
-    badgeAr: 'جديد • 3 غرف هروب متصلة + بوابة الخروج 3D',
-    badgeEn: 'NEW • 3 Connected Escape Rooms + Master Vault 3D',
+    badgeAr: '3 غرف هروب متصلة + بوابة الخروج 3D',
+    badgeEn: '3 Connected Escape Rooms + Master Vault 3D',
     modeAr: 'غرفة هروب وألغاز سلامة ثلاثية الأبعاد (WebGL 3D)',
     modeEn: '3D Safety & IPC Escape Room Adventure',
     titleAr: 'الهروب من المختبر 3D (Escape the Lab)',
@@ -235,21 +307,21 @@ export default function GameCenter() {
           <span aria-hidden="true">🎮</span>
           <span>
             {isAr
-              ? 'مركز الألعاب والمحاكاة السريرية التفاعلية (5 تجارب تعليمية)'
-              : 'Interactive Clinical Games & 3D Simulation Hub (5 Educational Games)'}
+              ? `مركز الألعاب والمحاكاة السريرية التفاعلية (${GAME_CENTER_REGISTRY.length} تجارب تعليمية)`
+              : `Interactive Clinical Games & 3D Simulation Hub (${GAME_CENTER_REGISTRY.length} Educational Games)`}
           </span>
         </div>
 
         <h1 className="gc-hero-title">
           {isAr
-            ? 'تعلّم الاستخدام الآمن للمضادات الحيوية باللعب والمحاكاة ثلاثية الأبعاد'
-            : 'Master Antibiotic Stewardship Through Play & 3D Cartoon Simulation'}
+            ? 'تعلّم الاستخدام الآمن للمضادات الحيوية وسلامة المرضى باللعب والمحاكاة ثلاثية الأبعاد'
+            : 'Master Antibiotic Stewardship & Patient Safety Through Play & 3D Simulation'}
         </h1>
 
         <p className="gc-hero-sub">
           {isAr
-            ? 'استكشف 4 عوالم كرتونية ثلاثية الأبعاد (WebGL 3D) مستقلة — محاكي الحياة الطبية، مختبر البكتيريا، مناوبة الطوارئ، والهروب من المختبر — بالإضافة إلى لعبة الأركيد الكلاسيكية «صائد البكتيريا».'
-            : 'Explore 4 independent 3D WebGL cartoon worlds — Medical Life Simulator, Bacteria Lab, Emergency Shift, and Escape the Lab — alongside our classic 2D Bacteria Hunter arcade game.'}
+            ? 'استكشف 6 عوالم كرتونية ثلاثية الأبعاد (WebGL 3D) مستقلة — تشمل أكاديمية التمريض (10 سيناريوهات)، الألغاز الطبية (10 قضايا تحقيق وسجل أدلة)، محاكي الحياة الطبية، مختبر البكتيريا، مناوبة الطوارئ، والهروب من المختبر — بالإضافة إلى لعبة الأركيد الكلاسيكية «صائد البكتيريا».'
+            : 'Explore 6 independent 3D WebGL cartoon worlds — including Nurse Academy (10 scenarios), Medical Mystery (10 cases & Evidence Journal), Medical Life Simulator, Bacteria Lab, Emergency Shift, and Escape the Lab — alongside our classic 2D Bacteria Hunter arcade game.'}
         </p>
 
         {/* Filter Pills */}
@@ -304,6 +376,68 @@ export default function GameCenter() {
                 <span className="gc-mode-tag">{isAr ? game.modeAr : game.modeEn}</span>
               </div>
 
+              {game.visualType === 'nurse3d' && (
+                <div className="gc-art-3d" aria-hidden="true">
+                  <svg viewBox="0 0 360 150" className="gc-svg-illustration">
+                    <polygon points="180,15 330,75 180,138 30,75" fill="#0c2d48" stroke="#38bdf8" strokeWidth="1.5" strokeOpacity="0.55" />
+                    {/* 3D Nursing Station, ID Scanner, Checklist & Avatar */}
+                    <g transform="translate(80, 44)">
+                      <rect x="0" y="10" width="46" height="34" rx="6" fill="#e0f2fe" stroke="#0284c7" strokeWidth="1.5" />
+                      <line x1="8" y1="20" x2="36" y2="20" stroke="#0284c7" strokeWidth="2.2" />
+                      <line x1="8" y1="28" x2="30" y2="28" stroke="#0d9488" strokeWidth="2.2" />
+                      <circle cx="38" cy="34" r="5" fill="#22c55e" />
+                    </g>
+                    <g transform="translate(162, 34)">
+                      <ellipse cx="18" cy="58" rx="16" ry="6" fill="rgba(56,189,248,0.35)" />
+                      <rect x="10" y="28" width="16" height="24" rx="5" fill="#0284c7" stroke="#ffffff" strokeWidth="1.2" />
+                      <circle cx="18" cy="16" r="10" fill="#fde68a" stroke="#ffffff" strokeWidth="1.2" />
+                      <path d="M 9 10 L 27 10 L 24 3 L 12 3 Z" fill="#ffffff" stroke="#0284c7" strokeWidth="1" />
+                    </g>
+                    <g transform="translate(228, 44)">
+                      <rect x="0" y="8" width="52" height="36" rx="6" fill="#0f172a" stroke="#2dd4bf" strokeWidth="1.6" />
+                      <text x="26" y="30" textAnchor="middle" fill="#5eead4" fontSize="11" fontWeight="bold">SBAR ✓</text>
+                    </g>
+                  </svg>
+                  <div className="gc-visual-floating-chips">
+                    <span>🪪 {isAr ? 'تحقق الهوية' : 'Patient ID'}</span>
+                    <span>🧼 {isAr ? 'اللحظات الـ 5' : '5 Moments'}</span>
+                    <span>💊 {isAr ? 'سلامة الدواء' : 'Med Safety'}</span>
+                    <span>📋 {isAr ? 'تسليم SBAR' : 'SBAR Handover'}</span>
+                  </div>
+                </div>
+              )}
+
+              {game.visualType === 'mystery3d' && (
+                <div className="gc-art-3d" aria-hidden="true">
+                  <svg viewBox="0 0 360 150" className="gc-svg-illustration">
+                    <polygon points="180,15 330,75 180,138 30,75" fill="#1e1338" stroke="#c084fc" strokeWidth="1.5" strokeOpacity="0.55" />
+                    {/* 3D Evidence Board, Red String Clue Chain & Magnifier */}
+                    <g transform="translate(82, 36)">
+                      <rect x="0" y="6" width="64" height="44" rx="6" fill="#2e1065" stroke="#a855f7" strokeWidth="1.8" />
+                      <rect x="8" y="14" width="16" height="12" rx="2" fill="#fef08a" />
+                      <rect x="38" y="16" width="16" height="12" rx="2" fill="#bae6fd" />
+                      <rect x="22" y="32" width="18" height="12" rx="2" fill="#fecdd3" />
+                      <line x1="16" y1="20" x2="46" y2="22" stroke="#f43f5e" strokeWidth="1.8" />
+                      <line x1="46" y1="22" x2="31" y2="38" stroke="#f43f5e" strokeWidth="1.8" />
+                    </g>
+                    <g transform="translate(172, 38)">
+                      <circle cx="20" cy="20" r="14" fill="rgba(56,189,248,0.2)" stroke="#38bdf8" strokeWidth="3" />
+                      <line x1="30" y1="30" x2="44" y2="44" stroke="#facc15" strokeWidth="4.5" strokeLinecap="round" />
+                    </g>
+                    <g transform="translate(236, 44)">
+                      <rect x="0" y="6" width="48" height="36" rx="6" fill="#0f172a" stroke="#c084fc" strokeWidth="1.6" />
+                      <text x="24" y="28" textAnchor="middle" fill="#e9d5ff" fontSize="11" fontWeight="bold">10 CASES</text>
+                    </g>
+                  </svg>
+                  <div className="gc-visual-floating-chips">
+                    <span>📓 {isAr ? 'سجل الأدلة' : 'Evidence Journal'}</span>
+                    <span>🔗 {isAr ? 'قرائن متسلسلة' : 'Clue Chains'}</span>
+                    <span>🔦 {isAr ? 'تتبع UV' : 'UV Forensics'}</span>
+                    <span>🕵️ {isAr ? '10 قضايا' : '10 Cases'}</span>
+                  </div>
+                </div>
+              )}
+
               {game.visualType === 'simulator3d' && (
                 <div className="gc-art-3d" aria-hidden="true">
                   <svg viewBox="0 0 360 150" className="gc-svg-illustration">
@@ -355,7 +489,6 @@ export default function GameCenter() {
                 <div className="gc-art-3d" aria-hidden="true">
                   <svg viewBox="0 0 360 150" className="gc-svg-illustration">
                     <polygon points="180,15 330,75 180,138 30,75" fill="#0b1f38" stroke="#60a5fa" strokeWidth="1.5" strokeOpacity="0.5" />
-                    {/* 3D Microscope & Petri Dish */}
                     <g transform="translate(96, 44)">
                       <ellipse cx="26" cy="52" rx="24" ry="10" fill="#1e3a8a" stroke="#38bdf8" strokeWidth="1.5" />
                       <circle cx="18" cy="50" r="4" fill="#f43f5e" />
@@ -385,7 +518,6 @@ export default function GameCenter() {
                 <div className="gc-art-3d" aria-hidden="true">
                   <svg viewBox="0 0 360 150" className="gc-svg-illustration">
                     <polygon points="180,15 330,75 180,138 30,75" fill="#280d15" stroke="#f87171" strokeWidth="1.5" strokeOpacity="0.5" />
-                    {/* 3D ER Stretcher, Vitals Monitor & Red Flag */}
                     <g transform="translate(82, 48)">
                       <polygon points="0,24 42,8 68,18 26,34" fill="#fed7aa" stroke="#ea580c" strokeWidth="1.3" />
                       <polygon points="0,24 26,34 26,46 0,36" fill="#9a3412" />
@@ -413,7 +545,6 @@ export default function GameCenter() {
                 <div className="gc-art-3d" aria-hidden="true">
                   <svg viewBox="0 0 360 150" className="gc-svg-illustration">
                     <polygon points="180,15 330,75 180,138 30,75" fill="#082220" stroke="#34d399" strokeWidth="1.5" strokeOpacity="0.5" />
-                    {/* Laser Gate, Keycard & Exit Vault */}
                     <line x1="115" y1="35" x2="245" y2="95" stroke="#22c55e" strokeWidth="2.5" strokeDasharray="6 4" />
                     <g transform="translate(88, 46)">
                       <rect x="0" y="8" width="42" height="28" rx="5" fill="#065f46" stroke="#34d399" strokeWidth="1.6" />
@@ -502,8 +633,8 @@ export default function GameCenter() {
             <h2>
               🛡️{' '}
               {isAr
-                ? 'لماذا نتعلم ترشيد المضادات الحيوية عبر المحاكاة؟'
-                : 'Why Learn Antibiotic Stewardship Through Simulation?'}
+                ? 'لماذا نتعلم ترشيد المضادات الحيوية وسلامة المرضى عبر المحاكاة؟'
+                : 'Why Learn Antibiotic Stewardship & Patient Safety Through Simulation?'}
             </h2>
             <p className="small muted" style={{ marginBottom: '10px' }}>
               {isAr

@@ -15,21 +15,23 @@ import {
  *   users/{uid}/gameProgress/{gameId}
  *   where gameId is one of:
  *     - 'medicalSimulator' (existing Medical Life Simulator)
- *     - 'bacteriaLab'      (Game 1: Bacteria Lab 3D)
- *     - 'emergencyShift'   (Game 2: Emergency Shift 3D)
- *     - 'escapeTheLab'     (Game 3: Escape the Lab 3D)
+ *     - 'nurseAcademy'     (Nurse Academy 3D — 10 Scenarios)
+ *     - 'medicalMystery'   (Medical Mystery 3D — 10 Investigation Cases)
+ *     - 'bacteriaLab'      (Bacteria Lab 3D)
+ *     - 'emergencyShift'   (Emergency Shift 3D)
+ *     - 'escapeTheLab'     (Escape the Lab 3D)
  *
  *   Schema:
  *   {
  *     schemaVersion: 1,
  *     gameId:         string,
- *     completedIds:   string[],   // stable level/mission/scenario IDs
+ *     completedIds:   string[],   // stable level/mission/scenario/case IDs
  *     earnedBadgeIds: string[],
  *     lastPlayedId:   string | null,
  *     updatedAt:      serverTimestamp
  *   }
  *
- * This path is already covered by the existing owner-only rule in firestore.rules:
+ * This path is covered by the existing owner-only rule in firestore.rules:
  *   match /users/{uid} { match /{subcollection=**} { allow read, write: if isSignedIn() && request.auth.uid == uid } }
  * so no breaking security-rule change is required.
  */
@@ -39,6 +41,8 @@ export const CLOUD_PROGRESS_DOC_ID = 'medicalSimulator';
 
 export type CloudGameId =
   | 'medicalSimulator'
+  | 'nurseAcademy'
+  | 'medicalMystery'
   | 'bacteriaLab'
   | 'emergencyShift'
   | 'escapeTheLab';

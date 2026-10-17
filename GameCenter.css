@@ -122,6 +122,16 @@
   border-bottom: 2px solid rgba(56, 189, 248, 0.3);
 }
 
+.gc-card-visual.nurse3d {
+  background: radial-gradient(circle at 50% 35%, #0c4a6e 0%, #061c2e 100%);
+  border-bottom: 2px solid rgba(56, 189, 248, 0.45);
+}
+
+.gc-card-visual.mystery3d {
+  background: radial-gradient(circle at 50% 35%, #3b1764 0%, #140826 100%);
+  border-bottom: 2px solid rgba(192, 132, 252, 0.45);
+}
+
 .gc-card-visual.lab3d {
   background: radial-gradient(circle at 50% 35%, #1e295b 0%, #091326 100%);
   border-bottom: 2px solid rgba(96, 165, 250, 0.35);
@@ -159,6 +169,12 @@
   font-weight: 700;
   padding: 3px 11px;
   border-radius: 999px;
+}
+
+.gc-card-visual.mystery3d .gc-badge-pill {
+  background: rgba(168, 85, 247, 0.25);
+  border-color: rgba(192, 132, 252, 0.65);
+  color: #e9d5ff;
 }
 
 .gc-card-visual.er3d .gc-badge-pill {
