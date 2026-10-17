@@ -2857,3 +2857,462 @@ label,
     min-height: 42px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UPDATE 53 — PREMIUM DARK TEAL GLASSMORPHISM SIDEBAR & RTL/LTR ENGINE
+   Scoped strictly to .hamburger-btn and .drawer-* classes
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Enhanced "All Sections" Hamburger Trigger */
+.hamburger-btn {
+  background: linear-gradient(135deg, rgba(23, 184, 196, 0.22) 0%, rgba(11, 60, 93, 0.45) 100%);
+  border: 1px solid rgba(23, 184, 196, 0.45);
+  color: #ffffff;
+  box-shadow: 0 2px 12px rgba(23, 184, 196, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.hamburger-btn:hover {
+  background: linear-gradient(135deg, rgba(23, 184, 196, 0.38) 0%, rgba(14, 154, 167, 0.55) 100%);
+  border-color: rgba(94, 234, 212, 0.75);
+  box-shadow: 0 4px 18px rgba(23, 184, 196, 0.32);
+}
+
+.hamburger-btn:focus-visible {
+  outline: 2px solid #5eead4;
+  outline-offset: 2px;
+}
+
+/* Subtle Frosted Backdrop */
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  justify-content: flex-start;
+  background: rgba(3, 15, 23, 0.62);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: drawerBackdropIn 0.24s ease-out forwards;
+}
+
+.drawer-backdrop.is-closing {
+  animation: drawerBackdropOut 0.22s ease-in forwards;
+}
+
+@keyframes drawerBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes drawerBackdropOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Dark Teal Glassmorphism Panel */
+.drawer-panel {
+  width: clamp(260px, 86vw, 360px);
+  max-width: calc(100vw - 16px);
+  height: 100vh;
+  height: 100dvh;
+  margin-inline-start: 0;
+  margin-inline-end: auto;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(
+    165deg,
+    rgba(9, 44, 58, 0.84) 0%,
+    rgba(6, 28, 39, 0.88) 55%,
+    rgba(4, 19, 28, 0.92) 100%
+  );
+  -webkit-backdrop-filter: blur(20px) saturate(165%);
+  backdrop-filter: blur(20px) saturate(165%);
+  color: #f1f5f9;
+  border-inline-end: 1px solid rgba(23, 184, 196, 0.34);
+  box-shadow:
+    0 24px 56px rgba(0, 0, 0, 0.62),
+    0 0 32px rgba(23, 184, 196, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+/* Graceful fallback for browsers without backdrop-filter support */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .drawer-backdrop {
+    background: rgba(3, 15, 23, 0.78);
+  }
+  .drawer-panel {
+    background: linear-gradient(165deg, rgba(8, 38, 52, 0.98) 0%, rgba(4, 20, 30, 0.99) 100%);
+  }
+}
+
+/* Direction-Aware Slide Animations:
+   - RTL (Arabic): Opens from the RIGHT (translateX(100%) -> 0)
+   - LTR (English): Opens from the LEFT (translateX(-100%) -> 0)
+*/
+:root[dir="rtl"] .drawer-panel,
+[dir="rtl"] .drawer-panel {
+  border-left: 1px solid rgba(23, 184, 196, 0.34);
+  border-right: none;
+  padding-right: env(safe-area-inset-right);
+  animation: drawerSlideInRtl 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+:root[dir="rtl"] .drawer-panel.is-closing,
+[dir="rtl"] .drawer-panel.is-closing {
+  animation: drawerSlideOutRtl 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+:root[dir="ltr"] .drawer-panel,
+[dir="ltr"] .drawer-panel {
+  border-right: 1px solid rgba(23, 184, 196, 0.34);
+  border-left: none;
+  padding-left: env(safe-area-inset-left);
+  animation: drawerSlideInLtr 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+:root[dir="ltr"] .drawer-panel.is-closing,
+[dir="ltr"] .drawer-panel.is-closing {
+  animation: drawerSlideOutLtr 0.22s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+@keyframes drawerSlideInRtl {
+  from { transform: translateX(100%); opacity: 0.6; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes drawerSlideOutRtl {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0.4; }
+}
+
+@keyframes drawerSlideInLtr {
+  from { transform: translateX(-100%); opacity: 0.6; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes drawerSlideOutLtr {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-100%); opacity: 0.4; }
+}
+
+/* Glassy Drawer Header */
+.drawer-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: max(16px, env(safe-area-inset-top)) 18px 15px;
+  background: linear-gradient(
+    135deg,
+    rgba(14, 154, 167, 0.22) 0%,
+    rgba(8, 42, 60, 0.78) 100%
+  );
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(23, 184, 196, 0.28);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+}
+
+.drawer-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.drawer-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(23, 184, 196, 0.18);
+  border: 1px solid rgba(23, 184, 196, 0.42);
+  box-shadow: 0 0 14px rgba(23, 184, 196, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.drawer-brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.drawer-brand-text b {
+  color: #ffffff;
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.drawer-subtitle {
+  color: #94e2eb;
+  font-size: 0.76rem;
+  opacity: 0.9;
+  line-height: 1.35;
+  margin-top: 2px;
+}
+
+.drawer-close-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(23, 184, 196, 0.28);
+  color: #e2e8f0;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.drawer-close-btn:hover {
+  background: rgba(23, 184, 196, 0.22);
+  border-color: rgba(94, 234, 212, 0.65);
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+.drawer-close-btn:focus-visible {
+  outline: 2px solid #5eead4;
+  outline-offset: 2px;
+}
+
+/* Navigation Links Container */
+.drawer-links {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 12px 16px;
+  gap: 5px;
+}
+
+/* Individual Navigation Item */
+.drawer-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: 46px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.025);
+  color: #e2e8f0;
+  text-decoration: none;
+  text-align: start;
+  font: inherit;
+  font-size: 0.93rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.drawer-item:hover {
+  background: rgba(23, 184, 196, 0.13);
+  border-color: rgba(23, 184, 196, 0.30);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.drawer-item:focus-visible {
+  outline: 2px solid #5eead4;
+  outline-offset: 2px;
+  background: rgba(23, 184, 196, 0.16);
+}
+
+/* Active Section Indicator — Subtle Teal Glass Accent & Cyan Glow */
+.drawer-item.active {
+  background: linear-gradient(
+    90deg,
+    rgba(23, 184, 196, 0.26) 0%,
+    rgba(14, 154, 167, 0.10) 100%
+  );
+  border-color: rgba(23, 184, 196, 0.52);
+  border-inline-start: 4px solid #22d3ee;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow:
+    0 6px 18px rgba(23, 184, 196, 0.18),
+    inset 0 0 12px rgba(23, 184, 196, 0.10);
+}
+
+/* Polished Icon Badges inside Sidebar Items */
+.drawer-item .item-icon {
+  width: 34px;
+  height: 34px;
+  margin-inline-end: 0;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.12rem;
+  flex-shrink: 0;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.drawer-item:hover .item-icon {
+  background: rgba(23, 184, 196, 0.18);
+  border-color: rgba(23, 184, 196, 0.38);
+}
+
+.drawer-item.active .item-icon {
+  background: rgba(23, 184, 196, 0.28);
+  border-color: rgba(94, 234, 212, 0.65);
+  box-shadow: 0 0 12px rgba(23, 184, 196, 0.32);
+}
+
+.drawer-item .item-title {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+}
+
+.drawer-item .item-arrow {
+  color: #94a3b8;
+  font-size: 0.88rem;
+  opacity: 0.65;
+  flex-shrink: 0;
+  transition: transform 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+}
+
+.drawer-item:hover .item-arrow,
+.drawer-item.active .item-arrow {
+  color: #5eead4;
+  opacity: 1;
+}
+
+[dir="rtl"] .drawer-item:hover .item-arrow {
+  transform: translateX(-3px);
+}
+
+[dir="ltr"] .drawer-item:hover .item-arrow {
+  transform: translateX(3px);
+}
+
+/* Subtle Cyan Divider */
+.drawer-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(23, 184, 196, 0.32) 50%,
+    transparent 100%
+  );
+  margin: 8px 6px;
+}
+
+/* Admin, Auth & Logout Action Items in Sidebar */
+.drawer-item.admin {
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.drawer-item.drawer-auth-btn {
+  color: #99f6e4;
+  border-color: rgba(23, 184, 196, 0.25);
+  background: rgba(23, 184, 196, 0.08);
+}
+
+.drawer-item.drawer-auth-btn:hover {
+  background: rgba(23, 184, 196, 0.20);
+  border-color: rgba(94, 234, 212, 0.5);
+  color: #ffffff;
+}
+
+.drawer-item.drawer-logout-btn {
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.25);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.drawer-item.drawer-logout-btn:hover {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(252, 165, 165, 0.5);
+  color: #ffffff;
+}
+
+/* Custom Subtle Scrollbar Inside Drawer */
+.drawer-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.drawer-panel::-webkit-scrollbar-track {
+  background: rgba(4, 19, 28, 0.4);
+}
+
+.drawer-panel::-webkit-scrollbar-thumb {
+  background: rgba(23, 184, 196, 0.35);
+  border-radius: 999px;
+}
+
+.drawer-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(23, 184, 196, 0.6);
+}
+
+/* Small Mobile Screens (320px – 380px) */
+@media (max-width: 380px) {
+  .drawer-panel {
+    width: min(310px, calc(100vw - 14px));
+  }
+  .drawer-header {
+    padding: max(12px, env(safe-area-inset-top)) 14px 12px;
+  }
+  .drawer-logo {
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+  }
+  .drawer-brand-text b {
+    font-size: 0.94rem;
+  }
+  .drawer-links {
+    padding: 10px 8px 14px;
+  }
+  .drawer-item {
+    padding: 8px 10px;
+    gap: 9px;
+    font-size: 0.88rem;
+    min-height: 42px;
+  }
+  .drawer-item .item-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+}
+
+/* Reduced Motion Preference */
+@media (prefers-reduced-motion: reduce) {
+  .drawer-backdrop,
+  .drawer-backdrop.is-closing,
+  :root[dir="rtl"] .drawer-panel,
+  [dir="rtl"] .drawer-panel,
+  :root[dir="rtl"] .drawer-panel.is-closing,
+  [dir="rtl"] .drawer-panel.is-closing,
+  :root[dir="ltr"] .drawer-panel,
+  [dir="ltr"] .drawer-panel,
+  :root[dir="ltr"] .drawer-panel.is-closing,
+  [dir="ltr"] .drawer-panel.is-closing {
+    animation: none !important;
+    transition: none !important;
+  }
+}

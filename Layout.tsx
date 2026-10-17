@@ -33,10 +33,52 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   const { dark, toggle } = useDarkMode();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerClosing, setDrawerClosing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const authCtx = useAuth() as any;
   const user = authCtx?.user;
   const openAuthModal = authCtx?.openAuthModal || (() => {});
+
+  const hamburgerBtnRef = useRef<HTMLButtonElement>(null);
+  const drawerCloseBtnRef = useRef<HTMLButtonElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
+
+  const openDrawer = () => {
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setDrawerClosing(false);
+    setDrawerOpen(true);
+  };
+
+  const closeDrawer = (restoreFocus = false) => {
+    if (!drawerOpen || drawerClosing) return;
+    const reducedMotion =
+      typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (reducedMotion) {
+      setDrawerOpen(false);
+      setDrawerClosing(false);
+      if (restoreFocus) {
+        window.setTimeout(() => hamburgerBtnRef.current?.focus({ preventScroll: true }), 0);
+      }
+      return;
+    }
+
+    setDrawerClosing(true);
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = window.setTimeout(() => {
+      setDrawerOpen(false);
+      setDrawerClosing(false);
+      closeTimerRef.current = null;
+      if (restoreFocus) {
+        hamburgerBtnRef.current?.focus({ preventScroll: true });
+      }
+    }, 220);
+  };
 
   const handleExitGuestMode = () => {
     // Exit Guest Mode safely without calling Firebase sign-out
@@ -62,8 +104,50 @@ export default function Layout({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    setDrawerOpen(false);
+    if (drawerOpen) {
+      closeDrawer(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Prevent unintended background scrolling while the sidebar is open
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [drawerOpen]);
+
+  // Escape-key dismissal and initial focus management
+  useEffect(() => {
+    if (!drawerOpen || drawerClosing) return;
+    const focusTimer = window.setTimeout(() => {
+      drawerCloseBtnRef.current?.focus({ preventScroll: true });
+    }, 30);
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeDrawer(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.clearTimeout(focusTimer);
+      window.removeEventListener('keydown', onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawerOpen, drawerClosing]);
 
   const navItems: NavItem[] = [
     { to: '/', key: 'navHome', icon: '🏠' },
@@ -209,15 +293,18 @@ export default function Layout({ children }: { children: ReactNode }) {
               {isAr ? 'EN' : 'عربي'}
             </button>
 
-            {/* 3-Lines Hamburger Menu Button */}
+            {/* 3-Lines Hamburger Menu Button ("All Sections" Trigger) */}
             <button
               type="button"
+              ref={hamburgerBtnRef}
               className="hamburger-btn"
-              onClick={() => setDrawerOpen(true)}
+              onClick={openDrawer}
+              aria-expanded={drawerOpen && !drawerClosing}
+              aria-controls="site-sections-drawer"
               aria-label={isAr ? 'فتح القائمة' : 'Open menu'}
               title={isAr ? 'أقسام الموقع الكاملة' : 'All Site Sections'}
             >
-              <span className="hamburger-icon">☰</span>
+              <span className="hamburger-icon" aria-hidden="true">☰</span>
               <span className="hamburger-text">{isAr ? 'كل الأقسام' : 'Menu'}</span>
             </button>
           </div>
@@ -241,26 +328,36 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* Slide-out Navigation Drawer */}
+      {/* Slide-out Dark Teal Glassmorphism Navigation Drawer */}
       {drawerOpen && (
-        <div className="drawer-backdrop" onClick={() => setDrawerOpen(false)}>
+        <div
+          className={`drawer-backdrop${drawerClosing ? ' is-closing' : ''}`}
+          onClick={() => closeDrawer(true)}
+          role="presentation"
+        >
           <nav
-            className="drawer-panel"
+            id="site-sections-drawer"
+            className={`drawer-panel${drawerClosing ? ' is-closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
-            aria-label="Side menu"
+            aria-label={isAr ? 'القائمة الجانبية لجميع الأقسام' : 'Side menu'}
           >
             <div className="drawer-header">
               <div className="drawer-brand">
-                <span className="drawer-logo">💊</span>
-                <div>
+                <span className="drawer-logo" aria-hidden="true">💊</span>
+                <div className="drawer-brand-text">
                   <b>{isAr ? 'أقسام المنصة السريرية' : 'Clinical Portal Menu'}</b>
+                  <small className="drawer-subtitle">
+                    {isAr ? 'جميع الأدوات والأدلة التوعوية' : 'All Clinical Tools & Guides'}
+                  </small>
                 </div>
               </div>
               <button
                 type="button"
+                ref={drawerCloseBtnRef}
                 className="drawer-close-btn"
-                onClick={() => setDrawerOpen(false)}
-                aria-label="Close menu"
+                onClick={() => closeDrawer(true)}
+                aria-label={isAr ? 'إغلاق القائمة' : 'Close menu'}
+                title={isAr ? 'إغلاق (Esc)' : 'Close (Esc)'}
               >
                 ✕
               </button>
@@ -272,11 +369,12 @@ export default function Layout({ children }: { children: ReactNode }) {
                   key={item.to}
                   to={item.to}
                   end={item.to === '/'}
+                  onClick={() => closeDrawer(false)}
                   className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}
                 >
-                  <span className="item-icon">{item.icon}</span>
+                  <span className="item-icon" aria-hidden="true">{item.icon}</span>
                   <span className="item-title">{t(item.key)}</span>
-                  <span className="item-arrow">{isAr ? '←' : '→'}</span>
+                  <span className="item-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
                 </NavLink>
               ))}
 
@@ -284,11 +382,12 @@ export default function Layout({ children }: { children: ReactNode }) {
 
               <NavLink
                 to="/admin"
+                onClick={() => closeDrawer(false)}
                 className={({ isActive }) => `drawer-item admin ${isActive ? 'active' : ''}`}
               >
-                <span className="item-icon">⚙️</span>
+                <span className="item-icon" aria-hidden="true">⚙️</span>
                 <span className="item-title">{t('navAdmin')}</span>
-                <span className="item-arrow">{isAr ? '←' : '→'}</span>
+                <span className="item-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
               </NavLink>
 
               {!user && (
@@ -296,25 +395,17 @@ export default function Layout({ children }: { children: ReactNode }) {
                   <div className="drawer-divider"></div>
                   <button
                     type="button"
-                    className="drawer-item"
+                    className="drawer-item drawer-auth-btn"
                     onClick={() => {
-                      setDrawerOpen(false);
+                      closeDrawer(false);
                       handleExitGuestMode();
                     }}
-                    style={{
-                      width: '100%',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#ffffff',
-                      cursor: 'pointer',
-                      textAlign: 'inherit',
-                    }}
                   >
-                    <span className="item-icon">👤</span>
+                    <span className="item-icon" aria-hidden="true">👤</span>
                     <span className="item-title">
                       {isAr ? 'تسجيل الدخول (الخروج من وضع الزائر)' : 'Sign In (Exit Guest Mode)'}
                     </span>
-                    <span className="item-arrow">{isAr ? '←' : '→'}</span>
+                    <span className="item-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
                   </button>
                 </>
               )}
@@ -324,23 +415,15 @@ export default function Layout({ children }: { children: ReactNode }) {
                   <div className="drawer-divider"></div>
                   <button
                     type="button"
-                    className="drawer-item"
+                    className="drawer-item drawer-logout-btn"
                     onClick={() => {
-                      setDrawerOpen(false);
+                      closeDrawer(false);
                       setShowLogoutModal(true);
                     }}
-                    style={{
-                      width: '100%',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#fca5a5',
-                      cursor: 'pointer',
-                      textAlign: 'inherit',
-                    }}
                   >
-                    <span className="item-icon">🚪</span>
+                    <span className="item-icon" aria-hidden="true">🚪</span>
                     <span className="item-title">{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
-                    <span className="item-arrow">{isAr ? '←' : '→'}</span>
+                    <span className="item-arrow" aria-hidden="true">{isAr ? '←' : '→'}</span>
                   </button>
                 </>
               )}
