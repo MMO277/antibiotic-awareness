@@ -50,6 +50,18 @@ export default function ChatWidget() {
   const stopListenRef = useRef<(() => void) | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
+  // Bacteria Hunter Gaming Mode: close any open panel when gameplay starts (the widget itself is hidden by CSS)
+  useEffect(() => {
+    const onGaming = (e: Event) => {
+      if ((e as CustomEvent<{ active: boolean }>).detail?.active) {
+        setIsOpen(false);
+        setSosOpen(false);
+      }
+    };
+    window.addEventListener('bh:gaming-mode', onGaming);
+    return () => window.removeEventListener('bh:gaming-mode', onGaming);
+  }, []);
+
   useEffect(() => {
     if (isOpen) {
       endRef.current?.scrollIntoView({ block: 'nearest' });

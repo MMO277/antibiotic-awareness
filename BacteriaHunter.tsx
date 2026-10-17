@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from './i18n';
+import { useGamingMode } from './useGamingMode';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -932,6 +933,16 @@ export default function BacteriaHunter() {
   const [canvasSize, setCanvasSize] = useState<CanvasMetrics>({ w: 360, h: 560, dpr: 1 });
   const { S, joyRef, shootBtnRef, initGame, uiTick, tick } = useGameEngine(canvasRef, isAr, sizeRef);
 
+  // ─── Gaming Mode (fullscreen / immersive layout) ───────────────────────────
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [confirmExit, setConfirmExit] = useState(false);
+  // If native fullscreen ends without the Exit button (Esc / system gesture), pause the run safely.
+  const onNativeFullscreenLost = useCallback(() => {
+    if (S.gameState === 'playing') { S.gameState = 'paused'; tick(); }
+  }, [S, tick]);
+  const gaming = useGamingMode(wrapperRef, onNativeFullscreenLost);
+  const gamingActive = gaming.active;
+
   // Resize canvas
   useEffect(() => {
     const update = () => {
@@ -940,17 +951,20 @@ export default function BacteriaHunter() {
       const vv = window.visualViewport;
       const vw = window.innerWidth;
       const vh = vv ? vv.height : window.innerHeight;
-      // Mobile portrait only: give the game container an explicit height that fills the
-      // viewport (minus sticky site header + on-screen controls), instead of letting it
-      // collapse to the canvas' default 360:560 aspect ratio.
-      const mobilePortrait = vw <= 700 && window.innerHeight > vw;
       let w: number, h: number, dpr = 1;
-      if (mobilePortrait) {
+      if (gamingActive) {
+        // Gaming Mode: the container is a flex child that fills the whole viewport (see .bh-immersive),
+        // so measure its real size. Logical size == displayed size => no stretching, touch/collision stay correct.
+        el.style.height = '';
+        w = Math.floor(el.clientWidth);
+        h = Math.floor(el.clientHeight);
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        if (w < 50 || h < 50) return; // layout not ready yet; ResizeObserver will call again
+      } else if (vw <= 700 && window.innerHeight > vw) {
+        // Mobile portrait menu screens: explicit height instead of collapsing to the canvas' default 360:560.
         const topBar = document.querySelector('header.top')?.getBoundingClientRect().height ?? 64;
         const avail = Math.floor(vh - topBar - BH_CONTROLS_RESERVE - BH_CHROME_RESERVE);
-        const target = Math.max(320, avail);
-        el.style.height = `${target}px`;
-        // use the container's real inner size (it has a border) so logical size == displayed size
+        el.style.height = `${Math.max(320, avail)}px`;
         w = Math.floor(el.clientWidth);
         h = Math.floor(el.clientHeight);
         dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -963,9 +977,10 @@ export default function BacteriaHunter() {
       const prev = sizeRef.current;
       if (prev.w === w && prev.h === h && prev.dpr === dpr) return;
       sizeRef.current = { w, h, dpr };
-      // keep the player inside the new play area
+      // keep the player at the same relative spot inside the new play area
       const pl = S.player;
       if (pl) {
+        if (prev.w > 0 && prev.h > 0) { pl.x = (pl.x / prev.w) * w; pl.y = (pl.y / prev.h) * h; }
         pl.x = Math.min(Math.max(pl.x, pl.radius), w - pl.radius);
         pl.y = Math.min(Math.max(pl.y, pl.radius), h - pl.radius);
       }
@@ -974,9 +989,17 @@ export default function BacteriaHunter() {
     update();
     const ro = new ResizeObserver(update);
     if (containerRef.current) ro.observe(containerRef.current);
+    const vv = window.visualViewport;
     window.addEventListener('resize', update);
-    return () => { ro.disconnect(); window.removeEventListener('resize', update); };
-  }, [S]);
+    window.addEventListener('orientationchange', update);
+    vv?.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', update);
+      vv?.removeEventListener('resize', update);
+    };
+  }, [S, gamingActive]);
 
   // Prevent page scroll when touch is on canvas
   useEffect(() => {
@@ -1023,7 +1046,7 @@ export default function BacteriaHunter() {
           <div className="bh-card">
             <h2 className="bh-title" style={{ fontSize: '1.3rem' }}>{isAr ? 'اختر مستوى الصعوبة' : 'Select Difficulty'}</h2>
             {(['easy', 'medium', 'hard'] as Difficulty[]).map(d => (
-              <button key={d} className={`bh-btn bh-diff-btn bh-diff-${d}`} onClick={() => initGame(d)}>
+              <button key={d} className={`bh-btn bh-diff-btn bh-diff-${d}`} onClick={() => startGame(d)}>
                 {d === 'easy' ? (isAr ? '🟢 سهل' : '🟢 Easy') : d === 'medium' ? (isAr ? '🟡 متوسط' : '🟡 Medium') : (isAr ? '🔴 صعب' : '🔴 Hard')}
               </button>
             ))}
@@ -1054,8 +1077,8 @@ export default function BacteriaHunter() {
             <div className="bh-edu-end">
               <p>💡 {isAr ? EDU_MESSAGES_AR[Math.floor(Math.random() * EDU_MESSAGES_AR.length)] : EDU_MESSAGES_EN[Math.floor(Math.random() * EDU_MESSAGES_EN.length)]}</p>
             </div>
-            <button className="bh-btn bh-btn-primary" onClick={() => initGame(S.difficulty)}>{isAr ? '🔄 العب مجددًا' : '🔄 Play Again'}</button>
-            <button className="bh-btn bh-btn-ghost" onClick={() => { S.gameState = 'menu'; tick(); }}>{isAr ? '🏠 القائمة' : '🏠 Menu'}</button>
+            <button className="bh-btn bh-btn-primary" onClick={() => startGame(S.difficulty)}>{isAr ? '🔄 العب مجددًا' : '🔄 Play Again'}</button>
+            <button className="bh-btn bh-btn-ghost" onClick={doExit}>{isAr ? '🏠 القائمة' : '🏠 Menu'}</button>
           </div>
         </div>
       );
@@ -1082,8 +1105,8 @@ export default function BacteriaHunter() {
             <div className="bh-edu-end">
               <p>💡 {isAr ? 'بكتيريا المقاومة تحدٍّ حقيقي يواجه الطب الحديث. الاستخدام الرشيد للمضادات الحيوية هو خط دفاعنا الأول.' : 'Antibiotic resistance is a real modern challenge. Responsible use is our first line of defense.'}</p>
             </div>
-            <button className="bh-btn bh-btn-primary" onClick={() => initGame(S.difficulty)}>{isAr ? '🔄 العب مجددًا' : '🔄 Play Again'}</button>
-            <button className="bh-btn bh-btn-ghost" onClick={() => { S.gameState = 'menu'; tick(); }}>{isAr ? '🏠 القائمة' : '🏠 Menu'}</button>
+            <button className="bh-btn bh-btn-primary" onClick={() => startGame(S.difficulty)}>{isAr ? '🔄 العب مجددًا' : '🔄 Play Again'}</button>
+            <button className="bh-btn bh-btn-ghost" onClick={doExit}>{isAr ? '🏠 القائمة' : '🏠 Menu'}</button>
           </div>
         </div>
       );
@@ -1093,21 +1116,59 @@ export default function BacteriaHunter() {
 
   const isInGame = gs === 'playing' || gs === 'paused' || gs === 'boss_intro';
 
-  const wasInGame = useRef(false);
-  useEffect(() => {
-    if (isInGame && !wasInGame.current && window.innerWidth <= 700 && window.innerHeight > window.innerWidth) {
-      const el = containerRef.current;
-      if (el) {
-        const topBar = document.querySelector('header.top')?.getBoundingClientRect().height ?? 64;
-        window.scrollTo({ top: Math.max(0, window.scrollY + el.getBoundingClientRect().top - topBar - 6) });
-      }
+  // ─── Start / exit helpers ──────────────────────────────────────────────────
+  const startGame = (diff: Difficulty) => {
+    gaming.enter();        // inside the tap handler so the browser may allow native fullscreen
+    initGame(diff);
+  };
+
+  // Leave Gaming Mode for good: stop the run, release inputs, restore the website layout.
+  const doExit = () => {
+    setConfirmExit(false);
+    joyRef.current = { active: false, sx: 0, sy: 0, cx: 0, cy: 0 };
+    shootBtnRef.current = false;
+    S.gameState = 'menu';
+    gaming.exit();
+    tick();
+  };
+
+  // Exit button: confirm only when an active (unpaused) run would be thrown away.
+  const requestExit = () => {
+    if (S.gameState === 'playing' || S.gameState === 'boss_intro') {
+      S.gameState = 'paused';
+      setConfirmExit(true);
+      tick();
+    } else {
+      doExit(); // paused, game over, victory: nothing more to protect
     }
-    wasInGame.current = isInGame;
-  }, [isInGame]);
+  };
+
+  const resumeFromConfirm = () => {
+    setConfirmExit(false);
+    if (S.gameState === 'paused') S.gameState = 'playing';
+    tick();
+  };
+
+  // If the run was resumed some other way (Esc / P), drop the confirmation dialog.
+  useEffect(() => {
+    if (confirmExit && gs === 'playing') setConfirmExit(false);
+  }, [confirmExit, gs]);
 
   return (
     <main className="wrap narrow bh-page" dir={isAr ? 'rtl' : 'ltr'}>
-      <div className={`card bh-wrapper${isInGame ? ' bh-playing' : ''}`}>
+      <div
+        ref={wrapperRef}
+        dir={isAr ? 'rtl' : 'ltr'}
+        className={`card bh-wrapper${isInGame ? ' bh-playing' : ''}${gamingActive ? ' bh-immersive' : ''}`}
+      >
+        {gamingActive && (
+          <div className="bh-gamebar">
+            <button type="button" className="bh-exit-btn" onClick={requestExit}>
+              <span aria-hidden="true">✕</span> {isAr ? 'الخروج من اللعبة' : 'Exit Game'}
+            </button>
+            <span className="bh-gamebar-title" aria-hidden="true">🦠 {isAr ? 'صائد البكتيريا' : 'Bacteria Hunter'}</span>
+          </div>
+        )}
         <div className="bh-header">
           <h1 className="bh-page-title">🦠 {isAr ? 'صائد البكتيريا' : 'Bacteria Hunter'}</h1>
           <p className="bh-page-sub">{isAr ? 'لعبة أركيد تعليمية للوعي بالمضادات الحيوية' : 'Educational arcade game for antibiotic awareness'}</p>
@@ -1157,6 +1218,21 @@ export default function BacteriaHunter() {
                   {isAr ? a.labelAr : a.labelEn}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {gamingActive && confirmExit && (
+          <div className="bh-confirm" role="alertdialog" aria-modal="true" aria-labelledby="bh-confirm-title">
+            <div className="bh-confirm-card">
+              <h2 id="bh-confirm-title" className="bh-confirm-title">{isAr ? 'الخروج من اللعبة؟' : 'Exit the game?'}</h2>
+              <p>{isAr ? 'سيتم فقدان تقدّمك في هذه الجولة.' : 'Your progress in this run will be lost.'}</p>
+              <button type="button" className="bh-btn bh-btn-primary" onClick={resumeFromConfirm} autoFocus>
+                {isAr ? 'متابعة اللعب' : 'Continue Playing'}
+              </button>
+              <button type="button" className="bh-btn bh-btn-danger" onClick={doExit}>
+                {isAr ? 'الخروج من اللعبة' : 'Exit Game'}
+              </button>
             </div>
           </div>
         )}

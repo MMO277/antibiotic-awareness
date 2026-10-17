@@ -3998,3 +3998,114 @@ label,
 [dir="rtl"] .bh-controls-hint { text-align: end; }
 [dir="rtl"] .bh-edu-end { text-align: end; }
 [dir="rtl"] .bh-mobile-controls { flex-direction: row-reverse; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BACTERIA HUNTER — GAMING MODE (fullscreen / immersive layout)
+   `html.bh-gaming` is added only while a run is active and always removed on exit/unmount.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Hide ONLY the floating SOS + AI assistant widget (fab stack and both popups live inside it). */
+html.bh-gaming .chat-widget-root { display: none !important; }
+html.bh-gaming, html.bh-gaming body { overflow: hidden; overscroll-behavior: none; }
+
+/* CSS fallback layout (also correct inside native fullscreen): the wrapper fills the whole viewport. */
+.bh-wrapper.bh-immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  box-sizing: border-box;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  margin: 0;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  border: 0;
+  border-radius: 0;
+  background: #060f1e;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.bh-immersive .bh-header,
+.bh-immersive .bh-disclaimer,
+.bh-immersive .bh-all-achievements { display: none; }
+
+.bh-immersive .bh-canvas-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  width: 100%;
+  border-radius: 0;
+  border-inline: 0;
+}
+.bh-immersive .bh-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.bh-immersive .bh-mobile-controls { flex: 0 0 auto; padding: 8px 14px 10px; touch-action: none; }
+
+/* Top strip with the Exit button (kept out of the canvas so it never covers the HUD) */
+.bh-gamebar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 52px;
+  padding: 4px 10px;
+}
+.bh-gamebar-title { color: #00D2FF; font-weight: 700; font-size: 0.95rem; opacity: 0.85; }
+.bh-exit-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  touch-action: manipulation;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.bh-exit-btn:hover { transform: scale(1.04); box-shadow: 0 4px 16px rgba(220, 38, 38, 0.55); }
+.bh-exit-btn:active { transform: scale(0.97); }
+.bh-exit-btn:focus-visible { outline: 3px solid #fde047; outline-offset: 2px; }
+
+/* Exit confirmation dialog (rendered inside the wrapper so it is visible in native fullscreen) */
+.bh-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(3, 10, 25, 0.88);
+}
+.bh-confirm-card {
+  width: 100%;
+  max-width: 340px;
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  text-align: center;
+  color: #e6f3ff;
+  background: rgba(10, 22, 40, 0.98);
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  border-radius: 14px;
+}
+.bh-confirm-card p { margin: 0 0 0.3rem; color: #b8c7d9; }
+.bh-confirm-title { margin: 0; font-size: 1.2rem; color: #00D2FF; }
+.bh-btn-danger { background: linear-gradient(135deg, #ef4444, #b91c1c); color: #fff; border: 2px solid rgba(255, 255, 255, 0.5); }
+.bh-btn-danger:hover { opacity: 0.9; }
+.bh-confirm .bh-btn { min-height: 46px; }
+
+[data-theme="light"] .bh-wrapper.bh-immersive { background: #060f1e; border-color: transparent; }
