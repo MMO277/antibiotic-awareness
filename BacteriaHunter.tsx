@@ -128,12 +128,18 @@ function spawnEdge(W: number, H: number): Vec2 {
 function makeEnemy(type: Enemy['type'], W: number, H: number, wave: number, diff: Difficulty): Enemy {
   const pos = spawnEdge(W, H);
   const scale = 1 + wave * 0.08 + (diff === 'hard' ? 0.3 : diff === 'medium' ? 0.15 : 0);
+  // Always point toward center initially so enemies enter the screen
+  const cx = W / 2 + randRange(-60, 60);
+  const cy = H / 2 + randRange(-60, 60);
+  const dx = cx - pos.x;
+  const dy = cy - pos.y;
+  const dl = Math.sqrt(dx * dx + dy * dy) || 1;
   const configs: Record<Enemy['type'], Partial<Enemy> & { color: string }> = {
-    small:  { radius: 12, hp: 2, maxHp: 2, color: '#FF6B6B', vx: randRange(-1.8, 1.8) * scale, vy: randRange(-1.8, 1.8) * scale },
-    medium: { radius: 20, hp: 5, maxHp: 5, color: '#FF9F43', vx: randRange(-1, 1) * scale, vy: randRange(-1, 1) * scale },
-    large:  { radius: 28, hp: 10, maxHp: 10, color: '#9B59B6', vx: randRange(-0.6, 0.6) * scale, vy: randRange(-0.6, 0.6) * scale },
-    zigzag: { radius: 14, hp: 3, maxHp: 3, color: '#1DD1A1', vx: randRange(-1.5, 1.5) * scale, vy: randRange(-1.5, 1.5) * scale },
-    boss:   { radius: 45, hp: 80 + wave * 10, maxHp: 80 + wave * 10, color: '#C0392B', vx: 0.5, vy: 0.5 },
+    small:  { radius: 12, hp: 2, maxHp: 2, color: '#FF6B6B', vx: (dx/dl) * 1.6 * scale, vy: (dy/dl) * 1.6 * scale },
+    medium: { radius: 20, hp: 5, maxHp: 5, color: '#FF9F43', vx: (dx/dl) * 1.0 * scale, vy: (dy/dl) * 1.0 * scale },
+    large:  { radius: 28, hp: 10, maxHp: 10, color: '#9B59B6', vx: (dx/dl) * 0.7 * scale, vy: (dy/dl) * 0.7 * scale },
+    zigzag: { radius: 14, hp: 3, maxHp: 3, color: '#1DD1A1', vx: (dx/dl) * 1.4 * scale, vy: (dy/dl) * 1.4 * scale },
+    boss:   { radius: 45, hp: 80 + wave * 10, maxHp: 80 + wave * 10, color: '#C0392B', vx: (dx/dl) * 0.8, vy: (dy/dl) * 0.8 },
   };
   const cfg = configs[type];
   return {
@@ -206,7 +212,7 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
     };
     S.bullets = []; S.enemies = []; S.enemyBullets = [];
     S.powerUps = []; S.particles = [];
-    S.score = 0; S.wave = 0; S.waveEnemiesLeft = 0; S.waveTimer = 60;
+    S.score = 0; S.wave = 1; S.waveEnemiesLeft = -2; S.waveTimer = 90;
     S.frameCount = 0; S.totalKills = 0; S.wavesCompleted = 0;
     S.bossActive = false; S.showEdu = false;
     S.achievements = ACHIEVEMENTS_INIT.map(a => ({ ...a }));
@@ -231,7 +237,7 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
       setTimeout(() => { if (S.gameState === 'boss_intro') S.gameState = 'playing'; tick(); }, 2500);
     } else {
       S.bossActive = false;
-      const count = 3 + wave * 2 + (S.difficulty === 'hard' ? 3 : S.difficulty === 'medium' ? 1 : 0);
+      const count = 2 + wave * 2 + (S.difficulty === 'hard' ? 3 : S.difficulty === 'medium' ? 1 : 0);
       for (let i = 0; i < count; i++) {
         const r = Math.random();
         let type: Enemy['type'] = 'small';
@@ -370,17 +376,17 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
             e.shootCd = S.difficulty === 'easy' ? 100 : 70;
           }
         } else {
-          // small/medium home on player gently
+          // small/medium home on player
           const tx2 = p.x - e.x, ty2 = p.y - e.y;
           const tl = Math.sqrt(tx2 * tx2 + ty2 * ty2) || 1;
-          const spd = e.type === 'small' ? (1.2 + S.wave * 0.05) : 0.9;
-          e.vx += ((tx2 / tl) * spd - e.vx) * 0.05;
-          e.vy += ((ty2 / tl) * spd - e.vy) * 0.05;
+          const spd = e.type === 'small' ? (1.5 + S.wave * 0.06) : 1.1;
+          e.vx += ((tx2 / tl) * spd - e.vx) * 0.08;
+          e.vy += ((ty2 / tl) * spd - e.vy) * 0.08;
         }
         e.x += e.vx; e.y += e.vy;
         if (e.type !== 'boss') {
-          e.x = clamp(e.x, -50, W + 50);
-          e.y = clamp(e.y, -50, H + 50);
+          e.x = clamp(e.x, -80, W + 80);
+          e.y = clamp(e.y, -80, H + 80);
         } else {
           e.x = clamp(e.x, e.radius, W - e.radius);
           e.y = clamp(e.y, e.radius, H - e.radius);
@@ -489,22 +495,27 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
       S.particles = S.particles.filter(pt => { pt.x += pt.vx; pt.y += pt.vy; pt.life--; pt.vx *= 0.92; pt.vy *= 0.92; return pt.life > 0; });
 
       // ─ Wave completion ─
-      if (S.waveEnemiesLeft <= 0 && S.enemies.length === 0) {
+      if (S.waveEnemiesLeft === 0 && S.enemies.length === 0) {
         if (S.bossActive) {
-          // Boss defeated
           S.bossActive = false;
-          if (S.wave >= 12) { S.gameState = 'victory'; if (!S.damageTaken) earn('no_damage', isAr ? '🛡️ لا أذى' : '🛡️ Untouched'); tick(); return; }
+          if (S.wave >= 12) {
+            S.gameState = 'victory';
+            if (!S.damageTaken) earn('no_damage', isAr ? '🛡️ لا أذى' : '🛡️ Untouched');
+            tick();
+            return;
+          }
         }
         S.wavesCompleted++;
         earn('wave1', isAr ? '🌊 ناجي الموجة' : '🌊 Wave Survivor');
-        S.waveTimer = 180;
         S.wave++;
-        S.waveEnemiesLeft = -1; // waiting
+        S.waveTimer = 150;
+        S.waveEnemiesLeft = -1;
       }
-      if (S.waveEnemiesLeft === -1) {
+
+      // -2 = first wave countdown, -1 = between waves countdown
+      if (S.waveEnemiesLeft === -2 || S.waveEnemiesLeft === -1) {
         S.waveTimer--;
         if (S.waveTimer <= 0) {
-          S.waveEnemiesLeft = 0;
           spawnWave();
         }
       }
@@ -518,9 +529,6 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
         S.highScore = S.score;
         localStorage.setItem('bh_highscore', String(S.score));
       }
-
-      // Start first wave
-      if (S.wave === 0 && S.waveEnemiesLeft === 0) { S.waveEnemiesLeft = -1; S.wave = 1; spawnWave(); }
     }
 
     // ─── Draw ───────────────────────────────────────────────────────────────
