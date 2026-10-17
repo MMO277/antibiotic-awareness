@@ -29,6 +29,7 @@ import MythFact from './MythFact';
 import Methodology from './Methodology';
 import Research from './Research';
 import Dashboard from './Dashboard';
+import BacteriaHunter from './BacteriaHunter';
 import Editor from './Editor';
 
 function ConfigMissing() {
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/myth" element={<MythFact />} />
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/research" element={<Research />} />
+          <Route path="/game" element={<BacteriaHunter />} />
           <Route path="/admin" element={configured ? <Dashboard /> : <ConfigMissing />} />
           <Route path="/admin/new" element={configured ? <Editor /> : <ConfigMissing />} />
           <Route path="/admin/medicine/:id" element={configured ? <Editor /> : <ConfigMissing />} />
