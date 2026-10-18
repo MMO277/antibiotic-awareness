@@ -32,7 +32,13 @@ export type CustomPropShape =
   | 'sbar_podium'
   | 'evidence_board'
   | 'mar_audit_terminal'
-  | 'equipment_uv_tracer';
+  | 'equipment_uv_tracer'
+  | 'hand_sink'
+  | 'ppe_rack'
+  | 'vitals_monitor'
+  | 'specimen_cooler'
+  | 'stewardship_kiosk'
+  | 'lab_analyzer';
 
 export interface BoxObstacle {
   minX: number;
@@ -522,8 +528,11 @@ function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean):
       break;
     }
     case 'ast_analyzer':
+    case 'lab_analyzer':
     case 'triage_board':
     case 'er_vitals_monitor':
+    case 'vitals_monitor':
+    case 'stewardship_kiosk':
     case 'pediatric_airway_monitor':
     case 'sbar_podium':
     case 'mar_audit_terminal': {
@@ -534,7 +543,8 @@ function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean):
       break;
     }
     case 'biosafety_hood':
-    case 'ppe_locker': {
+    case 'ppe_locker':
+    case 'ppe_rack': {
       const cab = new THREE.Mesh(new THREE.BoxGeometry(0.82, 0.88, 0.44), primaryMat);
       const shield = new THREE.Mesh(new THREE.BoxGeometry(0.66, 0.48, 0.46), accentMat);
       shield.position.y = 0.08;
@@ -542,7 +552,8 @@ function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean):
       break;
     }
     case 'uv_hand_scanner':
-    case 'hand_hygiene_station': {
+    case 'hand_hygiene_station':
+    case 'hand_sink': {
       const bottle = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.64, seg), primaryMat);
       const pump = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.12, 0.36), accentMat);
       pump.position.set(0, 0.38, 0.06);

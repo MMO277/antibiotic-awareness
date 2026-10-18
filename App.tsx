@@ -34,13 +34,13 @@ import BacteriaHunter from './BacteriaHunter';
 import GameCenter from './GameCenter';
 import Editor from './Editor';
 
-// Lazy-load 3D WebGL games so Three.js / WebGL code stays out of the initial application bundle
-const MedicalSimulator = lazy(() => import('./MedicalSimulator'));
-const NurseAcademy = lazy(() => import('./NurseAcademy'));
-const MedicalMystery = lazy(() => import('./MedicalMystery'));
-const BacteriaLab = lazy(() => import('./BacteriaLab'));
-const EmergencyShift = lazy(() => import('./EmergencyShift'));
-const EscapeTheLab = lazy(() => import('./EscapeTheLab'));
+// Direct imports for 3D WebGL games so GitHub Pages routes never fail on dynamic chunk/CSS preload
+import MedicalSimulator from './MedicalSimulator';
+import NurseAcademy from './NurseAcademy';
+import MedicalMystery from './MedicalMystery';
+import BacteriaLab from './BacteriaLab';
+import EmergencyShift from './EmergencyShift';
+import EscapeTheLab from './EscapeTheLab';
 
 function ConfigMissing() {
   const { t } = useLang();

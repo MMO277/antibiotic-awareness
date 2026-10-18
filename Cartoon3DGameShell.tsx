@@ -652,8 +652,8 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
   });
 
   const currentNode = useMemo(() => {
-    if (missionFinished) return null;
-    return activeMission.nodes[currentNodeId] || null;
+    if (missionFinished || !activeMission?.nodes) return null;
+    return activeMission.nodes[currentNodeId] || Object.values(activeMission.nodes)[0] || null;
   }, [activeMission, currentNodeId, missionFinished]);
 
   const targetNpc: string | null = currentNode ? currentNode.targetNpc : null;
