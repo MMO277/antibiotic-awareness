@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mmo277.github.io/antibiotic-awareness/sitemap.xml
