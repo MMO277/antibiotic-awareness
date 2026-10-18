@@ -15,6 +15,9 @@ import {
   calculateScheduleProgress,
   formatLocalDateYYYYMMDD,
   computeEndDate,
+  calculateAutoDoseTimes,
+  formatTime12Hour,
+  buildScheduleIcsContent,
 } from './trackerData';
 
 function formatTimestampReadable(iso?: string, isAr = true): string {
@@ -62,6 +65,7 @@ export default function Tracker() {
   const [medName, setMedName] = useState('');
   const [prescribedDose, setPrescribedDose] = useState('');
   const [route, setRoute] = useState('oral');
+  const [firstDoseTime, setFirstDoseTime] = useState('08:00');
   const [frequency, setFrequency] = useState('twice_daily');
   const [doseTimes, setDoseTimes] = useState<string[]>(['08:00', '20:00']);
   const [startDate, setStartDate] = useState(() => formatLocalDateYYYYMMDD());
@@ -90,7 +94,7 @@ export default function Tracker() {
           isAr ? 'تم تفعيل التنبيهات بنجاح 🔔' : 'Reminders Enabled Successfully 🔔',
           {
             body: isAr
-              ? 'سيتم تنبيهك عند حلول مواعيد جرعات المضاد الحيوي أثناء فتح المتصفح.'
+              ? 'سيتم تنبيهك بإشعار منبثق عند حلول مواعيد جرعات المضاد الحيوي أثناء فتح المتصفح.'
               : 'You will be alerted at scheduled dose times while your browser is open and active.',
           }
         );
@@ -100,17 +104,36 @@ export default function Tracker() {
     }
   };
 
+  const downloadCalendarAlarms = (sch: TreatmentSchedule) => {
+    const icsContent = buildScheduleIcsContent(sch, isAr);
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dose-alarms-${sch.id}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  // Auto-calculate all dose times when either First Dose Start Time or Frequency (dose count) changes
+  const handleFirstDoseTimeChange = (newStart: string) => {
+    setFirstDoseTime(newStart);
+    setDoseTimes(calculateAutoDoseTimes(newStart, frequency));
+  };
+
   const handleFrequencyChange = (freq: string) => {
     setFrequency(freq);
-    if (freq === 'once_daily') setDoseTimes(['08:00']);
-    else if (freq === 'twice_daily') setDoseTimes(['08:00', '20:00']);
-    else if (freq === 'thrice_daily') setDoseTimes(['08:00', '16:00', '00:00']);
-    else if (freq === 'four_times_daily') setDoseTimes(['06:00', '12:00', '18:00', '00:00']);
+    setDoseTimes(calculateAutoDoseTimes(firstDoseTime, freq));
   };
 
   const handleTimeChange = (index: number, val: string) => {
     const updated = [...doseTimes];
     updated[index] = val;
+    if (index === 0) {
+      setFirstDoseTime(val);
+    }
     setDoseTimes(updated);
   };
 
@@ -162,6 +185,7 @@ export default function Tracker() {
       prescribedDose: prescribedDose.trim(),
       route,
       frequency,
+      firstDoseTime,
       doseTimes,
       startDate,
       durationDays,
@@ -188,6 +212,7 @@ export default function Tracker() {
     setMedName('');
     setPrescribedDose('');
     setRoute('oral');
+    setFirstDoseTime('08:00');
     setFrequency('twice_daily');
     setDoseTimes(['08:00', '20:00']);
     setStartDate(formatLocalDateYYYYMMDD());
@@ -201,6 +226,7 @@ export default function Tracker() {
     setMedName(sch.medicineName);
     setPrescribedDose(sch.prescribedDose);
     setRoute(sch.route);
+    setFirstDoseTime(sch.firstDoseTime || sch.doseTimes[0] || '08:00');
     setFrequency(sch.frequency);
     setDoseTimes(sch.doseTimes);
     setStartDate(sch.startDate);
@@ -373,12 +399,12 @@ export default function Tracker() {
       {/* Reminder Limitations Notice (Priority 5) */}
       <section className="reminder-limitations-box no-print">
         <strong>
-          ℹ️ {isAr ? 'توضيح قيود تنبيهات المتصفح:' : 'Browser Notification Limitations:'}{' '}
+          ℹ️ {isAr ? 'توضيح طريقة عمل الإشعارات:' : 'How Dose Notifications Work:'}{' '}
         </strong>
         <span className="small">
           {isAr
-            ? 'تعمل تنبيهات المتصفح فقط أثناء فتح الموقع أو بقاء المتصفح نشطاً على الجهاز، ولا يُضمن عملها عند إغلاق المتصفح بالكامل. ننصح بضبط منبه الهاتف الأساسي لمواعيد المضاد الحيوي.'
-            : 'Browser notifications only trigger while the browser remains open/active and are not guaranteed when the browser is closed. Please also use your phone’s native alarm.'}
+            ? 'عند تفعيل الإشعارات، يظهر إشعار منبثق على الشاشة طالما أن المتصفح مفتوح في الخلفية. ولضمان التنبيه حتى عند إغلاق المتصفح، اضغط «📅 منبهات الموبايل (.ics)» في أي جدول لإضافة المواعيد لتقويم ومنبه هاتفك.'
+            : 'When enabled, a system notification pops up while the browser remains open in the background. For alarms when the browser is closed, click "📅 Phone Alarms (.ics)" on any schedule.'}
         </span>
       </section>
 
@@ -403,8 +429,8 @@ export default function Tracker() {
           <h3>{isAr ? 'لا توجد جداول علاجية نشطة حالياً' : 'No Active Treatment Schedules'}</h3>
           <p className="muted">
             {isAr
-              ? 'اضغط على زر «إضافة جدول علاج جديد» لإدخال بيانات الوصفة الطبية وتتبع جرعاتك اليومية عبر أجهزتك.'
-              : 'Click "New Treatment Schedule" to enter your prescription details and begin tracking doses across your devices.'}
+              ? 'اضغط على زر «إضافة جدول علاج جديد» وحدد وقت أول جرعة وعدد الجرعات ليقوم الموقع بحساب المواعيد تلقائياً.'
+              : 'Click "New Treatment Schedule", set your first dose start time and daily count, and the tracker will calculate all dose times automatically.'}
           </p>
         </section>
       ) : (
@@ -418,7 +444,6 @@ export default function Tracker() {
             progressPercent,
           } = calculateScheduleProgress(sch);
 
-          // Group doses by day
           const dayGroups: Record<number, ScheduledDose[]> = {};
           sch.doses.forEach((d) => {
             if (!dayGroups[d.dayNumber]) dayGroups[d.dayNumber] = [];
@@ -435,13 +460,24 @@ export default function Tracker() {
                     <b>{isAr ? 'المدة:' : 'Duration:'}</b> {sch.durationDays}{' '}
                     {isAr ? 'أيام' : 'days'} ({sch.startDate} → {sch.endDate})
                   </p>
+                  <p className="sch-meta" style={{ marginTop: '4px' }}>
+                    <b>{isAr ? 'مواعيد الجرعات اليومية:' : 'Scheduled Times:'}</b>{' '}
+                    {sch.doseTimes.map((t) => formatTime12Hour(t, isAr)).join(' ، ')}
+                  </p>
                   {sch.notes && (
                     <p className="sch-notes">
                       📝 <i>{sch.notes}</i>
                     </p>
                   )}
                 </div>
-                <div className="sch-actions">
+                <div className="sch-actions" style={{ flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn-secondary small"
+                    onClick={() => downloadCalendarAlarms(sch)}
+                  >
+                    📅 {isAr ? 'منبهات الموبايل (.ics)' : 'Phone Alarms (.ics)'}
+                  </button>
                   <button type="button" className="btn-secondary" onClick={() => openEdit(sch)}>
                     ✏️ {isAr ? 'تعديل' : 'Edit'}
                   </button>
@@ -531,7 +567,7 @@ export default function Tracker() {
                           return (
                             <div key={dose.id} className={`dose-item ${status}`}>
                               <div className="dose-left">
-                                <span className="dose-time">⏰ {timeDisplay}</span>
+                                <span className="dose-time">⏰ {formatTime12Hour(timeDisplay, isAr)}</span>
                                 <span className={`status-pill ${status}`}>
                                   {status === 'taken' && (isAr ? 'تم أخذها ✅' : 'Taken ✅')}
                                   {status === 'upcoming' && (isAr ? 'قادمة ⏳' : 'Upcoming ⏳')}
@@ -733,42 +769,48 @@ export default function Tracker() {
                   </div>
                 </div>
 
+                {/* First Dose Time + Number of Daily Doses -> Auto-calculates all times */}
                 <div className="form-row">
                   <div className="form-group">
                     <label>
-                      <b>{isAr ? 'عدد مرات الجرعة يومياً:' : 'Frequency:'}</b>
+                      <b>🕒 {isAr ? 'وقت بدء أول جرعة:' : 'First Dose Start Time:'} *</b>
                     </label>
-                    <select value={frequency} onChange={(e) => handleFrequencyChange(e.target.value)}>
-                      <option value="once_daily">{isAr ? 'مرة واحدة يومياً (كل 24 ساعة)' : 'Once daily (every 24h)'}</option>
-                      <option value="twice_daily">{isAr ? 'مرتان يومياً (كل 12 ساعة)' : 'Twice daily (every 12h)'}</option>
-                      <option value="thrice_daily">{isAr ? '3 مرات يومياً (كل 8 ساعات)' : 'Three times daily (every 8h)'}</option>
-                      <option value="four_times_daily">{isAr ? '4 مرات يومياً (كل 6 ساعات)' : 'Four times daily (every 6h)'}</option>
-                    </select>
+                    <input
+                      type="time"
+                      value={firstDoseTime}
+                      onChange={(e) => handleFirstDoseTimeChange(e.target.value)}
+                      required
+                    />
                   </div>
 
                   <div className="form-group">
                     <label>
-                      <b>{isAr ? 'مدة الكورس بالأيام:' : 'Duration (Days):'} *</b>
+                      <b>🔢 {isAr ? 'عدد الجرعات يومياً (يحسب المواعيد تلقائياً):' : 'Doses Per Day (Auto-Calculates Times):'}</b>
                     </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={60}
-                      value={durationDays}
-                      onChange={(e) => setDurationDays(Number(e.target.value))}
-                      required
-                    />
+                    <select value={frequency} onChange={(e) => handleFrequencyChange(e.target.value)}>
+                      <option value="once_daily">{isAr ? 'جرعة واحدة يومياً (كل 24 ساعة)' : '1 dose daily (every 24h)'}</option>
+                      <option value="twice_daily">{isAr ? 'جرعتان يومياً (كل 12 ساعة)' : '2 doses daily (every 12h)'}</option>
+                      <option value="thrice_daily">{isAr ? '3 جرعات يومياً (كل 8 ساعات)' : '3 doses daily (every 8h)'}</option>
+                      <option value="four_times_daily">{isAr ? '4 جرعات يومياً (كل 6 ساعات)' : '4 doses daily (every 6h)'}</option>
+                    </select>
                   </div>
                 </div>
 
                 <div className="form-group">
                   <label>
-                    <b>{isAr ? 'مواعيد الجرعات خلال اليوم:' : 'Scheduled Dose Times:'}</b>
+                    <b>
+                      ✨{' '}
+                      {isAr
+                        ? 'مواعيد الجرعات المحسوبة تلقائياً خلال اليوم:'
+                        : 'Auto-Calculated Scheduled Dose Times:'}
+                    </b>
                   </label>
                   <div className="dose-times-grid">
                     {doseTimes.map((time, idx) => (
                       <div key={idx} className="time-input-group">
-                        <small>{isAr ? `الجرعة ${idx + 1}` : `Dose ${idx + 1}`}:</small>
+                        <small>
+                          {isAr ? `الجرعة ${idx + 1}` : `Dose ${idx + 1}`} ({formatTime12Hour(time, isAr)}):
+                        </small>
                         <input
                           type="time"
                           value={time}
@@ -795,16 +837,30 @@ export default function Tracker() {
 
                   <div className="form-group">
                     <label>
-                      <b>{isAr ? 'تعليمات إضافية (اختياري):' : 'Notes / Instructions (Optional):'}</b>
+                      <b>{isAr ? 'مدة الكورس بالأيام:' : 'Duration (Days):'} *</b>
                     </label>
                     <input
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder={
-                        isAr ? 'مثال: بعد الأكل، يحفظ في الثلاجة' : 'e.g. Take with food, keep refrigerated'
-                      }
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={durationDays}
+                      onChange={(e) => setDurationDays(Number(e.target.value))}
+                      required
                     />
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <b>{isAr ? 'تعليمات إضافية (اختياري):' : 'Notes / Instructions (Optional):'}</b>
+                  </label>
+                  <input
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder={
+                      isAr ? 'مثال: بعد الأكل، يحفظ في الثلاجة' : 'e.g. Take with food, keep refrigerated'
+                    }
+                  />
                 </div>
 
                 <div className="modal-actions">

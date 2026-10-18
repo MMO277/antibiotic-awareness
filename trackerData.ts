@@ -13,6 +13,8 @@ export type CloudSyncStatus =
   | 'local_only'
   | 'error';
 
+export type RadarFrequency = 'q24h' | 'q12h' | 'q8h' | 'q6h';
+
 export interface ScheduledDose {
   id: string;
   scheduleId: string;
@@ -33,7 +35,8 @@ export interface TreatmentSchedule {
   prescribedDose: string;
   route: string;
   frequency: string;
-  doseTimes: string[]; // e.g. ["08:00", "20:00"]
+  firstDoseTime?: string; // e.g. "09:00"
+  doseTimes: string[]; // e.g. ["09:00", "21:00"]
   startDate: string; // "YYYY-MM-DD"
   durationDays: number;
   endDate: string; // "YYYY-MM-DD"
@@ -47,7 +50,8 @@ export interface TreatmentSchedule {
 
 export interface RadarWorkspaceState {
   selectedAbx: string;
-  frequency: 'q12h' | 'q8h' | 'q24h';
+  frequency: RadarFrequency;
+  firstDoseTime: string; // "HH:mm"
   selectedCoMeds: string[];
   updatedAt: string;
 }
@@ -61,9 +65,74 @@ const SCHEDULES_EVENT = 'aa-tracker-schedules-updated';
 export const DEFAULT_RADAR_WORKSPACE: RadarWorkspaceState = {
   selectedAbx: 'ciprofloxacin',
   frequency: 'q12h',
+  firstDoseTime: '08:00',
   selectedCoMeds: ['calcium_dairy', 'iron_zinc', 'probiotics', 'paracetamol'],
   updatedAt: '1970-01-01T00:00:00.000Z',
 };
+
+/**
+ * Adds minutes to an "HH:mm" time string and wraps around 24 hours.
+ */
+export function addMinutesToTime(hhmm: string, minutesToAdd: number): string {
+  const parts = (hhmm || '08:00').split(':').map(Number);
+  const baseH = !isNaN(parts[0]) ? parts[0] : 8;
+  const baseM = !isNaN(parts[1]) ? parts[1] : 0;
+  const totalMinutes = (((baseH * 60 + baseM + minutesToAdd) % 1440) + 1440) % 1440;
+  const outH = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
+  const outM = String(totalMinutes % 60).padStart(2, '0');
+  return `${outH}:${outM}`;
+}
+
+/**
+ * Automatically calculates all daily dose times starting from `firstDoseTime`
+ * divided evenly across 24 hours based on `dosesPerDay` (1, 2, 3, or 4) or frequency key.
+ */
+export function calculateAutoDoseTimes(
+  firstDoseTime: string,
+  dosesCountOrFreq: number | string
+): string[] {
+  const cleanStart = /^\d{2}:\d{2}$/.test(firstDoseTime) ? firstDoseTime : '08:00';
+  let count = 2;
+  if (typeof dosesCountOrFreq === 'number') {
+    count = Math.max(1, Math.min(6, Math.round(dosesCountOrFreq)));
+  } else {
+    if (dosesCountOrFreq === 'once_daily' || dosesCountOrFreq === 'q24h') count = 1;
+    else if (dosesCountOrFreq === 'twice_daily' || dosesCountOrFreq === 'q12h') count = 2;
+    else if (dosesCountOrFreq === 'thrice_daily' || dosesCountOrFreq === 'q8h') count = 3;
+    else if (dosesCountOrFreq === 'four_times_daily' || dosesCountOrFreq === 'q6h') count = 4;
+  }
+
+  const intervalMinutes = Math.round((24 * 60) / count);
+  const times: string[] = [];
+  for (let i = 0; i < count; i++) {
+    times.push(addMinutesToTime(cleanStart, i * intervalMinutes));
+  }
+  return times;
+}
+
+/**
+ * Formats an "HH:mm" 24-hour string into a friendly 12-hour Arabic or English time string.
+ */
+export function formatTime12Hour(hhmm: string, isAr = true): string {
+  const parts = (hhmm || '08:00').split(':').map(Number);
+  if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) return hhmm;
+  const h24 = parts[0];
+  const m = String(parts[1]).padStart(2, '0');
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  const hStr = String(h12).padStart(2, '0');
+
+  if (isAr) {
+    let periodAr = 'صباحاً';
+    if (h24 === 0 && parts[1] === 0) periodAr = 'منتصف الليل';
+    else if (h24 === 12) periodAr = 'ظهراً';
+    else if (h24 > 12 && h24 < 17) periodAr = 'عصراً';
+    else if (h24 >= 17) periodAr = 'مساءً';
+    return `${hStr}:${m} ${periodAr}`;
+  } else {
+    const periodEn = h24 >= 12 ? 'PM' : 'AM';
+    return `${hStr}:${m} ${periodEn}`;
+  }
+}
 
 export function formatLocalDateYYYYMMDD(d: Date = new Date()): string {
   const year = d.getFullYear();
@@ -122,9 +191,13 @@ export function normalizeRadarWorkspace(raw: any): RadarWorkspaceState {
     typeof raw.selectedAbx === 'string' && raw.selectedAbx.trim()
       ? raw.selectedAbx.trim()
       : DEFAULT_RADAR_WORKSPACE.selectedAbx;
-  const frequency: 'q12h' | 'q8h' | 'q24h' = ['q12h', 'q8h', 'q24h'].includes(raw.frequency)
+  const frequency: RadarFrequency = ['q24h', 'q12h', 'q8h', 'q6h'].includes(raw.frequency)
     ? raw.frequency
     : DEFAULT_RADAR_WORKSPACE.frequency;
+  const firstDoseTime =
+    typeof raw.firstDoseTime === 'string' && /^\d{2}:\d{2}$/.test(raw.firstDoseTime)
+      ? raw.firstDoseTime
+      : DEFAULT_RADAR_WORKSPACE.firstDoseTime;
   const selectedCoMeds = Array.isArray(raw.selectedCoMeds)
     ? raw.selectedCoMeds.filter((x: unknown): x is string => typeof x === 'string')
     : [...DEFAULT_RADAR_WORKSPACE.selectedCoMeds];
@@ -132,7 +205,7 @@ export function normalizeRadarWorkspace(raw: any): RadarWorkspaceState {
     typeof raw.updatedAt === 'string' && raw.updatedAt
       ? raw.updatedAt
       : DEFAULT_RADAR_WORKSPACE.updatedAt;
-  return { selectedAbx, frequency, selectedCoMeds, updatedAt };
+  return { selectedAbx, frequency, firstDoseTime, selectedCoMeds, updatedAt };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -179,6 +252,10 @@ export function normalizeSchedules(raw: any): TreatmentSchedule[] {
         Array.isArray(s.doseTimes) && s.doseTimes.length > 0
           ? s.doseTimes.map(String)
           : ['08:00', '20:00'];
+      const firstDoseTime =
+        typeof s.firstDoseTime === 'string' && /^\d{2}:\d{2}$/.test(s.firstDoseTime)
+          ? s.firstDoseTime
+          : doseTimes[0] || '08:00';
 
       const doses: ScheduledDose[] = Array.isArray(s.doses)
         ? s.doses
@@ -228,6 +305,7 @@ export function normalizeSchedules(raw: any): TreatmentSchedule[] {
         prescribedDose: typeof s.prescribedDose === 'string' ? s.prescribedDose.trim() : '',
         route: typeof s.route === 'string' && s.route ? s.route : 'oral',
         frequency: typeof s.frequency === 'string' && s.frequency ? s.frequency : 'twice_daily',
+        firstDoseTime,
         doseTimes,
         startDate,
         durationDays,
@@ -267,8 +345,6 @@ export function getScheduleSignature(
 
 /**
  * Conflict-safe dose merge using `statusUpdatedAt` (and `takenAt`/`missedAt` fallback).
- * Ensures accidental dose status corrections (e.g., Undo back to upcoming or switching taken <-> missed)
- * and cross-device dose recordings always preserve the latest confirmed user action.
  */
 export function mergeDoseRecords(primary: ScheduledDose, secondary: ScheduledDose): ScheduledDose {
   const pTime = primary.statusUpdatedAt || primary.takenAt || primary.missedAt || '';
@@ -284,7 +360,6 @@ export function mergeDoseRecords(primary: ScheduledDose, secondary: ScheduledDos
     return primary;
   }
 
-  // Legacy fallback when neither dose has a timestamp: preserve explicit 'taken' or 'missed'
   const isExplicit = (st: DoseStatus) => st === 'taken' || st === 'missed';
   if (!isExplicit(primary.status) && isExplicit(secondary.status)) {
     return { ...secondary, id: primary.id, scheduleId: primary.scheduleId };
@@ -369,9 +444,6 @@ export function mergeSchedules(
 
 /**
  * Safely merges local Guest records into an authenticated user's Cloud records on sign-in.
- * - Cloud records are ALWAYS the primary source of truth and are never overwritten by stale guest metadata.
- * - Avoids duplicate prescriptions by checking both `id` and `getScheduleSignature(s)`.
- * - Preserves all existing cloud records and only merges newer explicit dose confirmations or genuinely new guest schedules.
  */
 export function safeMergeGuestIntoCloud(
   cloudSchedules: TreatmentSchedule[],
@@ -407,7 +479,6 @@ export function safeMergeGuestIntoCloud(
             (d.dayNumber === cd.dayNumber && d.doseNumberInDay === cd.doseNumberInDay)
         );
         if (!gd) return cd;
-        // Cloud dose takes precedence if already confirmed; only adopt guest confirmation if cloud dose is still upcoming
         if (cd.status === 'upcoming' && (gd.status === 'taken' || gd.status === 'missed')) {
           doseChanged = true;
           return {
@@ -503,10 +574,46 @@ export function saveSchedules(schedules: TreatmentSchedule[], uid?: string | nul
 }
 
 /**
- * Reactive hook that synchronizes the user's Prescriptions, Treatment Schedules, Dose History,
- * and Radar Workspace across devices via Cloud Firestore (`users/{uid}`) when signed in,
- * while isolating accounts and providing safe guest-to-account migration and offline resilience.
+ * Generates an iCalendar (.ics) file string for a treatment schedule so the patient can
+ * add native phone/calendar alarms that work even when the browser is closed.
  */
+export function buildScheduleIcsContent(sch: TreatmentSchedule, isAr = true): string {
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Antibiotic Awareness//Prescription Radar//EN',
+    'CALSCALE:GREGORIAN',
+  ];
+
+  sch.doses.forEach((d) => {
+    const cleanIso = d.scheduledTime.replace(/[-:]/g, '');
+    const dtStart = cleanIso.length === 13 ? `${cleanIso}00` : cleanIso.slice(0, 15);
+    const summary = isAr
+      ? `💊 موعد جرعة: ${sch.medicineName} (${sch.prescribedDose})`
+      : `💊 Dose Reminder: ${sch.medicineName} (${sch.prescribedDose})`;
+    const desc = isAr
+      ? `اليوم ${d.dayNumber} - الجرعة ${d.doseNumberInDay}. ${sch.notes || ''}`
+      : `Day ${d.dayNumber} - Dose ${d.doseNumberInDay}. ${sch.notes || ''}`;
+
+    lines.push(
+      'BEGIN:VEVENT',
+      `UID:${d.id}@antibiotic-awareness`,
+      `DTSTART:${dtStart}`,
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${desc}`,
+      'BEGIN:VALARM',
+      'TRIGGER:-PT0M',
+      'ACTION:DISPLAY',
+      `DESCRIPTION:${summary}`,
+      'END:VALARM',
+      'END:VEVENT'
+    );
+  });
+
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
+}
+
 export function useSyncedSchedules() {
   const { user, loading: authLoading } = useAuth();
   const uid = user?.uid ?? null;
@@ -590,7 +697,6 @@ export function useSyncedSchedules() {
             );
           });
         } catch (txErr) {
-          // If runTransaction fails due to offline cache state, fall back to setDoc with merge
           await setDoc(
             userDocRef,
             {
@@ -606,7 +712,6 @@ export function useSyncedSchedules() {
           }
         }
 
-        // Persist merged result to UID-scoped cache
         try {
           localStorage.setItem(
             getSchedulesStorageKey(targetUid),
@@ -660,7 +765,6 @@ export function useSyncedSchedules() {
       return;
     }
 
-    // Signed-out / Guest mode: strictly load only guest storage, never expose any UID cache
     if (!uid) {
       hydratedUidRef.current = null;
       hasPendingLocalWriteRef.current = false;
@@ -677,8 +781,6 @@ export function useSyncedSchedules() {
       return;
     }
 
-    // Signed-in user: load UID-scoped cache if present on this device, but keep loading=true
-    // until Cloud Firestore hydration completes if no UID cache exists yet
     const cachedDeleted = loadDeletedMap(uid);
     deletedMapRef.current = cachedDeleted;
 
@@ -699,7 +801,6 @@ export function useSyncedSchedules() {
       setSchedulesState(cachedScoped);
       setInitialLoading(false);
     } else {
-      // Do not display an empty tracker as if the patient has no prescriptions while cloud data is still loading
       setInitialLoading(true);
     }
 
@@ -726,7 +827,6 @@ export function useSyncedSchedules() {
         const mergedDeleted = mergeDeletedMaps(cloudDeleted, cachedDeleted);
         deletedMapRef.current = mergedDeleted;
 
-        // Check if there is un-migrated guest data on this device
         const migrationKey = `${MIGRATED_LEGACY_SCHEDULES_PREFIX}${uid}`;
         const alreadyMigrated = localStorage.getItem(migrationKey) === '1';
         let guestSchedules: TreatmentSchedule[] = [];
@@ -739,12 +839,10 @@ export function useSyncedSchedules() {
           } catch {}
         }
 
-        // First combine cloud schedules with any UID-scoped offline edits on this device
         const cloudPlusUidCache = cachedScoped
           ? mergeSchedules(cloudSchedules, cachedScoped, mergedDeleted)
           : cloudSchedules.filter((s) => !mergedDeleted[s.id]);
 
-        // Next, safely merge any un-migrated guest schedules without overwriting or duplicating cloud records
         let resolved = cloudPlusUidCache;
         let shouldWriteToCloud = false;
 
@@ -763,7 +861,6 @@ export function useSyncedSchedules() {
           shouldWriteToCloud = true;
         }
 
-        // Hydrate Radar Workspace state from cloud if newer
         let resolvedRadar = cachedRadar;
         if (data?.radarWorkspace) {
           const cloudRadar = normalizeRadarWorkspace(data.radarWorkspace);
@@ -789,7 +886,6 @@ export function useSyncedSchedules() {
           );
           if (!alreadyMigrated && guestSchedules.length > 0) {
             localStorage.setItem(migrationKey, '1');
-            // Clear un-scoped guest key after migration so another user on this device never sees it
             localStorage.removeItem(STORAGE_KEY);
           }
         } catch {}
@@ -825,7 +921,6 @@ export function useSyncedSchedules() {
         }
       });
 
-    // Real-time Firestore listener across devices
     const unsubscribe = onSnapshot(
       userDocRef,
       { includeMetadataChanges: true },
@@ -900,7 +995,6 @@ export function useSyncedSchedules() {
     };
   }, [uid, authLoading, pushStateToCloud]);
 
-  // Listen for online/offline transitions to keep syncStatus honest and flush pending writes
   useEffect(() => {
     if (typeof window === 'undefined' || !uid) return;
     const handleOnline = () => {
@@ -926,7 +1020,6 @@ export function useSyncedSchedules() {
     };
   }, [uid, pushStateToCloud]);
 
-  // Listen for same-tab updates across components (e.g., PrescriptionRadar <-> Tracker)
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -956,7 +1049,6 @@ export function useSyncedSchedules() {
       const nextRaw = typeof updater === 'function' ? updater(prev) : updater;
       const nowIso = new Date().toISOString();
 
-      // Detect any removed schedule IDs so deletions sync across devices via tombstones
       const nextIds = new Set(nextRaw.map((s) => s.id));
       const updatedDeleted = { ...deletedMapRef.current };
       for (const oldSch of prev) {
@@ -964,7 +1056,7 @@ export function useSyncedSchedules() {
           updatedDeleted[oldSch.id] = nowIso;
         }
       }
-      // If a schedule is present in nextRaw, ensure its updatedAt reflects modifications
+
       const stampedRaw = nextRaw.map((s) => {
         const oldMatch = prev.find((p) => p.id === s.id);
         if (!oldMatch || JSON.stringify(oldMatch) !== JSON.stringify(s)) {
@@ -1032,7 +1124,6 @@ export function useSyncedSchedules() {
                 statusUpdatedAt: nowIso,
               };
             }
-            // Resetting / correcting accidental entry back to upcoming (or overdue-unconfirmed based on clock)
             return {
               ...rest,
               status: 'upcoming' as const,
@@ -1104,13 +1195,6 @@ export function useSyncedSchedules() {
   };
 }
 
-/**
- * Computes effective status for a dose:
- * - 'taken': explicitly marked taken by patient
- * - 'missed': explicitly marked missed by patient
- * - 'unconfirmed': scheduled time has passed, but not yet confirmed by patient (never automatically labeled 'missed')
- * - 'upcoming': scheduled time is in the future
- */
 export function getDoseStatus(dose: ScheduledDose, now = new Date()): DoseStatus {
   if (dose.status === 'taken') return 'taken';
   if (dose.status === 'missed') return 'missed';
@@ -1145,10 +1229,6 @@ export function calculateScheduleProgress(sch: TreatmentSchedule, now = new Date
   };
 }
 
-/**
- * Generates all doses for a schedule over durationDays using local calendar dates,
- * optionally preserving existing dose confirmations when editing a schedule.
- */
 export function generateScheduleDoses(
   scheduleId: string,
   startDateStr: string,

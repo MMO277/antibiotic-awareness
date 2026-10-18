@@ -13,12 +13,17 @@ import {
   TreatmentSchedule,
   ScheduledDose,
   DoseStatus,
+  RadarFrequency,
   useSyncedSchedules,
   generateScheduleDoses,
   getDoseStatus,
   calculateScheduleProgress,
   formatLocalDateYYYYMMDD,
   computeEndDate,
+  calculateAutoDoseTimes,
+  addMinutesToTime,
+  formatTime12Hour,
+  buildScheduleIcsContent,
 } from './trackerData';
 
 export interface CoMedItem {
@@ -157,10 +162,18 @@ export default function PrescriptionRadar() {
 
   const selectedAbx = radarWorkspace.selectedAbx;
   const frequency = radarWorkspace.frequency;
+  const firstDoseTime = radarWorkspace.firstDoseTime || '08:00';
   const selectedCoMeds = radarWorkspace.selectedCoMeds;
 
   const setSelectedAbx = (val: string) => updateRadarWorkspace({ selectedAbx: val });
-  const setFrequency = (val: 'q12h' | 'q8h' | 'q24h') => updateRadarWorkspace({ frequency: val });
+  const setFrequency = (val: RadarFrequency) => updateRadarWorkspace({ frequency: val });
+  const setFirstDoseTime = (val: string) => updateRadarWorkspace({ firstDoseTime: val });
+
+  // Automatically calculated daily dose times from `firstDoseTime` + `frequency`
+  const autoRadarDoseTimes = useMemo(
+    () => calculateAutoDoseTimes(firstDoseTime, frequency),
+    [firstDoseTime, frequency]
+  );
 
   function toggleCoMed(id: string) {
     const next = selectedCoMeds.includes(id)
@@ -187,12 +200,14 @@ export default function PrescriptionRadar() {
   const [prescribedDose, setPrescribedDose] = useState('');
   const [route, setRoute] = useState('oral');
   const [scheduleFreq, setScheduleFreq] = useState('twice_daily');
+  const [modalFirstDoseTime, setModalFirstDoseTime] = useState('08:00');
   const [doseTimes, setDoseTimes] = useState<string[]>(['08:00', '20:00']);
   const [startDate, setStartDate] = useState(() => formatLocalDateYYYYMMDD());
   const [durationDays, setDurationDays] = useState(7);
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState('');
   const [reportGeneratedAt, setReportGeneratedAt] = useState<string>(() => new Date().toISOString());
+  const [activeDueBanner, setActiveDueBanner] = useState<string | null>(null);
 
   // Browser notification state & in-tab reminder check
   const [notifSupported, setNotifSupported] = useState(false);
@@ -207,7 +222,7 @@ export default function PrescriptionRadar() {
 
   // Active in-tab reminder check while the browser is open
   useEffect(() => {
-    if (!notifSupported || notifPermission !== 'granted' || schedules.length === 0) return;
+    if (schedules.length === 0) return;
 
     const checkReminders = () => {
       const now = new Date();
@@ -228,16 +243,22 @@ export default function PrescriptionRadar() {
           if (dDate === currentYYYYMMDD && dHHMM === currentHHMM && !firedMap[d.id]) {
             firedMap[d.id] = true;
             updated = true;
-            try {
-              new Notification(
-                isAr ? `⏰ موعد جرعة الدواء: ${sch.medicineName}` : `⏰ Dose Reminder: ${sch.medicineName}`,
-                {
-                  body: isAr
-                    ? `الجرعة الموصوفة: ${sch.prescribedDose} (${dHHMM}). يرجى تأكيد الجرعة في رادار الروشتة.`
-                    : `Prescribed dose: ${sch.prescribedDose} (${dHHMM}). Please confirm in Prescription Radar.`,
-                }
-              );
-            } catch {}
+            const alertText = isAr
+              ? `⏰ حان الآن موعد جرعة: ${sch.medicineName} (${sch.prescribedDose}) — الساعة ${formatTime12Hour(dHHMM, true)}`
+              : `⏰ Time for your dose: ${sch.medicineName} (${sch.prescribedDose}) — ${formatTime12Hour(dHHMM, false)}`;
+            setActiveDueBanner(alertText);
+            if (notifSupported && notifPermission === 'granted') {
+              try {
+                new Notification(
+                  isAr ? `⏰ موعد جرعة الدواء: ${sch.medicineName}` : `⏰ Dose Reminder: ${sch.medicineName}`,
+                  {
+                    body: isAr
+                      ? `الجرعة الموصوفة: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, true)}). يرجى تأكيد الجرعة في رادار الروشتة.`
+                      : `Prescribed dose: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, false)}). Please confirm in Prescription Radar.`,
+                  }
+                );
+              } catch {}
+            }
           }
         });
       });
@@ -250,7 +271,7 @@ export default function PrescriptionRadar() {
     };
 
     checkReminders();
-    const timer = window.setInterval(checkReminders, 30000);
+    const timer = window.setInterval(checkReminders, 25000);
     return () => window.clearInterval(timer);
   }, [notifSupported, notifPermission, schedules, isAr]);
 
@@ -264,14 +285,27 @@ export default function PrescriptionRadar() {
           isAr ? 'تم تفعيل تنبيهات المتصفح 🔔' : 'Browser Reminders Enabled 🔔',
           {
             body: isAr
-              ? 'سيتم تنبيهك بمواعيد الجرعات طالما أن المتصفح مفتوح ونشط على هذا الجهاز.'
-              : 'You will be alerted at scheduled dose times while this browser remains open and active.',
+              ? 'سيظهر لك إشعار منبثق على الشاشة عند حلول موعد الجرعة طالما أن الموقع أو المتصفح مفتوح.'
+              : 'A system notification will pop up at scheduled dose times while this browser remains open.',
           }
         );
       }
     } catch (err) {
       console.error('Notification error:', err);
     }
+  };
+
+  const downloadCalendarAlarms = (sch: TreatmentSchedule) => {
+    const icsContent = buildScheduleIcsContent(sch, isAr);
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dose-alarms-${sch.id}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   // Analyze multi-drug prescription interactions & timing rules
@@ -320,9 +354,9 @@ export default function PrescriptionRadar() {
             titleAr: '⚠️ فصل زمني إلزامي (ساعتين إلى 3 ساعات)',
             titleEn: '⚠️ Mandatory 2–3 Hour Separation',
             ruleAr:
-              'أقراص الحديد والزنك تُبطل امتصاص هذا المضاد الحيوي إذا أُخذت في نفس الوقت. خذ الحديد في منتصف النهار (مثلاً 1:30 ظهراً) بعيداً عن جرعة المضاد.',
+              'أقراص الحديد والزنك تُبطل امتصاص هذا المضاد الحيوي إذا أُخذت في نفس الوقت. خذ الحديد بعد جرعة المضاد بـ 3 إلى 4 ساعات على الأقل.',
             ruleEn:
-              'Iron and zinc supplements strongly chelate this antibiotic. Take iron at midday (e.g. 1:30 PM) at least 2 hours apart.',
+              'Iron and zinc supplements strongly chelate this antibiotic. Take iron at least 3–4 hours apart from your antibiotic dose.',
           });
         } else {
           list.push({
@@ -474,7 +508,7 @@ export default function PrescriptionRadar() {
     return list;
   }, [selectedAbx, selectedCoMeds, isAr]);
 
-  // Build 24-Hour Smart Daily Schedule slots
+  // Build 24-Hour Smart Daily Schedule slots dynamically from `firstDoseTime` & `autoRadarDoseTimes`
   const dailySlots = useMemo(() => {
     const abxName = isAr ? currentAbx?.nameAr || '' : currentAbx?.nameEn || '';
     const foodRuleAr =
@@ -495,6 +529,7 @@ export default function PrescriptionRadar() {
         : 'With a full glass of water (250 mL)';
 
     const slots: Array<{
+      hhmm: string;
       timeAr: string;
       timeEn: string;
       badge: string;
@@ -502,78 +537,90 @@ export default function PrescriptionRadar() {
       itemsEn: string[];
     }> = [];
 
-    slots.push({
-      timeAr: '08:00 صباحاً',
-      timeEn: '08:00 AM',
-      badge: '💊',
-      itemsAr: [
-        `جرعة الصباح: ${abxName} — (${foodRuleAr})`,
-        ...(selectedCoMeds.includes('paracetamol') ? ['باراسيتامول (عند اللزوم وفق إرشادات الطبيب)'] : []),
-      ],
-      itemsEn: [
-        `Morning Antibiotic Dose: ${abxName} — (${foodRuleEn})`,
-        ...(selectedCoMeds.includes('paracetamol') ? ['Paracetamol (if needed as directed by doctor)'] : []),
-      ],
-    });
+    const intervalLabelAr =
+      frequency === 'q24h'
+        ? 'كل 24 ساعة'
+        : frequency === 'q12h'
+          ? 'كل 12 ساعة'
+          : frequency === 'q8h'
+            ? 'كل 8 ساعات'
+            : 'كل 6 ساعات';
+    const intervalLabelEn =
+      frequency === 'q24h'
+        ? 'Every 24h'
+        : frequency === 'q12h'
+          ? 'Every 12h'
+          : frequency === 'q8h'
+            ? 'Every 8h'
+            : 'Every 6h';
 
-    if (selectedCoMeds.includes('probiotics')) {
+    // 1. Add all auto-calculated antibiotic doses
+    autoRadarDoseTimes.forEach((t, idx) => {
       slots.push({
-        timeAr: '10:30 صباحاً',
-        timeEn: '10:30 AM',
-        badge: '🥣',
+        hhmm: t,
+        timeAr: formatTime12Hour(t, true),
+        timeEn: formatTime12Hour(t, false),
+        badge: '💊',
         itemsAr: [
-          'البروبيوتيك أو كوب الزبادي الطبيعي (بعد المضاد بساعتين ونصف لضمان عدم قتل الخمائر النافعة)',
+          `الجرعة ${idx + 1} (${intervalLabelAr}): ${abxName} — (${foodRuleAr})`,
+          ...(idx === 0 && selectedCoMeds.includes('paracetamol')
+            ? ['باراسيتامول (عند اللزوم وفق إرشادات الطبيب)']
+            : []),
         ],
         itemsEn: [
-          'Probiotic or Natural Yogurt (2.5 hours after antibiotic so beneficial flora survive)',
+          `Antibiotic Dose ${idx + 1} (${intervalLabelEn}): ${abxName} — (${foodRuleEn})`,
+          ...(idx === 0 && selectedCoMeds.includes('paracetamol')
+            ? ['Paracetamol (if needed as directed by doctor)']
+            : []),
+        ],
+      });
+    });
+
+    // 2. Probiotics / Yogurt: +2 hours 30 minutes after Dose 1
+    if (selectedCoMeds.includes('probiotics')) {
+      const probTime = addMinutesToTime(firstDoseTime, 150);
+      slots.push({
+        hhmm: probTime,
+        timeAr: formatTime12Hour(probTime, true),
+        timeEn: formatTime12Hour(probTime, false),
+        badge: '🥣',
+        itemsAr: [
+          'البروبيوتيك أو كوب الزبادي الطبيعي (بعد الجرعة الأولى بساعتين ونصف لضمان عدم قتل الخمائر النافعة)',
+        ],
+        itemsEn: [
+          'Probiotic or Natural Yogurt (2.5 hours after Dose 1 so beneficial flora survive)',
         ],
       });
     }
 
+    // 3. Iron / Calcium / Antacids: +3.5 hours after Dose 1 (safely separated from all antibiotic doses)
     const middayMedsAr: string[] = [];
     const middayMedsEn: string[] = [];
     if (selectedCoMeds.includes('iron_zinc')) {
-      middayMedsAr.push('كبسولة الحديد / الزنك (بعد الغداء بعيداً عن المضاد الحيوي بـ 5 ساعات)');
-      middayMedsEn.push('Iron / Zinc supplement (with lunch, safely separated from morning & evening antibiotic)');
+      middayMedsAr.push('كبسولة الحديد / الزنك (مفصولة بـ 3 ساعات ونصف عن جرعة المضاد لمنع تعارض الامتصاص)');
+      middayMedsEn.push('Iron / Zinc supplement (safely spaced 3.5 hours after antibiotic dose)');
     }
     if (selectedCoMeds.includes('calcium_dairy')) {
-      middayMedsAr.push('مكمل الكالسيوم أو منتجات الألبان (مفصول زمنياً عن جرعة المضاد)');
+      middayMedsAr.push('مكمل الكالسيوم أو منتجات الألبان (في نافذة الأمان بعيداً عن جرعة المضاد)');
       middayMedsEn.push('Calcium supplement or dairy meal (safely separated from antibiotic)');
     }
     if (selectedCoMeds.includes('antacids')) {
-      middayMedsAr.push('دواء الحموضة / المعدة (عند اللزوم ظهراً بعيداً عن موعد المضاد بساعتين)');
+      middayMedsAr.push('دواء الحموضة / المعدة (عند اللزوم بعيداً عن موعد المضاد بساعتين على الأقل)');
       middayMedsEn.push('Antacid / Stomach protector (spaced at least 2 hours from antibiotic)');
     }
     if (middayMedsAr.length > 0) {
+      const sepTime = addMinutesToTime(firstDoseTime, 210);
       slots.push({
-        timeAr: '01:30 ظهراً',
-        timeEn: '01:30 PM',
+        hhmm: sepTime,
+        timeAr: formatTime12Hour(sepTime, true),
+        timeEn: formatTime12Hour(sepTime, false),
         badge: '🛡️',
         itemsAr: middayMedsAr,
         itemsEn: middayMedsEn,
       });
     }
 
-    if (frequency === 'q8h') {
-      slots.push({
-        timeAr: '04:00 عصراً',
-        timeEn: '04:00 PM',
-        badge: '💊',
-        itemsAr: [`الجرعة الثانية (كل 8 ساعات): ${abxName} — (${foodRuleAr})`],
-        itemsEn: [`Afternoon Dose (Every 8h): ${abxName} — (${foodRuleEn})`],
-      });
-    }
-
-    if (frequency === 'q12h') {
-      slots.push({
-        timeAr: '08:00 مساءً',
-        timeEn: '08:00 PM',
-        badge: '💊',
-        itemsAr: [`جرعة المساء (كل 12 ساعة): ${abxName} — (${foodRuleAr})`],
-        itemsEn: [`Evening Dose (Every 12h): ${abxName} — (${foodRuleEn})`],
-      });
-    }
-
+    // 4. Evening Chronic Meds / Contraceptives / Statins
     const nightAr: string[] = [];
     const nightEn: string[] = [];
     if (selectedCoMeds.includes('statins')) {
@@ -585,29 +632,21 @@ export default function PrescriptionRadar() {
       nightEn.push('Daily Oral Contraceptive Pill at its fixed time');
     }
     if (nightAr.length > 0) {
+      const nightTime = '22:30';
       slots.push({
-        timeAr: '10:30 مساءً',
-        timeEn: '10:30 PM',
+        hhmm: nightTime,
+        timeAr: formatTime12Hour(nightTime, true),
+        timeEn: formatTime12Hour(nightTime, false),
         badge: '🌙',
         itemsAr: nightAr,
         itemsEn: nightEn,
       });
     }
 
-    if (frequency === 'q8h') {
-      slots.push({
-        timeAr: '12:00 منتصف الليل',
-        timeEn: '12:00 Midnight',
-        badge: '💊',
-        itemsAr: [`الجرعة الثالثة (كل 8 ساعات): ${abxName} — (${foodRuleAr})`],
-        itemsEn: [`Night Dose (Every 8h): ${abxName} — (${foodRuleEn})`],
-      });
-    }
-
     return slots;
-  }, [currentAbx, selectedAbx, frequency, selectedCoMeds, isAr]);
+  }, [currentAbx, selectedAbx, frequency, firstDoseTime, autoRadarDoseTimes, selectedCoMeds, isAr]);
 
-  // Open Save Prescription Modal pre-populated from current Radar analysis
+  // Open Save Prescription Modal pre-populated from current Radar analysis + auto-calculated times
   const openSaveFromRadar = () => {
     setEditingScheduleId(null);
     const defaultName = currentAbx
@@ -618,16 +657,18 @@ export default function PrescriptionRadar() {
     setMedName(defaultName);
     setPrescribedDose('');
     setRoute('oral');
-    if (frequency === 'q24h') {
-      setScheduleFreq('once_daily');
-      setDoseTimes(['08:00']);
-    } else if (frequency === 'q8h') {
-      setScheduleFreq('thrice_daily');
-      setDoseTimes(['08:00', '16:00', '00:00']);
-    } else {
-      setScheduleFreq('twice_daily');
-      setDoseTimes(['08:00', '20:00']);
-    }
+
+    const freqKey =
+      frequency === 'q24h'
+        ? 'once_daily'
+        : frequency === 'q8h'
+          ? 'thrice_daily'
+          : frequency === 'q6h'
+            ? 'four_times_daily'
+            : 'twice_daily';
+    setScheduleFreq(freqKey);
+    setModalFirstDoseTime(firstDoseTime);
+    setDoseTimes(calculateAutoDoseTimes(firstDoseTime, freqKey));
     setStartDate(formatLocalDateYYYYMMDD());
     setDurationDays(7);
     setNotes('');
@@ -641,6 +682,8 @@ export default function PrescriptionRadar() {
     setPrescribedDose(sch.prescribedDose);
     setRoute(sch.route);
     setScheduleFreq(sch.frequency);
+    const startT = sch.firstDoseTime || sch.doseTimes[0] || '08:00';
+    setModalFirstDoseTime(startT);
     setDoseTimes(sch.doseTimes);
     setStartDate(sch.startDate);
     setDurationDays(sch.durationDays);
@@ -652,7 +695,8 @@ export default function PrescriptionRadar() {
   const loadScheduleIntoRadar = (sch: TreatmentSchedule) => {
     const partial: {
       selectedAbx?: string;
-      frequency?: 'q12h' | 'q8h' | 'q24h';
+      frequency?: RadarFrequency;
+      firstDoseTime?: string;
       selectedCoMeds?: string[];
     } = {};
     if (sch.antibioticId && ACTIVE_INGREDIENTS.some((a) => a.id === sch.antibioticId)) {
@@ -667,8 +711,12 @@ export default function PrescriptionRadar() {
     }
     if (sch.frequency === 'once_daily' || sch.frequency === 'q24h') partial.frequency = 'q24h';
     else if (sch.frequency === 'thrice_daily' || sch.frequency === 'q8h') partial.frequency = 'q8h';
+    else if (sch.frequency === 'four_times_daily' || sch.frequency === 'q6h') partial.frequency = 'q6h';
     else partial.frequency = 'q12h';
 
+    if (sch.firstDoseTime || sch.doseTimes[0]) {
+      partial.firstDoseTime = sch.firstDoseTime || sch.doseTimes[0];
+    }
     if (Array.isArray(sch.coMedications)) {
       partial.selectedCoMeds = sch.coMedications;
     }
@@ -676,17 +724,24 @@ export default function PrescriptionRadar() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // When patient changes the number of daily doses in the modal, auto-calculate all dose times from `modalFirstDoseTime`
   const handleScheduleFreqChange = (freq: string) => {
     setScheduleFreq(freq);
-    if (freq === 'once_daily') setDoseTimes(['08:00']);
-    else if (freq === 'twice_daily') setDoseTimes(['08:00', '20:00']);
-    else if (freq === 'thrice_daily') setDoseTimes(['08:00', '16:00', '00:00']);
-    else if (freq === 'four_times_daily') setDoseTimes(['06:00', '12:00', '18:00', '00:00']);
+    setDoseTimes(calculateAutoDoseTimes(modalFirstDoseTime, freq));
+  };
+
+  // When patient changes the first dose start time in the modal, auto-calculate all remaining dose times!
+  const handleModalFirstDoseTimeChange = (newStartTime: string) => {
+    setModalFirstDoseTime(newStartTime);
+    setDoseTimes(calculateAutoDoseTimes(newStartTime, scheduleFreq));
   };
 
   const handleTimeChange = (index: number, val: string) => {
     const updated = [...doseTimes];
     updated[index] = val;
+    if (index === 0) {
+      setModalFirstDoseTime(val);
+    }
     setDoseTimes(updated);
   };
 
@@ -738,6 +793,7 @@ export default function PrescriptionRadar() {
       prescribedDose: prescribedDose.trim(),
       route,
       frequency: scheduleFreq,
+      firstDoseTime: modalFirstDoseTime,
       doseTimes,
       startDate,
       durationDays,
@@ -917,10 +973,22 @@ export default function PrescriptionRadar() {
         </h1>
         <p style={{ color: '#cbd5e1', margin: 0, maxWidth: '820px', lineHeight: 1.65 }}>
           {isAr
-            ? 'افحص التداخلات الدوائية والغذائية لروشتتك، ونظّم مواعيد الـ 24 ساعة، واحفظ الروشتة وسجل جرعاتك (المأخوذة، القادمة، المتأخرة غير المؤكدة، والفائتة) لتظهر تلقائياً على جميع أجهزتك عند تسجيل الدخول.'
-            : 'Screen your prescription for multi-drug and food interactions, generate an optimized 24-hour schedule, and save your treatment course so your schedule and dose history stay synchronized across all your signed-in devices.'}
+            ? 'حدد وقت بدء أول جرعة وعدد الجرعات في اليوم ليقوم الموقع بحساب مواعيد الجرعات تلقائياً وفصل الأدوية المتعارضة بالساعة، مع مزامنة روشتاتك وسجل جرعاتك عبر جميع أجهزتك.'
+            : 'Set your first dose start time and daily dose count so the Radar automatically calculates your exact schedule, spaces conflicting medications, and syncs your treatment records across all your devices.'}
         </p>
       </section>
+
+      {/* Active Due Dose Alert Banner (if triggered while open) */}
+      {activeDueBanner && (
+        <section className="card no-print" style={{ background: '#ecfdf5', border: '2px solid #10b981', color: '#065f46' }}>
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <strong>🔔 {activeDueBanner}</strong>
+            <button type="button" className="btn-secondary small" onClick={() => setActiveDueBanner(null)}>
+              {isAr ? 'إغلاق التنبيه' : 'Dismiss'}
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Cloud Sync Status Bar */}
       <section className="no-print">{renderSyncBadge()}</section>
@@ -933,11 +1001,14 @@ export default function PrescriptionRadar() {
           : 'This tool supports prescription organization and safety education; it never invents prescription instructions, recommends antibiotic alternatives automatically, or calculates replacement doses. Always verify uncertain instructions or missed doses with your prescribing doctor or pharmacist.'}
       </section>
 
-      {/* Step 1: Select Antibiotic & Frequency */}
+      {/* Step 1: Select Antibiotic, First Dose Start Time & Number of Daily Doses */}
       <section className="card stack no-print">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <h2 style={{ margin: 0 }}>
-            1️⃣ {isAr ? 'اختر المضاد الحيوي الأساسي ونظام الجرعة:' : '1. Select Primary Antibiotic & Dosing Frequency:'}
+            1️⃣{' '}
+            {isAr
+              ? 'اختر المضاد الحيوي، ووقت بدء أول جرعة، وعدد الجرعات اليومية:'
+              : '1. Select Antibiotic, First Dose Start Time & Daily Dose Count:'}
           </h2>
           <button type="button" className="btn small" onClick={openSaveFromRadar}>
             💾 {isAr ? 'حفظ هذه الروشتة لمتابعة الجرعات عبر أجهزتك' : 'Save Prescription to Track Across Devices'}
@@ -964,38 +1035,86 @@ export default function PrescriptionRadar() {
           </div>
 
           <div>
+            <label htmlFor="radar-first-time" style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+              🕒 {isAr ? 'وقت بدء أول جرعة:' : 'First Dose Start Time:'}
+            </label>
+            <input
+              id="radar-first-time"
+              type="time"
+              value={firstDoseTime}
+              onChange={(e) => setFirstDoseTime(e.target.value || '08:00')}
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '10px', fontWeight: 700 }}
+            />
+          </div>
+
+          <div>
             <label htmlFor="radar-freq" style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-              ⏰ {isAr ? 'تكرار الجرعة اليومي بالروشتة:' : 'Prescribed Daily Frequency:'}
+              🔢 {isAr ? 'عدد الجرعات في اليوم (يحسب باقي المواعيد تلقائياً):' : 'Doses Per Day (Auto-Calculates Schedule):'}
             </label>
             <select
               id="radar-freq"
               value={frequency}
-              onChange={(e) => setFrequency(e.target.value as 'q12h' | 'q8h' | 'q24h')}
+              onChange={(e) => setFrequency(e.target.value as RadarFrequency)}
               style={{ width: '100%', padding: '10px 12px', borderRadius: '10px' }}
             >
+              <option value="q24h">
+                {isAr ? 'جرعة واحدة يومياً (كل 24 ساعة)' : '1 Dose Daily (Every 24 hours)'}
+              </option>
               <option value="q12h">
-                {isAr
-                  ? 'مرتين يومياً (كل 12 ساعة — 8 ص و 8 م)'
-                  : 'Twice Daily (Every 12 hours — 8 AM & 8 PM)'}
+                {isAr ? 'جرعتان يومياً (كل 12 ساعة)' : '2 Doses Daily (Every 12 hours)'}
               </option>
               <option value="q8h">
-                {isAr
-                  ? '3 مرات يومياً (كل 8 ساعات — 8 ص، 4 م، 12 ص)'
-                  : '3 Times Daily (Every 8 hours — 8 AM, 4 PM, 12 AM)'}
+                {isAr ? '3 جرعات يومياً (كل 8 ساعات)' : '3 Doses Daily (Every 8 hours)'}
               </option>
-              <option value="q24h">
-                {isAr
-                  ? 'مرة واحدة يومياً (كل 24 ساعة — 8 ص)'
-                  : 'Once Daily (Every 24 hours — 8 AM)'}
+              <option value="q6h">
+                {isAr ? '4 جرعات يومياً (كل 6 ساعات)' : '4 Doses Daily (Every 6 hours)'}
               </option>
             </select>
+          </div>
+        </div>
+
+        {/* Auto-Calculated Dose Times Strip */}
+        <div
+          style={{
+            padding: '12px 16px',
+            borderRadius: '12px',
+            background: 'var(--tint)',
+            border: '1.5px solid var(--teal)',
+          }}
+        >
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <strong>
+                ✨{' '}
+                {isAr
+                  ? 'مواعيد الجرعات المحسوبة تلقائياً بناءً على وقت البدء:'
+                  : 'Auto-Calculated Daily Dose Times from Your Start Time:'}
+              </strong>
+              <div className="row wrapRow" style={{ gap: '8px', marginTop: '8px' }}>
+                {autoRadarDoseTimes.map((t, i) => (
+                  <span
+                    key={i}
+                    className="badge"
+                    style={{
+                      background: '#0284c7',
+                      color: '#fff',
+                      padding: '6px 12px',
+                      fontSize: '0.88rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    💊 {isAr ? `الجرعة ${i + 1}:` : `Dose ${i + 1}:`} {formatTime12Hour(t, isAr)}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Allergy Safety Check Banner from Synced Health Profile */}
         <div
           style={{
-            marginTop: '6px',
+            marginTop: '4px',
             padding: '12px 16px',
             borderRadius: '12px',
             border:
@@ -1120,17 +1239,17 @@ export default function PrescriptionRadar() {
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <h2 style={{ margin: 0 }}>
-              🗓️ {isAr ? 'جدول تنظيم مواعيد اليوم الذكي (بدون تعارض)' : 'Optimized 24-Hour Smart Medication Schedule'}
+              🗓️ {isAr ? 'جدول تنظيم مواعيد اليوم الذكي (مرتب تلقائياً حسب وقت البدء)' : 'Optimized 24-Hour Smart Medication Schedule'}
             </h2>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               {isAr
-                ? 'تم ترتيب مواعيد المضاد الحيوي والمكملات تلقائياً لضمان أعلى امتصاص وأمان للمعدة:'
-                : 'Your antibiotic and co-medications are automatically spaced across the day to prevent absorption conflicts:'}
+                ? `تم حساب مواعيد المضاد الحيوي (${autoRadarDoseTimes.length} جرعات يومياً بدءاً من ${formatTime12Hour(firstDoseTime, true)}) وفصل المكملات تلقائياً لمنع التعارض:`
+                : `Automatically calculated ${autoRadarDoseTimes.length} daily doses starting at ${formatTime12Hour(firstDoseTime, false)} with safe co-medication spacing:`}
             </p>
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <button type="button" className="btn small" onClick={openSaveFromRadar}>
-              ➕ {isAr ? 'تأكيد وحفظ الروشتة في رحلة العلاج' : 'Confirm & Save to Treatment Journey'}
+              ➕ {isAr ? 'تأكيد وحفظ الروشتة بهذه المواعيد' : 'Confirm & Save With These Times'}
             </button>
             <button type="button" className="btn ghost small" onClick={handlePrintReport}>
               🖨️ {isAr ? 'طباعة الجدول والتقرير (PDF)' : 'Print Schedule & Report (PDF)'}
@@ -1224,12 +1343,12 @@ export default function PrescriptionRadar() {
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <strong>
-                🔔 {isAr ? 'منبهات الجرعات وقيود متصفح الويب:' : 'Dose Reminders & Browser Limitations:'}
+                🔔 {isAr ? 'كيف تعمل إشعارات مواعيد الجرعات؟' : 'How Do Dose Notifications Work?'}
               </strong>
               <p className="small" style={{ margin: '4px 0 0', lineHeight: 1.55 }}>
                 {isAr
-                  ? 'تعمل تنبيهات المتصفح أثناء بقاء هذه الصفحة أو المتصفح مفتوحاً ونشطاً على جهازك، ولا يمكن ضمان انطلاقها في الخلفية عند إغلاق المتصفح بالكامل أو قفل الهاتف. للالتزام الدقيق بمواعيد المضاد الحيوي، يُرجى ضبط منبه الهاتف الأساسي (Alarm) بجانب هذا المتابع.'
-                  : 'Browser notifications work while this tab or browser remains open and active on your device, and cannot be guaranteed when the browser is completely closed. For critical antibiotic doses, please also set your phone’s native alarm clock.'}
+                  ? 'عند تفعيل إشعارات المتصفح، يظهر لك إشعار منبثق خارجي على شاشة الهاتف أو الكمبيوتر (System Notification) بالإضافة إلى تنبيه داخل الصفحة طالما أن المتصفح مفتوح في الخلفية. أما إذا أغلقت المتصفح تماماً، فلا تعمل إشعارات الويب؛ لذلك وفرنا لك أيضاً زر «📅 تحميل منبهات الموبايل (.ics)» داخل كل روشتة لإضافة مواعيد الجرعات لمنبه وتقويم هاتفك مباشرةً!'
+                  : 'When browser notifications are enabled, a system notification pops up on your screen (along with an in-page banner) as long as the browser remains open in the background. Because web notifications cannot fire if the browser is completely closed, you can also click "📅 Add to Phone Calendar (.ics)" on any saved prescription for guaranteed native alarms.'}
               </p>
             </div>
             {notifSupported && (
@@ -1275,7 +1394,7 @@ export default function PrescriptionRadar() {
           </ul>
         </div>
 
-        {/* Initial Cloud Loading Guard — Never show empty state while cloud data is still loading */}
+        {/* Initial Cloud Loading Guard */}
         {initialLoading ? (
           <div className="card center" style={{ padding: '36px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '2.2rem', marginBottom: '10px' }} aria-hidden="true">
@@ -1330,7 +1449,6 @@ export default function PrescriptionRadar() {
                 dayGroups[d.dayNumber].push(d);
               });
 
-              // Recorded dose history (taken or explicitly missed) sorted most recent first
               const recordedHistory = sch.doses
                 .filter((d) => d.status === 'taken' || d.status === 'missed')
                 .sort((a, b) => {
@@ -1361,7 +1479,7 @@ export default function PrescriptionRadar() {
                       </p>
                       <p className="sch-meta" style={{ marginTop: '4px' }}>
                         <b>{isAr ? 'مواعيد الجرعات اليومية:' : 'Scheduled Times:'}</b>{' '}
-                        {sch.doseTimes.join(' ، ')}
+                        {sch.doseTimes.map((t) => formatTime12Hour(t, isAr)).join(' ، ')}
                       </p>
                       {coMedLabels.length > 0 && (
                         <p className="sch-meta" style={{ marginTop: '4px' }}>
@@ -1378,6 +1496,14 @@ export default function PrescriptionRadar() {
                     </div>
 
                     <div className="sch-actions" style={{ flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn-secondary small"
+                        onClick={() => downloadCalendarAlarms(sch)}
+                        title={isAr ? 'إضافة مواعيد الجرعات لتقويم ومنبه الهاتف' : 'Add dose alarms to phone calendar'}
+                      >
+                        📅 {isAr ? 'منبهات الموبايل (.ics)' : 'Phone Alarms (.ics)'}
+                      </button>
                       <button
                         type="button"
                         className="btn-secondary small"
@@ -1402,7 +1528,7 @@ export default function PrescriptionRadar() {
                     </div>
                   </div>
 
-                  {/* 5-KPI Grid: Total, Taken, Upcoming, Overdue-Unconfirmed, Explicitly Missed */}
+                  {/* 5-KPI Grid */}
                   <div className="kpi-grid">
                     <div className="kpi-item">
                       <span className="kpi-num">{totalDoses}</span>
@@ -1480,7 +1606,7 @@ export default function PrescriptionRadar() {
                               return (
                                 <div key={dose.id} className={`dose-item ${status}`}>
                                   <div className="dose-left">
-                                    <span className="dose-time">⏰ {timeDisplay}</span>
+                                    <span className="dose-time">⏰ {formatTime12Hour(timeDisplay, isAr)}</span>
                                     <span className={`status-pill ${status}`}>
                                       {status === 'taken' && (isAr ? 'تم أخذها ✅' : 'Taken ✅')}
                                       {status === 'upcoming' && (isAr ? 'قادمة ⏳' : 'Upcoming ⏳')}
@@ -1624,7 +1750,7 @@ export default function PrescriptionRadar() {
         )}
       </section>
 
-      {/* Printable Treatment Summary Report (Priority 4 — Visible on screen & formatted for Print / Save as PDF) */}
+      {/* Printable Treatment Summary Report (Priority 4) */}
       <section className="card stack printable-treatment-report">
         <div className="row no-print" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div>
@@ -1663,7 +1789,6 @@ export default function PrescriptionRadar() {
           </div>
         </div>
 
-        {/* Active Radar Analysis Summary in Report */}
         <div className="report-block">
           <h3 style={{ margin: '0 0 6px' }}>
             🔬 {isAr ? 'ملخص فحص رادار الروشتة الحالي (24 ساعة):' : 'Current 24-Hour Prescription Radar Analysis:'}
@@ -1671,18 +1796,9 @@ export default function PrescriptionRadar() {
           <p className="small" style={{ margin: '0 0 6px' }}>
             <b>{isAr ? 'المضاد الحيوي المحدد:' : 'Selected Antibiotic:'}</b>{' '}
             {isAr ? `${currentAbx.nameAr} (${currentAbx.nameEn})` : `${currentAbx.nameEn} (${currentAbx.nameAr})`} ·{' '}
-            <b>{isAr ? 'نظام التكرار:' : 'Frequency:'}</b>{' '}
-            {frequency === 'q12h'
-              ? isAr
-                ? 'كل 12 ساعة'
-                : 'Every 12 hours'
-              : frequency === 'q8h'
-                ? isAr
-                  ? 'كل 8 ساعات'
-                  : 'Every 8 hours'
-                : isAr
-                  ? 'كل 24 ساعة'
-                  : 'Every 24 hours'}
+            <b>{isAr ? 'وقت بدء أول جرعة:' : 'First Dose Start:'}</b> {formatTime12Hour(firstDoseTime, isAr)} ·{' '}
+            <b>{isAr ? 'المواعيد اليومية:' : 'Daily Times:'}</b>{' '}
+            {autoRadarDoseTimes.map((t) => formatTime12Hour(t, isAr)).join(' ، ')}
           </p>
           <ul className="small" style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.6 }}>
             {dailySlots.map((s, i) => (
@@ -1693,7 +1809,6 @@ export default function PrescriptionRadar() {
           </ul>
         </div>
 
-        {/* Saved Prescriptions & Recorded Doses in Report */}
         {schedules.length > 0 && (
           <div className="report-block">
             <h3 style={{ margin: '0 0 8px' }}>
@@ -1823,42 +1938,48 @@ export default function PrescriptionRadar() {
                   </div>
                 </div>
 
+                {/* First Dose Start Time + Daily Dose Count -> Auto Calculates All Dose Times */}
                 <div className="form-row">
                   <div className="form-group">
                     <label>
-                      <b>{isAr ? 'تكرار الجرعة اليومي:' : 'Daily Frequency:'}</b>
+                      <b>🕒 {isAr ? 'وقت بدء أول جرعة:' : 'First Dose Start Time:'} *</b>
                     </label>
-                    <select value={scheduleFreq} onChange={(e) => handleScheduleFreqChange(e.target.value)}>
-                      <option value="once_daily">{isAr ? 'مرة واحدة يومياً (كل 24 ساعة)' : 'Once daily (every 24h)'}</option>
-                      <option value="twice_daily">{isAr ? 'مرتان يومياً (كل 12 ساعة)' : 'Twice daily (every 12h)'}</option>
-                      <option value="thrice_daily">{isAr ? '3 مرات يومياً (كل 8 ساعات)' : 'Three times daily (every 8h)'}</option>
-                      <option value="four_times_daily">{isAr ? '4 مرات يومياً (كل 6 ساعات)' : 'Four times daily (every 6h)'}</option>
-                    </select>
+                    <input
+                      type="time"
+                      value={modalFirstDoseTime}
+                      onChange={(e) => handleModalFirstDoseTimeChange(e.target.value)}
+                      required
+                    />
                   </div>
 
                   <div className="form-group">
                     <label>
-                      <b>{isAr ? 'مدة الكورس الموصوفة (بالأيام):' : 'Prescribed Duration (Days):'} *</b>
+                      <b>🔢 {isAr ? 'عدد الجرعات يومياً (يحسب الأوقات تلقائياً):' : 'Doses Per Day (Auto-Calculates Times):'}</b>
                     </label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={60}
-                      value={durationDays}
-                      onChange={(e) => setDurationDays(Number(e.target.value))}
-                      required
-                    />
+                    <select value={scheduleFreq} onChange={(e) => handleScheduleFreqChange(e.target.value)}>
+                      <option value="once_daily">{isAr ? 'جرعة واحدة يومياً (كل 24 ساعة)' : '1 dose daily (every 24h)'}</option>
+                      <option value="twice_daily">{isAr ? 'جرعتان يومياً (كل 12 ساعة)' : '2 doses daily (every 12h)'}</option>
+                      <option value="thrice_daily">{isAr ? '3 جرعات يومياً (كل 8 ساعات)' : '3 doses daily (every 8h)'}</option>
+                      <option value="four_times_daily">{isAr ? '4 جرعات يومياً (كل 6 ساعات)' : '4 doses daily (every 6h)'}</option>
+                    </select>
                   </div>
                 </div>
 
                 <div className="form-group">
                   <label>
-                    <b>{isAr ? 'مواعيد الجرعات خلال اليوم:' : 'Scheduled Dose Times:'}</b>
+                    <b>
+                      ✨{' '}
+                      {isAr
+                        ? 'مواعيد الجرعات المحسوبة تلقائياً خلال اليوم (يمكنك تعديل أي موعد عند الحاجة):'
+                        : 'Auto-Calculated Scheduled Dose Times (Editable if needed):'}
+                    </b>
                   </label>
                   <div className="dose-times-grid">
                     {doseTimes.map((time, idx) => (
                       <div key={idx} className="time-input-group">
-                        <small>{isAr ? `الجرعة ${idx + 1}` : `Dose ${idx + 1}`}:</small>
+                        <small>
+                          {isAr ? `الجرعة ${idx + 1}` : `Dose ${idx + 1}`} ({formatTime12Hour(time, isAr)}):
+                        </small>
                         <input
                           type="time"
                           value={time}
@@ -1885,14 +2006,28 @@ export default function PrescriptionRadar() {
 
                   <div className="form-group">
                     <label>
-                      <b>{isAr ? 'تعليمات الطبيب أو الصيدلي في الروشتة:' : 'Prescribed Instructions / Notes:'}</b>
+                      <b>{isAr ? 'مدة الكورس الموصوفة (بالأيام):' : 'Prescribed Duration (Days):'} *</b>
                     </label>
                     <input
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder={isAr ? 'مثال: بعد الأكل، مع كوب ماء كامل' : 'e.g. Take after meals with a full glass of water'}
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={durationDays}
+                      onChange={(e) => setDurationDays(Number(e.target.value))}
+                      required
                     />
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label>
+                    <b>{isAr ? 'تعليمات الطبيب أو الصيدلي في الروشتة:' : 'Prescribed Instructions / Notes:'}</b>
+                  </label>
+                  <input
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder={isAr ? 'مثال: بعد الأكل، مع كوب ماء كامل' : 'e.g. Take after meals with a full glass of water'}
+                  />
                 </div>
 
                 <div className="modal-actions">
