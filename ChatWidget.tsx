@@ -155,6 +155,15 @@ export default function ChatWidget() {
             <span className="sos-pulse-dot"></span>
           </button>
 
+          <Link
+            to="/scan"
+            className="scan-fab"
+            aria-label={isAr ? 'مسح باركود العلبة بالكاميرا' : 'Scan Box Barcode'}
+          >
+            <span className="fab-icon">📷</span>
+            <span className="fab-label">{isAr ? 'مسح باركود العلبة بالكاميرا' : 'Scan Box Barcode'}</span>
+          </Link>
+
           <button
             type="button"
             className="chat-fab"

@@ -258,9 +258,6 @@ export default function Home() {
             <Link to="/green-prescription" className="pro-cta-btn primary-cta" style={{ background: "#10b981", color: "#052e16" }}>
               🌿 {isAr ? "الروشتة الخضرا الذكية" : "Green Prescription"}
             </Link>
-            <Link to="/scan" className="pro-cta-btn primary-cta">
-              📷 {isAr ? 'مسح باركود العلبة بالكاميرا' : 'Scan Box Barcode'}
-            </Link>
             <Link to="/medicines" className="pro-cta-btn secondary-cta">
               💊 {isAr ? 'تصفح الـ 206 مستحضرات والبدائل' : 'Browse 206 Egyptian Packages'}
             </Link>
