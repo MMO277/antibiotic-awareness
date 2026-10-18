@@ -1,0 +1,10 @@
+=== CHANGED FILE ===
+File: main.tsx
+
+REMOVED lines:
+  - import { AuthProvider } from './auth';
+  - <AuthProvider> wrapper around <App /> and <InstallPrompt />
+
+KEPT unchanged:
+  - All other files (App.tsx, Cartoon3DGameShell.tsx, etc.) are UNTOUCHED
+  - App.tsx already has its own AuthProvider from authContext.tsx — that stays

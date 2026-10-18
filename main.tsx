@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import App from './App';
 import { LangProvider } from './i18n';
-import { AuthProvider } from './auth';
 import InstallPrompt from './InstallPrompt';
 import './styles.css';
 
@@ -11,10 +10,8 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <HashRouter>
       <LangProvider>
-        <AuthProvider>
-          <App />
-          <InstallPrompt />
-        </AuthProvider>
+        <App />
+        <InstallPrompt />
       </LangProvider>
     </HashRouter>
   </React.StrictMode>,
