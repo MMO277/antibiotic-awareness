@@ -233,7 +233,10 @@ export function LangProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.title = D[lang].appName;
+    // Keep the tab title consistent with the static <title> in index.html (bilingual site identity).
+    document.title = lang === 'ar'
+      ? `${D.ar.appName} | ${D.en.appName}`
+      : `${D.en.appName} | ${D.ar.appName}`;
   }, [lang]);
   const setLang = (l: Lang) => {
     localStorage.setItem('lang', l);
