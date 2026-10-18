@@ -5,6 +5,18 @@ service cloud.firestore {
     // ---------- helpers ----------
     function isSignedIn() { return request.auth != null; }
 
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid && uid.size() > 0;
+    }
+
+    function validUserDocWrite() {
+      let d = request.resource.data;
+      return (!('schedules' in d) || d.schedules is list)
+        && (!('deletedScheduleIds' in d) || d.deletedScheduleIds is map)
+        && (!('radarWorkspace' in d) || d.radarWorkspace is map)
+        && (!('healthProfile' in d) || d.healthProfile is map);
+    }
+
     function roleDocPath() {
       return /databases/$(database)/documents/roles/$(request.auth.uid);
     }
@@ -73,9 +85,11 @@ service cloud.firestore {
 
     // ---------- personal patient data (strictly owner-only) ----------
     match /users/{uid} {
-      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && validUserDocWrite();
+      allow delete: if isOwner(uid);
       match /{subcollection=**} {
-        allow read, write: if isSignedIn() && request.auth.uid == uid;
+        allow read, write: if isOwner(uid);
       }
     }
 

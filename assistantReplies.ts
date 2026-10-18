@@ -198,8 +198,8 @@ export const PERSONAL: Record<PKind, Canned> = {
   },
   stopstart: {
     text: b(
-      'يجب إكمال كورس المضاد الحيوي كاملاً حتى آخر يوم كما حدده الطبيب، حتى لو اختفت الأعراض وشعرت بتحسن تام بعد يومين أو ثلاثة! التوقف المبكر يترك بكتيريا قوية على قيد الحياة تكتسب مناعة ضد الدواء وتعود العدوى أشد من السابق. أما إذا نسيت جرعة، فتناولها فور تذكرك إلا إذا اقترب موعد الجرعة التالية فتجاوزها وتابع جدولك بانتظام دون مضاعفة الجرعة أبداً.',
-      'Always finish the entire prescribed antibiotic course even if you feel completely better. Stopping early lets resilient bacteria survive and cause resistant recurrence.',
+      'يجب إكمال كورس المضاد الحيوي كاملاً حتى آخر يوم كما حدده الطبيب، حتى لو اختفت الأعراض وشعرت بتحسن تام بعد يومين أو ثلاثة! التوقف المبكر يترك بكتيريا قوية على قيد الحياة تكتسب مناعة ضد الدواء وتعود العدوى أشد من السابق. وإذا تأخرت عن جرعة أو نسيتها، فلا تضاعف الجرعة أبداً ولا تأخذ جرعة إضافية ولا تقرر تخطيها أو تعويضها من تلقاء نفسك، بل راجع الطبيب المعالج أو الصيدلي للحصول على التعليمات الخاصة بدوائك.',
+      'Always finish the entire prescribed antibiotic course even if you feel completely better. Stopping early lets resilient bacteria survive. If you miss a dose, never double a dose, take an extra dose, or automatically skip or replace it on your own—contact your prescribing doctor or pharmacist for medicine-specific instructions.',
     ),
     links: [A_SAFE, A_RESIST],
   },
@@ -233,10 +233,10 @@ export const PERSONAL: Record<PKind, Canned> = {
   },
   missed_dose: {
     text: b(
-      'إذا نسيت جرعة من المضاد الحيوي، فتناولها فور تذكرك مباشرة. لكن إذا كان موعد الجرعة التالية قد اقترب، فتجاوز الجرعة المنسية وتابع جدولك المعتاد في موعده، وممنوع منعاً باتاً أخذ جرعتين معاً لتعويض ما فاتك، لأن مضاعفة الجرعة تؤدي إلى ارتفاع تركيز الدواء في الدم وحدوث آثار جانبية وتسمم دوائي.',
-      'If you miss a dose, take it when remembered unless the next dose is near. Never take two doses together.',
+      'عند نسيان أو تأخر جرعة من المضاد الحيوي: ممنوع منعاً باتاً مضاعفة الجرعة أو أخذ جرعة إضافية، كما لا ينبغي تخطي الجرعة أو تعويضها تلقائياً من تلقاء نفسك لأن التصرف الصحيح يختلف حسب نوع المضاد الحيوي ونظام الجرعات وحالتك الصحية. تواصل مع الطبيب المعالج أو الصيدلي فوراً لمعرفة التعليمات الدقيقة الخاصة بدوائك وروشتتك.',
+      'If you miss or delay an antibiotic dose: never double a dose, never take an extra dose, and do not automatically skip or replace a dose on your own. Contact your prescribing doctor or pharmacist for instructions specific to your medicine and prescription.',
     ),
-    links: [A_SAFE],
+    links: [A_SAFE, A_ASK],
   },
   milk_food: {
     text: b(

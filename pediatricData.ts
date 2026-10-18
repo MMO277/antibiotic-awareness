@@ -58,8 +58,8 @@ export const PEDIATRIC_SUSPENSIONS: PediatricSuspension[] = [
     },
     reconstitutionWaterVolMl: 64,
     specialNursingTip: {
-      ar: 'إذا نسي الطفل جرعة، أعطها له فور التذكر ولا تضاعف الجرعة أبداً.',
-      en: 'If a dose is missed, administer as soon as remembered. Never double doses.',
+      ar: 'عند نسيان جرعة الطفل، لا تضاعف الجرعة أبداً ولا تعطِ جرعة إضافية أو تتخطَّها تلقائياً؛ استشر الطبيب أو الصيدلي لمعرفة التصرف الآمن المخصص لوزن الطفل ودوائه.',
+      en: 'If a dose is missed, never double the dose, give an extra dose, or automatically skip/replace it; consult the prescribing doctor or pharmacist for medicine-specific instructions.',
     },
   },
   {
