@@ -93,13 +93,13 @@ function createCartoonCharacter(
   role: NpcRole | 'player',
   lowGraphics: boolean
 ): AvatarRig {
-  const seg = lowGraphics ? 12 : 28;
+  const seg = lowGraphics ? 8 : 14;
   const root = new THREE.Group();
 
-  const skinMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.78, metalness: 0.0 });
-  const outfitMat = new THREE.MeshStandardMaterial({ color: outfitColor, roughness: 0.88, metalness: 0.0 });
-  const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.72, metalness: 0.02 });
-  const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.82, metalness: 0.0 });
+  const skinMat = new THREE.MeshLambertMaterial({ color: skinColor });
+  const outfitMat = new THREE.MeshLambertMaterial({ color: outfitColor });
+  const accentMat = new THREE.MeshLambertMaterial({ color: accentColor });
+  const darkMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
 
   // Ground shadow / proximity ring
   const ringGeo = new THREE.RingGeometry(0.45, 0.62, lowGraphics ? 16 : 24);
@@ -108,7 +108,7 @@ function createCartoonCharacter(
     color: role === 'player' ? 0x38bdf8 : 0x22d3ee,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: role === 'player' ? 0.28 : 0.14,
+    opacity: role === 'player' ? 0.55 : 0.28,
   });
   const highlightRing = new THREE.Mesh(ringGeo, ringMat);
   highlightRing.position.y = 0.02;
@@ -264,7 +264,7 @@ function createInteractivePropRig(
   propDef: InteractivePropDefinition,
   lowGraphics: boolean
 ): PropRig {
-  const seg = lowGraphics ? 12 : 28;
+  const seg = lowGraphics ? 8 : 14;
   const root = new THREE.Group();
   root.position.set(propDef.position[0], propDef.position[1], propDef.position[2]);
 
@@ -356,10 +356,10 @@ export function buildHospitalWardScene(lowGraphics: boolean): WardSceneAssets {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0b192c);
   if (!lowGraphics) {
-    scene.fog = new THREE.Fog(0x0b192c, 18, 34);
+    scene.fog = new THREE.Fog(0x0b192c, 24, 52);
   }
 
-  const camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 60);
+  const camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 90);
   camera.position.set(0, 4.8, 5.5);
 
   const disposableGeometries: THREE.BufferGeometry[] = [];
@@ -377,18 +377,18 @@ export function buildHospitalWardScene(lowGraphics: boolean): WardSceneAssets {
   dirLight.position.set(6, 12, 8);
   scene.add(dirLight);
 
-  const wardBounds = { minX: -8.8, maxX: 8.8, minZ: -6.8, maxZ: 6.8 };
+  const wardBounds = { minX: -8.8, maxX: 8.8, minZ: -14.5, maxZ: 6.8 };
   const baseObstacles: BoxObstacle[] = [];
   const obstacles: BoxObstacle[] = [];
 
   // 1. Hospital Floor with Clinical Tile Grid
-  const floorGeo = new THREE.PlaneGeometry(20, 16);
+  const floorGeo = new THREE.PlaneGeometry(20, 30);
   floorGeo.rotateX(-Math.PI / 2);
   const floorMat = new THREE.MeshLambertMaterial({ color: 0xe2e8f0 });
   const floorMesh = new THREE.Mesh(floorGeo, floorMat);
   scene.add(floorMesh);
 
-  const gridHelper = new THREE.GridHelper(20, 20, 0x94a3b8, 0xcbd5e1);
+  const gridHelper = new THREE.GridHelper(20, 30, 0x94a3b8, 0xcbd5e1);
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
 
@@ -409,20 +409,37 @@ export function buildHospitalWardScene(lowGraphics: boolean): WardSceneAssets {
   const wallMat = new THREE.MeshLambertMaterial({ color: 0xf1f5f9 });
   const trimMat = new THREE.MeshLambertMaterial({ color: 0x0e9aa7 });
 
-  const backWall = new THREE.Mesh(new THREE.BoxGeometry(20, 4.2, 0.4), wallMat);
-  backWall.position.set(0, 2.1, -8);
-  scene.add(backWall);
+  // The former solid back wall is now split around a wide doorway into the main corridor.
+  const backWallLeft = new THREE.Mesh(new THREE.BoxGeometry(8.2, 4.2, 0.4), wallMat);
+  backWallLeft.position.set(-5.9, 2.1, -8);
+  const backWallRight = new THREE.Mesh(new THREE.BoxGeometry(8.2, 4.2, 0.4), wallMat);
+  backWallRight.position.set(5.9, 2.1, -8);
+  scene.add(backWallLeft, backWallRight);
+  const corridorFloor = new THREE.Mesh(
+    new THREE.PlaneGeometry(20, 14),
+    new THREE.MeshLambertMaterial({ color: 0xdbeafe })
+  );
+  corridorFloor.rotation.x = -Math.PI / 2;
+  corridorFloor.position.set(0, 0.008, -11);
+  scene.add(corridorFloor);
+  const corridorCenterLine = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.35, 14),
+    new THREE.MeshLambertMaterial({ color: 0x99f6e4 })
+  );
+  corridorCenterLine.rotation.x = -Math.PI / 2;
+  corridorCenterLine.position.set(0, 0.018, -11);
+  scene.add(corridorCenterLine);
 
   const backTrim = new THREE.Mesh(new THREE.BoxGeometry(20, 0.35, 0.44), trimMat);
   backTrim.position.set(0, 1.1, -7.98);
   scene.add(backTrim);
 
-  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.2, 16), wallMat);
-  leftWall.position.set(-10, 2.1, 0);
+  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.2, 30), wallMat);
+  leftWall.position.set(-10, 2.1, -1);
   scene.add(leftWall);
 
-  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.2, 16), wallMat);
-  rightWall.position.set(10, 2.1, 0);
+  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.2, 30), wallMat);
+  rightWall.position.set(10, 2.1, -1);
   scene.add(rightWall);
 
   const doorFrame = new THREE.Mesh(
@@ -437,7 +454,7 @@ export function buildHospitalWardScene(lowGraphics: boolean): WardSceneAssets {
     new THREE.MeshLambertMaterial({ color: 0x38bdf8 })
   );
   doorPanel.position.set(0, 1.45, -7.93);
-  scene.add(doorPanel);
+  // Keep the frame as a doorway landmark; the door leaf is intentionally omitted so it stays open.
 
   // 3. 3D Department Signs Above Stations
   const addStationSign = (
@@ -465,6 +482,11 @@ export function buildHospitalWardScene(lowGraphics: boolean): WardSceneAssets {
   addStationSign(4.5, 3.1, -7.7, 0, 'مكتب الطبيب الاستشاري', 'Physician Consult', '#1e3a8a', '#60a5fa', '👨‍⚕️');
   addStationSign(-9.7, 3.1, 3.2, Math.PI / 2, 'جناح المرضى - سرير ١', 'Patient Ward - Bed 1', '#0369a1', '#38bdf8', '🛌');
   addStationSign(9.7, 3.1, 3.4, -Math.PI / 2, 'الصيدلية والمختبر', 'Pharmacy & Lab', '#065f46', '#34d399', '💊');
+  addStationSign(0, 3.55, -15.0, 0, 'المستشفى الرئيسي - الممر الطبي', 'MAIN HOSPITAL • CLINICAL CORRIDOR', '#0f172a', '#67e8f9', '🏥');
+  addStationSign(-9.7, 3.0, -10.2, Math.PI / 2, 'غرفة الأشعة', 'Radiology', '#1d4ed8', '#93c5fd', '🩻');
+  addStationSign(9.7, 3.0, -10.2, -Math.PI / 2, 'غرفة الإجراءات', 'Treatment Room', '#0f766e', '#5eead4', '🩺');
+  addStationSign(-9.7, 3.0, -13.5, Math.PI / 2, 'جناح المرضى', 'Patient Wing', '#0369a1', '#7dd3fc', '🛏️');
+  addStationSign(9.7, 3.0, -13.5, -Math.PI / 2, 'المختبر المركزي', 'Central Laboratory', '#065f46', '#6ee7b7', '🧪');
 
   // 4. Station 1: Nursing Station Desk
   const nurseDesk = new THREE.Mesh(
@@ -739,12 +761,12 @@ export function updateCharacterAnimations(
 ): void {
   // Player walk / idle animation
   if (isPlayerMoving) {
-    const swing = Math.sin(elapsedTime * 8.2) * 0.34;
+    const swing = Math.sin(elapsedTime * 10) * 0.55;
     playerRig.leftLegPivot.rotation.x = swing;
     playerRig.rightLegPivot.rotation.x = -swing;
-    playerRig.leftArmPivot.rotation.x = -swing * 0.62;
-    playerRig.rightArmPivot.rotation.x = swing * 0.62;
-    playerRig.headGroup.position.y = 1.66 + Math.abs(Math.sin(elapsedTime * 8.2)) * 0.012;
+    playerRig.leftArmPivot.rotation.x = -swing * 0.8;
+    playerRig.rightArmPivot.rotation.x = swing * 0.8;
+    playerRig.headGroup.position.y = 1.66 + Math.abs(Math.sin(elapsedTime * 10)) * 0.04;
   } else {
     playerRig.leftLegPivot.rotation.x *= 0.85;
     playerRig.rightLegPivot.rotation.x *= 0.85;
