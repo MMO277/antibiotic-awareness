@@ -4322,3 +4322,57 @@ html.bh-gaming, html.bh-gaming body { overflow: hidden; overscroll-behavior: non
     page-break-inside: avoid;
   }
 }
+
+/* Reference-inspired premium homepage refinement: paired light/dark themes */
+.pro-hero { isolation:isolate; overflow:hidden; border-bottom-width:3px; }
+.pro-hero::before { content:""; position:absolute; z-index:-1; width:420px; height:420px; border-radius:50%; inset-inline-end:-180px; bottom:-240px; border:1px solid rgba(34,211,238,.25); box-shadow:0 0 0 34px rgba(34,211,238,.035),0 0 0 70px rgba(34,211,238,.025); pointer-events:none; }
+.pro-hero-inner { max-width:1080px; gap:19px; }
+.pro-hero-title { max-width:19ch; line-height:1.25; letter-spacing:-.035em; text-wrap:balance; }
+.pro-hero-sub { max-width:72ch; line-height:1.85; }
+.pro-hero-badge { box-shadow:0 8px 24px rgba(0,0,0,.08); }
+.pro-search-box { max-width:100%; min-height:64px; border-radius:16px; padding:7px 9px 7px 16px; }
+.pro-search-box:focus-within { box-shadow:0 0 0 4px rgba(34,211,238,.17),0 16px 38px rgba(0,0,0,.15); }
+.pro-search-btn { min-height:44px; }
+.pro-cta-btn { min-height:42px; border-radius:12px; }
+.pro-metrics-strip { border-radius:16px; }
+.pro-tool-card { border-radius:18px; padding:22px; min-height:220px; }
+.pro-tool-card h3 { line-height:1.45; }
+.pro-med-shortcut { border-radius:16px; padding:18px; transition:transform .2s ease,box-shadow .2s ease; }
+.pro-med-shortcut:hover { transform:translateY(-3px); box-shadow:0 12px 28px rgba(8,47,73,.12); }
+.highlight-card { border-radius:22px; }
+/* Light mode: the clean white/ice-blue look from the supplied reference */
+:root:not([data-theme="dark"]) .pro-hero {
+  background:radial-gradient(ellipse at 82% 12%,rgba(34,211,238,.19),transparent 37%),linear-gradient(135deg,#f7fcff 0%,#edf8fd 56%,#e2f5fb 100%);
+  color:#102a43; border-bottom:1px solid #c7eaf3;
+}
+:root:not([data-theme="dark"]) .pro-hero-title { color:#102a43; }
+:root:not([data-theme="dark"]) .pro-hero-sub { color:#486579; }
+:root:not([data-theme="dark"]) .pro-hero-badge { color:#087e91; background:rgba(255,255,255,.78); border-color:#c6eaf0; }
+:root:not([data-theme="dark"]) .pro-metrics-strip { background:rgba(255,255,255,.72); border-color:#c9e6ef; box-shadow:0 10px 28px rgba(20,90,120,.06); }
+:root:not([data-theme="dark"]) .pro-metric-item strong { color:#078da1; }
+:root:not([data-theme="dark"]) .pro-metric-item span { color:#567184; }
+:root:not([data-theme="dark"]) .pro-cta-btn.secondary-cta { color:#15536b; background:rgba(255,255,255,.82); border-color:#c4e4ee; }
+:root:not([data-theme="dark"]) .pro-cta-btn.secondary-cta:hover { background:#fff; box-shadow:0 5px 16px rgba(8,145,178,.12); }
+:root:not([data-theme="dark"]) .pro-search-box { border-color:#b9e5ee; box-shadow:0 12px 30px rgba(17,94,120,.12); }
+:root:not([data-theme="dark"]) .pro-search-box input { color:#17394b; }
+:root:not([data-theme="dark"]) .pro-search-box input::placeholder { color:#77909e; }
+:root:not([data-theme="dark"]) .pro-tool-card { box-shadow:0 8px 24px rgba(15,70,90,.055); }
+:root:not([data-theme="dark"]) .pro-tool-card:hover { box-shadow:0 16px 34px rgba(15,70,90,.12); }
+/* Dark mode: deep navy with controlled cyan highlights */
+:root[data-theme="dark"] .pro-hero { background:radial-gradient(ellipse at 84% 10%,rgba(34,211,238,.14),transparent 38%),linear-gradient(135deg,#071521 0%,#0a2234 58%,#0b3547 100%); }
+:root[data-theme="dark"] .pro-metrics-strip { background:rgba(4,18,29,.48); border-color:rgba(103,232,249,.18); }
+:root[data-theme="dark"] .pro-tool-card { background:linear-gradient(145deg,var(--card-bg),rgba(10,36,51,.96)); }
+:root[data-theme="dark"] .pro-med-shortcut:hover { box-shadow:0 12px 28px rgba(0,0,0,.28); }
+@media (max-width:680px) {
+ .pro-hero { padding:34px 0 30px; }
+ .pro-hero-inner { gap:15px; }
+ .pro-hero-title { font-size:clamp(1.8rem,7vw,2.35rem); }
+ .pro-hero-sub { font-size:.96rem; }
+ .pro-search-box { gap:4px; padding:6px; }
+ .pro-search-box input { min-width:0; font-size:.92rem; }
+ .pro-search-btn { padding:9px 12px; }
+ .pro-cta-btn { justify-content:center; flex:1 1 100%; }
+ .pro-tool-card { min-height:0; padding:18px; }
+ .pro-metrics-strip { gap:14px 8px; padding:14px 10px; }
+}
+@media (prefers-reduced-motion:reduce) { .pro-tool-card,.pro-med-shortcut,.pro-cta-btn { transition:none!important; } }
