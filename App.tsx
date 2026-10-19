@@ -31,6 +31,7 @@ import Research from './Research';
 import Dashboard from './Dashboard';
 import BacteriaHunter from './BacteriaHunter';
 import GameCenter from './GameCenter';
+import OpenWorldGame from './OpenWorldGame';
 import Editor from './Editor';
 
 // Direct imports for 3D WebGL games so GitHub Pages routes never fail on dynamic chunk/CSS preload
@@ -122,6 +123,7 @@ export default function App() {
           <Route path="/methodology" element={<Methodology />} />
           <Route path="/research" element={<Research />} />
           <Route path="/games" element={<GameCenter />} />
+          <Route path="/open-world" element={<OpenWorldGame />} />
           <Route
             path="/medical-simulator"
             element={

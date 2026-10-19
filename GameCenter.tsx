@@ -31,6 +31,18 @@ export interface GameRegistryItem {
 
 export const GAME_CENTER_REGISTRY: GameRegistryItem[] = [
   {
+    id: 'open-health-world', route: '/open-world', badgeAr: 'جديد • عالم مفتوح 3D', badgeEn: 'NEW • 3D OPEN WORLD',
+    modeAr: 'استكشاف مدينة صحية ثلاثية الأبعاد', modeEn: 'Third-Person 3D Open World',
+    titleAr: 'عالم المدينة الصحية المفتوح', titleEn: 'Open Health World',
+    subtitleAr: 'تحرّك بحرية واستكشف المستشفى والصيدلية ومركز التعلّم والمركز المجتمعي', subtitleEn: 'Freely explore the hospital, pharmacy, learning center, and community hub',
+    descriptionAr: 'مدينة ثلاثية الأبعاد بمنظور الشخص الثالث، مع حركة للشخصية ومناطق قابلة للاستكشاف ومعلومات توعوية تفاعلية.',
+    descriptionEn: 'A third-person 3D town with free character movement, explorable landmarks, and interactive antibiotic-awareness facts.',
+    featuresAr: ['عالم ثلاثي الأبعاد مع كاميرا تتبع الشخصية', 'أربع مناطق تفاعلية ومعلومات توعوية', 'تحكم بالكمبيوتر والموبايل ومكافآت XP'],
+    featuresEn: ['Third-person 3D world with follow camera', 'Four interactive landmarks and learning facts', 'Desktop and mobile controls with XP rewards'],
+    controlsAr: 'الكمبيوتر: WASD أو الأسهم + E | الهاتف: أزرار الاتجاهات والتفاعل', controlsEn: 'Desktop: WASD / arrows + E | Mobile: direction pad + Interact',
+    ctaAr: 'ادخل العالم المفتوح 🌎', ctaEn: 'Enter Open World 🌎', accentColor: '#0ea5e9', secondaryColor: '#34d399', visualType: 'simulator3d', category: '3d-simulation',
+  },
+  {
     id: 'nurse-academy',
     route: '/nurse-academy',
     badgeAr: 'جديد • 10 سيناريوهات تدريبية 3D',
