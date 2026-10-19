@@ -19,6 +19,8 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - name: TypeScript validation
+        run: npm run typecheck
       - run: npm run build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
