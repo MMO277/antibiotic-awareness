@@ -4576,3 +4576,34 @@ html.bh-gaming, html.bh-gaming body { overflow: hidden; overscroll-behavior: non
   .pro-med-shortcut { padding: 8px; }
   .pro-med-shortcut h3 { font-size: .76rem !important; }
 }
+
+/* Mobile header: visible menu label and a more balanced, spread-out layout */
+@media (max-width: 680px) {
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: clamp(5px, 1.6vw, 12px);
+    flex-wrap: nowrap;
+  }
+  .hamburger-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: auto !important;
+    white-space: nowrap;
+  }
+  :root[dir="rtl"] .hamburger-btn::after,
+  [dir="rtl"] .hamburger-btn::after { content: "القائمة"; font-size: .88rem; font-weight: 700; }
+  :root[dir="ltr"] .hamburger-btn::after,
+  [dir="ltr"] .hamburger-btn::after { content: "Menu"; font-size: .88rem; font-weight: 700; }
+  .header-user-chip { max-width: 94px; }
+  .header-auth-group { min-width: 0; }
+}
+
+.pro-tools-more-wrap { display: flex; justify-content: center; margin-top: 14px; }
+.pro-tools-more-btn { min-width: 160px; font-weight: 700; }
+@media (max-width: 480px) {
+  .pro-tools-more-wrap { margin-top: 10px; }
+  .pro-tools-more-btn { min-width: 140px; padding: 8px 12px !important; font-size: .86rem !important; }
+}

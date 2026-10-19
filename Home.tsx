@@ -18,6 +18,7 @@ export default function Home() {
   const nav = useNavigate();
   const [q, setQ] = useState('');
   const [focused, setFocused] = useState(false);
+  const [showAllClinicalTools, setShowAllClinicalTools] = useState(false);
 
   const go = (e: FormEvent) => {
     e.preventDefault();
@@ -327,7 +328,10 @@ export default function Home() {
           </div>
 
           <div className="pro-tools-grid">
-            {clinicalTools.map((tool) => (
+            {(showAllClinicalTools ? [...clinicalTools].sort((a, b) => {
+              const priority = ['/medicines', '/allergy-checker', '/prescription-radar', '/scan', '/compare', '/green-prescription'];
+              return (priority.indexOf(a.to) === -1 ? 999 : priority.indexOf(a.to)) - (priority.indexOf(b.to) === -1 ? 999 : priority.indexOf(b.to));
+            }) : ['/medicines', '/allergy-checker', '/prescription-radar', '/scan'].map((path) => clinicalTools.find((tool) => tool.to === path)).filter(Boolean)).map((tool) => (
               <Link
                 key={tool.to}
                 to={tool.to}
@@ -356,6 +360,11 @@ export default function Home() {
                 </span>
               </Link>
             ))}
+          </div>
+          <div className="pro-tools-more-wrap">
+            <button type="button" className="btn ghost pro-tools-more-btn" onClick={() => setShowAllClinicalTools((value) => !value)} aria-expanded={showAllClinicalTools}>
+              {showAllClinicalTools ? (isAr ? 'عرض أقل ↑' : 'Show Less ↑') : (isAr ? 'عرض كل الأدوات ↓' : 'Show All Tools ↓')}
+            </button>
           </div>
         </section>
 
