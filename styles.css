@@ -4460,3 +4460,59 @@ html.bh-gaming, html.bh-gaming body { overflow: hidden; overscroll-behavior: non
   .pro-featured-section .head { align-items:flex-start; flex-direction:column; }
 }
 @media (prefers-reduced-motion:reduce) { .pro-tool-card { transition:none; } .pro-tool-card:hover { transform:none; } }
+
+/* Mobile compactness pass: keep the desktop identity visible without oversized artwork */
+@media (max-width: 760px) {
+  .pro-hero-inner {
+    row-gap: 10px;
+    padding-block: 20px 18px;
+  }
+  .pro-hero-badge { font-size: .72rem; padding: 5px 9px; }
+  .pro-hero-title {
+    font-size: clamp(1.48rem, 6.2vw, 2rem);
+    line-height: 1.22;
+    letter-spacing: -.025em;
+  }
+  .pro-hero-sub { font-size: .86rem; line-height: 1.6; }
+  .pro-hero-art {
+    min-height: 166px;
+    max-width: 250px;
+    margin-block: -2px;
+  }
+  .pro-art-shield { width: 88px; height: 104px; }
+  .pro-art-shield span { font-size: 2.65rem; }
+  .pro-art-shield i { width: 13px; height: 13px; right: 18px; top: 20px; border-width: 3px; }
+  .pro-art-pill { width: 67px; height: 25px; border-width: 3px; left: 8%; bottom: 13%; }
+  .pro-art-cross { font-size: 1.7rem; }
+  .pro-art-mini-card { gap: 6px; padding: 5px 7px; border-radius: 10px; font-size: .62rem; }
+  .pro-art-mini-card b { width: 21px; height: 21px; border-radius: 7px; font-size: .72rem; }
+  .pro-art-card-top { top: 10%; right: -2%; }
+  .pro-art-card-bottom { bottom: 6%; right: -1%; }
+  .pro-search-wrap, .pro-search-box { max-width: none; }
+  .pro-search-box { padding: 7px; border-radius: 14px; }
+  .pro-hero-actions { gap: 8px; }
+  .pro-metrics-strip { gap: 8px; }
+  .pro-tools-section { padding-top: 2px; }
+  .pro-section-heading { gap: 8px; margin-bottom: 12px; }
+  .pro-section-heading h2 { font-size: 1.25rem; }
+  .pro-tools-grid { gap: 10px; }
+  .pro-tool-card { min-height: 0; padding: 13px; border-radius: 14px; }
+  .pro-tool-card h3 { font-size: .94rem; line-height: 1.35; }
+  .pro-tool-card p { font-size: .78rem; line-height: 1.5; }
+  .pro-tool-card svg, .pro-tool-card .icon { width: 24px; height: 24px; }
+  .pro-featured-section { padding: 14px; }
+  .pro-featured-section .head { gap: 9px; margin-bottom: 12px; }
+  .pro-featured-section .grid { gap: 9px; }
+  .pro-med-shortcut { min-height: 104px; padding: 12px; gap: 6px; }
+}
+@media (max-width: 420px) {
+  .pro-hero-inner { row-gap: 9px; padding-block: 17px 15px; }
+  .pro-hero-art { min-height: 145px; max-width: 220px; }
+  .pro-art-shield { width: 78px; height: 92px; }
+  .pro-art-shield span { font-size: 2.3rem; }
+  .pro-art-mini-card { font-size: .57rem; padding: 4px 6px; }
+  .pro-art-mini-card b { width: 18px; height: 18px; }
+  .pro-tool-card { padding: 11px; }
+  .pro-tool-card h3 { font-size: .88rem; }
+  .pro-featured-section { padding: 11px; }
+}
