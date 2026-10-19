@@ -331,7 +331,7 @@ export default function Home() {
             {(showAllClinicalTools ? [...clinicalTools].sort((a, b) => {
               const priority = ['/medicines', '/allergy-checker', '/prescription-radar', '/scan', '/compare', '/green-prescription'];
               return (priority.indexOf(a.to) === -1 ? 999 : priority.indexOf(a.to)) - (priority.indexOf(b.to) === -1 ? 999 : priority.indexOf(b.to));
-            }) : ['/medicines', '/allergy-checker', '/prescription-radar', '/scan'].map((path) => clinicalTools.find((tool) => tool.to === path)).filter(Boolean)).map((tool) => (
+            }) : ['/medicines', '/allergy-checker', '/prescription-radar', '/scan'].map((path) => clinicalTools.find((tool) => tool.to === path)).filter((tool): tool is (typeof clinicalTools)[number] => Boolean(tool))).map((tool) => (
               <Link
                 key={tool.to}
                 to={tool.to}
