@@ -4516,3 +4516,63 @@ html.bh-gaming, html.bh-gaming body { overflow: hidden; overscroll-behavior: non
   .pro-tool-card h3 { font-size: .88rem; }
   .pro-featured-section { padding: 11px; }
 }
+
+/* Two-column mobile cards: compact, readable, and closer to desktop density */
+@media (max-width: 760px) {
+  .pro-tools-grid,
+  .pro-featured-section .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 9px;
+  }
+  .pro-tool-card {
+    min-width: 0;
+    padding: 10px;
+    border-radius: 13px;
+    gap: 7px;
+  }
+  .pro-tool-top { gap: 6px; align-items: center; }
+  .pro-tool-icon {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+  }
+  .pro-tool-icon svg,
+  .pro-tool-icon .icon { width: 19px; height: 19px; }
+  .pro-tool-card .badge { font-size: .58rem; padding: 3px 5px; line-height: 1.25; }
+  .pro-tool-card h3 { font-size: .82rem; line-height: 1.35; margin: 3px 0; }
+  .pro-tool-card p { font-size: .7rem; line-height: 1.42; margin: 0; }
+  .pro-tool-link { font-size: .68rem; line-height: 1.35; }
+  .pro-tool-card::after { width: 72px; height: 72px; right: -38px; bottom: -40px; }
+  .pro-med-shortcut {
+    min-width: 0;
+    min-height: 0;
+    padding: 10px;
+    gap: 5px;
+    border-radius: 12px;
+  }
+  .pro-med-shortcut .row { flex-direction: column; gap: 5px; }
+  .pro-med-shortcut h3 { font-size: .82rem !important; line-height: 1.35; }
+  .pro-med-shortcut code { font-size: .59rem !important; max-width: 100%; }
+  .pro-med-shortcut p { font-size: .68rem; line-height: 1.4; margin: 0 0 3px !important; }
+  .pro-med-shortcut .more { font-size: .68rem !important; }
+  .pro-featured-section .head h2 { font-size: 1.02rem; line-height: 1.4; }
+  .pro-featured-section .head p { font-size: .72rem; line-height: 1.5; }
+}
+@media (max-width: 380px) {
+  .pro-tools-grid,
+  .pro-featured-section .grid { gap: 7px; }
+  .pro-tool-card { padding: 8px; }
+  .pro-tool-card h3 { font-size: .76rem; }
+  .pro-tool-card p { font-size: .66rem; }
+  .pro-tool-icon { width: 30px; height: 30px; min-width: 30px; }
+  .pro-tool-icon svg,
+  .pro-tool-icon .icon { width: 17px; height: 17px; }
+  .pro-med-shortcut { padding: 8px; }
+  .pro-med-shortcut h3 { font-size: .76rem !important; }
+}
