@@ -1654,40 +1654,13 @@ export const NURSE_ACADEMY_CONFIG: Cartoon3DGameConfig = {
               "ar": "قشعريرة مفاجئة، تسارع في التنفس، وشعور بالدوار مقارنة بالقراءة السابقة قبل ساعتين.",
               "en": "New-onset chills, rapid breathing, and lightheadedness compared to baseline two hours ago."
             },
-            "vitals": [
-              {
-                "label": {
-                  "ar": "الحرارة (Temp)",
-                  "en": "Temp"
-                },
-                "value": "38.9 °C",
-                "status": "critical"
-              },
-              {
-                "label": {
-                  "ar": "النبض (HR)",
-                  "en": "HR"
-                },
-                "value": "118 bpm",
-                "status": "critical"
-              },
-              {
-                "label": {
-                  "ar": "التنفس (RR)",
-                  "en": "RR"
-                },
-                "value": "26 /min",
-                "status": "critical"
-              },
-              {
-                "label": {
-                  "ar": "الأكسجين (SpO2)",
-                  "en": "SpO2"
-                },
-                "value": "91%",
-                "status": "warning"
-              }
-            ],
+            "vitals": {
+              "temp": "38.9 °C",
+              "hr": "118 bpm",
+              "rr": "26 /min",
+              "spo2": "91%",
+              "bp": "غير مسجل / Not recorded"
+            },
             "allergyAlert": {
               "ar": "ملاحظة تعليمية: اجتماع تسارع التنفس والنبض مع الحمى ونقص الأكسجين يمثل علامة تحذيرية (Red Flag) تستوجب التصعيد الفوري للفريق الطبي.",
               "en": "Educational Note: Combined tachypnea, tachycardia, fever, and hypoxia are red flags requiring immediate escalation to the medical team."
