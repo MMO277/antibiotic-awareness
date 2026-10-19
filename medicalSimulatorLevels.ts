@@ -1,11 +1,5 @@
 import { Bilingual } from './types';
-import {
-  MedicalScenario,
-  NpcRole,
-  ScenarioChoice,
-  ScenarioNode,
-  ScenarioSource,
-} from './medicalSimulatorScenarios';
+import { MedicalScenario } from './medicalSimulatorScenarios';
 
 export type EnvironmentTheme =
   | 'ward'

@@ -36,6 +36,16 @@ export default function Home() {
     }).slice(0, 6);
   }, [q]);
 
+  const { verifiedBarcodesCount, manufacturersCount } = useMemo(() => {
+    let verified = 0;
+    const makers = new Set<string>();
+    for (const p of EGYPTIAN_COMMERCIAL_PRODUCTS) {
+      if (p.barcode) verified++;
+      if (p.manufacturer) makers.add(p.manufacturer);
+    }
+    return { verifiedBarcodesCount: verified, manufacturersCount: makers.size };
+  }, []);
+
   const clinicalTools = [
     {
       to: '/games',
@@ -280,11 +290,11 @@ export default function Home() {
               <span>{isAr ? 'عبوة ومستحضر بالسوق المصري' : 'Egyptian Market Packages'}</span>
             </div>
             <div className="pro-metric-item">
-              <strong>59</strong>
+              <strong>{verifiedBarcodesCount}</strong>
               <span>{isAr ? 'باركود خطي مصري موثق (622)' : 'Verified 622 Barcodes'}</span>
             </div>
             <div className="pro-metric-item">
-              <strong>36</strong>
+              <strong>{manufacturersCount}</strong>
               <span>{isAr ? 'شركة ومصنع دوائي معتمد' : 'Pharma Manufacturers'}</span>
             </div>
           </div>

@@ -14,7 +14,8 @@ service cloud.firestore {
       return (!('schedules' in d) || d.schedules is list)
         && (!('deletedScheduleIds' in d) || d.deletedScheduleIds is map)
         && (!('radarWorkspace' in d) || d.radarWorkspace is map)
-        && (!('healthProfile' in d) || d.healthProfile is map);
+        && (!('healthProfile' in d) || d.healthProfile is map)
+        && (!('learnDone' in d) || d.learnDone is list);
     }
 
     function roleDocPath() {

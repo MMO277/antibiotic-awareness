@@ -19,9 +19,12 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
 } from 'firebase/auth';
-import { auth, configured } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db, configured } from './firebase';
 
 export type AuthMode = 'login' | 'register' | 'forgot';
+export type Role = 'editor' | 'reviewer' | 'admin';
+export const ROLES: Role[] = ['editor', 'reviewer', 'admin'];
 
 export const GUEST_MODE_KEY = 'aa_guest_mode';
 
@@ -47,6 +50,8 @@ export function setGuestModeActive(active: boolean): void {
 
 export interface AuthContextType {
   user: User | null;
+  role: Role | null;
+  roleStatus: string;
   loading: boolean;
   error: string | null;
   clearError: () => void;
@@ -69,6 +74,8 @@ export interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  role: null,
+  roleStatus: '',
   loading: false,
   error: null,
   clearError: () => {},
@@ -127,6 +134,8 @@ const googleProvider = new GoogleAuthProvider();
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<Role | null>(null);
+  const [roleStatus, setRoleStatus] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState<boolean>(() => isGuestModeActive());
@@ -137,6 +146,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!configured || !auth) {
       setUser(null);
+      setRole(null);
+      setRoleStatus('');
       setLoading(false);
       if (!isGuestModeActive()) {
         setModalOpen(true);
@@ -144,21 +155,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    let cancelled = false;
     setLoading(true);
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (cancelled) return;
       setUser(currentUser);
-      setLoading(false);
       if (currentUser) {
         setGuestModeActive(false);
         setIsGuest(false);
         setModalOpen(false);
+        if (db) {
+          try {
+            const snap = await getDoc(doc(db, 'roles', currentUser.uid));
+            if (cancelled) return;
+            if (!snap.exists()) {
+              setRole(null);
+              setRoleStatus('missing');
+            } else {
+              const raw = snap.data().role;
+              const r = typeof raw === 'string' ? (raw.trim() as Role) : null;
+              if (r && ROLES.includes(r)) {
+                setRole(r);
+                setRoleStatus('ok');
+              } else {
+                setRole(null);
+                setRoleStatus(`invalid:${String(raw)}`);
+              }
+            }
+          } catch (e) {
+            if (cancelled) return;
+            setRole(null);
+            setRoleStatus(`error:${(e as { code?: string }).code ?? 'unknown'}`);
+          }
+        } else {
+          setRole(null);
+          setRoleStatus('');
+        }
       } else {
+        setRole(null);
+        setRoleStatus('');
         if (!isGuestModeActive()) {
           setModalOpen(true);
         }
       }
+      if (!cancelled) {
+        setLoading(false);
+      }
     });
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   const clearError = () => setError(null);
@@ -273,6 +320,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsGuest(false);
     if (!configured || !auth) {
       setUser(null);
+      setRole(null);
+      setRoleStatus('');
       return;
     }
     try {
@@ -305,6 +354,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        role,
+        roleStatus,
         loading,
         error,
         clearError,

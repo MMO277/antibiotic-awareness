@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useAuth } from './authContext';
@@ -10,6 +10,7 @@ import {
   ScheduledDose,
   DoseStatus,
   useSyncedSchedules,
+  useDoseReminderNotifications,
   generateScheduleDoses,
   getDoseStatus,
   calculateScheduleProgress,
@@ -17,25 +18,10 @@ import {
   computeEndDate,
   calculateAutoDoseTimes,
   formatTime12Hour,
-  buildScheduleIcsContent,
+  formatTimestampReadable,
+  formatRouteLabel,
+  downloadScheduleIcs,
 } from './trackerData';
-
-function formatTimestampReadable(iso?: string, isAr = true): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  try {
-    return d.toLocaleString(isAr ? 'ar-EG' : 'en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso.replace('T', ' ').slice(0, 16);
-  }
-}
 
 export default function Tracker() {
   const { lang } = useLang();
@@ -57,6 +43,14 @@ export default function Tracker() {
     isAuthenticated,
   } = useSyncedSchedules();
 
+  const {
+    notifSupported,
+    notifPermission,
+    activeDueBanner,
+    setActiveDueBanner,
+    requestNotifPermission,
+  } = useDoseReminderNotifications(schedules, isAr);
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
   const [reportGeneratedAt, setReportGeneratedAt] = useState<string>(() => new Date().toISOString());
@@ -72,50 +66,6 @@ export default function Tracker() {
   const [durationDays, setDurationDays] = useState(7);
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState('');
-
-  // Notification state
-  const [notifSupported, setNotifSupported] = useState(false);
-  const [notifPermission, setNotifPermission] = useState('default');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotifSupported(true);
-      setNotifPermission(Notification.permission);
-    }
-  }, []);
-
-  const requestNotifPermission = async () => {
-    if (!notifSupported) return;
-    try {
-      const perm = await Notification.requestPermission();
-      setNotifPermission(perm);
-      if (perm === 'granted') {
-        new Notification(
-          isAr ? 'تم تفعيل التنبيهات بنجاح 🔔' : 'Reminders Enabled Successfully 🔔',
-          {
-            body: isAr
-              ? 'سيتم تنبيهك بإشعار منبثق عند حلول مواعيد جرعات المضاد الحيوي أثناء فتح المتصفح.'
-              : 'You will be alerted at scheduled dose times while your browser is open and active.',
-          }
-        );
-      }
-    } catch (err) {
-      console.error('Notification error:', err);
-    }
-  };
-
-  const downloadCalendarAlarms = (sch: TreatmentSchedule) => {
-    const icsContent = buildScheduleIcsContent(sch, isAr);
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dose-alarms-${sch.id}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
 
   // Auto-calculate all dose times when either First Dose Start Time or Frequency (dose count) changes
   const handleFirstDoseTimeChange = (newStart: string) => {
@@ -264,6 +214,18 @@ export default function Tracker() {
             : 'A personal patient-friendly tool to help you organize, track, and synchronize your prescribed antibiotic doses across all your devices.'}
         </p>
       </header>
+
+      {/* Active Due Dose Alert Banner (if triggered while open) */}
+      {activeDueBanner && (
+        <section className="card no-print" style={{ background: '#ecfdf5', border: '2px solid #10b981', color: '#065f46' }}>
+          <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <strong>🔔 {activeDueBanner}</strong>
+            <button type="button" className="btn-secondary small" onClick={() => setActiveDueBanner(null)}>
+              {isAr ? 'إغلاق التنبيه' : 'Dismiss'}
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* Cloud Sync Status Bar */}
       <section className="no-print">
@@ -457,6 +419,7 @@ export default function Tracker() {
                   <h2 className="sch-title">💊 {sch.medicineName}</h2>
                   <p className="sch-meta">
                     <b>{isAr ? 'الجرعة:' : 'Dose:'}</b> {sch.prescribedDose} ·{' '}
+                    <b>{isAr ? 'طريقة الاستعمال:' : 'Route:'}</b> {formatRouteLabel(sch.route, isAr)} ·{' '}
                     <b>{isAr ? 'المدة:' : 'Duration:'}</b> {sch.durationDays}{' '}
                     {isAr ? 'أيام' : 'days'} ({sch.startDate} → {sch.endDate})
                   </p>
@@ -474,7 +437,7 @@ export default function Tracker() {
                   <button
                     type="button"
                     className="btn-secondary small"
-                    onClick={() => downloadCalendarAlarms(sch)}
+                    onClick={() => downloadScheduleIcs(sch, isAr)}
                   >
                     📅 {isAr ? 'منبهات الموبايل (.ics)' : 'Phone Alarms (.ics)'}
                   </button>

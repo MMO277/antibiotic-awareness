@@ -38,6 +38,23 @@ import {
 
 export const CLOUD_PROGRESS_COLLECTION = 'gameProgress';
 export const CLOUD_PROGRESS_DOC_ID = 'medicalSimulator';
+export const CLOUD_LOAD_TIMEOUT_MS = 10000;
+
+export function withTimeout<T>(promise: Promise<T>, ms: number = CLOUD_LOAD_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      }
+    );
+  });
+}
 
 export type CloudGameId =
   | 'medicalSimulator'

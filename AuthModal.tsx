@@ -1,6 +1,6 @@
 import './lamp-login.css';
 import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, RefObject, useEffect, useRef, useState } from 'react';
-import { useAuth, translateAuthError, AuthMode } from './authContext';
+import { useAuth, translateAuthError } from './authContext';
 import { useLang } from './i18n';
 import { configured } from './firebase';
 

@@ -36,9 +36,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerClosing, setDrawerClosing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const authCtx = useAuth() as any;
-  const user = authCtx?.user;
-  const openAuthModal = authCtx?.openAuthModal || (() => {});
+  const authCtx = useAuth();
+  const user = authCtx.user;
+  const openAuthModal = authCtx.openAuthModal;
 
   const hamburgerBtnRef = useRef<HTMLButtonElement>(null);
   const drawerCloseBtnRef = useRef<HTMLButtonElement>(null);
@@ -87,7 +87,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       sessionStorage.removeItem('aa_lamp_seen');
       sessionStorage.removeItem('aa_guest_mode');
     } catch {}
-    if (typeof authCtx?.exitGuestMode === 'function') {
+    if (typeof authCtx.exitGuestMode === 'function') {
       authCtx.exitGuestMode();
     } else {
       openAuthModal('login');
@@ -431,8 +431,14 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* Always-on Floating AI Assistant Bubble */}
       <ChatWidget />
 
-      {/* Self-contained Logout Modal mounted directly in Layout */}
-      <LogoutModal isOpen={showLogoutModal} onClose={() => setShowLogoutModal(false)} />
+      {/* Single Logout Modal instance connected to both Layout and AuthContext */}
+      <LogoutModal
+        isOpen={showLogoutModal || authCtx.logoutModalOpen}
+        onClose={() => {
+          setShowLogoutModal(false);
+          authCtx.closeLogoutModal();
+        }}
+      />
 
       {/* Professional Academic & Medical Footer on All Pages */}
       <footer className="pro-footer">

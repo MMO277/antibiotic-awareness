@@ -333,11 +333,6 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
         p.lastShot = S.frameCount;
       }
 
-      // ─ Bullet Burst power-up ─
-      if (keysRef.current.has('e') || (S.frameCount % 1 === 0 && false)) {
-        // burst on E — handled below
-      }
-
       // ─ Move bullets ─
       S.bullets = S.bullets.filter(b => {
         b.x += b.vx; b.y += b.vy;
@@ -345,7 +340,6 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
       });
 
       // ─ Move & update enemies ─
-      const CENTER = { x: W / 2, y: H / 2 };
       for (const e of S.enemies) {
         if (e.type === 'zigzag') {
           e.phase += 0.06;
@@ -395,7 +389,6 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
           e.x = clamp(e.x, e.radius, W - e.radius);
           e.y = clamp(e.y, e.radius, H - e.radius);
         }
-        void CENTER;
       }
 
       // ─ Enemy bullet movement ─
@@ -924,7 +917,7 @@ const BH_CHROME_RESERVE = 40;
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function BacteriaHunter() {
-  const { t, lang } = useLang();
+  const { lang } = useLang();
   const isAr = lang === 'ar';
   const canvasRef = useRef<HTMLCanvasElement>(null!);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1014,7 +1007,6 @@ export default function BacteriaHunter() {
   void uiTick; // triggers re-render
 
   const gs = S.gameState;
-  const p = S.player;
 
   // ─── Overlays ─────────────────────────────────────────────────────────────
   const renderOverlay = () => {

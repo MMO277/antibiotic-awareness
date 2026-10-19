@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import PrescriptionRadar from "./PrescriptionRadar";
+import { Suspense } from 'react';
+import PrescriptionRadar from './PrescriptionRadar';
 import AwarenessWeek from './AwarenessWeek';
 import GreenPrescription from './GreenPrescription';
 import CompareDrugs from './CompareDrugs';
@@ -17,7 +17,6 @@ import { useLang } from './i18n';
 import Layout from './Layout';
 import { AuthProvider } from './authContext';
 import AuthModal from './AuthModal';
-import LogoutModal from './LogoutModal';
 import Home from './Home';
 import Medicines from './Medicines';
 import MedicinePage from './MedicinePage';
@@ -179,7 +178,6 @@ export default function App() {
         </Routes>
       </Layout>
       <AuthModal />
-      <LogoutModal />
     </AuthProvider>
   );
 }

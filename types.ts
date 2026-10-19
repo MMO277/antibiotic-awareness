@@ -1,5 +1,6 @@
 export type Lang = 'ar' | 'en';
 export type Bi = { ar: string; en: string };
+export type Bilingual = Bi;
 export type Status = 'draft' | 'pending_review' | 'approved' | 'archived';
 export const STATUSES: Status[] = ['draft', 'pending_review', 'approved', 'archived'];
 

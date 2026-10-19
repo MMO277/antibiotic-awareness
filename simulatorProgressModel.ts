@@ -39,6 +39,13 @@ function cleanIds(value: unknown): string[] {
   return out;
 }
 
+/** Appends IDs from `extra` that `base` lacks; returns the SAME array reference when nothing is new (avoids re-render loops). */
+export function unionIds(base: string[], extra: string[]): string[] {
+  const have = new Set(base);
+  const add = extra.filter((x) => !have.has(x));
+  return add.length ? [...base, ...add] : base;
+}
+
 /** Turns any unknown value (Firestore data, localStorage JSON) into a valid progress object. */
 export function normalizeProgress(raw: unknown): SimulatorProgress {
   if (!raw || typeof raw !== 'object') return emptyProgress();

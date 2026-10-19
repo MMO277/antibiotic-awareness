@@ -265,6 +265,8 @@ export function validateForApproval(m: Medicine): string[] {
     if (!m[f].ar.trim() || !m[f].en.trim()) p.push(`${FIELD_LABELS[f].ar} / ${FIELD_LABELS[f].en}`);
   }
   if (m.sources.length === 0) p.push('مصدر واحد على الأقل / At least one source');
+  if (!m.lastReviewed.trim()) p.push('تاريخ آخر مراجعة / Last reviewed date');
+  if (!m.reviewedBy.trim()) p.push('اسم المراجع / Reviewed by');
   return p;
 }
 

@@ -27,13 +27,16 @@ import {
   mergeProgress,
   normalizeProgress,
   SimulatorProgress,
+  unionIds,
 } from './simulatorProgressModel';
 import {
+  CLOUD_LOAD_TIMEOUT_MS,
   cloudProgressAvailable,
   isLocalMergeResolved,
   markLocalMergeResolved,
   readCloudProgress,
   readUidCache,
+  withTimeout,
 } from './simulatorProgressCloud';
 import { useSimulatorProgressSync } from './useSimulatorProgressSync';
 import {
@@ -91,13 +94,6 @@ function collidesWithObstacles(x: number, z: number, obstacles: BoxObstacle[]): 
     }
   }
   return false;
-}
-
-/** Appends IDs from `extra` that `base` lacks; returns the SAME array when nothing is new (no re-render loops). */
-function unionIds(base: string[], extra: string[]): string[] {
-  const have = new Set(base);
-  const add = extra.filter((x) => !have.has(x));
-  return add.length ? [...base, ...add] : base;
 }
 
 interface SimulatorGameProps {
@@ -1967,24 +1963,6 @@ type GateState =
       localOffer: SimulatorProgress | null;
     }
   | { status: 'error'; uid: string; cache: SimulatorProgress | null };
-
-const CLOUD_LOAD_TIMEOUT_MS = 10000;
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const t = window.setTimeout(() => reject(new Error('timeout')), ms);
-    promise.then(
-      (v) => {
-        window.clearTimeout(t);
-        resolve(v);
-      },
-      (e) => {
-        window.clearTimeout(t);
-        reject(e);
-      }
-    );
-  });
-}
 
 export default function MedicalSimulator() {
   const { lang } = useLang();

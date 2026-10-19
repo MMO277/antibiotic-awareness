@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useAuth } from './authContext';
@@ -15,6 +15,7 @@ import {
   DoseStatus,
   RadarFrequency,
   useSyncedSchedules,
+  useDoseReminderNotifications,
   generateScheduleDoses,
   getDoseStatus,
   calculateScheduleProgress,
@@ -23,7 +24,9 @@ import {
   calculateAutoDoseTimes,
   addMinutesToTime,
   formatTime12Hour,
-  buildScheduleIcsContent,
+  formatTimestampReadable,
+  formatRouteLabel,
+  downloadScheduleIcs,
 } from './trackerData';
 
 export interface CoMedItem {
@@ -120,25 +123,6 @@ interface RadarFinding {
   ruleEn: string;
 }
 
-const NOTIF_FIRED_STORAGE_KEY = 'aa_fired_dose_notifications';
-
-function formatTimestampReadable(iso?: string, isAr = true): string {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso;
-  try {
-    return d.toLocaleString(isAr ? 'ar-EG' : 'en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return iso.replace('T', ' ').slice(0, 16);
-  }
-}
-
 export default function PrescriptionRadar() {
   const { lang } = useLang();
   const isAr = lang === 'ar';
@@ -159,6 +143,14 @@ export default function PrescriptionRadar() {
     retrySync,
     isAuthenticated,
   } = useSyncedSchedules();
+
+  const {
+    notifSupported,
+    notifPermission,
+    activeDueBanner,
+    setActiveDueBanner,
+    requestNotifPermission,
+  } = useDoseReminderNotifications(schedules, isAr);
 
   const selectedAbx = radarWorkspace.selectedAbx;
   const frequency = radarWorkspace.frequency;
@@ -207,106 +199,6 @@ export default function PrescriptionRadar() {
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState('');
   const [reportGeneratedAt, setReportGeneratedAt] = useState<string>(() => new Date().toISOString());
-  const [activeDueBanner, setActiveDueBanner] = useState<string | null>(null);
-
-  // Browser notification state & in-tab reminder check
-  const [notifSupported, setNotifSupported] = useState(false);
-  const [notifPermission, setNotifPermission] = useState('default');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setNotifSupported(true);
-      setNotifPermission(Notification.permission);
-    }
-  }, []);
-
-  // Active in-tab reminder check while the browser is open
-  useEffect(() => {
-    if (schedules.length === 0) return;
-
-    const checkReminders = () => {
-      const now = new Date();
-      const currentYYYYMMDD = formatLocalDateYYYYMMDD(now);
-      const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-      let firedMap: Record<string, boolean> = {};
-      try {
-        const raw = localStorage.getItem(NOTIF_FIRED_STORAGE_KEY);
-        if (raw) firedMap = JSON.parse(raw);
-      } catch {}
-
-      let updated = false;
-      schedules.forEach((sch) => {
-        sch.doses.forEach((d) => {
-          if (d.status !== 'upcoming') return;
-          const [dDate, dTimeFull] = d.scheduledTime.split('T');
-          const dHHMM = (dTimeFull || '').slice(0, 5);
-          if (dDate === currentYYYYMMDD && dHHMM === currentHHMM && !firedMap[d.id]) {
-            firedMap[d.id] = true;
-            updated = true;
-            const alertText = isAr
-              ? `⏰ حان الآن موعد جرعة: ${sch.medicineName} (${sch.prescribedDose}) — الساعة ${formatTime12Hour(dHHMM, true)}`
-              : `⏰ Time for your dose: ${sch.medicineName} (${sch.prescribedDose}) — ${formatTime12Hour(dHHMM, false)}`;
-            setActiveDueBanner(alertText);
-            if (notifSupported && notifPermission === 'granted') {
-              try {
-                new Notification(
-                  isAr ? `⏰ موعد جرعة الدواء: ${sch.medicineName}` : `⏰ Dose Reminder: ${sch.medicineName}`,
-                  {
-                    body: isAr
-                      ? `الجرعة الموصوفة: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, true)}). يرجى تأكيد الجرعة في رادار الروشتة.`
-                      : `Prescribed dose: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, false)}). Please confirm in Prescription Radar.`,
-                  }
-                );
-              } catch {}
-            }
-          }
-        });
-      });
-
-      if (updated) {
-        try {
-          localStorage.setItem(NOTIF_FIRED_STORAGE_KEY, JSON.stringify(firedMap));
-        } catch {}
-      }
-    };
-
-    checkReminders();
-    const timer = window.setInterval(checkReminders, 25000);
-    return () => window.clearInterval(timer);
-  }, [notifSupported, notifPermission, schedules, isAr]);
-
-  const requestNotifPermission = async () => {
-    if (!notifSupported) return;
-    try {
-      const perm = await Notification.requestPermission();
-      setNotifPermission(perm);
-      if (perm === 'granted') {
-        new Notification(
-          isAr ? 'تم تفعيل تنبيهات المتصفح 🔔' : 'Browser Reminders Enabled 🔔',
-          {
-            body: isAr
-              ? 'سيظهر لك إشعار منبثق على الشاشة عند حلول موعد الجرعة طالما أن الموقع أو المتصفح مفتوح.'
-              : 'A system notification will pop up at scheduled dose times while this browser remains open.',
-          }
-        );
-      }
-    } catch (err) {
-      console.error('Notification error:', err);
-    }
-  };
-
-  const downloadCalendarAlarms = (sch: TreatmentSchedule) => {
-    const icsContent = buildScheduleIcsContent(sch, isAr);
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `dose-alarms-${sch.id}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
 
   // Analyze multi-drug prescription interactions & timing rules
   const findings = useMemo<RadarFinding[]>(() => {
@@ -1473,7 +1365,7 @@ export default function PrescriptionRadar() {
                       </h3>
                       <p className="sch-meta">
                         <b>{isAr ? 'الجرعة الموصوفة:' : 'Prescribed Dose:'}</b> {sch.prescribedDose} ·{' '}
-                        <b>{isAr ? 'طريقة الاستعمال:' : 'Route:'}</b> {sch.route} ·{' '}
+                        <b>{isAr ? 'طريقة الاستعمال:' : 'Route:'}</b> {formatRouteLabel(sch.route, isAr)} ·{' '}
                         <b>{isAr ? 'المدة:' : 'Duration:'}</b> {sch.durationDays}{' '}
                         {isAr ? 'أيام' : 'days'} ({sch.startDate} → {sch.endDate})
                       </p>
@@ -1499,7 +1391,7 @@ export default function PrescriptionRadar() {
                       <button
                         type="button"
                         className="btn-secondary small"
-                        onClick={() => downloadCalendarAlarms(sch)}
+                        onClick={() => downloadScheduleIcs(sch, isAr)}
                         title={isAr ? 'إضافة مواعيد الجرعات لتقويم ومنبه الهاتف' : 'Add dose alarms to phone calendar'}
                       >
                         📅 {isAr ? 'منبهات الموبايل (.ics)' : 'Phone Alarms (.ics)'}

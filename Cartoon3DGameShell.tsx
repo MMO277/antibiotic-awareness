@@ -12,8 +12,10 @@ import {
   hasExtraIds,
   mergeProgress,
   SimulatorProgress,
+  unionIds,
 } from './simulatorProgressModel';
 import {
+  CLOUD_LOAD_TIMEOUT_MS,
   CloudGameId,
   cloudProgressAvailable,
   isLocalMergeResolved,
@@ -21,6 +23,7 @@ import {
   readCloudProgress,
   readGuestProgress,
   readUidCache,
+  withTimeout,
 } from './simulatorProgressCloud';
 import { useSimulatorProgressSync } from './useSimulatorProgressSync';
 import {
@@ -175,12 +178,6 @@ function collidesWithObstacles(x: number, z: number, obstacles: BoxObstacle[]): 
     }
   }
   return false;
-}
-
-function unionIds(base: string[], extra: string[]): string[] {
-  const have = new Set(base);
-  const add = extra.filter((x) => !have.has(x));
-  return add.length ? [...base, ...add] : base;
 }
 
 function isMissionUnlocked(
@@ -2631,24 +2628,6 @@ type GateState =
       localOffer: SimulatorProgress | null;
     }
   | { status: 'error'; uid: string; cache: SimulatorProgress | null };
-
-const CLOUD_LOAD_TIMEOUT_MS = 10000;
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const t = window.setTimeout(() => reject(new Error('timeout')), ms);
-    promise.then(
-      (v) => {
-        window.clearTimeout(t);
-        resolve(v);
-      },
-      (e) => {
-        window.clearTimeout(t);
-        reject(e);
-      }
-    );
-  });
-}
 
 export default function Cartoon3DGameShell({ config }: { config: Cartoon3DGameConfig }) {
   const { lang } = useLang();

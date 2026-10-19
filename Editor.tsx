@@ -12,7 +12,13 @@ export default function Editor() {
   const nav = useNavigate();
   const { user, role, loading } = useAuth();
   const { t, lang } = useLang();
-  const [m, setM] = useState<Medicine | null | undefined>(isNew ? emptyMedicine('') : undefined);
+  const reviewer = role === 'reviewer' || role === 'admin';
+  const [m, setM] = useState<Medicine | null | undefined>(() => {
+    if (!isNew) return undefined;
+    const base = emptyMedicine('');
+    base.status = 'draft';
+    return base;
+  });
   const [errors, setErrors] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -29,7 +35,6 @@ export default function Editor() {
   if (m === undefined) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (m === null) return <main className="wrap"><p>{t('notFound')}</p></main>;
 
-  const reviewer = role === 'reviewer' || role === 'admin';
   const statuses: Status[] = reviewer ? ['draft', 'pending_review', 'approved', 'archived'] : ['draft', 'pending_review'];
   const upd = (patch: Partial<Medicine>) => setM({ ...m, ...patch });
   const setText = (f: TextField, l: 'ar' | 'en', v: string) => upd({ [f]: { ...m[f], [l]: v } } as Partial<Medicine>);

@@ -125,7 +125,7 @@ export default function AllergyChecker() {
           >
             {Object.entries(DRUG_ALLERGEN_MAP).map(([id, info]) => (
               <option key={id} value={id}>
-                {lang === 'ar' ? info.nameAr : id}
+                {lang === 'ar' ? info.nameAr : info.nameEn}
               </option>
             ))}
           </select>

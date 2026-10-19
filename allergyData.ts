@@ -498,43 +498,43 @@ export interface DrugProfileCheckResult {
   nursingWarning: Bi;
 }
 
-// Maps medicine IDs from site catalog to allergen family and ingredients
-export const DRUG_ALLERGEN_MAP: Record<string, { family: string; ingredients: string[]; nameAr: string }> = {
-  'amoxicillin': { family: 'penicillin', ingredients: ['amoxicillin'], nameAr: 'أموكسيسيلين' },
-  'amoxicillin-clavulanic-acid': { family: 'penicillin', ingredients: ['amoxicillin', 'clavulanic_acid'], nameAr: 'أموكسيسيلين + كلافولانات (أوجمنتين)' },
-  'penicillin-v-potassium': { family: 'penicillin', ingredients: ['penicillin_v'], nameAr: 'بنسلين V (أوسبن)' },
-  'cephalexin': { family: 'cephalosporin', ingredients: ['cephalexin'], nameAr: 'سيفالكسين (أوسبكسين)' },
-  'cefuroxime': { family: 'cephalosporin', ingredients: ['cefuroxime'], nameAr: 'سيفوروكسيم (زينات)' },
-  'ceftriaxone': { family: 'cephalosporin', ingredients: ['ceftriaxone'], nameAr: 'سيفترياكسون' },
-  'cefixime': { family: 'cephalosporin', ingredients: ['cefixime'], nameAr: 'سيفيكسيم (سوبراكس)' },
-  'co-trimoxazole': { family: 'sulfa', ingredients: ['sulfamethoxazole', 'trimethoprim'], nameAr: 'كوتريموكسازول (سبتازول)' },
-  'azithromycin': { family: 'macrolide', ingredients: ['azithromycin'], nameAr: 'أزيثرومايسين (زيثروماكس)' },
-  'clarithromycin': { family: 'macrolide', ingredients: ['clarithromycin'], nameAr: 'كلاريثرومايسين (كلاسيد)' },
-  'ciprofloxacin': { family: 'fluoroquinolone', ingredients: ['ciprofloxacin'], nameAr: 'سيبروفلوكساسين (سيبروفار)' },
-  'levofloxacin': { family: 'fluoroquinolone', ingredients: ['levofloxacin'], nameAr: 'ليفوفلوكساسين (تافانيك)' },
-  'doxycycline': { family: 'tetracycline', ingredients: ['doxycycline'], nameAr: 'دوكسيسيكلين (تابوسين)' },
-  'metronidazole': { family: 'nitroimidazole', ingredients: ['metronidazole'], nameAr: 'ميترونيدازول (فلاجيل)' },
-  'nitrofurantoin': { family: 'nitrofuran', ingredients: ['nitrofurantoin'], nameAr: 'نيتروفورانتوين (ماكروفيوران)' },
-  'clindamycin': { family: 'lincosamide', ingredients: ['clindamycin'], nameAr: 'كليندامايسين (دالاسين)' },
-  'cefotaxime': { family: 'cephalosporin', ingredients: ['cefotaxime'], nameAr: 'سيفوتاكسيم (سيفوتاكس)' },
-  'flucloxacillin': { family: 'penicillin', ingredients: ['flucloxacillin'], nameAr: 'فلوكلوكساسيللين (فلوكسامو)' },
-  'amikacin': { family: 'aminoglycoside', ingredients: ['amikacin'], nameAr: 'أميكاسين (أميكين)' },
-  'gentamicin': { family: 'aminoglycoside', ingredients: ['gentamicin'], nameAr: 'جنتامايسين (جاراميسين)' },
-  'moxifloxacin': { family: 'fluoroquinolone', ingredients: ['moxifloxacin'], nameAr: 'موكسيفلوكساسين (أفيلوكس)' },
-  'cefoperazone-sulbactam': { family: 'cephalosporin', ingredients: ['cefoperazone', 'sulbactam'], nameAr: 'سيفوبيرازون + سولباكتام (سيلبيرازون)' },
-  'linezolid': { family: 'oxazolidinone', ingredients: ['linezolid'], nameAr: 'لينيزوليد (أفيروزوليد)' },
-  'vancomycin': { family: 'glycopeptide', ingredients: ['vancomycin'], nameAr: 'فانكومايسين (فانكوسين)' },
-  'meropenem': { family: 'carbapenem', ingredients: ['meropenem'], nameAr: 'ميروبينيم (ميرونيم)' },
-  'cefepime': { family: 'cephalosporin', ingredients: ['cefepime'], nameAr: 'سيفيبيم (ماكسيبيم)' },
-  'cefdinir': { family: 'cephalosporin', ingredients: ['cefdinir'], nameAr: 'سيفدينير (أومنيسيف / دينار)' },
-  'cefadroxil': { family: 'cephalosporin', ingredients: ['cefadroxil'], nameAr: 'سيفادروكسيل (ديوريسيف / بيودروكسيل)' },
-  'ampicillin-sulbactam': { family: 'penicillin', ingredients: ['ampicillin', 'sulbactam'], nameAr: 'أمبيسيلين + سولباكتام (يوناسين)' },
-  'erythromycin': { family: 'macrolide', ingredients: ['erythromycin'], nameAr: 'إريثرومايسين (إريثروسين)' },
-  'fusidic-acid': { family: 'fusidane', ingredients: ['fusidic_acid'], nameAr: 'حمض الفيوسيديك (فيوسيدين)' },
-  'rifaximin': { family: 'rifamycin', ingredients: ['rifaximin'], nameAr: 'ريفاكسيمين (تراسيد / جاستروبيوتك)' },
+// Maps medicine IDs from site catalog to allergen family and bilingual labels
+export const DRUG_ALLERGEN_MAP: Record<string, { family: string; ingredients: string[]; nameAr: string; nameEn: string }> = {
+  'amoxicillin': { family: 'penicillin', ingredients: ['amoxicillin'], nameAr: 'أموكسيسيلين', nameEn: 'Amoxicillin (E-Mox / Amoxil)' },
+  'amoxicillin-clavulanic-acid': { family: 'penicillin', ingredients: ['amoxicillin', 'clavulanic_acid'], nameAr: 'أموكسيسيلين + كلافولانات (أوجمنتين)', nameEn: 'Amoxicillin + Clavulanic Acid (Augmentin / Hibiotic)' },
+  'penicillin-v-potassium': { family: 'penicillin', ingredients: ['penicillin_v'], nameAr: 'بنسلين V (أوسبن)', nameEn: 'Penicillin V Potassium (Ospen)' },
+  'cephalexin': { family: 'cephalosporin', ingredients: ['cephalexin'], nameAr: 'سيفالكسين (أوسبكسين)', nameEn: 'Cephalexin (Ceporex / Ospexin)' },
+  'cefuroxime': { family: 'cephalosporin', ingredients: ['cefuroxime'], nameAr: 'سيفوروكسيم (زينات)', nameEn: 'Cefuroxime (Zinnat)' },
+  'ceftriaxone': { family: 'cephalosporin', ingredients: ['ceftriaxone'], nameAr: 'سيفترياكسون', nameEn: 'Ceftriaxone (Rocephin / Epicephin)' },
+  'cefixime': { family: 'cephalosporin', ingredients: ['cefixime'], nameAr: 'سيفيكسيم (سوبراكس)', nameEn: 'Cefixime (Suprax / Magnacef)' },
+  'co-trimoxazole': { family: 'sulfa', ingredients: ['sulfamethoxazole', 'trimethoprim'], nameAr: 'كوتريموكسازول (سبتازول)', nameEn: 'Co-trimoxazole (Septazole / Sutrim)' },
+  'azithromycin': { family: 'macrolide', ingredients: ['azithromycin'], nameAr: 'أزيثرومايسين (زيثروماكس)', nameEn: 'Azithromycin (Zithromax / Xithrone)' },
+  'clarithromycin': { family: 'macrolide', ingredients: ['clarithromycin'], nameAr: 'كلاريثرومايسين (كلاسيد)', nameEn: 'Clarithromycin (Klacid)' },
+  'ciprofloxacin': { family: 'fluoroquinolone', ingredients: ['ciprofloxacin'], nameAr: 'سيبروفلوكساسين (سيبروفار)', nameEn: 'Ciprofloxacin (Ciprofar / Ciprobay)' },
+  'levofloxacin': { family: 'fluoroquinolone', ingredients: ['levofloxacin'], nameAr: 'ليفوفلوكساسين (تافانيك)', nameEn: 'Levofloxacin (Tavanic / Levoxin)' },
+  'doxycycline': { family: 'tetracycline', ingredients: ['doxycycline'], nameAr: 'دوكسيسيكلين (تابوسين)', nameEn: 'Doxycycline (Vibramycin / Tabocin)' },
+  'metronidazole': { family: 'nitroimidazole', ingredients: ['metronidazole'], nameAr: 'ميترونيدازول (فلاجيل)', nameEn: 'Metronidazole (Flagyl / Amrizole)' },
+  'nitrofurantoin': { family: 'nitrofuran', ingredients: ['nitrofurantoin'], nameAr: 'نيتروفورانتوين (ماكروفيوران)', nameEn: 'Nitrofurantoin (Macrofuran / Uvamin)' },
+  'clindamycin': { family: 'lincosamide', ingredients: ['clindamycin'], nameAr: 'كليندامايسين (دالاسين)', nameEn: 'Clindamycin (Dalacin C)' },
+  'cefotaxime': { family: 'cephalosporin', ingredients: ['cefotaxime'], nameAr: 'سيفوتاكسيم (سيفوتاكس)', nameEn: 'Cefotaxime (Cefotax / Claforan)' },
+  'flucloxacillin': { family: 'penicillin', ingredients: ['flucloxacillin'], nameAr: 'فلوكلوكساسيللين (فلوكسامو)', nameEn: 'Flucloxacillin (Floxamo / Flucil)' },
+  'amikacin': { family: 'aminoglycoside', ingredients: ['amikacin'], nameAr: 'أميكاسين (أميكين)', nameEn: 'Amikacin (Amikin)' },
+  'gentamicin': { family: 'aminoglycoside', ingredients: ['gentamicin'], nameAr: 'جنتامايسين (جاراميسين)', nameEn: 'Gentamicin (Garamycin)' },
+  'moxifloxacin': { family: 'fluoroquinolone', ingredients: ['moxifloxacin'], nameAr: 'موكسيفلوكساسين (أفيلوكس)', nameEn: 'Moxifloxacin (Avelox)' },
+  'cefoperazone-sulbactam': { family: 'cephalosporin', ingredients: ['cefoperazone', 'sulbactam'], nameAr: 'سيفوبيرازون + سولباكتام (سيلبيرازون)', nameEn: 'Cefoperazone + Sulbactam (Sulperazon)' },
+  'linezolid': { family: 'oxazolidinone', ingredients: ['linezolid'], nameAr: 'لينيزوليد (أفيروزوليد)', nameEn: 'Linezolid (Zyvox / Averozolid)' },
+  'vancomycin': { family: 'glycopeptide', ingredients: ['vancomycin'], nameAr: 'فانكومايسين (فانكوسين)', nameEn: 'Vancomycin (Vancocin / Vancomix)' },
+  'meropenem': { family: 'carbapenem', ingredients: ['meropenem'], nameAr: 'ميروبينيم (ميرونيم)', nameEn: 'Meropenem (Meronem)' },
+  'cefepime': { family: 'cephalosporin', ingredients: ['cefepime'], nameAr: 'سيفيبيم (ماكسيبيم)', nameEn: 'Cefepime (Maxipime)' },
+  'cefdinir': { family: 'cephalosporin', ingredients: ['cefdinir'], nameAr: 'سيفدينير (أومنيسيف / دينار)', nameEn: 'Cefdinir (Omnicef / Dinar)' },
+  'cefadroxil': { family: 'cephalosporin', ingredients: ['cefadroxil'], nameAr: 'سيفادروكسيل (ديوريسيف / بيودروكسيل)', nameEn: 'Cefadroxil (Duricef / Biodroxil)' },
+  'ampicillin-sulbactam': { family: 'penicillin', ingredients: ['ampicillin', 'sulbactam'], nameAr: 'أمبيسيلين + سولباكتام (يوناسين)', nameEn: 'Ampicillin + Sulbactam (Unasyn)' },
+  'erythromycin': { family: 'macrolide', ingredients: ['erythromycin'], nameAr: 'إريثرومايسين (إريثروسين)', nameEn: 'Erythromycin (Erythrocin)' },
+  'fusidic-acid': { family: 'fusidane', ingredients: ['fusidic_acid'], nameAr: 'حمض الفيوسيديك (فيوسيدين)', nameEn: 'Fusidic Acid (Fucidin)' },
+  'rifaximin': { family: 'rifamycin', ingredients: ['rifaximin'], nameAr: 'ريفاكسيمين (تراسيد / جاستروبيوتك)', nameEn: 'Rifaximin (Trcid / Gastrobiotic)' },
 };
 
-/** Evaluates allergy match level and cross-reactivity for a selected drug */
+/** Evaluates allergy match level and bidirectional beta-lactam cross-reactivity for a selected drug */
 export function checkDrugAllergySafety(
   drugId: string,
   userAllergies: AllergyRecord[]
@@ -587,24 +587,30 @@ export function checkDrugAllergySafety(
     };
   }
 
-  // 2. Check Cross-Reactivity (e.g. Penicillin vs Cephalosporins)
-  const hasPenicillinAllergy = userAllergies.some((a) => a.allergenKey === 'penicillin');
-  if (hasPenicillinAllergy && drugInfo.family === 'cephalosporin') {
-    const penAllergy = userAllergies.find((a) => a.allergenKey === 'penicillin')!;
+  // 2. Check Bidirectional Beta-Lactam Cross-Reactivity (Penicillins ↔ Cephalosporins ↔ Carbapenems)
+  const betaLactamAllergy = userAllergies.find(
+    (a) => a.allergenKey === 'penicillin' || a.allergenKey === 'cephalosporin'
+  );
+  const isBetaLactamDrug =
+    drugInfo.family === 'penicillin' ||
+    drugInfo.family === 'cephalosporin' ||
+    drugInfo.family === 'carbapenem';
+
+  if (betaLactamAllergy && isBetaLactamDrug) {
     return {
       matchLevel: 'cross_reactivity',
-      matchedAllergy: penAllergy,
+      matchedAllergy: betaLactamAllergy,
       title: { ar: 'تحذير سريري: احتمالية حساسية متصالبة (Cross-Reactivity)', en: 'Clinical Concern: Potential Cross-Reactivity' },
       explanation: {
-        ar: `لديك حساسية مسجلة من البنسلين، وهذا الدواء ينتمي لعائلة السيفالوسبورينات. توجد نسبة حساسية متصالبة سريرية (نحو 2% إلى 5%) بسبب التشابه في التركيب الحلقي لبيتا-لاكتام، خاصة إذا كانت حساسيتك السابقة شديدة.`,
-        en: `You have a documented penicillin allergy, and this drug is a cephalosporin. There is a documented 2-5% cross-reactivity risk due to shared beta-lactam structures.`,
+        ar: `لديك حساسية مسجلة من «${betaLactamAllergy.drugName}»، وهذا الدواء ينتمي لمضادات بيتا-لاكتام (${drugInfo.nameAr}). توجد نسبة حساسية متصالبة سريرية (نحو 1% إلى 5%) بسبب التشابه في حلقة بيتا-لاكتام الكيميائية، خاصة إذا كانت حساسيتك السابقة شديدة.`,
+        en: `You have a documented beta-lactam allergy (${betaLactamAllergy.drugName}), and ${drugInfo.nameEn} shares a beta-lactam ring structure with a documented 1–5% cross-reactivity risk.`,
       },
       clinicalAction: {
         ar: 'يلزم تقييم طبي دقيق قبل التناول! قد ينصح الطبيب بإجراء اختبار حساسية جلدي، أو اختيار مضاد آمن من خارج عائلة بيتا-لاكتام (كالماكروليد).',
         en: 'Requires medical assessment prior to use. Skin testing or alternative non-beta-lactam class may be advised.',
       },
       nursingWarning: {
-        ar: 'تقييم تمريضي سريري: التحقق من شدة الحساسية السابقة للبنسلين (هل كانت طفحاً خفيفاً أم صعوبة تنفس؟) ومراقبة المريض 30 دقيقة بعد أول جرعة.',
+        ar: 'تقييم تمريضي سريري: التحقق من شدة الحساسية السابقة لبيتا-لاكتام (هل كانت طفحاً خفيفاً أم صعوبة تنفس؟) ومراقبة المريض 30 دقيقة بعد أول جرعة.',
         en: 'Nursing Assessment: Differentiate mild cutaneous rash vs true IgE-mediated anaphylaxis history.',
       },
     };

@@ -59,6 +59,7 @@ export interface RadarWorkspaceState {
 export const STORAGE_KEY = 'antibiotic_treatment_tracker_schedules';
 export const DELETED_SCHEDULES_KEY = 'antibiotic_treatment_tracker_deleted';
 export const RADAR_WORKSPACE_KEY = 'aa_prescription_radar_workspace';
+export const NOTIF_FIRED_STORAGE_KEY = 'aa_fired_dose_notifications';
 const MIGRATED_LEGACY_SCHEDULES_PREFIX = 'aa_migrated_legacy_schedules_';
 const SCHEDULES_EVENT = 'aa-tracker-schedules-updated';
 
@@ -69,6 +70,57 @@ export const DEFAULT_RADAR_WORKSPACE: RadarWorkspaceState = {
   selectedCoMeds: ['calcium_dairy', 'iron_zinc', 'probiotics', 'paracetamol'],
   updatedAt: '1970-01-01T00:00:00.000Z',
 };
+
+export function formatTimestampReadable(iso?: string, isAr = true): string {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  try {
+    return d.toLocaleString(isAr ? 'ar-EG' : 'en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return iso.replace('T', ' ').slice(0, 16);
+  }
+}
+
+export function formatRouteLabel(route: string, isAr = true): string {
+  switch (route) {
+    case 'oral':
+      return isAr ? 'أقراص / كبسول فموي' : 'Oral Tablet/Capsule';
+    case 'suspension':
+      return isAr ? 'شراب معلق' : 'Oral Suspension';
+    case 'injection':
+      return isAr ? 'حقن (وريد/عضل)' : 'Injection';
+    case 'topical':
+      return isAr ? 'موضعي (كريم/مرهم)' : 'Topical';
+    default:
+      return route;
+  }
+}
+
+export function formatFrequencyLabel(freq: string, isAr = true): string {
+  switch (freq) {
+    case 'once_daily':
+    case 'q24h':
+      return isAr ? 'مرة واحدة يومياً (كل 24 ساعة)' : 'Once daily (every 24h)';
+    case 'twice_daily':
+    case 'q12h':
+      return isAr ? 'مرتين يومياً (كل 12 ساعة)' : 'Twice daily (every 12h)';
+    case 'thrice_daily':
+    case 'q8h':
+      return isAr ? '3 مرات يومياً (كل 8 ساعات)' : '3 times daily (every 8h)';
+    case 'four_times_daily':
+    case 'q6h':
+      return isAr ? '4 مرات يومياً (كل 6 ساعات)' : '4 times daily (every 6h)';
+    default:
+      return freq;
+  }
+}
 
 /**
  * Adds minutes to an "HH:mm" time string and wraps around 24 hours.
@@ -612,6 +664,118 @@ export function buildScheduleIcsContent(sch: TreatmentSchedule, isAr = true): st
 
   lines.push('END:VCALENDAR');
   return lines.join('\r\n');
+}
+
+export function downloadScheduleIcs(sch: TreatmentSchedule, isAr = true): void {
+  const icsContent = buildScheduleIcsContent(sch, isAr);
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `dose-alarms-${sch.id}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Shared hook for browser notification permission and active in-tab dose reminders
+ * across both Standalone Tracker (/tracker) and Prescription Radar (/prescription-radar).
+ */
+export function useDoseReminderNotifications(schedules: TreatmentSchedule[], isAr: boolean) {
+  const [notifSupported, setNotifSupported] = useState(false);
+  const [notifPermission, setNotifPermission] = useState('default');
+  const [activeDueBanner, setActiveDueBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotifSupported(true);
+      setNotifPermission(Notification.permission);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (schedules.length === 0) return;
+
+    const checkReminders = () => {
+      const now = new Date();
+      const currentYYYYMMDD = formatLocalDateYYYYMMDD(now);
+      const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      let firedMap: Record<string, boolean> = {};
+      try {
+        const raw = localStorage.getItem(NOTIF_FIRED_STORAGE_KEY);
+        if (raw) firedMap = JSON.parse(raw);
+      } catch {}
+
+      let updated = false;
+      schedules.forEach((sch) => {
+        sch.doses.forEach((d) => {
+          if (d.status !== 'upcoming') return;
+          const [dDate, dTimeFull] = d.scheduledTime.split('T');
+          const dHHMM = (dTimeFull || '').slice(0, 5);
+          if (dDate === currentYYYYMMDD && dHHMM === currentHHMM && !firedMap[d.id]) {
+            firedMap[d.id] = true;
+            updated = true;
+            const alertText = isAr
+              ? `⏰ حان الآن موعد جرعة: ${sch.medicineName} (${sch.prescribedDose}) — الساعة ${formatTime12Hour(dHHMM, true)}`
+              : `⏰ Time for your dose: ${sch.medicineName} (${sch.prescribedDose}) — ${formatTime12Hour(dHHMM, false)}`;
+            setActiveDueBanner(alertText);
+            if (notifSupported && notifPermission === 'granted') {
+              try {
+                new Notification(
+                  isAr ? `⏰ موعد جرعة الدواء: ${sch.medicineName}` : `⏰ Dose Reminder: ${sch.medicineName}`,
+                  {
+                    body: isAr
+                      ? `الجرعة الموصوفة: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, true)}). يرجى تأكيد الجرعة في المتابع العلاجي.`
+                      : `Prescribed dose: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, false)}). Please confirm in your tracker.`,
+                  }
+                );
+              } catch {}
+            }
+          }
+        });
+      });
+
+      if (updated) {
+        try {
+          localStorage.setItem(NOTIF_FIRED_STORAGE_KEY, JSON.stringify(firedMap));
+        } catch {}
+      }
+    };
+
+    checkReminders();
+    const timer = window.setInterval(checkReminders, 25000);
+    return () => window.clearInterval(timer);
+  }, [notifSupported, notifPermission, schedules, isAr]);
+
+  const requestNotifPermission = useCallback(async () => {
+    if (!notifSupported) return;
+    try {
+      const perm = await Notification.requestPermission();
+      setNotifPermission(perm);
+      if (perm === 'granted') {
+        new Notification(
+          isAr ? 'تم تفعيل تنبيهات المتصفح 🔔' : 'Browser Reminders Enabled 🔔',
+          {
+            body: isAr
+              ? 'سيظهر لك إشعار منبثق على الشاشة عند حلول موعد الجرعة طالما أن الموقع أو المتصفح مفتوح.'
+              : 'A system notification will pop up at scheduled dose times while this browser remains open.',
+          }
+        );
+      }
+    } catch (err) {
+      console.error('Notification error:', err);
+    }
+  }, [notifSupported, isAr]);
+
+  return {
+    notifSupported,
+    notifPermission,
+    activeDueBanner,
+    setActiveDueBanner,
+    requestNotifPermission,
+  };
 }
 
 export function useSyncedSchedules() {
