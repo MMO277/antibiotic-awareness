@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
+import { useAuth } from './authContext';
+import { db } from './firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import './OpenWorldGame.css';
 
 type Place = { name: string; ar: string; en: string; x: number; z: number; color: number; icon: string; fact: string; factEn: string };
@@ -28,8 +31,33 @@ function makeBuilding(scene: THREE.Scene, p: Place) {
 
 export default function OpenWorldGame() {
   const { lang } = useLang(); const isAr = lang === 'ar';
+  const { user } = useAuth();
   const mountRef = useRef<HTMLDivElement>(null); const inspectRef = useRef<(() => void) | null>(null); const keys = useRef<Record<string, boolean>>({}); const playerPos = useRef(new THREE.Vector3(0,0,5));
   const [ready,setReady] = useState(false); const [xp,setXp] = useState(0); const [dialog,setDialog] = useState<Place|null>(null);
+  const [visited,setVisited] = useState<string[]>([]); const [progressLoaded,setProgressLoaded] = useState(false);
+  const progressKey = 'aa_open_world_progress_v1';
+  useEffect(() => {
+    let cancelled = false; setProgressLoaded(false);
+    const apply = (data: any) => { if (cancelled || !data) return; setXp(Number.isFinite(data.xp) ? Math.max(0, data.xp) : 0); setVisited(Array.isArray(data.visited) ? data.visited.filter((id: unknown) => typeof id === 'string' && PLACES.some(p => p.name === id)) : []); };
+    (async () => {
+      try {
+        if (user && db) { const snap = await getDoc(doc(db, 'users', user.uid, 'gameProgress', 'openWorld')); if (snap.exists()) apply(snap.data()); else { const raw = localStorage.getItem(progressKey); if (raw) apply(JSON.parse(raw)); } }
+        else { const raw = localStorage.getItem(progressKey); if (raw) apply(JSON.parse(raw)); }
+      } catch (error) { console.warn('Could not load open-world progress:', error); try { const raw = localStorage.getItem(progressKey); if (raw) apply(JSON.parse(raw)); } catch {} }
+      finally { if (!cancelled) setProgressLoaded(true); }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.uid]);
+  useEffect(() => {
+    if (!progressLoaded) return;
+    const data = { xp, visited, updatedAt: new Date().toISOString() };
+    try { localStorage.setItem(progressKey, JSON.stringify(data)); } catch {}
+    if (user && db) {
+      const timer = window.setTimeout(() => { void setDoc(doc(db, 'users', user.uid, 'gameProgress', 'openWorld'), { xp, visited, updatedAt: serverTimestamp() }, { merge: true }).catch(error => console.warn('Could not sync open-world progress to cloud:', error)); }, 500);
+      return () => window.clearTimeout(timer);
+    }
+  }, [xp, visited, user?.uid, progressLoaded]);
+  const visitPlace = (place: Place) => { setDialog(place); if (!visited.includes(place.name)) { setVisited(old => old.includes(place.name) ? old : [...old, place.name]); setXp(old => old + 20); } };
   useEffect(() => {
     const mount = mountRef.current; if (!mount) return;
     let renderer: THREE.WebGLRenderer;
@@ -67,12 +95,12 @@ export default function OpenWorldGame() {
   },[]);
   useEffect(()=>{const p=playerPos.current; const id=window.setInterval(()=>{const p0=(document.querySelector('.ow-game') as HTMLElement); if(!p0)return; /* proximity is updated from the game camera's avatar via lightweight scene event below */},500);return()=>window.clearInterval(id);},[]);
   const startMove=(x:number,z:number)=>{(window as any).__owMove={x,z};}; const stopMove=()=>{(window as any).__owMove={x:0,z:0};};
-  const inspect=()=>{const pos=playerPos.current; const place=PLACES.map(p=>({...p,d:Math.hypot(pos.x-p.x,pos.z-p.z)})).sort((a,b)=>a.d-b.d)[0]; if(place && place.d<13){setDialog(place);setXp(v=>v+20);}else{setDialog({name:'hint',ar:'اقترب من أحد المباني',en:'Get closer to a landmark',x:0,z:0,color:0xffffff,icon:'!',fact:'اقترب من المستشفى أو الصيدلية أو مركز التعلّم أو المركز المجتمعي، ثم اضغط تفاعل.',factEn:'Walk closer to the hospital, pharmacy, learning center, or community hub, then press Interact.'});}};
+  const inspect=()=>{const pos=playerPos.current; const place=PLACES.map(p=>({...p,d:Math.hypot(pos.x-p.x,pos.z-p.z)})).sort((a,b)=>a.d-b.d)[0]; if(place && place.d<13){visitPlace(place);}else{setDialog({name:'hint',ar:'اقترب من أحد المباني',en:'Get closer to a landmark',x:0,z:0,color:0xffffff,icon:'!',fact:'اقترب من المستشفى أو الصيدلية أو مركز التعلّم أو المركز المجتمعي، ثم اضغط تفاعل.',factEn:'Walk closer to the hospital, pharmacy, learning center, or community hub, then press Interact.'});}};
   inspectRef.current=inspect;
-  return <main className="ow-page" dir={isAr?'rtl':'ltr'}><header className="ow-header"><Link to="/games" className="ow-back">← {isAr?'مركز الألعاب':'Game Center'}</Link><div><strong>🌎 {isAr?'المدينة الصحية المفتوحة':'Open Health World'}</strong><span>{isAr?'استكشف • تعلّم • اجمع النقاط':'Explore • Learn • Earn XP'}</span></div><div className="ow-xp">⭐ {xp} XP</div></header>
-    <section className="ow-layout"><div className="ow-stage"><div className="ow-scene" ref={mountRef}/><div className="ow-hud"><div className="ow-avatar">🧑🏻‍🎓</div><div className="ow-progress"><b>{isAr?'مهمة المدينة':'City Mission'}</b><span>{isAr?'زر الأماكن الأربعة وتعلّم معلومة جديدة':'Visit all four landmarks to learn'}</span><div className="ow-bar"><i style={{width:`${Math.min(100,xp/80*100)}%`}}/></div></div><div className="ow-map"><span>🧭</span><small>{isAr?'المدينة':'CITY'}</small><i className="ow-map-dot dot1"/><i className="ow-map-dot dot2"/><i className="ow-map-dot dot3"/><i className="ow-map-dot dot4"/></div></div>{!ready&&<div className="ow-loading">{isAr?'جارٍ تجهيز العالم ثلاثي الأبعاد…':'Preparing 3D world…'}<small>{isAr?'إذا لم يدعم جهازك WebGL، جرّب متصفحًا حديثًا.':'If WebGL is unavailable, try a modern browser.'}</small></div>}
+  return <main className="ow-page" dir={isAr?'rtl':'ltr'}><header className="ow-header"><Link to="/games" className="ow-back">← {isAr?'مركز الألعاب':'Game Center'}</Link><div><strong>🌎 {isAr?'المدينة الصحية المفتوحة':'Open Health World'}</strong><span>{isAr?'استكشف • تعلّم • اجمع النقاط':'Explore • Learn • Earn XP'}</span></div><div className="ow-xp">⭐ {xp} XP <small>{user ? (isAr?'مزامنة سحابية':'Cloud sync') : (isAr?'حفظ على هذا الجهاز':'Saved on this device')}</small></div></header>
+    <section className="ow-layout"><div className="ow-stage"><div className="ow-scene" ref={mountRef}/><div className="ow-hud"><div className="ow-avatar">🧑🏻‍🎓</div><div className="ow-progress"><b>{isAr?'مهمة المدينة':'City Mission'}</b><span>{isAr?`زرت ${visited.length} من 4 أماكن`:`Visited ${visited.length} of 4 landmarks`}</span><div className="ow-bar"><i style={{width:`${Math.min(100,xp/80*100)}%`}}/></div></div><div className="ow-map"><span>🧭</span><small>{isAr?'المدينة':'CITY'}</small><i className="ow-map-dot dot1"/><i className="ow-map-dot dot2"/><i className="ow-map-dot dot3"/><i className="ow-map-dot dot4"/></div></div>{!ready&&<div className="ow-loading">{isAr?'جارٍ تجهيز العالم ثلاثي الأبعاد…':'Preparing 3D world…'}<small>{isAr?'إذا لم يدعم جهازك WebGL، جرّب متصفحًا حديثًا.':'If WebGL is unavailable, try a modern browser.'}</small></div>}
       {dialog&&<div className="ow-dialog"><button className="ow-close" onClick={()=>setDialog(null)}>×</button><b>{dialog.icon} {isAr?dialog.ar:dialog.en}</b><p>{isAr?dialog.fact:dialog.factEn}</p><button className="ow-primary" onClick={()=>setDialog(null)}>{isAr?'متابعة الاستكشاف':'Keep exploring'}</button></div>}
       <div className="ow-controls"><div className="ow-pad"><button onPointerDown={()=>startMove(0,-1)} onPointerUp={stopMove} onPointerLeave={stopMove} aria-label="Forward">▲</button><div><button onPointerDown={()=>startMove(-1,0)} onPointerUp={stopMove} onPointerLeave={stopMove} aria-label="Left">◀</button><button onPointerDown={()=>startMove(0,1)} onPointerUp={stopMove} onPointerLeave={stopMove} aria-label="Back">▼</button><button onPointerDown={()=>startMove(1,0)} onPointerUp={stopMove} onPointerLeave={stopMove} aria-label="Right">▶</button></div></div><button className="ow-interact" onClick={inspect}>✋<span>{isAr?'تفاعل':'Interact'} (E)</span></button></div></div>
-      <aside className="ow-sidebar"><span className="ow-kicker">OPEN WORLD • 3D</span><h1>{isAr?'مدينة صحية… عالم من المغامرات':'A healthier world starts with you'}</h1><p>{isAr?'تحرك بحرية بمنظور الشخص الثالث، واكتشف أربع مناطق، وتفاعل مع الأماكن لتتعلم الاستخدام المسؤول للمضادات الحيوية.':'Move freely in third person, explore four districts, and interact with landmarks to learn responsible antibiotic use.'}</p><div className="ow-place-list">{PLACES.map((p,i)=><button key={p.name} onClick={()=>{setNear(p);setDialog(p);setXp(v=>v+20);}}><span className="ow-place-icon">{p.icon}</span><span><b>{isAr?p.ar:p.en}</b><small>{isAr?'اكتشف معلومة واكسب 20 نقطة':'Discover a fact • +20 XP'}</small></span><span>›</span></button>)}</div><div className="ow-help"><b>🎮 {isAr?'التحكم':'Controls'}</b><p>{isAr?'الكمبيوتر: WASD أو الأسهم للحركة، و E للتفاعل. الهاتف: استخدم عصا الاتجاهات وزر التفاعل.':'Desktop: WASD / arrows to move, E to interact. Mobile: use the direction pad and Interact.'}</p></div><button className="ow-primary ow-reset" onClick={()=>{setXp(0);setDialog(null);window.location.reload();}}>{isAr?'إعادة بدء الجولة':'Restart adventure'}</button></aside></section>
+      <aside className="ow-sidebar"><span className="ow-kicker">OPEN WORLD • 3D</span><h1>{isAr?'مدينة صحية… عالم من المغامرات':'A healthier world starts with you'}</h1><p>{isAr?'تحرك بحرية بمنظور الشخص الثالث، واكتشف أربع مناطق، وتفاعل مع الأماكن لتتعلم الاستخدام المسؤول للمضادات الحيوية.':'Move freely in third person, explore four districts, and interact with landmarks to learn responsible antibiotic use.'}</p><div className="ow-place-list">{PLACES.map((p,i)=><button key={p.name} onClick={()=>visitPlace(p)}><span className="ow-place-icon">{p.icon}</span><span><b>{isAr?p.ar:p.en}</b><small>{isAr?'اكتشف معلومة واكسب 20 نقطة':'Discover a fact • +20 XP'}</small></span><span>›</span></button>)}</div><div className="ow-help"><b>🎮 {isAr?'التحكم':'Controls'}</b><p>{isAr?'الكمبيوتر: WASD أو الأسهم للحركة، و E للتفاعل. الهاتف: استخدم عصا الاتجاهات وزر التفاعل.':'Desktop: WASD / arrows to move, E to interact. Mobile: use the direction pad and Interact.'}</p></div><button className="ow-primary ow-reset" onClick={()=>{setXp(0);setVisited([]);setDialog(null);try{localStorage.removeItem(progressKey);}catch{} if(user&&db) void setDoc(doc(db,'users',user.uid,'gameProgress','openWorld'),{xp:0,visited:[],updatedAt:serverTimestamp()},{merge:true}).catch(error=>console.warn('Could not reset cloud progress:',error));}}>{isAr?'إعادة بدء الجولة':'Restart adventure'}</button></aside></section>
     <footer className="ow-footer">{isAr?'محتوى توعوي تعليمي — لا تستبدل اللعبة نصيحة الطبيب أو الصيدلي.':'Educational awareness game — not a substitute for advice from a clinician or pharmacist.'}</footer></main>;
 }
