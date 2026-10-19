@@ -7,6 +7,10 @@ export interface SpeechState {
   currentParagraphIndex: number;
 }
 
+export interface VoiceRecognitionHandle {
+  stop: () => void;
+}
+
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 }
@@ -21,7 +25,7 @@ export function startVoiceRecognition(
   onResult: (transcript: string) => void,
   onError?: (err: string) => void,
   onEnd?: () => void
-): { stop: () => void } | null {
+): VoiceRecognitionHandle | null {
   if (!isVoiceRecognitionSupported()) {
     onError?.(lang === 'ar' ? 'المتصفح لا يدعم الإدخال الصوتي المباشر.' : 'Voice recognition not supported in this browser.');
     return null;

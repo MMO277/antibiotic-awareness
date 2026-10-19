@@ -15,6 +15,7 @@ import {
   speakText,
   startVoiceRecognition,
   stopSpeech,
+  VoiceRecognitionHandle,
 } from './speechService';
 
 const WIDGET_CHIPS = {
@@ -47,19 +48,31 @@ export default function ChatWidget() {
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
-  const stopListenRef = useRef<(() => void) | null>(null);
+  const stopListenRef = useRef<VoiceRecognitionHandle | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   // Bacteria Hunter Gaming Mode: close any open panel when gameplay starts (the widget itself is hidden by CSS)
   useEffect(() => {
     const onGaming = (e: Event) => {
       if ((e as CustomEvent<{ active: boolean }>).detail?.active) {
+        stopSpeech();
+        stopListenRef.current?.stop();
+        stopListenRef.current = null;
+        setListening(false);
         setIsOpen(false);
         setSosOpen(false);
       }
     };
     window.addEventListener('bh:gaming-mode', onGaming);
     return () => window.removeEventListener('bh:gaming-mode', onGaming);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopSpeech();
+      stopListenRef.current?.stop();
+      stopListenRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
@@ -112,23 +125,32 @@ export default function ChatWidget() {
 
   function toggleVoiceMic() {
     if (listening) {
-      if (stopListenRef.current) stopListenRef.current();
+      stopListenRef.current?.stop();
+      stopListenRef.current = null;
       setListening(false);
       return;
     }
     if (!isVoiceRecognitionSupported()) return;
+    stopListenRef.current?.stop();
     setListening(true);
     stopListenRef.current = startVoiceRecognition(
       lang,
       (transcript) => {
+        stopListenRef.current = null;
         setListening(false);
         if (transcript.trim()) {
           setQ(transcript);
           ask(transcript, true);
         }
       },
-      () => setListening(false),
-      () => setListening(false),
+      () => {
+        stopListenRef.current = null;
+        setListening(false);
+      },
+      () => {
+        stopListenRef.current = null;
+        setListening(false);
+      },
     );
   }
 
@@ -261,6 +283,9 @@ export default function ChatWidget() {
                 className="close-popup-btn"
                 onClick={() => {
                   stopSpeech();
+                  stopListenRef.current?.stop();
+                  stopListenRef.current = null;
+                  setListening(false);
                   setIsOpen(false);
                 }}
                 aria-label="Close chat"

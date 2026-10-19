@@ -15,6 +15,7 @@ import {
   speakText,
   startVoiceRecognition,
   stopSpeech,
+  VoiceRecognitionHandle,
 } from './speechService';
 
 const CHIPS = {
@@ -162,7 +163,7 @@ export default function Assistant() {
   const [listening, setListening] = useState(false);
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [voiceNote, setVoiceNote] = useState('');
-  const stopListenRef = useRef<(() => void) | null>(null);
+  const stopListenRef = useRef<VoiceRecognitionHandle | null>(null);
   const end = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -172,7 +173,8 @@ export default function Assistant() {
   useEffect(() => {
     return () => {
       stopSpeech();
-      if (stopListenRef.current) stopListenRef.current();
+      stopListenRef.current?.stop();
+      stopListenRef.current = null;
     };
   }, []);
 
@@ -227,7 +229,8 @@ export default function Assistant() {
 
   function toggleVoiceMic() {
     if (listening) {
-      if (stopListenRef.current) stopListenRef.current();
+      stopListenRef.current?.stop();
+      stopListenRef.current = null;
       setListening(false);
       return;
     }
@@ -241,12 +244,14 @@ export default function Assistant() {
       return;
     }
 
+    stopListenRef.current?.stop();
     setVoiceNote(isAr ? '🎙️ تحدث الآن... أنا أستمع إليك باللهجة المصرية أو العربية' : '🎙️ Speak now... Listening');
     setListening(true);
 
     stopListenRef.current = startVoiceRecognition(
       lang,
       (transcript) => {
+        stopListenRef.current = null;
         setListening(false);
         setVoiceNote('');
         if (transcript.trim()) {
@@ -255,10 +260,12 @@ export default function Assistant() {
         }
       },
       (errMsg) => {
+        stopListenRef.current = null;
         setListening(false);
         setVoiceNote(errMsg);
       },
       () => {
+        stopListenRef.current = null;
         setListening(false);
       },
     );
