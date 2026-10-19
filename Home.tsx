@@ -208,9 +208,18 @@ export default function Home() {
               ? 'المرجع السريري والتوعوي الشامل للمضادات الحيوية المسجلة في السوق المصري: ابحث بالاسم التجاري أو العلمي أو الباركود الخطي، واستكشف البدائل المتطابقة، والأسعار الرسمية، وفاحص الحساسية والجرعات.'
               : 'Comprehensive clinical and patient-education portal for antibiotics in Egypt: search by trade name, generic ingredient, or linear barcode, and check exact generics, prices, and allergy safety.'}
           </p>
+          <div className="pro-hero-art" aria-hidden="true">
+            <div className="pro-art-orbit pro-art-orbit-one" />
+            <div className="pro-art-orbit pro-art-orbit-two" />
+            <div className="pro-art-cross">＋</div>
+            <div className="pro-art-shield"><span>✚</span><i /></div>
+            <div className="pro-art-pill"><span /><span /></div>
+            <div className="pro-art-mini-card pro-art-card-top"><b>✓</b><span>{isAr ? 'أمان الدواء' : 'Medication safety'}</span></div>
+            <div className="pro-art-mini-card pro-art-card-bottom"><b>⌕</b><span>{isAr ? 'دليل الأدوية المصري' : 'Egyptian drug guide'}</span></div>
+          </div>
 
           {/* Search Bar with Instant Live Autocomplete Dropdown */}
-          <div style={{ position: 'relative', maxWidth: '760px', marginInline: 'auto', width: '100%' }}>
+          <div className="pro-search-wrap" style={{ position: 'relative', maxWidth: '850px', marginInline: 'auto', width: '100%' }}>
             <form className="pro-search-box" onSubmit={go} role="search">
               <span className="pro-search-icon">🔍</span>
               <input
@@ -303,8 +312,8 @@ export default function Home() {
 
       <div className="wrap stack" style={{ marginTop: '28px' }}>
         {/* Clinical Command Center: Interactive Modules */}
-        <section>
-          <div className="head" style={{ marginBottom: '14px' }}>
+        <section className="pro-tools-section">
+          <div className="head pro-section-heading" style={{ marginBottom: '14px' }}>
             <div>
               <h2 style={{ fontSize: '1.45rem', marginBottom: '4px' }}>
                 🏥 {isAr ? 'منظومة الأدوات السريرية والتمريضية الذكية' : 'Smart Clinical & Nursing Stewardship Suite'}
@@ -351,7 +360,7 @@ export default function Home() {
         </section>
 
         {/* Quick Access to Most Prescribed Antibiotics in Egypt */}
-        <section className="card highlight-card">
+        <section className="card highlight-card pro-featured-section">
           <div className="head" style={{ marginBottom: '12px' }}>
             <div>
               <h2 style={{ margin: 0 }}>
