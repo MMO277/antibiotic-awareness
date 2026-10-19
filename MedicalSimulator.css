@@ -1372,3 +1372,9 @@
 .ms-immersive .ms-controls-hint-banner,
 .ms-immersive .ms-target-chip,
 .ms-immersive .ms-locked-toast { display: none !important; }
+
+/* Keep shared 3D simulations consistent on physical phone orientation, including Arabic RTL. */
+.ms-immersive .ms-hud-controls { direction: ltr !important; flex-direction: row !important; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); inset-inline: unset; }
+.ms-immersive .ms-joystick-zone { order: 0; align-items: center; }
+.ms-immersive .ms-action-zone { order: 1; align-items: flex-end; }
+.ms-immersive:not(.ms-hud-expanded) .ms-scenario-drawer { display: none !important; }
