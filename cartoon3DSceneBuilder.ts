@@ -266,13 +266,13 @@ function createCartoonCharacter(
   baseRotationY: number,
   lowGraphics: boolean
 ): AvatarRig {
-  const seg = lowGraphics ? 8 : 14;
+  const seg = lowGraphics ? 12 : 28;
   const root = new THREE.Group();
 
-  const skinMat = new THREE.MeshLambertMaterial({ color: skinColor });
-  const outfitMat = new THREE.MeshLambertMaterial({ color: outfitColor });
-  const accentMat = new THREE.MeshLambertMaterial({ color: accentColor });
-  const darkMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+  const skinMat = new THREE.MeshStandardMaterial({ color: skinColor, roughness: 0.78, metalness: 0.0 });
+  const outfitMat = new THREE.MeshStandardMaterial({ color: outfitColor, roughness: 0.88, metalness: 0.0 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: accentColor, roughness: 0.72, metalness: 0.02 });
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.82, metalness: 0.0 });
 
   const ringGeo = new THREE.RingGeometry(0.45, 0.62, lowGraphics ? 16 : 24);
   ringGeo.rotateX(-Math.PI / 2);
@@ -280,7 +280,7 @@ function createCartoonCharacter(
     color: hatType === 'player' ? 0x38bdf8 : 0x22d3ee,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: hatType === 'player' ? 0.55 : 0.28,
+    opacity: hatType === 'player' ? 0.28 : 0.14,
   });
   const highlightRing = new THREE.Mesh(ringGeo, ringMat);
   highlightRing.position.y = 0.02;
@@ -425,7 +425,7 @@ function createCartoonCharacter(
 }
 
 function createInteractivePropRig(propDef: CustomPropDef, lowGraphics: boolean): PropRig {
-  const seg = lowGraphics ? 8 : 14;
+  const seg = lowGraphics ? 12 : 28;
   const root = new THREE.Group();
   root.position.set(propDef.position[0], propDef.position[1], propDef.position[2]);
 
@@ -1212,13 +1212,13 @@ export function updateCustomSceneAnimations(
   const animSpeed = reducedMotion ? 0.25 : 1.0;
 
   if (isPlayerMoving) {
-    const swing = Math.sin(elapsedTime * 10 * animSpeed) * 0.58;
+    const swing = Math.sin(elapsedTime * 8.2 * animSpeed) * 0.36;
     playerRig.leftLegPivot.rotation.x = swing;
     playerRig.rightLegPivot.rotation.x = -swing;
-    playerRig.leftArmPivot.rotation.x = -swing * 0.85;
-    playerRig.rightArmPivot.rotation.x = swing * 0.85;
-    playerRig.torso.position.y = 1.02 + Math.abs(Math.sin(elapsedTime * 10 * animSpeed)) * 0.03;
-    playerRig.headGroup.position.y = 1.66 + Math.abs(Math.sin(elapsedTime * 10 * animSpeed)) * 0.04;
+    playerRig.leftArmPivot.rotation.x = -swing * 0.62;
+    playerRig.rightArmPivot.rotation.x = swing * 0.62;
+    playerRig.torso.position.y = 1.02 + Math.abs(Math.sin(elapsedTime * 8.2 * animSpeed)) * 0.012;
+    playerRig.headGroup.position.y = 1.66 + Math.abs(Math.sin(elapsedTime * 8.2 * animSpeed)) * 0.014;
   } else {
     playerRig.leftLegPivot.rotation.x *= 0.82;
     playerRig.rightLegPivot.rotation.x *= 0.82;
