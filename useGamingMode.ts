@@ -28,6 +28,24 @@ function broadcast(active: boolean) {
   window.dispatchEvent(new CustomEvent(GAMING_EVENT, { detail: { active } }));
 }
 
+/** Request landscape while a 3D simulation is in native fullscreen. Browsers that
+ * do not support orientation locking fall back to the in-game rotate-device overlay. */
+async function lockLandscape() {
+  try {
+    const orientation = (screen as Screen & { orientation?: ScreenOrientation & { lock?: (orientation: string) => Promise<void> } }).orientation;
+    if (orientation?.lock) await orientation.lock('landscape');
+  } catch {
+    // Orientation lock is permission- and browser-dependent; CSS fallback remains available.
+  }
+}
+
+function unlockOrientation() {
+  try {
+    const orientation = (screen as Screen & { orientation?: ScreenOrientation & { unlock?: () => void } }).orientation;
+    orientation?.unlock?.();
+  } catch { /* best-effort cleanup */ }
+}
+
 export function useGamingMode(
   targetRef: React.RefObject<HTMLElement | null>,
   onNativeFullscreenLost: () => void,
@@ -61,6 +79,7 @@ export function useGamingMode(
     setActive(false);
     setNativeFullscreen(false);
     applyDom(false);
+    unlockOrientation();
     void exitNative();
   }, [applyDom, exitNative]);
 
@@ -105,6 +124,7 @@ export function useGamingMode(
   const toggleNative = useCallback(() => {
     if (fsElement()) {
       weEnteredNative.current = false;
+      unlockOrientation();
       void exitNative();
       return;
     }
@@ -118,7 +138,10 @@ export function useGamingMode(
           : undefined;
       if (req && typeof (req as Promise<void>).then === 'function') {
         (req as Promise<void>)
-          .then(() => { weEnteredNative.current = !!fsElement(); })
+          .then(async () => {
+            weEnteredNative.current = !!fsElement();
+            if (weEnteredNative.current) await lockLandscape();
+          })
           .catch(() => { weEnteredNative.current = false; });
       }
     } catch {
@@ -134,6 +157,7 @@ export function useGamingMode(
       if (isFs) {
         weEnteredNative.current = true;
       } else if (weEnteredNative.current && activeRef.current) {
+        unlockOrientation();
         // Native fullscreen ended without the Exit button: pause the run but stay in the immersive layout
         weEnteredNative.current = false;
         lostCb.current();
@@ -152,6 +176,7 @@ export function useGamingMode(
     if (activeRef.current) {
       activeRef.current = false;
       applyDom(false);
+      unlockOrientation();
       void exitNative();
     }
   }, [applyDom, exitNative]);
