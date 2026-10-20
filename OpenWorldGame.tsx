@@ -1118,6 +1118,112 @@ export default function OpenWorldGame() {
 
   return (
     <main ref={pageRef} className="ow-page" dir={isAr ? 'rtl' : 'ltr'}>
+      <style>{`
+/* Guaranteed Physical LEFT Joystick & Physical RIGHT Action Stack in OpenWorldGame */
+html body .ow-page .ow-layout {
+  direction: ltr !important;
+}
+html body .ow-page .ow-stage .ow-controls {
+  position: absolute !important;
+  inset: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  direction: ltr !important;
+  display: block !important;
+  pointer-events: none !important;
+  z-index: 25 !important;
+}
+html body .ow-page .ow-stage .ow-controls .ow-joystick {
+  position: absolute !important;
+  left: max(14px, env(safe-area-inset-left, 0px)) !important;
+  right: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+  top: auto !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 26 !important;
+}
+html body .ow-page .ow-stage .ow-controls .ow-action-stack {
+  position: absolute !important;
+  right: max(14px, env(safe-area-inset-right, 0px)) !important;
+  left: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+  top: auto !important;
+  display: grid !important;
+  justify-items: end !important;
+  gap: 7px !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 26 !important;
+}
+
+/* Complete Clinical Modal Classes for OpenWorldClinicalModals.tsx */
+.ow-modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; border-bottom: 1px solid rgba(255,255,255,.14); padding-bottom: 8px; }
+.ow-sim-badge { display: inline-block; background: rgba(245,158,11,.18); border: 1px solid rgba(251,191,36,.55); color: #fde68a; font-size: .68rem; font-weight: 800; padding: 2px 8px; border-radius: 6px; margin-bottom: 4px; }
+.ow-modal-head h2 { margin: 2px 0; font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ow-code-pill { background: #0284c7; color: #fff; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 800; }
+.ow-room-sub { margin: 2px 0 0; font-size: .75rem; color: #93c5fd; }
+.ow-allergy-banner { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 12px; border-radius: 10px; font-size: .78rem; }
+.ow-allergy-danger { background: rgba(127,29,29,.55); border: 1.5px solid #f87171; color: #fecaca; }
+.ow-allergy-safe { background: rgba(6,78,59,.45); border: 1px solid rgba(52,211,153,.55); color: #d1fae5; }
+.ow-modal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.ow-modal-card { background: #071526; border: 1px solid rgba(56,189,248,.28); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; align-content: start; }
+.ow-modal-card h3 { margin: 0; font-size: .86rem; color: #7dd3fc; }
+.ow-modal-card p { margin: 0; font-size: .78rem; line-height: 1.5; color: #e2e8f0; }
+.ow-muted-text { color: #94a3b8 !important; font-size: .74rem !important; }
+.ow-dialogue-box { background: #0c2d48; border-inline-start: 4px solid #38bdf8; padding: 8px 10px; border-radius: 8px; display: grid; gap: 4px; }
+.ow-vitals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(82px, 1fr)); gap: 6px; }
+.ow-vital-chip { background: #0b192c; border: 1px solid rgba(56,189,248,.35); border-radius: 8px; padding: 6px 5px; text-align: center; display: grid; gap: 2px; }
+.ow-vital-chip small { font-size: .64rem; color: #94a3b8; font-weight: 700; }
+.ow-vital-chip b { font-size: .8rem; color: #38bdf8; font-family: ui-monospace, monospace; }
+.ow-vitals-locked { background: rgba(15,23,42,.8); border: 1px dashed rgba(148,163,184,.45); border-radius: 8px; padding: 10px; font-size: .75rem; color: #cbd5e1; text-align: center; }
+.ow-action-btn-group { display: grid; gap: 6px; }
+.ow-step-btn { display: flex; align-items: center; justify-content: flex-start; gap: 6px; text-align: start; padding: 8px 11px; border-radius: 9px; border: 1px solid rgba(56,189,248,.4); background: #0f2942; color: #f8fafc; font-size: .77rem; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; }
+.ow-step-btn:hover { background: #163a5c; border-color: #38bdf8; }
+.ow-step-btn.done { background: rgba(6,78,59,.65); border-color: #34d399; color: #d1fae5; }
+.ow-escalate-btn { border-color: rgba(248,113,113,.65); background: rgba(127,29,29,.45); }
+.ow-workflow-banner { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; background: #071526; border: 1.5px solid #38bdf8; border-radius: 12px; padding: 10px 12px; }
+.ow-workflow-banner p { margin: 3px 0 0; font-size: .75rem; color: #cbd5e1; }
+.ow-med-safety-box { background: #071526; border: 1.5px solid #f59e0b; border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; }
+.ow-med-safety-box h3 { margin: 0; font-size: .86rem; color: #fde68a; }
+.ow-med-order-summary { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: #04101f; padding: 7px 10px; border-radius: 8px; font-size: .75rem; color: #bae6fd; }
+.ow-allergy-stop-card { background: rgba(127,29,29,.45); border: 1px solid #f87171; border-radius: 10px; padding: 9px 11px; display: grid; gap: 8px; font-size: .77rem; color: #fecaca; }
+.ow-danger-btn { border: 1.5px solid #fca5a5; border-radius: 10px; padding: 9px 14px; background: linear-gradient(135deg, #dc2626, #991b1b); color: #fff; font-weight: 800; font-size: .79rem; cursor: pointer; }
+.ow-safe-med-panel { background: rgba(6,78,59,.35); border: 1px solid #34d399; border-radius: 10px; padding: 9px 11px; display: grid; gap: 8px; }
+.ow-safe-order-line { margin: 0; font-size: .79rem; color: #a7f3d0; }
+.ow-rights-checklist { display: grid; gap: 5px; background: #04101f; padding: 8px 10px; border-radius: 8px; }
+.ow-rights-checklist label { display: flex; align-items: center; gap: 8px; font-size: .75rem; color: #e2e8f0; cursor: pointer; }
+.ow-rights-checklist input { width: 16px; height: 16px; accent-color: #10b981; }
+.ow-modal-feedback { background: rgba(2,132,199,.28); border: 1px solid #38bdf8; color: #e0f2fe; padding: 8px 11px; border-radius: 9px; font-size: .78rem; font-weight: 700; text-align: center; }
+.ow-eq-list { display: grid; gap: 7px; }
+.ow-eq-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: #04101f; border: 1px solid rgba(255,255,255,.12); padding: 8px 10px; border-radius: 9px; }
+.ow-eq-row b { display: block; font-size: .78rem; color: #fff; }
+.ow-eq-row small { display: block; font-size: .69rem; color: #94a3b8; margin-top: 2px; }
+.ow-place-strip { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; background: #0c2d48; border: 1px solid rgba(56,189,248,.45); padding: 7px 10px; border-radius: 9px; font-size: .76rem; }
+.ow-placed-tags { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .73rem; color: #94a3b8; }
+.ow-tag-pill { background: #1e293b; border: 1px solid #475569; color: #e2e8f0; padding: 2px 8px; border-radius: 999px; font-size: .7rem; }
+.ow-xray-viewer { border: 2px solid rgba(56,189,248,.55); border-radius: 12px; overflow: hidden; background: #090d16; max-width: 420px; width: 100%; margin: 4px auto 0; }
+.ow-lab-report { background: #04101f; border: 1px solid #8b5cf6; border-radius: 10px; padding: 9px 12px; font-size: .77rem; }
+.ow-lab-report ul { margin: 6px 0 0; padding-inline-start: 18px; display: grid; gap: 4px; }
+.ow-res-r { color: #f87171; }
+.ow-res-s { color: #34d399; }
+.ow-sbar-summary { background: #04101f; border: 1px solid rgba(56,189,248,.3); border-radius: 10px; padding: 8px 10px; display: grid; gap: 6px; font-size: .75rem; }
+.ow-sbar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px; }
+.ow-sbar-item { background: #0b192c; border: 1px solid rgba(255,255,255,.1); border-radius: 7px; padding: 6px 8px; display: grid; gap: 2px; }
+.ow-sbar-item small { color: #7dd3fc; font-size: .68rem; }
+.ow-staff-modal { max-width: 460px; }
+.ow-staff-quote { background: #071526; border-inline-start: 4px solid #38bdf8; padding: 10px 12px; border-radius: 9px; font-size: .84rem; line-height: 1.6; color: #f1f5f9; }
+`}</style>
       <header className="ow-header">
         <Link to="/games" className="ow-back">
           ← {isAr ? 'مركز الألعاب' : 'Game Center'}
@@ -1175,8 +1281,8 @@ export default function OpenWorldGame() {
         </button>
       </header>
 
-      <section className="ow-layout">
-        <div className="ow-stage">
+      <section className="ow-layout" dir="ltr">
+        <div className="ow-stage" dir="ltr">
           <div className="ow-scene" ref={mountRef} />
 
           {/* Top-Left Collapsible Menu & HUD Toggle Buttons */}
@@ -1462,10 +1568,35 @@ export default function OpenWorldGame() {
           )}
 
           {/* Bottom Controls: Physical LEFT Virtual Joystick + Physical RIGHT Action Buttons */}
-          <div className="ow-controls" dir="ltr">
+          <div
+            className="ow-controls"
+            dir="ltr"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              width: '100%',
+              height: '100%',
+              direction: 'ltr',
+              pointerEvents: 'none',
+              zIndex: 25,
+            }}
+          >
             <div
               ref={joyBaseRef}
               className="ow-joystick"
+              style={{
+                position: 'absolute',
+                left: '14px',
+                right: 'auto',
+                bottom: '14px',
+                top: 'auto',
+                pointerEvents: 'auto',
+                zIndex: 26,
+              }}
               role="group"
               aria-label={isAr ? 'عصا الحركة' : 'Movement joystick'}
               onPointerDown={(e) => {
@@ -1505,7 +1636,21 @@ export default function OpenWorldGame() {
               <span className="ow-joystick-knob" />
             </div>
 
-            <div className="ow-action-stack">
+            <div
+              className="ow-action-stack"
+              style={{
+                position: 'absolute',
+                right: '14px',
+                left: 'auto',
+                bottom: '14px',
+                top: 'auto',
+                display: 'grid',
+                justifyItems: 'end',
+                gap: '7px',
+                pointerEvents: 'auto',
+                zIndex: 26,
+              }}
+            >
               {gameState.carriedItemId && (
                 <button
                   type="button"
@@ -1541,6 +1686,7 @@ export default function OpenWorldGame() {
         {/* Slide-Out / Side Panel: 8 Playable Missions, Patients Status & Hospital Navigation */}
         <aside
           className={`ow-sidebar ${showGameMenu ? 'ow-sidebar-open' : ''}`}
+          dir={isAr ? 'rtl' : 'ltr'}
           aria-hidden={!showGameMenu && isFullscreen}
         >
           <span className="ow-kicker">3D NURSING SIMULATION • 8 MISSIONS</span>

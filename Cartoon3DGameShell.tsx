@@ -2485,8 +2485,100 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
           )}
 
           {/* Mobile & Touch HUD Controls (strictly physical LEFT for joystick in both AR & EN) */}
-          <div className="ms-hud-controls" dir="ltr">
-            <div className="ms-joystick-zone">
+          <style>{`
+          html body .ms-wrapper.ms-immersive .ms-viewport {
+            flex: 1 1 0% !important;
+            min-height: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            position: relative !important;
+            overflow: hidden !important;
+          }
+          html body .ms-wrapper .ms-viewport .ms-hud-controls,
+          html.bh-gaming body .ms-wrapper.ms-immersive .ms-hud-controls {
+            position: absolute !important;
+            inset: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            direction: ltr !important;
+            display: block !important;
+            pointer-events: none !important;
+            z-index: 35 !important;
+          }
+          html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-joystick-zone,
+          html.bh-gaming body .ms-wrapper.ms-immersive .ms-joystick-zone {
+            position: absolute !important;
+            left: max(14px, env(safe-area-inset-left, 0px)) !important;
+            right: auto !important;
+            inset-inline-start: auto !important;
+            inset-inline-end: auto !important;
+            bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+            top: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 5px !important;
+            pointer-events: auto !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 36 !important;
+          }
+          html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-action-zone,
+          html.bh-gaming body .ms-wrapper.ms-immersive .ms-action-zone {
+            position: absolute !important;
+            right: max(14px, env(safe-area-inset-right, 0px)) !important;
+            left: auto !important;
+            inset-inline-start: auto !important;
+            inset-inline-end: auto !important;
+            bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+            top: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: flex-end !important;
+            gap: 6px !important;
+            pointer-events: auto !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 36 !important;
+          }
+        `}</style>
+          <div
+            className="ms-hud-controls"
+            dir="ltr"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              width: '100%',
+              height: '100%',
+              direction: 'ltr',
+              pointerEvents: 'none',
+              zIndex: 35,
+            }}
+          >
+            <div
+              className="ms-joystick-zone"
+              style={{
+                position: 'absolute',
+                left: '14px',
+                right: 'auto',
+                bottom: '14px',
+                top: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '5px',
+                pointerEvents: 'auto',
+                zIndex: 36,
+              }}
+            >
               <div
                 ref={joyBaseRef}
                 className="ms-joystick-base"
@@ -2542,7 +2634,22 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
               </span>
             </div>
 
-            <div className="ms-action-zone">
+            <div
+              className="ms-action-zone"
+              style={{
+                position: 'absolute',
+                right: '14px',
+                left: 'auto',
+                bottom: '14px',
+                top: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                gap: '6px',
+                pointerEvents: 'auto',
+                zIndex: 36,
+              }}
+            >
               <button
                 type="button"
                 className="ms-cam-reset-btn"

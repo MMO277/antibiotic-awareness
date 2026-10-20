@@ -543,3 +543,57 @@
 
 .ms-immersive:not(.ms-hud-expanded) .ms-objective-bar,
 .ms-immersive .ms-controls-hint-banner { display: none !important; }
+
+
+/* Guaranteed physical LEFT joystick and physical RIGHT action buttons with explicit bottom anchor */
+html body .ms-wrapper .ms-viewport .ms-hud-controls,
+html.bh-gaming body .ms-wrapper.ms-immersive .ms-hud-controls {
+  position: absolute !important;
+  inset: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  direction: ltr !important;
+  display: block !important;
+  pointer-events: none !important;
+  z-index: 35 !important;
+}
+html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-joystick-zone,
+html.bh-gaming body .ms-wrapper.ms-immersive .ms-joystick-zone {
+  position: absolute !important;
+  left: max(14px, env(safe-area-inset-left, 0px)) !important;
+  right: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+  top: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 5px !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 36 !important;
+}
+html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-action-zone,
+html.bh-gaming body .ms-wrapper.ms-immersive .ms-action-zone {
+  position: absolute !important;
+  right: max(14px, env(safe-area-inset-right, 0px)) !important;
+  left: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+  top: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 6px !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 36 !important;
+}

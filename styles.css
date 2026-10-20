@@ -4625,21 +4625,111 @@ html.bh-gaming, html.bh-gaming body { overflow: hidden; overscroll-behavior: non
     transform-origin: center center !important;
     z-index: 12000 !important;
   }
-  html.bh-gaming .ms-wrapper.ms-immersive .ms-viewport,
-  html.bh-gaming .ms-wrapper.ms-immersive .ms-canvas-container { width: 100% !important; height: 100% !important; }
-  /* Pin the movement joystick to the physical left edge, regardless of RTL, DOM flex rules, or per-game HUD styles. */
-  html.bh-gaming .ms-wrapper.ms-immersive .ms-hud-controls {
-    position: absolute !important; left: 0 !important; right: 0 !important; inset-inline: unset !important;
-    width: 100% !important; direction: ltr !important; flex-direction: row !important;
+  html.bh-gaming .ms-wrapper.ms-immersive .ms-viewport {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    position: relative !important;
   }
-  html.bh-gaming .ms-wrapper.ms-immersive .ms-joystick-zone { position: absolute !important; left: max(12px, env(safe-area-inset-left, 0px)) !important; right: auto !important; order: 0 !important; }
-  html.bh-gaming .ms-wrapper.ms-immersive .ms-action-zone { position: absolute !important; right: max(12px, env(safe-area-inset-right, 0px)) !important; left: auto !important; order: 1 !important; }
+  html.bh-gaming .ms-wrapper.ms-immersive .ms-canvas-container {
+    width: 100% !important;
+    height: 100% !important;
+  }
 }
-/* Landscape physical orientation also keeps the same left/right HUD placement. */
-html.bh-gaming .ms-wrapper.ms-immersive .ms-hud-controls { direction: ltr !important; flex-direction: row !important; }
-html.bh-gaming .ms-wrapper.ms-immersive .ms-joystick-zone { order: 0 !important; }
-html.bh-gaming .ms-wrapper.ms-immersive .ms-action-zone { order: 1 !important; }
-/* Hard pin joystick/action zones for every immersive simulation, in both Arabic RTL and English LTR. */
-html.bh-gaming .ms-wrapper.ms-immersive .ms-hud-controls { position: absolute !important; direction: ltr !important; flex-direction: row !important; }
-html.bh-gaming .ms-wrapper.ms-immersive .ms-joystick-zone { position: absolute !important; left: max(12px, env(safe-area-inset-left, 0px)) !important; right: auto !important; order: 0 !important; }
-html.bh-gaming .ms-wrapper.ms-immersive .ms-action-zone { position: absolute !important; right: max(12px, env(safe-area-inset-right, 0px)) !important; left: auto !important; order: 1 !important; }
+
+/* Hard-pin joystick to physical LEFT and action buttons to physical RIGHT across all 3D simulations,
+   with explicit bottom: 14px and full-size container so the joystick is NEVER clipped by overflow:hidden. */
+html body .ms-wrapper .ms-viewport .ms-hud-controls,
+html.bh-gaming .ms-wrapper.ms-immersive .ms-hud-controls {
+  position: absolute !important;
+  inset: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  direction: ltr !important;
+  display: block !important;
+  pointer-events: none !important;
+  z-index: 35 !important;
+}
+html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-joystick-zone,
+html.bh-gaming .ms-wrapper.ms-immersive .ms-joystick-zone {
+  position: absolute !important;
+  left: max(14px, env(safe-area-inset-left, 0px)) !important;
+  right: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+  top: auto !important;
+  order: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 5px !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 36 !important;
+}
+html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-action-zone,
+html.bh-gaming .ms-wrapper.ms-immersive .ms-action-zone {
+  position: absolute !important;
+  right: max(14px, env(safe-area-inset-right, 0px)) !important;
+  left: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+  top: auto !important;
+  order: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 6px !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 36 !important;
+}
+html body .ow-page .ow-stage .ow-controls {
+  position: absolute !important;
+  inset: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  direction: ltr !important;
+  display: block !important;
+  pointer-events: none !important;
+  z-index: 25 !important;
+}
+html body .ow-page .ow-stage .ow-controls .ow-joystick {
+  position: absolute !important;
+  left: max(14px, env(safe-area-inset-left, 0px)) !important;
+  right: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+  top: auto !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 26 !important;
+}
+html body .ow-page .ow-stage .ow-controls .ow-action-stack {
+  position: absolute !important;
+  right: max(14px, env(safe-area-inset-right, 0px)) !important;
+  left: auto !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: auto !important;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
+  top: auto !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 26 !important;
+}
