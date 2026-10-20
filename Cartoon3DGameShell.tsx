@@ -566,7 +566,6 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
   const [paused, setPaused] = useState<boolean>(false);
   const [showControlsHint, setShowControlsHint] = useState<boolean>(true);
   const [showMissionDrawer, setShowMissionDrawer] = useState<boolean>(false);
-  const [showImmersiveHud, setShowImmersiveHud] = useState<boolean>(false);
   const [showEvidenceJournal, setShowEvidenceJournal] = useState<boolean>(false);
   const [lockedToastMsg, setLockedToastMsg] = useState<string>('');
   const [confirmExit, setConfirmExit] = useState<boolean>(false);
@@ -648,6 +647,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
   const gaming = useGamingMode(wrapperRef, () => {
     setPaused(true);
   });
+  const [immersiveMenuOpen, setImmersiveMenuOpen] = useState(false);
 
   const currentNode = useMemo(() => {
     if (missionFinished || !activeMission?.nodes) return null;
@@ -1388,8 +1388,20 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
       <div
         ref={wrapperRef}
         dir={isAr ? 'rtl' : 'ltr'}
-        className={`card ms-wrapper ${gaming.active ? 'bh-immersive ms-immersive' : ''} ${showImmersiveHud ? 'ms-hud-expanded' : ''}`}
+        className={`card ms-wrapper ${gaming.active ? 'bh-immersive ms-immersive' : ''} ${immersiveMenuOpen ? 'ms-hud-expanded' : ''}`}
       >
+        {gaming.active && (
+          <button
+            type="button"
+            className="ms-immersive-menu-toggle"
+            onClick={() => setImmersiveMenuOpen((open) => !open)}
+            aria-expanded={immersiveMenuOpen}
+            aria-label={immersiveMenuOpen ? (isAr ? 'إخفاء قائمة اللعبة' : 'Hide game menu') : (isAr ? 'فتح قائمة اللعبة' : 'Open game menu')}
+            title={immersiveMenuOpen ? (isAr ? 'إخفاء القائمة' : 'Hide menu') : (isAr ? 'فتح القائمة' : 'Open menu')}
+          >
+            {immersiveMenuOpen ? '⌄' : '☰'}
+          </button>
+        )}
         {/* Top Control & Telemetry Bar */}
         <header className="ms-topbar">
           <div className="ms-topbar-left">
@@ -1783,16 +1795,6 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
           onPointerCancel={handleViewportPointerUp}
         >
           <canvas ref={canvasRef} className="ms-canvas" />
-          <button
-            type="button"
-            className="ms-immersive-menu-toggle"
-            onClick={() => setShowImmersiveHud((shown) => !shown)}
-            aria-label={isAr ? 'إظهار/إخفاء قائمة اللعبة' : 'Show/hide game menu'}
-            aria-expanded={showImmersiveHud}
-            title={isAr ? 'إظهار/إخفاء قائمة اللعبة' : 'Show/hide game menu'}
-          >
-            {showImmersiveHud ? '⌃' : '⌄'}
-          </button>
 
           {/* Skippable Cinematic Camera Fly-In Indicator */}
           {cinematicActive && sceneStatus === 'ready' && !modalOpen && !missionFinished && (

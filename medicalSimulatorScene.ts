@@ -356,10 +356,10 @@ export function buildHospitalWardScene(lowGraphics: boolean): WardSceneAssets {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0b192c);
   if (!lowGraphics) {
-    scene.fog = new THREE.Fog(0x0b192c, 24, 52);
+    scene.fog = new THREE.Fog(0x0b192c, 34, 78);
   }
 
-  const camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 90);
+  const camera = new THREE.PerspectiveCamera(55, 16 / 9, 0.1, 110);
   camera.position.set(0, 4.8, 5.5);
 
   const disposableGeometries: THREE.BufferGeometry[] = [];
@@ -377,18 +377,18 @@ export function buildHospitalWardScene(lowGraphics: boolean): WardSceneAssets {
   dirLight.position.set(6, 12, 8);
   scene.add(dirLight);
 
-  const wardBounds = { minX: -8.8, maxX: 8.8, minZ: -14.5, maxZ: 6.8 };
+  const wardBounds = { minX: -18.8, maxX: 18.8, minZ: -14.8, maxZ: 14.8 };
   const baseObstacles: BoxObstacle[] = [];
   const obstacles: BoxObstacle[] = [];
 
   // 1. Hospital Floor with Clinical Tile Grid
-  const floorGeo = new THREE.PlaneGeometry(20, 30);
+  const floorGeo = new THREE.PlaneGeometry(40, 32);
   floorGeo.rotateX(-Math.PI / 2);
   const floorMat = new THREE.MeshLambertMaterial({ color: 0xe2e8f0 });
   const floorMesh = new THREE.Mesh(floorGeo, floorMat);
   scene.add(floorMesh);
 
-  const gridHelper = new THREE.GridHelper(20, 30, 0x94a3b8, 0xcbd5e1);
+  const gridHelper = new THREE.GridHelper(40, 40, 0x94a3b8, 0xcbd5e1);
   gridHelper.position.y = 0.01;
   scene.add(gridHelper);
 
@@ -404,57 +404,46 @@ export function buildHospitalWardScene(lowGraphics: boolean): WardSceneAssets {
   addFloorZone(4.5, -2.8, 4.6, 3.6, 0xdbeafe);
   addFloorZone(-5.2, 3.2, 5.2, 4.4, 0xe0f2fe);
   addFloorZone(5.2, 3.4, 4.8, 4.2, 0xd1fae5);
+  // Additional clinical wings make this a navigable hospital building, not a single boxed room.
+  addFloorZone(-11.5, -11.8, 8.5, 7.2, 0xdbeafe);
+  addFloorZone(11.5, -11.8, 8.5, 7.2, 0xccfbf1);
+  addFloorZone(0, 10.5, 36, 8.5, 0xf1f5f9);
 
   // 2. Perimeter Walls
   const wallMat = new THREE.MeshLambertMaterial({ color: 0xf1f5f9 });
   const trimMat = new THREE.MeshLambertMaterial({ color: 0x0e9aa7 });
 
-  // The former solid back wall is now split around a wide doorway into the main corridor.
-  const backWallLeft = new THREE.Mesh(new THREE.BoxGeometry(8.2, 4.2, 0.4), wallMat);
-  backWallLeft.position.set(-5.9, 2.1, -8);
-  const backWallRight = new THREE.Mesh(new THREE.BoxGeometry(8.2, 4.2, 0.4), wallMat);
-  backWallRight.position.set(5.9, 2.1, -8);
-  scene.add(backWallLeft, backWallRight);
-  const corridorFloor = new THREE.Mesh(
-    new THREE.PlaneGeometry(20, 14),
-    new THREE.MeshLambertMaterial({ color: 0xdbeafe })
-  );
-  corridorFloor.rotation.x = -Math.PI / 2;
-  corridorFloor.position.set(0, 0.008, -11);
-  scene.add(corridorFloor);
-  const corridorCenterLine = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.35, 14),
-    new THREE.MeshLambertMaterial({ color: 0x99f6e4 })
-  );
-  corridorCenterLine.rotation.x = -Math.PI / 2;
-  corridorCenterLine.position.set(0, 0.018, -11);
-  scene.add(corridorCenterLine);
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(40, 4.2, 0.4), wallMat);
+  backWall.position.set(0, 2.1, -16);
+  scene.add(backWall);
 
-  const backTrim = new THREE.Mesh(new THREE.BoxGeometry(20, 0.35, 0.44), trimMat);
-  backTrim.position.set(0, 1.1, -7.98);
+  const backTrim = new THREE.Mesh(new THREE.BoxGeometry(40, 0.35, 0.44), trimMat);
+  backTrim.position.set(0, 1.1, -15.98);
   scene.add(backTrim);
 
-  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.2, 30), wallMat);
-  leftWall.position.set(-10, 2.1, -1);
+  const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.2, 32), wallMat);
+  leftWall.position.set(-20, 2.1, 0);
   scene.add(leftWall);
 
-  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.2, 30), wallMat);
-  rightWall.position.set(10, 2.1, -1);
+  const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.4, 4.2, 32), wallMat);
+  rightWall.position.set(20, 2.1, 0);
   scene.add(rightWall);
 
   const doorFrame = new THREE.Mesh(
     new THREE.BoxGeometry(2.4, 3.1, 0.48),
     new THREE.MeshLambertMaterial({ color: 0x0b3c5d })
   );
-  doorFrame.position.set(0, 1.55, -7.95);
+  doorFrame.position.set(0, 1.55, -15.95);
+  doorFrame.visible = false; // Keep the corridor walkable; the decorative frame is rebuilt as posts below.
   scene.add(doorFrame);
 
   const doorPanel = new THREE.Mesh(
     new THREE.BoxGeometry(2.0, 2.85, 0.52),
     new THREE.MeshLambertMaterial({ color: 0x38bdf8 })
   );
-  doorPanel.position.set(0, 1.45, -7.93);
-  // Keep the frame as a doorway landmark; the door leaf is intentionally omitted so it stays open.
+  doorPanel.position.set(0, 1.45, -15.93);
+  doorPanel.visible = false; // The corridor doorway is intentionally open for free exploration.
+  scene.add(doorPanel);
 
   // 3. 3D Department Signs Above Stations
   const addStationSign = (
@@ -480,13 +469,38 @@ export function buildHospitalWardScene(lowGraphics: boolean): WardSceneAssets {
 
   addStationSign(-4.2, 3.1, -7.7, 0, 'محطة التمريض', 'Nursing Station', '#0f766e', '#2dd4bf', '👩‍⚕️');
   addStationSign(4.5, 3.1, -7.7, 0, 'مكتب الطبيب الاستشاري', 'Physician Consult', '#1e3a8a', '#60a5fa', '👨‍⚕️');
-  addStationSign(-9.7, 3.1, 3.2, Math.PI / 2, 'جناح المرضى - سرير ١', 'Patient Ward - Bed 1', '#0369a1', '#38bdf8', '🛌');
-  addStationSign(9.7, 3.1, 3.4, -Math.PI / 2, 'الصيدلية والمختبر', 'Pharmacy & Lab', '#065f46', '#34d399', '💊');
-  addStationSign(0, 3.55, -15.0, 0, 'المستشفى الرئيسي - الممر الطبي', 'MAIN HOSPITAL • CLINICAL CORRIDOR', '#0f172a', '#67e8f9', '🏥');
-  addStationSign(-9.7, 3.0, -10.2, Math.PI / 2, 'غرفة الأشعة', 'Radiology', '#1d4ed8', '#93c5fd', '🩻');
-  addStationSign(9.7, 3.0, -10.2, -Math.PI / 2, 'غرفة الإجراءات', 'Treatment Room', '#0f766e', '#5eead4', '🩺');
-  addStationSign(-9.7, 3.0, -13.5, Math.PI / 2, 'جناح المرضى', 'Patient Wing', '#0369a1', '#7dd3fc', '🛏️');
-  addStationSign(9.7, 3.0, -13.5, -Math.PI / 2, 'المختبر المركزي', 'Central Laboratory', '#065f46', '#6ee7b7', '🧪');
+  addStationSign(-19.7, 3.1, 3.2, Math.PI / 2, 'جناح المرضى - سرير ١', 'Patient Ward - Bed 1', '#0369a1', '#38bdf8', '🛌');
+  addStationSign(19.7, 3.1, 3.4, -Math.PI / 2, 'الصيدلية والمختبر', 'Pharmacy & Lab', '#065f46', '#34d399', '💊');
+  addStationSign(0, 3.45, -15.72, 0, 'المستشفى التعليمي العام', 'GENERAL TEACHING HOSPITAL', '#102a43', '#38bdf8', '✚');
+
+  // Main corridor and two walk-in clinical rooms on either side. Each wall leaves a door-width opening.
+  const wingWallMat = new THREE.MeshLambertMaterial({ color: 0xe2e8f0 });
+  const addWingWall = (w:number,h:number,d:number,x:number,y:number,z:number) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wingWallMat); m.position.set(x,y,z); scene.add(m); m.castShadow = true; baseObstacles.push({ minX:x-w/2, maxX:x+w/2, minZ:z-d/2, maxZ:z+d/2 }); };
+  addWingWall(5.25, 3.4, .24, -15.375, 1.7, -8.3);
+  addWingWall(5.25, 3.4, .24, -7.625, 1.7, -8.3);
+  addWingWall(5.25, 3.4, .24, 7.625, 1.7, -8.3);
+  addWingWall(5.25, 3.4, .24, 15.375, 1.7, -8.3);
+  addWingWall(.24, 3.4, 1.9, -4.6, 1.7, -9.3); addWingWall(.24, 3.4, 1.9, -4.6, 1.7, -13.9);
+  addWingWall(.24, 3.4, 1.9, 4.6, 1.7, -9.3); addWingWall(.24, 3.4, 1.9, 4.6, 1.7, -13.9);
+  // Front facade frames a wide entrance; the door is open so the player can walk through the whole wing.
+  const frontWallMat = new THREE.MeshLambertMaterial({ color: 0xf1f5f9 });
+  const frontLeft = new THREE.Mesh(new THREE.BoxGeometry(15.5, 4.2, .4), frontWallMat); frontLeft.position.set(-12.25, 2.1, 16); scene.add(frontLeft);
+  const frontRight = new THREE.Mesh(new THREE.BoxGeometry(15.5, 4.2, .4), frontWallMat); frontRight.position.set(12.25, 2.1, 16); scene.add(frontRight);
+  const entryPostMat = new THREE.MeshLambertMaterial({ color: 0x0f766e });
+  for(const x of [-4.2,4.2]){const post=new THREE.Mesh(new THREE.BoxGeometry(.28,3.4,.48),entryPostMat);post.position.set(x,1.7,15.85);scene.add(post);}
+  const entryHeader = new THREE.Mesh(new THREE.BoxGeometry(8.7,.28,.5),trimMat);entryHeader.position.set(0,3.45,15.85);scene.add(entryHeader);
+  // Long clinical corridors use glass side windows and ceiling light panels to establish a real building scale.
+  const corridorGlass = new THREE.MeshLambertMaterial({ color: 0x9bdcf5, emissive: 0x164e63, emissiveIntensity: .18 });
+  for(let z=-13;z<=13;z+=4.3){for(const x of [-19.76,19.76]){const win=new THREE.Mesh(new THREE.BoxGeometry(.08,1.35,1.65),corridorGlass);win.position.set(x,2.65,z);scene.add(win);}}
+  const ceilingLampMat = new THREE.MeshBasicMaterial({ color: 0xfef3c7 });
+  for(const z of [-13,-9,-4,1,6,11]){const panel=new THREE.Mesh(new THREE.BoxGeometry(1.9,.06,.55),ceilingLampMat);panel.position.set(0,3.95,z);scene.add(panel);const sidePanel=new THREE.Mesh(new THREE.BoxGeometry(1.2,.06,.45),ceilingLampMat);sidePanel.position.set(-11.4,3.95,z);scene.add(sidePanel);const sidePanelR=sidePanel.clone();sidePanelR.position.x=11.4;scene.add(sidePanelR);}
+  // Named rooms with recognizable equipment, visible from the central corridor.
+  const xrayFrame = new THREE.Mesh(new THREE.TorusGeometry(1.05,.18,10,28), new THREE.MeshLambertMaterial({ color: 0x94a3b8 })); xrayFrame.position.set(-11.4,1.65,-12.4); xrayFrame.rotation.y=Math.PI/2; scene.add(xrayFrame);
+  const xrayBed = new THREE.Mesh(new THREE.BoxGeometry(2.5,.24,.8), new THREE.MeshLambertMaterial({ color: 0xffffff })); xrayBed.position.set(-11.4,.72,-12.4); scene.add(xrayBed);
+  const labBench = new THREE.Mesh(new THREE.BoxGeometry(5.2,.22,1.05), new THREE.MeshLambertMaterial({ color: 0x94a3b8 })); labBench.position.set(11.4,1.0,-12.8); scene.add(labBench);
+  for(let i=0;i<6;i++){const tube=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.42,10),new THREE.MeshLambertMaterial({ color:[0x38bdf8,0x34d399,0xfbbf24,0xf87171,0xa78bfa,0x22c55e][i] }));tube.position.set(9.6+i*.72,1.32,-12.8);scene.add(tube);}
+  addStationSign(-11.4, 3.05, -9.05, 0, 'قسم الأشعة', 'RADIOLOGY', '#1e3a8a', '#60a5fa', '✳');
+  addStationSign(11.4, 3.05, -9.05, 0, 'المعمل المركزي', 'CENTRAL LAB', '#065f46', '#34d399', '⚗');
 
   // 4. Station 1: Nursing Station Desk
   const nurseDesk = new THREE.Mesh(

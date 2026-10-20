@@ -57,3 +57,19 @@
   .ow-page:fullscreen .ow-interact { padding: 11px 12px; }
   .ow-page:fullscreen .ow-camera-tip { display: none; }
 }
+
+/* World-map landmarks for the expanded seven-building campus. */
+.ow-map-dot { transform: translate(-50%, -50%); box-shadow: 0 0 0 2px rgba(6,19,38,.55), 0 0 10px rgba(255,255,255,.25); }
+.ow-map-dot-0 { background: #fb7185; }
+.ow-map-dot-1 { background: #34d399; }
+.ow-map-dot-2 { background: #60a5fa; }
+.ow-map-dot-3 { background: #c084fc; }
+.ow-map-dot-4 { background: #38bdf8; }
+.ow-map-dot-5 { background: #4ade80; }
+.ow-map-dot-6 { background: #f87171; animation: ow-emergency-pulse 1.6s ease-in-out infinite; }
+@keyframes ow-emergency-pulse { 0%,100% { box-shadow: 0 0 0 2px rgba(6,19,38,.55), 0 0 0 0 rgba(248,113,113,.45); } 50% { box-shadow: 0 0 0 2px rgba(6,19,38,.55), 0 0 0 6px rgba(248,113,113,0); } }
+.ow-place-list button { transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+.ow-place-list button:hover { transform: translateY(-2px); }
+.ow-page:fullscreen .ow-dialog { z-index: 40; }
+.ow-page:fullscreen .ow-controls { direction: ltr !important; }
+@media (prefers-reduced-motion: reduce) { .ow-map-dot-6 { animation: none; } .ow-place-list button { transition: none; } }
