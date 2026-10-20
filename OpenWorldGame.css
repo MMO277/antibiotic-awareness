@@ -74,24 +74,30 @@
 .ow-page:fullscreen .ow-controls { direction: ltr !important; }
 @media (prefers-reduced-motion: reduce) { .ow-map-dot-6 { animation: none; } .ow-place-list button { transition: none; } }
 
-/* Open World: request landscape on fullscreen and provide a visible fallback on mobile browsers. */
+/* Auto-rotate the game interface itself on portrait phones. The player does not need to turn the device. */
 @media (orientation: portrait) and (max-width: 900px) and (pointer: coarse) {
-  .ow-page::after {
-    content: "↻\A ROTATE YOUR PHONE\A أدر الهاتف بالعرض";
-    white-space: pre-line;
-    position: fixed;
-    inset: 0;
-    z-index: 20000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    text-align: center;
-    padding: 24px;
-    box-sizing: border-box;
-    background: radial-gradient(ellipse at center, rgba(16, 42, 66, .98), rgba(3, 10, 20, .99));
-    color: #f8fafc;
-    font: 800 clamp(1.15rem, 5vw, 2rem)/1.8 system-ui, sans-serif;
-    pointer-events: none;
+  .ow-page {
+    position: fixed !important; left: 50% !important; top: 50% !important; right: auto !important; bottom: auto !important;
+    width: 100dvh !important; height: 100dvw !important; min-height: 100dvw !important;
+    padding: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important;
+    overflow: hidden !important; box-sizing: border-box !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important; transform-origin: center center !important;
+    z-index: 12000 !important;
   }
+  .ow-page .ow-header { position: absolute !important; z-index: 25; top: 8px; right: 8px; margin: 0 !important; }
+  .ow-page .ow-header > :not(.ow-fullscreen) { display: none !important; }
+  .ow-page .ow-fullscreen { width: 42px; height: 40px; justify-content: center; padding: 0; background: #061a31c9; }
+  .ow-page .ow-layout { display: block !important; position: relative; width: 100%; height: 100%; min-height: 0; }
+  .ow-page .ow-stage { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .ow-page .ow-sidebar { display: none !important; }
+  .ow-page .ow-sidebar.ow-sidebar-open { display: block !important; position: absolute; z-index: 18; top: 58px; right: 12px; bottom: 12px; width: min(340px, calc(100dvh - 24px)); max-width: calc(100% - 24px); box-sizing: border-box; overflow: auto; background: rgba(7, 26, 48, .97); backdrop-filter: blur(16px); box-shadow: 0 16px 48px #0008; }
+  .ow-page .ow-menu-toggle { position: absolute; z-index: 22; top: 10px; left: 10px; display: grid; place-items: center; }
+  .ow-page .ow-hud { display: none !important; }
+  .ow-page .ow-camera-hint, .ow-page .ow-footer { display: none !important; }
+  .ow-page .ow-controls { direction: ltr !important; flex-direction: row !important; bottom: 12px; left: 12px; right: 12px; }
+  .ow-page .ow-joystick { order: 0 !important; }
+  .ow-page .ow-action-stack { order: 1 !important; }
+  .ow-page::after { content: none !important; display: none !important; }
 }
+
+.ow-mission-list{display:grid;gap:8px;margin:18px 0 14px}.ow-mission-list h2{font-size:1rem;margin:0 0 3px;color:#f8fafc}.ow-mission-card{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #6b3444;border-radius:12px;background:linear-gradient(110deg,#3a2030,#10243b)}.ow-mission-card>span{font-size:24px}.ow-mission-card>div{display:grid;gap:4px}.ow-mission-card b{font-size:.82rem}.ow-mission-card small{font-size:.7rem;color:#c5d6e7;line-height:1.5}
