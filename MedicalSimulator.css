@@ -1367,11 +1367,9 @@
   .ms-immersive .ms-joystick-base { width: 94px; height: 94px; }
 }
 
-/* Mission objective strips should not cover the 3D world in immersive play. */
-.ms-immersive .ms-objective-bar,
-.ms-immersive .ms-controls-hint-banner,
-.ms-immersive .ms-target-chip,
-.ms-immersive .ms-locked-toast { display: none !important; }
+/* Mission objective strips are toggleable via the HUD menu button so they never block 3D play unless expanded. */
+.ms-immersive:not(.ms-hud-expanded) .ms-objective-bar,
+.ms-immersive .ms-controls-hint-banner { display: none !important; }
 
 /* Keep shared 3D simulations consistent on physical phone orientation, including Arabic RTL. */
 .ms-immersive .ms-hud-controls { direction: ltr !important; flex-direction: row !important; left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px)); inset-inline: unset; }

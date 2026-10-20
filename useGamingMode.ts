@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * Gaming Mode for Bacteria Hunter.
+ * Gaming Mode & Automatic Landscape Orientation Controller for 3D Simulations & Bacteria Hunter.
  *
- * - `enter()` must be called from a user gesture (tap/click) so the browser may grant native fullscreen.
- * - Native fullscreen is best-effort. If it is unsupported or rejected, the CSS "immersive" layout
- *   (`.bh-immersive`, applied by the caller via `active`) still fills the viewport.
+ * - `enter()` activates the immersive viewport layout immediately and, when called from a user gesture
+ *   (or when `opts.native !== false`), requests browser fullscreen first and then attempts
+ *   `screen.orientation.lock('landscape')`.
+ * - If native fullscreen or native orientation lock is rejected or unsupported (e.g. iOS Safari or
+ *   restricted mobile WebViews), the CSS auto-landscape viewport fallback rotates the game interface
+ *   cleanly without blocking gameplay behind a "rotate your phone" dead-end screen.
  * - While active, `html` gets the `bh-gaming` class (hides the floating assistant/SOS widget and locks
- *   page scroll). The class and the `bh:gaming-mode` event are always cleaned up on exit/unmount.
+ *   page scroll). Both fullscreen, orientation lock, and DOM classes are restored on exit/unmount.
  */
 
 export const GAMING_CLASS = 'bh-gaming';
@@ -20,30 +23,72 @@ type FsDoc = Document & {
 type FsEl = HTMLElement & { webkitRequestFullscreen?: () => Promise<void> | void };
 
 function fsElement(): Element | null {
+  if (typeof document === 'undefined') return null;
   const d = document as FsDoc;
   return document.fullscreenElement ?? d.webkitFullscreenElement ?? null;
 }
 
 function broadcast(active: boolean) {
+  if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent(GAMING_EVENT, { detail: { active } }));
 }
 
-/** Request landscape while a 3D simulation is in native fullscreen. Browsers that
- * do not support orientation locking fall back to the in-game rotate-device overlay. */
-async function lockLandscape() {
+/**
+ * Request landscape orientation lock when supported.
+ * Some browsers require fullscreen before locking orientation; callers should request fullscreen first
+ * and then invoke `lockLandscape()`.
+ */
+export async function lockLandscape(): Promise<boolean> {
+  if (typeof screen === 'undefined') return false;
   try {
-    const orientation = (screen as Screen & { orientation?: ScreenOrientation & { lock?: (orientation: string) => Promise<void> } }).orientation;
-    if (orientation?.lock) await orientation.lock('landscape');
+    const orientation = (
+      screen as Screen & {
+        orientation?: ScreenOrientation & { lock?: (mode: string) => Promise<void> };
+      }
+    ).orientation;
+    if (orientation?.lock) {
+      await orientation.lock('landscape');
+      return true;
+    }
   } catch {
-    // Orientation lock is permission- and browser-dependent; CSS fallback remains available.
+    // Orientation lock is permission- and browser-dependent; CSS landscape fallback remains active.
+  }
+  return false;
+}
+
+export function unlockOrientation(): void {
+  if (typeof screen === 'undefined') return;
+  try {
+    const orientation = (
+      screen as Screen & {
+        orientation?: ScreenOrientation & { unlock?: () => void };
+      }
+    ).orientation;
+    orientation?.unlock?.();
+  } catch {
+    /* best-effort cleanup */
   }
 }
 
-function unlockOrientation() {
-  try {
-    const orientation = (screen as Screen & { orientation?: ScreenOrientation & { unlock?: () => void } }).orientation;
-    orientation?.unlock?.();
-  } catch { /* best-effort cleanup */ }
+/**
+ * Detects whether the CSS portrait-to-landscape 90-degree clockwise rotation fallback is currently
+ * active on a coarse-pointer mobile viewport (`@media (orientation: portrait) and (max-width: 900px) and (pointer: coarse)`).
+ * When true, pointer/touch deltas (clientX, clientY) should be transformed into the rotated container's local axes.
+ */
+export function isCssPortraitRotatedFallback(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(orientation: portrait) and (max-width: 900px) and (pointer: coarse)').matches;
+}
+
+/**
+ * Maps screen-space delta `(rawDx, rawDy)` into the game container's local coordinate axes,
+ * accounting for the 90-degree clockwise CSS rotation fallback when the physical device is in portrait.
+ */
+export function mapScreenDeltaToLandscape(rawDx: number, rawDy: number): { dx: number; dy: number } {
+  if (isCssPortraitRotatedFallback()) {
+    return { dx: rawDy, dy: -rawDx };
+  }
+  return { dx: rawDx, dy: rawDy };
 }
 
 export function useGamingMode(
@@ -58,6 +103,7 @@ export function useGamingMode(
   lostCb.current = onNativeFullscreenLost;
 
   const applyDom = useCallback((on: boolean) => {
+    if (typeof document === 'undefined') return;
     document.documentElement.classList.toggle(GAMING_CLASS, on);
     broadcast(on);
   }, []);
@@ -69,8 +115,41 @@ export function useGamingMode(
       if (document.exitFullscreen) await document.exitFullscreen();
       else if (d.webkitExitFullscreen) await d.webkitExitFullscreen();
     } catch {
-      /* exiting can fail (e.g. already left); the CSS state is cleaned up regardless */
+      /* exiting can fail (e.g. already left); CSS state is cleaned up regardless */
     }
+  }, []);
+
+  const requestNativeAndLandscape = useCallback(async (el: FsEl | null): Promise<boolean> => {
+    if (!el) {
+      await lockLandscape();
+      return false;
+    }
+    try {
+      if (fsElement()) {
+        weEnteredNative.current = true;
+        setNativeFullscreen(true);
+        await lockLandscape();
+        return true;
+      }
+      const req = el.requestFullscreen
+        ? el.requestFullscreen({ navigationUI: 'hide' } as FullscreenOptions)
+        : el.webkitRequestFullscreen
+          ? el.webkitRequestFullscreen()
+          : undefined;
+      if (req && typeof (req as Promise<void>).then === 'function') {
+        await (req as Promise<void>);
+        const isFs = !!fsElement();
+        weEnteredNative.current = isFs;
+        setNativeFullscreen(isFs);
+        await lockLandscape();
+        return isFs;
+      }
+    } catch {
+      weEnteredNative.current = false;
+    }
+    // Even if fullscreen was blocked or unsupported, attempt orientation lock best-effort
+    await lockLandscape();
+    return false;
   }, []);
 
   const exit = useCallback(() => {
@@ -83,31 +162,23 @@ export function useGamingMode(
     void exitNative();
   }, [applyDom, exitNative]);
 
-  const enter = useCallback((opts?: { native?: boolean }) => {
-    if (activeRef.current) return;
-    activeRef.current = true;
-    setActive(true);
-    applyDom(true);
-    if (opts && opts.native === false) return; // immersive CSS layout only (no user gesture available)
-    const el = targetRef.current as FsEl | null;
-    if (!el) return;
-    try {
-      const req = el.requestFullscreen
-        ? el.requestFullscreen({ navigationUI: 'hide' } as FullscreenOptions)
-        : el.webkitRequestFullscreen
-          ? el.webkitRequestFullscreen()
-          : undefined;
-      if (req && typeof (req as Promise<void>).then === 'function') {
-        (req as Promise<void>)
-          .then(() => { weEnteredNative.current = !!fsElement(); })
-          .catch(() => { weEnteredNative.current = false; /* CSS immersive fallback stays in effect */ });
-      } else if (req === undefined && !el.webkitRequestFullscreen) {
-        weEnteredNative.current = false; // unsupported (e.g. iOS Safari): CSS fallback only
+  const enter = useCallback(
+    (opts?: { native?: boolean }) => {
+      if (!activeRef.current) {
+        activeRef.current = true;
+        setActive(true);
+        applyDom(true);
       }
-    } catch {
-      weEnteredNative.current = false;
-    }
-  }, [applyDom, targetRef]);
+      if (opts && opts.native === false) {
+        // Attempt non-throwing orientation lock if browser allows it without fullscreen
+        void lockLandscape();
+        return;
+      }
+      const el = targetRef.current as FsEl | null;
+      void requestNativeAndLandscape(el);
+    },
+    [applyDom, requestNativeAndLandscape, targetRef],
+  );
 
   /** True when the browser exposes a usable Fullscreen API (false on e.g. iPhone Safari). */
   const nativeSupported =
@@ -118,8 +189,7 @@ export function useGamingMode(
     );
 
   /**
-   * Toggle ONLY the native browser fullscreen, leaving the immersive layout untouched.
-   * Must be called from a user gesture. Leaving via this toggle does not trigger the "lost" callback.
+   * Toggle native browser fullscreen + landscape orientation lock from a user gesture.
    */
   const toggleNative = useCallback(() => {
     if (fsElement()) {
@@ -129,36 +199,19 @@ export function useGamingMode(
       return;
     }
     const el = targetRef.current as FsEl | null;
-    if (!el) return;
-    try {
-      const req = el.requestFullscreen
-        ? el.requestFullscreen({ navigationUI: 'hide' } as FullscreenOptions)
-        : el.webkitRequestFullscreen
-          ? el.webkitRequestFullscreen()
-          : undefined;
-      if (req && typeof (req as Promise<void>).then === 'function') {
-        (req as Promise<void>)
-          .then(async () => {
-            weEnteredNative.current = !!fsElement();
-            if (weEnteredNative.current) await lockLandscape();
-          })
-          .catch(() => { weEnteredNative.current = false; });
-      }
-    } catch {
-      weEnteredNative.current = false;
-    }
-  }, [exitNative, targetRef]);
+    void requestNativeAndLandscape(el);
+  }, [exitNative, requestNativeAndLandscape, targetRef]);
 
-  // Keep UI state in sync with the real browser fullscreen state (Esc key, system gesture, etc.)
+  // Keep UI state in sync with real browser fullscreen state (Esc key, system gesture, etc.)
   useEffect(() => {
     const onChange = () => {
       const isFs = !!fsElement();
       setNativeFullscreen(isFs);
       if (isFs) {
         weEnteredNative.current = true;
+        void lockLandscape();
       } else if (weEnteredNative.current && activeRef.current) {
         unlockOrientation();
-        // Native fullscreen ended without the Exit button: pause the run but stay in the immersive layout
         weEnteredNative.current = false;
         lostCb.current();
       }
@@ -171,15 +224,18 @@ export function useGamingMode(
     };
   }, []);
 
-  // Always restore the website if the component unmounts (navigation, route change)
-  useEffect(() => () => {
-    if (activeRef.current) {
-      activeRef.current = false;
-      applyDom(false);
-      unlockOrientation();
-      void exitNative();
-    }
-  }, [applyDom, exitNative]);
+  // Always restore the website layout when the component unmounts (navigation, route change)
+  useEffect(
+    () => () => {
+      if (activeRef.current) {
+        activeRef.current = false;
+        applyDom(false);
+        unlockOrientation();
+        void exitNative();
+      }
+    },
+    [applyDom, exitNative],
+  );
 
   return { active, nativeFullscreen, nativeSupported, enter, exit, toggleNative };
 }

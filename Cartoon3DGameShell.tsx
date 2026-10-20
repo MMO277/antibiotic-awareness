@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { useLang } from './i18n';
 import { useAuth } from './authContext';
 import { Bilingual, pick } from './types';
-import { useGamingMode } from './useGamingMode';
+import { mapScreenDeltaToLandscape, useGamingMode } from './useGamingMode';
 import Disclaimer from './Disclaimer';
 import { ScenarioChoice, ScenarioSource } from './medicalSimulatorScenarios';
 import {
@@ -1298,9 +1298,10 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
 
   const handleViewportPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (orbitPointerIdRef.current !== e.pointerId) return;
-    const dx = e.clientX - orbitLastPosRef.current.x;
-    const dy = e.clientY - orbitLastPosRef.current.y;
+    const rawDx = e.clientX - orbitLastPosRef.current.x;
+    const rawDy = e.clientY - orbitLastPosRef.current.y;
     orbitLastPosRef.current = { x: e.clientX, y: e.clientY };
+    const { dx, dy } = mapScreenDeltaToLandscape(rawDx, rawDy);
 
     camYawRef.current -= dx * 0.0075;
     camPitchRef.current = Math.max(0.28, Math.min(1.05, camPitchRef.current + dy * 0.0055));
@@ -1308,17 +1309,26 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
 
   const autoFullscreenTriedRef = useRef<boolean>(false);
 
+  const tryAutoLandscapeFullscreenOnce = () => {
+    if (!autoFullscreenTriedRef.current) {
+      autoFullscreenTriedRef.current = true;
+      if (gaming.nativeSupported && !gaming.nativeFullscreen) {
+        gaming.toggleNative();
+      } else {
+        gaming.enter({ native: false });
+      }
+    }
+  };
+
   const handleViewportPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (orbitPointerIdRef.current === e.pointerId) {
       orbitPointerIdRef.current = null;
     }
     if (
-      !autoFullscreenTriedRef.current &&
       e.type === 'pointerup' &&
       !(e.target as HTMLElement).closest('button, .ms-dialogue-modal, .ms-joystick-zone')
     ) {
-      autoFullscreenTriedRef.current = true;
-      if (gaming.nativeSupported && !gaming.nativeFullscreen) gaming.toggleNative();
+      tryAutoLandscapeFullscreenOnce();
     }
   };
 
@@ -1328,10 +1338,11 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
     const rect = base.getBoundingClientRect();
     const cx = rect.left + rect.width / 2;
     const cy = rect.top + rect.height / 2;
-    const maxR = rect.width * 0.38;
+    const maxR = Math.max(24, Math.min(rect.width, rect.height) * 0.38);
 
-    let dx = clientX - cx;
-    let dy = clientY - cy;
+    const mapped = mapScreenDeltaToLandscape(clientX - cx, clientY - cy);
+    let dx = mapped.dx;
+    let dy = mapped.dy;
     const dist = Math.hypot(dx, dy);
     if (dist > maxR) {
       dx = (dx / dist) * maxR;
@@ -2473,13 +2484,34 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
             </div>
           )}
 
-          {/* Mobile & Touch HUD Controls */}
-          <div className="ms-hud-controls">
+          {/* Mobile & Touch HUD Controls (strictly physical LEFT for joystick in both AR & EN) */}
+          <div className="ms-hud-controls" dir="ltr">
             <div className="ms-joystick-zone">
               <div
                 ref={joyBaseRef}
                 className="ms-joystick-base"
+                onPointerDown={(e) => {
+                  tryAutoLandscapeFullscreenOnce();
+                  joyTouchIdRef.current = e.pointerId;
+                  try {
+                    e.currentTarget.setPointerCapture(e.pointerId);
+                  } catch {}
+                  updateJoystickFromPoint(e.clientX, e.clientY);
+                }}
+                onPointerMove={(e) => {
+                  if (joyTouchIdRef.current === e.pointerId) {
+                    updateJoystickFromPoint(e.clientX, e.clientY);
+                  }
+                }}
+                onPointerUp={(e) => {
+                  if (joyTouchIdRef.current === e.pointerId) {
+                    resetJoystick();
+                  }
+                }}
+                onPointerCancel={resetJoystick}
+                onLostPointerCapture={resetJoystick}
                 onTouchStart={(e) => {
+                  tryAutoLandscapeFullscreenOnce();
                   if (e.changedTouches.length > 0) {
                     const t = e.changedTouches[0];
                     joyTouchIdRef.current = t.identifier;

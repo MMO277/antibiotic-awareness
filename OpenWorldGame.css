@@ -1,103 +1,237 @@
-.ow-page{min-height:calc(100vh - 70px);padding:clamp(12px,2vw,24px);color:#eaf4ff;background:radial-gradient(ellipse at 20% 0%,#173c67 0,#07172c 52%,#061326 100%);border-radius:22px}.ow-header{display:flex;align-items:center;gap:16px;margin-bottom:16px}.ow-header>div:nth-child(2){display:grid;gap:3px;flex:1}.ow-header strong{font-size:clamp(1rem,2vw,1.4rem)}.ow-header span{font-size:.8rem;color:#a8c2df}.ow-back{color:#d8eaff;text-decoration:none;border:1px solid #345675;padding:9px 12px;border-radius:12px}.ow-xp{white-space:nowrap;background:#15395c;border:1px solid #3d6d96;border-radius:12px;padding:10px;font-weight:800}.ow-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(260px,.8fr);gap:18px}.ow-stage{position:relative;min-height:610px;border:1px solid #2b5275;border-radius:20px;overflow:hidden;background:#8ed5ff;box-shadow:0 20px 55px #0005}.ow-scene{position:absolute;inset:0}.ow-scene canvas{display:block;width:100%;height:100%}.ow-hud{position:absolute;inset:14px 14px auto;display:flex;align-items:flex-start;gap:10px;pointer-events:none}.ow-avatar{display:grid;place-items:center;width:48px;height:48px;border:3px solid #49d5f4;border-radius:50%;background:#112b48;font-size:25px;box-shadow:0 3px 15px #0004}.ow-progress{width:min(290px,55%);display:grid;gap:5px;padding:10px 12px;border:1px solid #ffffff45;border-radius:12px;background:#061a31df;backdrop-filter:blur(10px);font-size:.8rem}.ow-progress span{color:#c4d8eb;font-size:.73rem}.ow-bar{height:6px;border-radius:8px;background:#334155;overflow:hidden}.ow-bar i{display:block;height:100%;background:linear-gradient(90deg,#34d399,#facc15);transition:width .25s}.ow-map{margin-inline-start:auto;position:relative;width:84px;height:84px;border-radius:50%;border:3px solid #d5eaff;background:radial-gradient(circle,#6cb88c 0 24%,#c9dba2 25% 40%,#568a72 41% 60%,#264c54 61%);display:grid;place-items:center;box-shadow:0 5px 20px #0005}.ow-map span{font-size:23px}.ow-map small{font-size:8px;font-weight:900;letter-spacing:1px}.ow-map-dot{position:absolute;width:8px;height:8px;border-radius:50%;background:#fbbf24;border:2px solid white}.dot1{top:16px;left:28px}.dot2{top:34px;right:14px}.dot3{bottom:18px;left:19px}.dot4{bottom:16px;right:22px}.ow-loading{position:absolute;inset:0;display:grid;align-content:center;justify-items:center;gap:8px;background:#06172b99;color:white;font-weight:800;text-align:center;pointer-events:none}.ow-loading small{font-weight:400;font-size:.8rem}.ow-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,calc(100% - 28px));padding:22px;border-radius:18px;border:1px solid #7dd3fc;background:#071b32f2;box-shadow:0 20px 70px #0007;z-index:5}.ow-dialog b{font-size:1.15rem}.ow-dialog p{line-height:1.8;color:#d2e5f6}.ow-close{position:absolute;top:7px;inset-inline-end:8px;background:transparent;border:0;color:white;font-size:24px;cursor:pointer}.ow-controls{position:absolute;bottom:16px;inset-inline:16px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}.ow-pad,.ow-interact{pointer-events:auto}.ow-pad{display:grid;justify-items:center;gap:5px}.ow-pad button{width:43px;height:43px;border:1px solid #ffffff66;border-radius:13px;color:white;background:#071b32c9;box-shadow:0 4px 14px #0003;touch-action:none}.ow-pad>div{display:flex;gap:5px}.ow-interact{display:flex;align-items:center;gap:8px;padding:13px 16px;border:1px solid #ffffff7a;border-radius:15px;color:white;background:#0c3150e8;font-weight:800;touch-action:manipulation}.ow-sidebar{padding:22px;border:1px solid #24486b;border-radius:20px;background:linear-gradient(160deg,#102b49,#091a30);align-self:stretch}.ow-kicker{font-size:.72rem;letter-spacing:2px;color:#67d8f6;font-weight:900}.ow-sidebar h1{font-size:clamp(1.5rem,2.5vw,2.2rem);line-height:1.2;margin:12px 0}.ow-sidebar>p{color:#b9cee3;line-height:1.8;font-size:.92rem}.ow-place-list{display:grid;gap:9px;margin:20px 0}.ow-place-list button{display:flex;align-items:center;gap:11px;text-align:start;padding:12px;border:1px solid #2b4e6d;border-radius:13px;background:#0c2340;color:#eaf4ff;cursor:pointer}.ow-place-list button:hover{border-color:#54c9ef;background:#123255}.ow-place-list button>span:nth-child(2){display:grid;gap:4px;flex:1}.ow-place-list small{font-size:.72rem;color:#a8c2db}.ow-place-icon{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#183e5c;color:#a7f3d0;font-size:22px}.ow-help{padding:14px;border-radius:14px;background:#0b2037;border:1px solid #254764}.ow-help p{font-size:.82rem;line-height:1.7;color:#b9cee3;margin-bottom:0}.ow-primary{border:0;border-radius:11px;padding:11px 15px;color:#062039;background:linear-gradient(135deg,#7dd3fc,#34d399);font-weight:900;cursor:pointer}.ow-reset{width:100%;margin-top:14px}.ow-footer{text-align:center;color:#92abc5;font-size:.75rem;padding:18px 8px}.ow-sidebar button:focus-visible,.ow-controls button:focus-visible{outline:3px solid #facc15;outline-offset:2px}@media(max-width:900px){.ow-layout{grid-template-columns:1fr}.ow-stage{min-height:clamp(420px,72vh,650px)}.ow-sidebar{padding:18px}.ow-place-list{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:560px){.ow-page{padding:9px;border-radius:14px}.ow-header{gap:8px;flex-wrap:wrap}.ow-header>div:nth-child(2){min-width:130px}.ow-back{font-size:.8rem;padding:8px}.ow-xp{font-size:.8rem;padding:8px}.ow-stage{min-height:510px;border-radius:15px}.ow-map{width:66px;height:66px}.ow-avatar{width:40px;height:40px;font-size:21px}.ow-progress{padding:8px;font-size:.72rem}.ow-place-list{grid-template-columns:1fr}.ow-interact{padding:12px;font-size:.82rem}.ow-pad button{width:39px;height:39px}}
+.ow-page{min-height:calc(100vh - 70px);padding:clamp(10px,1.8vw,20px);color:#eaf4ff;background:radial-gradient(ellipse at 20% 0%,#173c67 0,#07172c 52%,#061326 100%);border-radius:22px}.ow-header{display:flex;align-items:center;gap:14px;margin-bottom:14px}.ow-header>div:nth-child(2){display:grid;gap:3px;flex:1}.ow-header strong{font-size:clamp(.98rem,1.9vw,1.32rem)}.ow-header span{font-size:.78rem;color:#a8c2df}.ow-back{color:#d8eaff;text-decoration:none;border:1px solid #345675;padding:8px 12px;border-radius:12px;font-weight:700;white-space:nowrap}.ow-xp{white-space:nowrap;background:#15395c;border:1px solid #3d6d96;border-radius:12px;padding:8px 11px;font-weight:800;font-size:.86rem}.ow-xp small{display:block;font-size:.68rem;font-weight:600;color:#93c5fd}.ow-layout{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(280px,.85fr);gap:16px}.ow-stage{position:relative;min-height:620px;border:1px solid #2b5275;border-radius:20px;overflow:hidden;background:#8ed5ff;box-shadow:0 20px 55px #0005}.ow-scene{position:absolute;inset:0}.ow-scene canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}.ow-scene canvas:active{cursor:grabbing}
 
-/* Enhanced third-person controls: analog joystick, camera drag and immersive play. */
-.ow-fullscreen{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;border:1px solid #3b6588;border-radius:12px;padding:10px 12px;color:#eaf4ff;background:#102d4b;font-weight:800;cursor:pointer}
-.ow-fullscreen:hover{background:#174267;border-color:#67d8f6}
-.ow-camera-hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:2;padding:7px 11px;border:1px solid #ffffff42;border-radius:999px;background:#061a31b8;color:#fff;font-size:.75rem;pointer-events:none;backdrop-filter:blur(8px);white-space:nowrap}
-.ow-landscape-hint{position:absolute;z-index:7;top:64px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 24px);padding:9px 12px;border:1px solid #7dd3fc;border-radius:12px;background:#071b32ed;color:#fff;font-size:.8rem;box-shadow:0 8px 24px #0005}
-.ow-landscape-hint button{border:0;background:transparent;color:#fff;font-size:20px}
-.ow-controls{align-items:flex-end;z-index:4}
-.ow-joystick{position:relative;display:grid;place-items:center;width:132px;height:132px;border:1px solid #ffffff4f;border-radius:50%;background:radial-gradient(circle,#dbeafe20 0 28%,#061a31a8 29% 68%,#ffffff10 69%);box-shadow:0 8px 26px #0005;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;pointer-events:auto}
+/* Top Floating Buttons & Collapsible HUD */
+.ow-top-floating-btns{position:absolute;top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));z-index:22;display:flex;align-items:center;gap:8px}
+.ow-menu-toggle{width:40px;height:38px;display:grid;place-items:center;border:1px solid #ffffff66;border-radius:12px;color:#fff;background:#061a31d9;font-size:1.1rem;font-weight:900;cursor:pointer;box-shadow:0 4px 16px #0005}
+.ow-hud-collapse-btn{padding:6px 10px;border:1px solid #7dd3fc66;border-radius:10px;background:#061a31d9;color:#e0f2fe;font-size:.72rem;font-weight:700;cursor:pointer;backdrop-filter:blur(8px)}
+
+.ow-hud{position:absolute;top:max(10px,env(safe-area-inset-top,0px));left:130px;right:max(12px,env(safe-area-inset-right,0px));display:flex;align-items:flex-start;gap:10px;pointer-events:none;z-index:12}
+.ow-avatar{display:flex;flex-direction:column;align-items:center;justify-content:center;width:46px;height:46px;border:2.5px solid #49d5f4;border-radius:50%;background:#112b48;font-size:20px;box-shadow:0 3px 15px #0004;flex-shrink:0}
+.ow-avatar small{font-size:.58rem;font-weight:800;color:#7dd3fc;line-height:1}
+.ow-progress{width:min(420px,68%);display:grid;gap:4px;padding:8px 12px;border:1px solid #ffffff45;border-radius:12px;background:#061a31e6;backdrop-filter:blur(10px);font-size:.78rem;pointer-events:auto}
+.ow-progress-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ow-mission-step-pill{background:#0284c7;color:#fff;padding:1px 7px;border-radius:999px;font-size:.68rem;font-weight:700;white-space:nowrap}
+.ow-objective-line{color:#fde68a;font-size:.74rem;font-weight:600;line-height:1.35}
+.ow-bar{height:5px;border-radius:8px;background:#334155;overflow:hidden}
+.ow-bar i{display:block;height:100%;background:linear-gradient(90deg,#34d399,#38bdf8);transition:width .25s}
+
+.ow-map{margin-inline-start:auto;position:relative;width:76px;height:76px;border-radius:50%;border:2.5px solid #d5eaff;background:radial-gradient(circle,#6cb88c 0 24%,#c9dba2 25% 40%,#568a72 41% 60%,#264c54 61%);display:grid;place-items:center;box-shadow:0 5px 20px #0005;flex-shrink:0}
+.ow-map span{font-size:20px}
+.ow-map small{font-size:7px;font-weight:900;letter-spacing:1px}
+.ow-map-dot{position:absolute;width:7px;height:7px;border-radius:50%;background:#fbbf24;border:1.5px solid white;transform:translate(-50%,-50%)}
+.ow-map-dot-0{background:#fb7185}.ow-map-dot-1{background:#38bdf8}.ow-map-dot-2{background:#f87171}.ow-map-dot-3{background:#60a5fa}.ow-map-dot-4{background:#4ade80}.ow-map-dot-5{background:#34d399}.ow-map-dot-6{background:#c084fc}
+.ow-map-target-pulse{position:absolute;width:11px;height:11px;border-radius:50%;background:#facc15;border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 0 0 4px rgba(250,204,21,.45);animation:ow-pulse-ring 1.2s infinite ease-in-out}
+@keyframes ow-pulse-ring{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.35)}}
+
+/* Carried Item & Inventory Strip */
+.ow-inventory-hud{position:absolute;top:88px;left:max(10px,env(safe-area-inset-left,0px));z-index:11;display:flex;flex-direction:column;gap:5px;max-width:min(360px,calc(100% - 24px));pointer-events:auto}
+.ow-carried-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 10px;border-radius:10px;background:#071b32e6;border:1px solid #38bdf866;font-size:.73rem;color:#e0f2fe;backdrop-filter:blur(8px)}
+.ow-carried-chip b{color:#5eead4}
+.ow-carried-chip small{color:#94a3b8;font-size:.69rem}
+.ow-drop-mini-btn{border:1px solid #fca5a588;background:#7f1d1d99;color:#fecaca;border-radius:7px;padding:2px 7px;font-size:.68rem;font-weight:700;cursor:pointer}
+.ow-bag-chips{display:flex;gap:5px;flex-wrap:wrap}
+.ow-bag-item{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;border:1px solid #475569;background:#0f172ad9;color:#cbd5e1;font-size:.68rem;font-weight:600;cursor:pointer}
+.ow-bag-item.active{border-color:#34d399;background:#064e3be6;color:#d1fae5}
+
+/* Toast & Proximity Prompt */
+.ow-toast-banner{position:absolute;top:148px;left:50%;transform:translateX(-50%);z-index:24;background:#064e3bf2;border:1.5px solid #34d399;color:#ecfdf5;padding:7px 14px;border-radius:12px;font-size:.78rem;font-weight:700;box-shadow:0 8px 24px #0006;max-width:min(92%,460px);text-align:center}
+.ow-proximity-bar{position:absolute;bottom:142px;left:50%;transform:translateX(-50%);z-index:15;display:flex;align-items:center;justify-content:space-between;gap:10px;width:min(92%,450px);padding:8px 12px;border-radius:13px;background:#071b32f2;border:1.5px solid #38bdf8;box-shadow:0 10px 30px #0007}
+.ow-prox-text{display:grid;gap:2px;min-width:0;flex:1}
+.ow-prox-text b{font-size:.82rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ow-prox-text small{font-size:.7rem;color:#7dd3fc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ow-prox-action-btn{border:0;border-radius:10px;padding:8px 13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;font-size:.76rem;cursor:pointer;white-space:nowrap;flex-shrink:0}
+
+/* Loading & Department Info Dialog */
+.ow-loading{position:absolute;inset:0;display:grid;align-content:center;justify-items:center;gap:8px;background:#06172b99;color:white;font-weight:800;text-align:center;pointer-events:none;z-index:20}
+.ow-loading small{font-weight:400;font-size:.8rem}
+.ow-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,calc(100% - 28px));padding:20px;border-radius:18px;border:1px solid #7dd3fc;background:#071b32f5;box-shadow:0 20px 70px #0007;z-index:30}
+.ow-dialog b{font-size:1.1rem}
+.ow-dialog p{line-height:1.7;color:#d2e5f6;font-size:.88rem}
+.ow-close{position:absolute;top:7px;inset-inline-end:8px;background:transparent;border:0;color:white;font-size:24px;cursor:pointer}
+
+/* Interactive Clinical Modals (Patient, X-Ray, Lab, Pharmacy, SBAR) */
+.ow-modal-backdrop{position:absolute;inset:0;z-index:35;background:rgba(4,13,26,.82);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:10px}
+.ow-clinical-modal{width:min(680px,100%);max-height:94%;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:#0a1e36;border:1.5px solid #38bdf888;border-radius:16px;padding:14px 16px;color:#f1f5f9;box-shadow:0 20px 60px #0009;display:grid;gap:10px}
+.ow-clinical-modal.compact{max-width:480px}
+.ow-modal-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid #ffffff1f;padding-bottom:8px}
+.ow-modal-title-group{display:grid;gap:3px}
+.ow-modal-badge-sim{display:inline-block;width:fit-content;background:#f59e0b2b;border:1px solid #fbbf2488;color:#fde68a;font-size:.66rem;font-weight:800;padding:2px 8px;border-radius:6px}
+.ow-modal-title-group h3{margin:0;font-size:1.02rem;color:#fff}
+.ow-modal-title-group h3 small{color:#7dd3fc;font-size:.8rem}
+.ow-modal-sub{font-size:.74rem;color:#94a3b8}
+.ow-modal-close{background:#ffffff14;border:1px solid #ffffff30;color:#fff;width:32px;height:32px;border-radius:8px;font-size:1rem;cursor:pointer;flex-shrink:0}
+.ow-modal-body{display:grid;gap:10px}
+
+.ow-allergy-banner{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:10px;font-size:.79rem}
+.ow-allergy-banner.danger{background:#7f1d1d66;border:1.5px solid #f87171;color:#fecaca}
+.ow-allergy-banner.safe{background:#064e3b55;border:1px solid #34d39988;color:#d1fae5}
+
+.ow-patient-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.ow-info-box{background:#071526;border:1px solid #ffffff1a;border-radius:10px;padding:8px 10px}
+.ow-info-box small{display:block;color:#7dd3fc;font-size:.68rem;font-weight:700;margin-bottom:3px}
+.ow-info-box p{margin:0;font-size:.78rem;line-height:1.45;color:#e2e8f0}
+
+/* 5-Parameter Vital Signs Monitor */
+.ow-vitals-monitor{background:#040d1a;border:1.5px solid #0284c788;border-radius:12px;padding:9px 11px;display:grid;gap:8px}
+.ow-vitals-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;font-size:.78rem}
+.ow-vitals-pill{padding:2px 8px;border-radius:999px;font-size:.69rem;font-weight:800}
+.ow-vitals-pill.pending{background:#334155;color:#cbd5e1}
+.ow-vitals-pill.normal{background:#065f46;color:#a7f3d0;border:1px solid #34d399}
+.ow-vitals-pill.elevated{background:#78350f;color:#fde68a;border:1px solid #fbbf24}
+.ow-vitals-pill.critical{background:#7f1d1d;color:#fecaca;border:1px solid #f87171}
+.ow-vitals-cells{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.ow-vital-box{background:#0b192c;border:1px solid #38bdf844;border-radius:8px;padding:5px 4px;text-align:center}
+.ow-vital-box small{display:block;font-size:.6rem;color:#94a3b8;font-weight:700}
+.ow-vital-box b{font-size:.78rem;color:#38bdf8;font-family:ui-monospace,monospace}
+
+/* Interactive Nursing Actions Grid */
+.ow-actions-section h4,.ow-ws-section h4{margin:0 0 6px;font-size:.84rem;color:#99f6e4}
+.ow-actions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:7px}
+.ow-act-btn{display:flex;align-items:flex-start;gap:8px;text-align:start;padding:8px 10px;border-radius:10px;border:1px solid #38bdf84d;background:#0f2942;color:#f1f5f9;cursor:pointer;transition:transform .14s,border-color .14s}
+.ow-act-btn:hover{border-color:#38bdf8;transform:translateY(-1px)}
+.ow-act-btn.done{background:#064e3b77;border-color:#34d399}
+.ow-act-btn span{font-size:1.1rem;flex-shrink:0}
+.ow-act-btn b{display:block;font-size:.76rem;margin-bottom:2px}
+.ow-act-btn small{display:block;font-size:.66rem;color:#94a3b8;line-height:1.3}
+
+/* Contextual Clinical Workflows (Radiology, Lab, Pharmacy, SBAR) */
+.ow-workflow-card,.ow-sbar-box{background:#071526;border:1px solid #38bdf866;border-radius:12px;padding:10px 12px;display:grid;gap:8px}
+.ow-workflow-card h5,.ow-sbar-box h5{margin:0;font-size:.84rem;color:#7dd3fc}
+.ow-workflow-card p{margin:0;font-size:.76rem;color:#cbd5e1;line-height:1.45}
+.ow-workflow-btn{border:0;border-radius:10px;padding:9px 14px;background:linear-gradient(135deg,#38bdf8,#10b981);color:#041e34;font-weight:900;font-size:.79rem;cursor:pointer;text-align:center}
+.ow-btn-danger-block{border:1.5px solid #fca5a5;border-radius:10px;padding:9px 14px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;font-weight:900;font-size:.79rem;cursor:pointer;width:100%}
+
+.ow-med-check-box{padding:9px;border-radius:10px;display:grid;gap:7px;font-size:.77rem}
+.ow-med-check-box.danger{background:#450a0a88;border:1px solid #f87171}
+.ow-med-check-box.safe{background:#064e3b55;border:1px solid #34d399}
+.ow-med-meta{font-size:.7rem;color:#bae6fd;margin-top:2px}
+.ow-med-alert-text{margin:0;color:#fecaca;font-weight:700;line-height:1.45}
+.ow-med-safe-text{margin:0;color:#a7f3d0;font-weight:700}
+.ow-five-rights-list{display:grid;gap:5px;background:#04101f;padding:8px 10px;border-radius:9px}
+.ow-right-check{display:flex;align-items:center;gap:8px;font-size:.74rem;color:#e2e8f0;cursor:pointer}
+.ow-right-check input{width:16px;height:16px;accent-color:#10b981;margin:0}
+
+.ow-dialogue-bubble{background:#0c2d48;border-inline-start:4px solid #38bdf8;padding:8px 11px;border-radius:9px;font-size:.79rem;color:#f8fafc;line-height:1.5}
+
+/* Workstation Specific Styles */
+.ow-carried-place-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:#0c2d48;border:1px solid #38bdf866;padding:7px 10px;border-radius:10px;font-size:.76rem}
+.ow-place-btn{border:1px solid #7dd3fc88;border-radius:8px;padding:6px 11px;background:#0f2942;color:#e0f2fe;font-size:.73rem;font-weight:700;cursor:pointer}
+.ow-place-btn:disabled{opacity:.5;cursor:not-allowed}
+.ow-xray-disclaimer{background:#78350f66;border:1px solid #fbbf2488;color:#fde68a;padding:6px 10px;border-radius:8px;font-size:.72rem;font-weight:700}
+.ow-ws-warning{background:#7f1d1d55;border:1px solid #f87171;color:#fecaca;padding:10px 12px;border-radius:10px;font-size:.79rem;line-height:1.5}
+.ow-xray-viewer-wrap,.ow-lab-report-box{display:grid;gap:8px}
+.ow-xray-meta{display:flex;flex-wrap:wrap;gap:6px 14px;background:#04101f;padding:7px 10px;border-radius:9px;font-size:.73rem;color:#cbd5e1}
+.ow-xray-screen{border:2px solid #38bdf888;border-radius:12px;overflow:hidden;background:#091526;max-width:420px;margin-inline:auto;width:100%}
+.ow-xray-svg{display:block;width:100%;height:auto}
+.ow-xray-controls{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.ow-findings-list{margin:0;padding-inline-start:18px;font-size:.75rem;color:#bae6fd;display:grid;gap:3px}
+.ow-table-scroll{overflow-x:auto}
+.ow-ast-table{width:100%;border-collapse:collapse;font-size:.73rem}
+.ow-ast-table th,.ow-ast-table td{padding:6px 8px;border-bottom:1px solid #ffffff1f;text-align:start}
+.ow-ast-table th{background:#04101f;color:#7dd3fc}
+.ow-aware-tag{display:inline-block;padding:1px 6px;border-radius:6px;font-size:.66rem;font-weight:700;background:#065f46;color:#a7f3d0}
+.ow-aware-tag.Watch{background:#78350f;color:#fde68a}
+.ow-pharmacy-cards,.ow-equip-grid{display:grid;gap:7px}
+.ow-pharm-card,.ow-equip-card{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#071526;border:1px solid #ffffff22;padding:8px 10px;border-radius:10px;font-size:.76rem}
+.ow-pharm-card.unlocked{border-color:#34d399}
+.ow-pharm-card small,.ow-equip-card small{display:block;color:#94a3b8;font-size:.68rem;margin-top:2px}
+.ow-equip-icon{font-size:1.4rem}
+.ow-staff-speech{background:#071526;border-inline-start:4px solid #2dd4bf;padding:10px 12px;border-radius:10px;font-size:.84rem;line-height:1.6;margin:0}
+
+/* Bottom Movement & Action Controls — Physical LEFT Joystick in ALL languages/modes */
+.ow-controls{position:absolute;bottom:max(14px,env(safe-area-inset-bottom,0px));left:max(14px,env(safe-area-inset-left,0px));right:max(14px,env(safe-area-inset-right,0px));inset-inline:unset;display:flex;justify-content:space-between;align-items:flex-end;direction:ltr !important;flex-direction:row !important;pointer-events:none;z-index:14}
+.ow-controls>.ow-joystick{order:0 !important}
+.ow-controls>.ow-action-stack{order:1 !important}
+.ow-joystick{position:relative;display:grid;place-items:center;width:118px;height:118px;border:1.5px solid #ffffff59;border-radius:50%;background:radial-gradient(circle,#dbeafe20 0 28%,#061a31b8 29% 68%,#ffffff10 69%);box-shadow:0 8px 26px #0005;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;pointer-events:auto}
 .ow-joystick:active{cursor:grabbing}
-.ow-joystick-ring{position:absolute;inset:0;display:grid;place-items:center;color:#ffffff7d;font-size:36px;pointer-events:none}
-.ow-joystick-knob{position:absolute;left:calc(50% - 25px);top:calc(50% - 25px);width:50px;height:50px;border:2px solid #bdeaff;border-radius:50%;background:linear-gradient(145deg,#3e83b9eF,#0c3150f2);box-shadow:0 4px 14px #0007,inset 0 1px #ffffff6b;pointer-events:none;will-change:transform}
-.ow-action-stack{display:grid;justify-items:end;gap:8px;pointer-events:auto}
-.ow-camera-tip{max-width:150px;padding:6px 9px;border:1px solid #ffffff35;border-radius:10px;background:#061a31b8;color:#e7f5ff;font-size:.68rem;text-align:center}
-.ow-scene canvas{touch-action:none;cursor:grab}
-.ow-scene canvas:active{cursor:grabbing}
-.ow-page:fullscreen{width:100vw;height:100dvh;min-height:100dvh;overflow:auto;border-radius:0;padding:10px;background:#061326}
-.ow-page:fullscreen .ow-header{margin-bottom:8px}
-.ow-page:fullscreen .ow-layout{height:calc(100dvh - 100px);min-height:0;grid-template-columns:minmax(0,1fr) minmax(250px,310px);gap:12px}
-.ow-page:fullscreen .ow-stage{min-height:0;height:100%;}
-.ow-page:fullscreen .ow-sidebar{overflow:auto;padding:16px}
-.ow-page:fullscreen .ow-footer{padding:5px}
-@media(max-width:900px){.ow-page:fullscreen .ow-layout{grid-template-columns:minmax(0,1fr);height:auto}.ow-page:fullscreen .ow-stage{height:calc(100dvh - 82px);min-height:420px}.ow-page:fullscreen .ow-sidebar{display:none}.ow-page:fullscreen .ow-footer{display:none}}
-@media(max-width:560px){.ow-fullscreen{padding:8px 10px;font-size:.75rem}.ow-fullscreen span{display:none}.ow-joystick{width:116px;height:116px}.ow-joystick-knob{width:46px;height:46px;left:calc(50% - 23px);top:calc(50% - 23px)}.ow-camera-hint{top:82px;font-size:.67rem}.ow-page:fullscreen .ow-header>div:nth-child(2){min-width:0}.ow-page:fullscreen .ow-xp{padding:6px}.ow-page:fullscreen .ow-stage{height:calc(100dvh - 72px);min-height:0;border-radius:0}.ow-page:fullscreen .ow-hud{inset:8px 8px auto}.ow-page:fullscreen .ow-camera-hint{top:70px}.ow-page:fullscreen .ow-controls{bottom:12px;inset-inline:12px}}
-@media(orientation:landscape) and (max-height:520px){.ow-page:fullscreen .ow-header{gap:8px}.ow-page:fullscreen .ow-header>div:nth-child(2)>span{display:none}.ow-page:fullscreen .ow-layout{grid-template-columns:minmax(0,1fr) 230px}.ow-page:fullscreen .ow-sidebar{display:block;padding:10px}.ow-page:fullscreen .ow-sidebar h1{font-size:1.1rem;margin:6px 0}.ow-page:fullscreen .ow-sidebar>p,.ow-page:fullscreen .ow-help,.ow-page:fullscreen .ow-reset{display:none}.ow-page:fullscreen .ow-place-list{gap:4px;margin:8px 0}.ow-page:fullscreen .ow-place-list button{padding:6px}.ow-page:fullscreen .ow-place-icon{width:28px;height:28px}.ow-page:fullscreen .ow-joystick{width:100px;height:100px}.ow-page:fullscreen .ow-joystick-knob{width:40px;height:40px;left:calc(50% - 20px);top:calc(50% - 20px)}}
+.ow-joystick-ring{position:absolute;inset:0;display:grid;place-items:center;color:#ffffff7d;font-size:32px;pointer-events:none}
+.ow-joystick-knob{position:absolute;left:calc(50% - 23px);top:calc(50% - 23px);width:46px;height:46px;border:2px solid #bdeaff;border-radius:50%;background:linear-gradient(145deg,#3e83b9ef,#0c3150f2);box-shadow:0 4px 14px #0007,inset 0 1px #ffffff6b;pointer-events:none;will-change:transform}
+.ow-action-stack{display:grid;justify-items:end;gap:7px;pointer-events:auto}
+.ow-interact{display:flex;align-items:center;gap:7px;padding:12px 15px;border:1.5px solid #86efac;border-radius:14px;color:white;background:linear-gradient(135deg,#059669,#0f766e);font-weight:800;font-size:.82rem;cursor:pointer;touch-action:manipulation;box-shadow:0 6px 20px #0005}
+.ow-drop-btn{display:flex;align-items:center;gap:6px;padding:7px 11px;border:1px solid #fca5a5;border-radius:11px;color:#fecaca;background:#7f1d1dd9;font-weight:700;font-size:.73rem;cursor:pointer}
+.ow-camera-tip{max-width:150px;padding:4px 8px;border:1px solid #ffffff35;border-radius:9px;background:#061a31b8;color:#e7f5ff;font-size:.66rem;text-align:center}
 
-/* Game-first open-world presentation: physical left joystick, clean fullscreen, optional slide-out mission/location panel. */
-.ow-controls { direction: ltr !important; flex-direction: row !important; left: 16px; right: 16px; inset-inline: unset; }
-.ow-controls > .ow-joystick { order: 0; }
-.ow-controls > .ow-action-stack { order: 1; }
-.ow-menu-toggle { display: none; }
-.ow-page:fullscreen { position: relative; padding: 0; overflow: hidden; }
-.ow-page:fullscreen .ow-header { position: absolute; z-index: 25; top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); margin: 0; }
-.ow-page:fullscreen .ow-header > :not(.ow-fullscreen) { display: none !important; }
-.ow-page:fullscreen .ow-fullscreen { width: 42px; height: 40px; justify-content: center; padding: 0; background: #061a31c9; }
-.ow-page:fullscreen .ow-layout { display: block; position: relative; width: 100%; height: 100dvh; min-height: 0; }
-.ow-page:fullscreen .ow-stage { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
-.ow-page:fullscreen .ow-sidebar { display: none !important; }
-.ow-page:fullscreen .ow-sidebar.ow-sidebar-open { display: block !important; position: absolute; z-index: 18; top: 58px; right: 12px; bottom: 12px; width: min(340px, calc(100vw - 24px)); box-sizing: border-box; overflow: auto; background: rgba(7, 26, 48, .96); backdrop-filter: blur(16px); box-shadow: 0 16px 48px #0008; }
-.ow-menu-toggle { position: absolute; z-index: 22; top: max(10px, env(safe-area-inset-top, 0px)); left: max(10px, env(safe-area-inset-left, 0px)); width: 44px; height: 42px; display: none; place-items: center; border: 1px solid #ffffff66; border-radius: 13px; color: #fff; background: #061a31d9; font-size: 1.2rem; font-weight: 900; box-shadow: 0 4px 18px #0005; }
-.ow-page:fullscreen .ow-menu-toggle { display: grid; }
-.ow-page:fullscreen .ow-hud-immersive { display: none !important; }
-.ow-page:fullscreen .ow-camera-hint { display: none !important; }
-.ow-page:fullscreen .ow-controls { bottom: max(14px, env(safe-area-inset-bottom, 0px)); left: max(14px, env(safe-area-inset-left, 0px)); right: max(14px, env(safe-area-inset-right, 0px)); }
-.ow-page:fullscreen .ow-footer { display: none; }
-@media (max-width: 900px) {
-  .ow-page:fullscreen .ow-layout { height: 100dvh; }
-  .ow-page:fullscreen .ow-stage { height: 100dvh; min-height: 0; }
-  .ow-page:fullscreen .ow-sidebar.ow-sidebar-open { display: block !important; }
+/* Sidebar / Slide-Out Shift Drawer */
+.ow-sidebar{padding:18px;border:1px solid #24486b;border-radius:20px;background:linear-gradient(160deg,#102b49,#091a30);align-self:stretch;max-height:680px;overflow-y:auto}
+.ow-kicker{font-size:.68rem;letter-spacing:1.8px;color:#67d8f6;font-weight:900}
+.ow-sidebar h1{font-size:clamp(1.2rem,2vw,1.65rem);line-height:1.25;margin:8px 0}
+.ow-sidebar>p{color:#b9cee3;line-height:1.65;font-size:.82rem}
+.ow-mission-list{display:grid;gap:7px;margin:14px 0}
+.ow-mission-list h2{font-size:.88rem;margin:0 0 4px;color:#99f6e4}
+.ow-mission-card{display:flex;align-items:flex-start;gap:9px;text-align:start;width:100%;padding:9px 10px;border:1px solid #2b4e6d;border-radius:12px;background:#0c2340;color:#eaf4ff;cursor:pointer;transition:border-color .15s,background .15s}
+.ow-mission-card.active{border-color:#38bdf8;background:#12355b;box-shadow:0 0 0 2px #38bdf833}
+.ow-mission-card.done{border-color:#34d39988;background:#06392f88}
+.ow-mission-card>span{font-size:1.3rem;flex-shrink:0}
+.ow-mission-card>div{display:grid;gap:3px;flex:1}
+.ow-mission-card b{font-size:.78rem}
+.ow-mission-card small{font-size:.68rem;color:#c5d6e7;line-height:1.4}
+.ow-obj-counter{color:#fde68a !important;font-weight:700}
+
+.ow-place-list{display:grid;gap:7px;margin:14px 0}
+.ow-place-list button{display:flex;align-items:center;gap:10px;text-align:start;padding:9px 11px;border:1px solid #2b4e6d;border-radius:12px;background:#0c2340;color:#eaf4ff;cursor:pointer}
+.ow-place-list button:hover{border-color:#54c9ef;background:#123255}
+.ow-place-list button>span:nth-child(2){display:grid;gap:2px;flex:1}
+.ow-place-list b{font-size:.78rem}
+.ow-place-list small{font-size:.68rem;color:#a8c2db}
+.ow-place-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#183e5c;color:#a7f3d0;font-size:18px;flex-shrink:0}
+.ow-help{padding:11px;border-radius:12px;background:#0b2037;border:1px solid #254764}
+.ow-help p{font-size:.75rem;line-height:1.6;color:#b9cee3;margin:4px 0 0}
+.ow-primary{border:0;border-radius:11px;padding:10px 14px;color:#062039;background:linear-gradient(135deg,#7dd3fc,#34d399);font-weight:900;cursor:pointer}
+.ow-reset{width:100%;margin-top:12px}
+.ow-footer{text-align:center;color:#92abc5;font-size:.73rem;padding:14px 8px}
+.ow-fullscreen{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;border:1px solid #3b6588;border-radius:12px;padding:8px 11px;color:#eaf4ff;background:#102d4b;font-weight:800;cursor:pointer}
+
+/* Fullscreen & Responsive Mobile Landscape Layout */
+.ow-page:fullscreen{position:relative;width:100vw;height:100dvh;min-height:100dvh;padding:0;overflow:hidden;border-radius:0;background:#061326}
+.ow-page:fullscreen .ow-header{position:absolute;z-index:25;top:max(8px,env(safe-area-inset-top,0px));right:max(8px,env(safe-area-inset-right,0px));margin:0}
+.ow-page:fullscreen .ow-header>:not(.ow-fullscreen){display:none !important}
+.ow-page:fullscreen .ow-fullscreen{width:40px;height:38px;justify-content:center;padding:0;background:#061a31d9}
+.ow-page:fullscreen .ow-fullscreen span{display:none}
+.ow-page:fullscreen .ow-layout{display:block;position:relative;width:100%;height:100dvh;min-height:0}
+.ow-page:fullscreen .ow-stage{position:absolute;inset:0;width:100%;height:100%;min-height:0;border:0;border-radius:0;box-shadow:none}
+.ow-page:fullscreen .ow-sidebar{display:none !important}
+.ow-page:fullscreen .ow-sidebar.ow-sidebar-open{display:block !important;position:absolute;z-index:28;top:54px;left:12px;bottom:12px;width:min(360px,calc(100vw - 24px));max-height:none;box-sizing:border-box;overflow:auto;background:rgba(7,26,48,.96);backdrop-filter:blur(16px);box-shadow:0 16px 48px #0008}
+.ow-page:fullscreen .ow-footer{display:none}
+
+@media(max-width:900px){
+  .ow-layout{grid-template-columns:1fr}
+  .ow-stage{min-height:clamp(440px,74vh,640px)}
+  .ow-hud{left:118px;right:8px}
+  .ow-map{width:62px;height:62px}
+  .ow-vitals-cells{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
-@media (max-width: 560px) {
-  .ow-controls { left: 10px; right: 10px; }
-  .ow-page:fullscreen .ow-joystick { width: 108px; height: 108px; }
-  .ow-page:fullscreen .ow-joystick-knob { width: 44px; height: 44px; left: calc(50% - 22px); top: calc(50% - 22px); }
-  .ow-page:fullscreen .ow-action-stack { max-width: 42%; }
-  .ow-page:fullscreen .ow-interact { padding: 11px 12px; }
-  .ow-page:fullscreen .ow-camera-tip { display: none; }
-}
 
-/* World-map landmarks for the expanded seven-building campus. */
-.ow-map-dot { transform: translate(-50%, -50%); box-shadow: 0 0 0 2px rgba(6,19,38,.55), 0 0 10px rgba(255,255,255,.25); }
-.ow-map-dot-0 { background: #fb7185; }
-.ow-map-dot-1 { background: #34d399; }
-.ow-map-dot-2 { background: #60a5fa; }
-.ow-map-dot-3 { background: #c084fc; }
-.ow-map-dot-4 { background: #38bdf8; }
-.ow-map-dot-5 { background: #4ade80; }
-.ow-map-dot-6 { background: #f87171; animation: ow-emergency-pulse 1.6s ease-in-out infinite; }
-@keyframes ow-emergency-pulse { 0%,100% { box-shadow: 0 0 0 2px rgba(6,19,38,.55), 0 0 0 0 rgba(248,113,113,.45); } 50% { box-shadow: 0 0 0 2px rgba(6,19,38,.55), 0 0 0 6px rgba(248,113,113,0); } }
-.ow-place-list button { transition: transform .18s ease, border-color .18s ease, background .18s ease; }
-.ow-place-list button:hover { transform: translateY(-2px); }
-.ow-page:fullscreen .ow-dialog { z-index: 40; }
-.ow-page:fullscreen .ow-controls { direction: ltr !important; }
-@media (prefers-reduced-motion: reduce) { .ow-map-dot-6 { animation: none; } .ow-place-list button { transition: none; } }
-
-/* Auto-rotate the game interface itself on portrait phones. The player does not need to turn the device. */
+/* Auto-rotate the game interface itself into a landscape viewport on portrait phones when native orientation lock is unavailable */
 @media (orientation: portrait) and (max-width: 900px) and (pointer: coarse) {
   .ow-page {
-    position: fixed !important; left: 50% !important; top: 50% !important; right: auto !important; bottom: auto !important;
-    width: 100dvh !important; height: 100dvw !important; min-height: 100dvw !important;
-    padding: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important;
-    overflow: hidden !important; box-sizing: border-box !important;
-    transform: translate(-50%, -50%) rotate(90deg) !important; transform-origin: center center !important;
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100dvh !important;
+    height: 100dvw !important;
+    min-height: 100dvw !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    transform: translate(-50%, -50%) rotate(90deg) !important;
+    transform-origin: center center !important;
     z-index: 12000 !important;
   }
   .ow-page .ow-header { position: absolute !important; z-index: 25; top: 8px; right: 8px; margin: 0 !important; }
   .ow-page .ow-header > :not(.ow-fullscreen) { display: none !important; }
-  .ow-page .ow-fullscreen { width: 42px; height: 40px; justify-content: center; padding: 0; background: #061a31c9; }
+  .ow-page .ow-fullscreen { width: 40px; height: 38px; justify-content: center; padding: 0; background: #061a31d9; }
+  .ow-page .ow-fullscreen span { display: none; }
   .ow-page .ow-layout { display: block !important; position: relative; width: 100%; height: 100%; min-height: 0; }
   .ow-page .ow-stage { position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
   .ow-page .ow-sidebar { display: none !important; }
-  .ow-page .ow-sidebar.ow-sidebar-open { display: block !important; position: absolute; z-index: 18; top: 58px; right: 12px; bottom: 12px; width: min(340px, calc(100dvh - 24px)); max-width: calc(100% - 24px); box-sizing: border-box; overflow: auto; background: rgba(7, 26, 48, .97); backdrop-filter: blur(16px); box-shadow: 0 16px 48px #0008; }
-  .ow-page .ow-menu-toggle { position: absolute; z-index: 22; top: 10px; left: 10px; display: grid; place-items: center; }
-  .ow-page .ow-hud { display: none !important; }
-  .ow-page .ow-camera-hint, .ow-page .ow-footer { display: none !important; }
-  .ow-page .ow-controls { direction: ltr !important; flex-direction: row !important; bottom: 12px; left: 12px; right: 12px; }
-  .ow-page .ow-joystick { order: 0 !important; }
+  .ow-page .ow-sidebar.ow-sidebar-open { display: block !important; position: absolute; z-index: 28; top: 52px; left: 10px; bottom: 10px; width: min(350px, calc(100dvh - 20px)); max-height: none; overflow: auto; background: rgba(7, 26, 48, .97); }
+  .ow-page .ow-footer { display: none !important; }
+  .ow-page .ow-controls { direction: ltr !important; flex-direction: row !important; bottom: 10px; left: 12px; right: 12px; }
+  .ow-page .ow-joystick { order: 0 !important; width: 102px; height: 102px; }
   .ow-page .ow-action-stack { order: 1 !important; }
-  .ow-page::after { content: none !important; display: none !important; }
 }
-
-.ow-mission-list{display:grid;gap:8px;margin:18px 0 14px}.ow-mission-list h2{font-size:1rem;margin:0 0 3px;color:#f8fafc}.ow-mission-card{display:flex;align-items:center;gap:10px;padding:10px;border:1px solid #6b3444;border-radius:12px;background:linear-gradient(110deg,#3a2030,#10243b)}.ow-mission-card>span{font-size:24px}.ow-mission-card>div{display:grid;gap:4px}.ow-mission-card b{font-size:.82rem}.ow-mission-card small{font-size:.7rem;color:#c5d6e7;line-height:1.5}

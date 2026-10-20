@@ -31,16 +31,16 @@ export interface GameRegistryItem {
 
 export const GAME_CENTER_REGISTRY: GameRegistryItem[] = [
   {
-    id: 'open-health-world', route: '/open-world', badgeAr: 'جديد • عالم مفتوح 3D', badgeEn: 'NEW • 3D OPEN WORLD',
-    modeAr: 'استكشاف مدينة صحية ثلاثية الأبعاد', modeEn: 'Third-Person 3D Open World',
-    titleAr: 'عالم المدينة الصحية المفتوح', titleEn: 'Open Health World',
-    subtitleAr: 'تحرّك بحرية واستكشف المستشفى والصيدلية والأشعة والمعمل والطوارئ', subtitleEn: 'Freely explore the hospital, pharmacy, learning center, and community hub',
-    descriptionAr: 'مدينة صحية ثلاثية الأبعاد فيها طرق ومعابر مشاة وإنارة وشخصيات متحركة وسبعة مبانٍ تفاعلية، مع أقسام داخلية ولافتات واضحة وحفظ مكانك وتقدمك.',
-    descriptionEn: 'A third-person 3D health campus with roads, crosswalks, streetlights, animated pedestrians, seven interactive buildings, named rooms, and saved exploration progress.',
-    featuresAr: ['مدينة صحية بثلاثة أبعاد مع شوارع وممرات وساحة مركزية', 'سبعة مبانٍ تفاعلية تشمل الطوارئ والأشعة والمعمل والصيدلية', 'شخصيات متحركة، جويستك شمالي، وواجهة غامرة مع حفظ التقدم'],
-    featuresEn: ['A 3D health campus with roads, crosswalks, sidewalks and a central plaza', 'Seven interactive buildings including emergency, radiology, laboratory and pharmacy', 'Animated pedestrians, left-side joystick, immersive fullscreen and saved progress'],
-    controlsAr: 'الكمبيوتر: WASD أو الأسهم + E | الهاتف: جويستك يسار + تفاعل', controlsEn: 'Desktop: WASD / arrows + E | Mobile: left joystick + Interact',
-    ctaAr: 'ادخل العالم المفتوح 🌎', ctaEn: 'Enter Open World 🌎', accentColor: '#0ea5e9', secondaryColor: '#34d399', visualType: 'simulator3d', category: '3d-simulation',
+    id: 'open-health-world', route: '/open-world', badgeAr: 'محدّث • محاكاة مستشفى التمريض المفتوح 3D (8 مهام)', badgeEn: 'UPGRADED • 3D OPEN-WORLD NURSING HOSPITAL (8 MISSIONS)',
+    modeAr: 'محاكاة مناوبة تمريض ومستشفى مفتوح ثلاثي الأبعاد', modeEn: 'Third-Person 3D Open-World Nursing Simulation',
+    titleAr: 'مستشفى التمريض والعالم الصحي المفتوح 3D', titleEn: 'Open-World Nursing Hospital Simulation 3D',
+    subtitleAr: 'العب دور الممرضة عبر 8 مهام سريرية: الفرز، قياس العلامات الحيوية، أشعة الصدر، عينات المعمل، وفحص حساسية الأدوية', subtitleEn: 'Play as a hospital nurse across 8 clinical missions: triage, vital signs, chest X-ray, lab specimens, and medication allergy checks',
+    descriptionAr: 'مستشفى وعالم مفتوح ثلاثي الأبعاد بالكامل يضم محطة التمريض المركزية، عنابر المرضى، قسم الطوارئ والإسعاف، غرفة الأشعة السينية (X-Ray)، المعمل المركزي، الصيدلية، وغرفة المستلزمات والعلاج مع حمل المعدات وحفظ سحابي كامل.',
+    descriptionEn: 'A full third-person 3D walkable hospital complex featuring the Central Nursing Station, Inpatient Wards, Emergency & Triage, Radiology X-Ray Suite, Central Laboratory, Pharmacy, Supply Depot, and Treatment Room with equipment carrying and cloud continuity.',
+    featuresAr: ['8 مهام تمريضية متكاملة مع التقاط وحمل المعدات الطبية (حقيبة العلامات، عبوات العينات، طلبات الأشعة، والأدوية)', '6 مرضى تفاعليين بملفات سريرية وشاشات علامات حيوية حية (الحرارة، النبض، التنفس، الضغط، SpO2)', 'مسارات عملية للأشعة السينية (X-Ray) والمزارع المعملية (AST) وفحص الحقوق الخمسة وحساسية البنسلين وتسليم SBAR'],
+    featuresEn: ['8 playable nursing missions with real equipment pickup, carrying, and workstation placement', '6 interactive patients with simulated clinical charts and 5-parameter vital signs monitors', 'Functional Chest X-Ray viewer, Lab AST specimen workflow, 5-Rights penicillin allergy safety block, and SBAR handover'],
+    controlsAr: 'الكمبيوتر: WASD أو الأسهم + E للتفاعل + G لترك المعدة | الهاتف: جويستك يسار + تفاعل يمين', controlsEn: 'Desktop: WASD / arrows + E Interact + G Drop | Mobile: Left joystick + Right actions',
+    ctaAr: 'ابدأ مناوبة المستشفى المفتوح 3D 🏥', ctaEn: 'Start Open-World Nursing Shift 3D 🏥', accentColor: '#0ea5e9', secondaryColor: '#34d399', visualType: 'simulator3d', category: '3d-simulation',
   },
   {
     id: 'nurse-academy',

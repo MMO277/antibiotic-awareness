@@ -541,7 +541,5 @@
   .ms-immersive .ms-joystick-base { width: 94px; height: 94px; }
 }
 
-.ms-immersive .ms-objective-bar,
-.ms-immersive .ms-controls-hint-banner,
-.ms-immersive .ms-target-chip,
-.ms-immersive .ms-locked-toast { display: none !important; }
+.ms-immersive:not(.ms-hud-expanded) .ms-objective-bar,
+.ms-immersive .ms-controls-hint-banner { display: none !important; }
