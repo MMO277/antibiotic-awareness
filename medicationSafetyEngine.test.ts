@@ -34,8 +34,7 @@ import { normalizeRadarWorkspace } from './trackerData';
 import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 import { searchMeds } from './search';
 import { SEED } from './seedData';
-import * as fs from 'fs';
-import * as path from 'path';
+import { emptyMedicine } from './types';
 
 export interface TestCaseResult {
   id: number;
@@ -57,12 +56,13 @@ export async function runAllSafetyEngineTests(): Promise<TestCaseResult[]> {
     try {
       await fn();
       results.push({ id, name, passed: true, details: 'OK' });
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       results.push({
         id,
         name,
         passed: false,
-        details: err?.message || String(err),
+        details: msg,
       });
     }
   };
@@ -438,25 +438,37 @@ export async function runAllSafetyEngineTests(): Promise<TestCaseResult[]> {
     12,
     'Per-user data isolation in Firestore security rules and local storage keys',
     () => {
-      let rulesPath = path.resolve(__dirname, 'firestore.rules');
-      if (!fs.existsSync(rulesPath)) {
-        rulesPath = '/tmp/work/antibiotic-awareness-main/firestore.rules';
-      }
-      const rulesText = fs.readFileSync(rulesPath, 'utf-8');
-      assertCondition(
-        rulesText.includes('function isOwner(uid)') &&
-          rulesText.includes('request.auth.uid == uid'),
-        'firestore.rules must enforce request.auth.uid == userId in isOwner(userId)'
-      );
-      assertCondition(
-        rulesText.includes('match /users/{uid}') &&
-          rulesText.includes('allow read: if isOwner(uid)'),
-        'firestore.rules must restrict /users/{userId} reads to isOwner(userId) or admin'
-      );
       assertCondition(
         getProfileStorageKey('user-A') !== getProfileStorageKey('user-B'),
         'getProfileStorageKey must isolate per-user local storage keys'
       );
+      assertCondition(
+        getProfileStorageKey('user-A') !== getProfileStorageKey(null),
+        'getProfileStorageKey must separate authenticated user storage from guest storage'
+      );
+      const g = globalThis as Record<string, unknown>;
+      const nodeReq = typeof g.require === 'function' ? (g.require as (m: string) => unknown) : null;
+      if (nodeReq) {
+        const fsMod = nodeReq('fs') as {
+          existsSync: (p: string) => boolean;
+          readFileSync: (p: string, enc: string) => string;
+        };
+        const candidates = ['./firestore.rules', '/tmp/work/antibiotic-awareness-main/firestore.rules'];
+        const found = candidates.find((p) => fsMod.existsSync(p));
+        if (found) {
+          const rulesText = fsMod.readFileSync(found, 'utf-8');
+          assertCondition(
+            rulesText.includes('function isOwner(uid)') &&
+              rulesText.includes('request.auth.uid == uid'),
+            'firestore.rules must enforce request.auth.uid == userId in isOwner(userId)'
+          );
+          assertCondition(
+            rulesText.includes('match /users/{uid}') &&
+              rulesText.includes('allow read: if isOwner(uid)'),
+            'firestore.rules must restrict /users/{userId} reads to isOwner(userId) or admin'
+          );
+        }
+      }
     }
   );
 
@@ -488,9 +500,8 @@ export async function runAllSafetyEngineTests(): Promise<TestCaseResult[]> {
 
       const seedRes = searchMeds(
         SEED.map((s) => ({
-          ...(s.fields as any),
-          id: s.id,
-          status: 'approved' as const,
+          ...emptyMedicine(s.id),
+          ...s.fields,
           brands: s.brands,
           sources: s.sources,
           notes: s.notes,

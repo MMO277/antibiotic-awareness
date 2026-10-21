@@ -615,10 +615,8 @@ export function resolveMedicationIdentity(
     const gAr = normalizeMedToken(s.fields.genericName?.ar || '');
     const matchedBrand = s.brands.find(
       (b) =>
-        normalizeMedToken(b.name.en) === normCleaned ||
-        normalizeMedToken(b.name.ar) === normCleaned ||
-        normalizeMedToken(b.name.en) === normRaw ||
-        normalizeMedToken(b.name.ar) === normRaw
+        normalizeMedToken(b.name) === normCleaned ||
+        normalizeMedToken(b.name) === normRaw
     );
     if (
       s.id === rawInput.toLowerCase() ||
