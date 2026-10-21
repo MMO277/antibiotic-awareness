@@ -3,7 +3,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useAuth } from './authContext';
-import { ACTIVE_INGREDIENTS } from './egyptianDrugDatabase';
+import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 import {
   useSyncedHealthProfile,
   checkDrugAllergySafety,
@@ -456,7 +456,7 @@ export default function PrescriptionRadar() {
             'Taking probiotics at the exact same time as the antibiotic kills the beneficial bacteria. Take 2 hours after your antibiotic dose.',
         });
       } else if (cid === 'warfarin') {
-        if (isMetro || isMacrolide || isQuinolone || selectedAbx === 'sulfamethoxazole-trimethoprim') {
+        if (isMetro || isMacrolide || isQuinolone || (selectedAbx === 'co-trimoxazole' || selectedAbx === 'sulfamethoxazole-trimethoprim')) {
           list.push({
             coMedId: cid,
             coMedName: name,
@@ -656,7 +656,7 @@ export default function PrescriptionRadar() {
       });
     }
 
-    return slots;
+    return slots.sort((a, b) => a.hhmm.localeCompare(b.hhmm));
   }, [currentAbx, selectedAbx, frequency, firstDoseTime, autoRadarDoseTimes, selectedCoMeds, isAr]);
 
   // Open Save Prescription Modal pre-populated from current Radar analysis + auto-calculated times
@@ -2650,6 +2650,12 @@ export default function PrescriptionRadar() {
                       <option
                         key={ing.id}
                         value={isAr ? `${ing.nameAr} (${ing.nameEn})` : `${ing.nameEn} (${ing.nameAr})`}
+                      />
+                    ))}
+                    {EGYPTIAN_COMMERCIAL_PRODUCTS.map((prod) => (
+                      <option
+                        key={prod.productId}
+                        value={isAr ? `${prod.tradeNameAr} (${prod.tradeNameEn})` : `${prod.tradeNameEn} (${prod.tradeNameAr})`}
                       />
                     ))}
                   </datalist>

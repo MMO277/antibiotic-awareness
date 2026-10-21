@@ -1107,18 +1107,7 @@ export default function Scan() {
       }
     }
 
-    // 6) Check metallic Zithromax triangle visual signature if OCR was blocked by glare
-    if (inspected.isZithromaxMetallicTriangle) {
-      const zithProd = EGYPTIAN_COMMERCIAL_PRODUCTS.find(
-        (p) => p.tradeNameAr === 'زيثروماكس 500 مجم أقراص'
-      );
-      if (zithProd) {
-        setScanResult(buildResultFromProduct(zithProd, 'ai_vision'));
-        setBusy(false);
-        setStatusStep('');
-        return;
-      }
-    }
+    // Never guess a drug from box colors alone when OCR is unreadable
 
     setMsg(
       isAr

@@ -809,9 +809,9 @@ export function matchEgyptianDrugFromText(rawText: string): {
 }
 
 /**
- * Downscales large camera/gallery images in the browser to <=880px JPEG (<150 KB)
- * so Cloud OCR (`api.ocr.space` 1024 KB limit) never rejects phone photos,
- * and checks native BarcodeDetector + Zithromax metallic triangle signature.
+ * Downscales large camera/gallery images in the browser to <=800px JPEG (<95 KB)
+ * so Cloud OCR (`api.ocr.space` 1024 KB limit) and Vision endpoints never reject phone photos,
+ * and checks native BarcodeDetector.
  */
 export async function prepareImageForOcrAndVision(
   base64OrDataUrl: string,
@@ -821,7 +821,6 @@ export async function prepareImageForOcrAndVision(
   base64Data: string;
   mimeType: string;
   nativeBarcode: string | null;
-  isZithromaxMetallicTriangle: boolean;
 }> {
   const rawDataUri = base64OrDataUrl.startsWith('data:')
     ? base64OrDataUrl
@@ -834,7 +833,6 @@ export async function prepareImageForOcrAndVision(
       base64Data: rawBase64,
       mimeType: mimeType || 'image/jpeg',
       nativeBarcode: null,
-      isZithromaxMetallicTriangle: false,
     };
   }
 
@@ -846,7 +844,7 @@ export async function prepareImageForOcrAndVision(
       img.onerror = rej;
     });
 
-    const maxDim = 880;
+    const maxDim = 800;
     let w = img.width || 600;
     let h = img.height || 600;
     if (w > maxDim || h > maxDim) {
@@ -869,12 +867,11 @@ export async function prepareImageForOcrAndVision(
         base64Data: rawBase64,
         mimeType: mimeType || 'image/jpeg',
         nativeBarcode: null,
-        isZithromaxMetallicTriangle: false,
       };
     }
 
     ctx.drawImage(img, 0, 0, w, h);
-    const normalizedDataUri = canvas.toDataURL('image/jpeg', 0.85);
+    const normalizedDataUri = canvas.toDataURL('image/jpeg', 0.82);
     const normalizedBase64 = normalizedDataUri.split(',')[1] || rawBase64;
 
     let nativeBarcode: string | null = null;
@@ -896,56 +893,11 @@ export async function prepareImageForOcrAndVision(
       }
     }
 
-    let isZithromaxMetallicTriangle = false;
-    try {
-      const sampleCanvas = document.createElement('canvas');
-      const sw = 100;
-      const sh = 100;
-      sampleCanvas.width = sw;
-      sampleCanvas.height = sh;
-      const sCtx = sampleCanvas.getContext('2d');
-      if (sCtx) {
-        sCtx.drawImage(img, 0, 0, sw, sh);
-        const imgData = sCtx.getImageData(0, 0, sw, sh).data;
-        let centerLimeYellow = 0;
-        let centerTotal = 0;
-        let silverGrey = 0;
-        const totalPixels = sw * sh;
-
-        for (let y = 0; y < sh; y++) {
-          for (let x = 0; x < sw; x++) {
-            const idx = (y * sw + x) * 4;
-            const r = imgData[idx];
-            const g = imgData[idx + 1];
-            const b = imgData[idx + 2];
-
-            if (y >= sh * 0.2 && y <= sh * 0.85 && x >= sw * 0.15 && x <= sw * 0.85) {
-              centerTotal++;
-              if (g > 120 && r > 90 && b < 120 && g - b > 30) {
-                centerLimeYellow++;
-              }
-            }
-            if (Math.abs(r - g) < 28 && Math.abs(g - b) < 28 && r > 110 && r < 230) {
-              silverGrey++;
-            }
-          }
-        }
-        const limeRatio = centerTotal > 0 ? centerLimeYellow / centerTotal : 0;
-        const silverRatio = silverGrey / totalPixels;
-        if (limeRatio > 0.045 && silverRatio > 0.22) {
-          isZithromaxMetallicTriangle = true;
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-
     return {
       dataUri: normalizedDataUri,
       base64Data: normalizedBase64,
       mimeType: 'image/jpeg',
       nativeBarcode,
-      isZithromaxMetallicTriangle,
     };
   } catch {
     return {
@@ -953,7 +905,6 @@ export async function prepareImageForOcrAndVision(
       base64Data: rawBase64,
       mimeType: mimeType || 'image/jpeg',
       nativeBarcode: null,
-      isZithromaxMetallicTriangle: false,
     };
   }
 }
@@ -995,6 +946,107 @@ export async function performBrowserTesseractOcr(imageDataUrl: string): Promise<
   return '';
 }
 
+/**
+ * Zero-Hint Vision Text Transcriber:
+ * Uses a prompt with ZERO medicine names or examples so the model can never echo
+ * or hallucinate a drug name from the prompt. Filters out refusals or conversational replies.
+ */
+async function runZeroHintVisionOcr(dataUri: string): Promise<string> {
+  try {
+    const visionPrompt =
+      'Transcribe ONLY the exact visible text and numbers (Arabic and English) printed on the package or written on the paper in this image. Do NOT guess, do NOT add examples, and do NOT write sentences. If no text is readable, reply with the single word: NONE';
+    const res = await fetch('https://text.pollinations.ai/openai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: visionPrompt },
+              { type: 'image_url', image_url: { url: dataUri } },
+            ],
+          },
+        ],
+        temperature: 0.0,
+      }),
+    });
+    if (!res.ok) return '';
+    const json = await res.json();
+    const raw = (json?.choices?.[0]?.message?.content || '').trim();
+    if (!raw || /^none$/i.test(raw)) return '';
+    if (
+      /sorry|cannot|unable|can't|assist|provide|image_url|base64|عذراً|لا يمكنني/i.test(raw)
+    ) {
+      return '';
+    }
+    return raw;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Sequential Cloud OCR helper (`api.ocr.space`) that avoids firing 2 simultaneous requests
+ * with the same public `helloworld` key (which triggers concurrent rate-limiting).
+ * Engine 1 (`ara`) reads BOTH Arabic and English/Latin characters in a single request!
+ */
+async function runCloudOcrNonColliding(dataUri: string): Promise<string> {
+  const texts: string[] = [];
+
+  // 1) Engine 1 with 'ara' reads both Arabic and English/Latin characters
+  try {
+    const fdAra = new FormData();
+    fdAra.append('apikey', 'helloworld');
+    fdAra.append('base64Image', dataUri);
+    fdAra.append('language', 'ara');
+    fdAra.append('OCREngine', '1');
+    fdAra.append('scale', 'true');
+    const rAra = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      body: fdAra,
+    });
+    if (rAra.ok) {
+      const jAra = await rAra.json();
+      const parsedAra = jAra?.ParsedResults?.[0]?.ParsedText || '';
+      if (parsedAra.trim()) {
+        texts.push(parsedAra.trim());
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // 2) If Engine 1 did not match a drug yet, run Engine 2 ('eng') sequentially
+  const currentMatch = matchEgyptianDrugFromText(texts.join('\n'));
+  if (!currentMatch.matchedIngredientId) {
+    try {
+      const fdEng = new FormData();
+      fdEng.append('apikey', 'helloworld');
+      fdEng.append('base64Image', dataUri);
+      fdEng.append('language', 'eng');
+      fdEng.append('OCREngine', '2');
+      fdEng.append('scale', 'true');
+      const rEng = await fetch('https://api.ocr.space/parse/image', {
+        method: 'POST',
+        body: fdEng,
+      });
+      if (rEng.ok) {
+        const jEng = await rEng.json();
+        const parsedEng = jEng?.ParsedResults?.[0]?.ParsedText || '';
+        if (parsedEng.trim()) {
+          texts.push(parsedEng.trim());
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return texts.join('\n').trim();
+}
+
 function parseVisionText(rawText: string): {
   detectedDrugName: string;
   matchedIngredientId: string | null;
@@ -1028,12 +1080,11 @@ function parseVisionText(rawText: string): {
 /**
  * Multi-Engine Bilingual Vision & OCR Scanner:
  * Reads both Arabic and English medicine names accurately using:
- * 1) Native BarcodeDetector + Zithromax metallic signature inspection
- * 2) Cloud OCR Engine 2 (English / Latin drug names & concentrations)
- * 3) Cloud OCR Engine 1 (Arabic drug names & concentrations)
- * 4) Google Gemini Vision (if user API key `AIza...` is configured)
+ * 1) Native BarcodeDetector
+ * 2) Non-colliding Cloud OCR (`api.ocr.space` Engine 1 Arabic+Latin, then Engine 2 English)
+ * 3) Google Gemini Vision (if user API key `AIza...` is configured)
+ * 4) Zero-hint Vision OCR transcription (no drug names in prompt so it never hallucinates)
  * 5) Local in-browser Tesseract.js OCR (`eng+ara`) fallback
- * Never uses unverified keyless text LLMs to guess drug IDs.
  */
 export async function analyzeMedicineImageWithVision(
   base64Data: string,
@@ -1089,119 +1140,60 @@ Then write a clear clinical summary without markdown tables or ** symbols.`;
     return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
   };
 
-  const runOcrEng = async (): Promise<string> => {
-    const fd = new FormData();
-    fd.append('apikey', 'helloworld');
-    fd.append('base64Image', dataUri);
-    fd.append('language', 'eng');
-    fd.append('OCREngine', '2');
-    fd.append('scale', 'true');
-    const r = await fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      body: fd,
-    });
-    if (!r.ok) return '';
-    const j = await r.json();
-    return j?.ParsedResults?.[0]?.ParsedText || '';
-  };
-
-  const runOcrAra = async (): Promise<string> => {
-    const fd = new FormData();
-    fd.append('apikey', 'helloworld');
-    fd.append('base64Image', dataUri);
-    fd.append('language', 'ara');
-    fd.append('OCREngine', '1');
-    fd.append('scale', 'true');
-    const r = await fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      body: fd,
-    });
-    if (!r.ok) return '';
-    const j = await r.json();
-    return j?.ParsedResults?.[0]?.ParsedText || '';
-  };
-
-  const results = await Promise.allSettled([
+  const [geminiRes, cloudOcrRes, zeroHintRes] = await Promise.allSettled([
     runGemini(),
-    runOcrEng(),
-    runOcrAra(),
+    runCloudOcrNonColliding(dataUri),
+    runZeroHintVisionOcr(dataUri),
   ]);
 
-  const geminiText = results[0].status === 'fulfilled' ? results[0].value : '';
-  const engOcrText = results[1].status === 'fulfilled' ? results[1].value : '';
-  const araOcrText = results[2].status === 'fulfilled' ? results[2].value : '';
+  const geminiText = geminiRes.status === 'fulfilled' ? geminiRes.value : '';
+  const cloudOcrText = cloudOcrRes.status === 'fulfilled' ? cloudOcrRes.value : '';
+  const zeroHintText = zeroHintRes.status === 'fulfilled' ? zeroHintRes.value : '';
 
   const parsedGemini = geminiText
     ? parseVisionText(geminiText)
     : { detectedDrugName: '', matchedIngredientId: null, summary: '' };
 
-  // Prioritize real OCR text & native barcode
-  const ocrCombined = [
+  // Prioritize deterministic OCR + barcode first, then zero-hint vision transcription
+  const primaryText = [
     prepared.nativeBarcode || '',
-    engOcrText,
-    araOcrText,
+    cloudOcrText,
     parsedGemini.detectedDrugName,
   ]
     .filter(Boolean)
     .join('\n')
     .trim();
 
-  let matched = matchEgyptianDrugFromText(ocrCombined);
+  let matched = matchEgyptianDrugFromText(primaryText);
+  if (!matched.matchedIngredientId && zeroHintText) {
+    matched = matchEgyptianDrugFromText(`${primaryText}\n${zeroHintText}`);
+  }
 
-  // If cloud OCR did not match a drug yet, run local in-browser Tesseract OCR
   let localTesseractText = '';
   if (!matched.matchedIngredientId) {
     localTesseractText = await performBrowserTesseractOcr(dataUri);
     if (localTesseractText) {
-      matched = matchEgyptianDrugFromText(`${ocrCombined}\n${localTesseractText}`);
+      matched = matchEgyptianDrugFromText(`${primaryText}\n${zeroHintText}\n${localTesseractText}`);
     }
-  }
-
-  // Check Zithromax metallic silver + lime-yellow triangle visual signature if glare blocked OCR
-  if (!matched.matchedIngredientId && prepared.isZithromaxMetallicTriangle) {
-    const allOcrText = `${ocrCombined}\n${localTesseractText}`;
-    const is250 = /\b250\b|٢٥٠/.test(allOcrText);
-    const zithProd =
-      EGYPTIAN_COMMERCIAL_PRODUCTS.find(
-        (p) =>
-          p.activeIngredientId === 'azithromycin' &&
-          p.tradeNameAr.includes('زيثروماكس') &&
-          (is250 ? p.strength.includes('250') : p.strength.includes('500'))
-      ) ||
-      EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.tradeNameAr === 'زيثروماكس 500 مجم أقراص') ||
-      null;
-
-    matched = {
-      matchedProduct: zithProd,
-      matchedIngredientId: 'azithromycin',
-      detectedDrugName: zithProd
-        ? `${zithProd.tradeNameAr} (${zithProd.tradeNameEn})`
-        : 'زيثروماكس (Zithromax — Azithromycin)',
-      score: 140,
-    };
   }
 
   const allExtracted = [
     matched.detectedDrugName,
     parsedGemini.detectedDrugName,
-    engOcrText,
-    araOcrText,
+    cloudOcrText,
+    zeroHintText,
     localTesseractText,
   ]
     .filter(Boolean)
     .join('\n')
     .trim();
 
-  if (!allExtracted && !matched.matchedIngredientId) {
-    throw new Error('VISION_EMPTY');
-  }
-
   return {
     detectedDrugName:
       matched.detectedDrugName ||
       parsedGemini.detectedDrugName ||
-      engOcrText.split(/\r?\n/)[0] ||
-      araOcrText.split(/\r?\n/)[0] ||
+      cloudOcrText.split(/\r?\n/)[0] ||
+      zeroHintText.split(/\r?\n/)[0] ||
       '',
     matchedIngredientId: matched.matchedIngredientId || parsedGemini.matchedIngredientId,
     summary: parsedGemini.summary,
@@ -1496,8 +1488,9 @@ export function parsePrescriptionTextDeterministically(
 
 /**
  * Extracts readable prescription details from an uploaded or camera-captured prescription/medicine image.
- * Downscales oversized images automatically for reliable Cloud & Local OCR, checks barcode and visual
- * signatures, strictly marks output as unverified (`isUnverifiedOcr: true`), and never invents missing instructions.
+ * Downscales oversized images automatically for reliable Cloud & Local OCR, checks barcode,
+ * strictly marks output as unverified (`isUnverifiedOcr: true`), never invents missing instructions,
+ * and gracefully returns `unreadableFields` instead of throwing if OCR cannot read handwritten text.
  */
 export async function analyzePrescriptionImageWithVision(
   base64Data: string,
@@ -1564,47 +1557,15 @@ RX_CONTRADICTIONS: [any contradictory or ambiguous instructions noticed, or NONE
     return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
   };
 
-  const runOcrEng = async (): Promise<string> => {
-    const fd = new FormData();
-    fd.append('apikey', 'helloworld');
-    fd.append('base64Image', dataUri);
-    fd.append('language', 'eng');
-    fd.append('OCREngine', '2');
-    fd.append('scale', 'true');
-    const r = await fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      body: fd,
-    });
-    if (!r.ok) return '';
-    const j = await r.json();
-    return j?.ParsedResults?.[0]?.ParsedText || '';
-  };
-
-  const runOcrAra = async (): Promise<string> => {
-    const fd = new FormData();
-    fd.append('apikey', 'helloworld');
-    fd.append('base64Image', dataUri);
-    fd.append('language', 'ara');
-    fd.append('OCREngine', '1');
-    fd.append('scale', 'true');
-    const r = await fetch('https://api.ocr.space/parse/image', {
-      method: 'POST',
-      body: fd,
-    });
-    if (!r.ok) return '';
-    const j = await r.json();
-    return j?.ParsedResults?.[0]?.ParsedText || '';
-  };
-
-  const results = await Promise.allSettled([
+  const [geminiRes, cloudOcrRes, zeroHintRes] = await Promise.allSettled([
     runGemini(),
-    runOcrEng(),
-    runOcrAra(),
+    runCloudOcrNonColliding(dataUri),
+    runZeroHintVisionOcr(dataUri),
   ]);
 
-  const geminiText = results[0].status === 'fulfilled' ? results[0].value : '';
-  const engOcrText = results[1].status === 'fulfilled' ? results[1].value : '';
-  const araOcrText = results[2].status === 'fulfilled' ? results[2].value : '';
+  const geminiText = geminiRes.status === 'fulfilled' ? geminiRes.value : '';
+  const cloudOcrText = cloudOcrRes.status === 'fulfilled' ? cloudOcrRes.value : '';
+  const zeroHintText = zeroHintRes.status === 'fulfilled' ? zeroHintRes.value : '';
 
   const descriptiveFileName =
     fileNameHint &&
@@ -1612,48 +1573,25 @@ RX_CONTRADICTIONS: [any contradictory or ambiguous instructions noticed, or NONE
       ? fileNameHint.replace(/\.[a-z0-9]+$/i, '')
       : '';
 
-  // Prioritize real OCR text & native barcode
   let combinedRaw = [
     prepared.nativeBarcode || '',
-    engOcrText,
-    araOcrText,
+    cloudOcrText,
     geminiText,
+    zeroHintText,
     descriptiveFileName,
   ]
     .filter(Boolean)
     .join('\n')
     .trim();
 
-  let parsedResult = combinedRaw
-    ? parsePrescriptionTextDeterministically(combinedRaw)
-    : null;
+  let parsedResult = parsePrescriptionTextDeterministically(combinedRaw);
 
-  // If drug name was not yet detected from cloud OCR, run local in-browser Tesseract OCR (eng+ara)
-  if (!parsedResult || !parsedResult.detectedDrugName) {
+  if (!parsedResult.detectedDrugName) {
     const localTesseract = await performBrowserTesseractOcr(dataUri);
     if (localTesseract) {
       combinedRaw = [combinedRaw, localTesseract].filter(Boolean).join('\n').trim();
       parsedResult = parsePrescriptionTextDeterministically(combinedRaw);
     }
-  }
-
-  // If Zithromax metallic box signature is present and OCR was blocked by metallic glare
-  if (
-    prepared.isZithromaxMetallicTriangle &&
-    (!parsedResult || !parsedResult.matchedIngredientId)
-  ) {
-    const zithText = [
-      'RX_DRUG_ID: azithromycin',
-      'RX_DRUG_NAME: زيثروماكس (Zithromax — Azithromycin)',
-      combinedRaw,
-    ]
-      .filter(Boolean)
-      .join('\n');
-    parsedResult = parsePrescriptionTextDeterministically(zithText);
-  }
-
-  if (!parsedResult || (!parsedResult.rawExtractedText && !parsedResult.detectedDrugName)) {
-    throw new Error('PRESCRIPTION_OCR_EMPTY');
   }
 
   return parsedResult;
