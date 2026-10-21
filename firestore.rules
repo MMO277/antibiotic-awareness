@@ -13,6 +13,9 @@ service cloud.firestore {
       let d = request.resource.data;
       return (!('schedules' in d) || d.schedules is list)
         && (!('deletedScheduleIds' in d) || d.deletedScheduleIds is map)
+        && (!('prescriptions' in d) || d.prescriptions is list)
+        && (!('deletedPrescriptionIds' in d) || d.deletedPrescriptionIds is map)
+        && (!('treatmentEvents' in d) || d.treatmentEvents is list)
         && (!('radarWorkspace' in d) || d.radarWorkspace is map)
         && (!('healthProfile' in d) || d.healthProfile is map)
         && (!('learnDone' in d) || d.learnDone is list);

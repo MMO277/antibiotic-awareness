@@ -2,8 +2,49 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { doc, getDoc, onSnapshot, runTransaction, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db, configured } from './firebase';
 import { useAuth } from './authContext';
+import { AllergyRecord, checkDrugAllergySafety } from './allergyData';
 
 export type DoseStatus = 'upcoming' | 'taken' | 'missed' | 'unconfirmed';
+
+export type DoseDocumentedOutcome =
+  | 'taken_on_time'
+  | 'taken_late'
+  | 'missed_confirmed'
+  | 'held_for_clarification'
+  | 'skipped_clinician_advice';
+
+export type PrescriptionCaptureMethod =
+  | 'manual_entry'
+  | 'ocr_upload'
+  | 'camera_capture'
+  | 'scanner_import';
+
+export type PrescriptionVerificationStatus =
+  | 'unverified_ocr'
+  | 'needs_clarification'
+  | 'verified_by_patient';
+
+export type ClarificationFlagCode =
+  | 'missing_medicine'
+  | 'missing_dose'
+  | 'missing_route'
+  | 'missing_frequency'
+  | 'missing_duration'
+  | 'contradictory_frequency'
+  | 'contradictory_route_form'
+  | 'contradictory_duration'
+  | 'duplicate_dose_times'
+  | 'allergy_conflict'
+  | 'cross_allergy_risk'
+  | 'severe_drug_interaction'
+  | 'duplicate_active_course';
+
+export interface ClarificationFlag {
+  code: ClarificationFlagCode;
+  severity: 'blocking' | 'warning';
+  messageAr: string;
+  messageEn: string;
+}
 
 export type CloudSyncStatus =
   | 'loading'
@@ -25,11 +66,67 @@ export interface ScheduledDose {
   takenAt?: string;
   missedAt?: string;
   statusUpdatedAt?: string;
+  documentedOutcome?: DoseDocumentedOutcome;
   note?: string;
+}
+
+export interface SavedPrescription {
+  id: string;
+  antibioticId?: string;
+  medicineName: string;
+  prescribedDose: string;
+  route: string; // '' when unverified/missing from OCR
+  frequency: string; // '' when unverified/missing from OCR
+  firstDoseTime?: string;
+  doseTimes?: string[];
+  startDate?: string;
+  durationDays: number | null; // null when unverified/missing from OCR
+  notes?: string;
+  coMedications?: string[];
+  captureMethod: PrescriptionCaptureMethod;
+  rawExtractedText?: string;
+  imageFileName?: string;
+  isOcrUnverified: boolean;
+  verificationStatus: PrescriptionVerificationStatus;
+  verifiedAt?: string;
+  verifiedByPatient?: boolean;
+  clarificationFlags: ClarificationFlag[];
+  linkedScheduleId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TreatmentJourneyEventType =
+  | 'prescription_captured'
+  | 'ocr_extracted_unverified'
+  | 'clarification_flagged'
+  | 'prescription_verified'
+  | 'schedule_created'
+  | 'schedule_updated'
+  | 'schedule_deleted'
+  | 'dose_taken'
+  | 'dose_missed'
+  | 'dose_documented'
+  | 'dose_undone'
+  | 'duplicate_dose_blocked';
+
+export interface TreatmentJourneyEvent {
+  id: string;
+  type: TreatmentJourneyEventType;
+  timestamp: string;
+  prescriptionId?: string;
+  scheduleId?: string;
+  doseId?: string;
+  medicineName?: string;
+  scheduledTime?: string;
+  actualTime?: string;
+  summaryAr: string;
+  summaryEn: string;
 }
 
 export interface TreatmentSchedule {
   id: string;
+  prescriptionId?: string;
   antibioticId?: string;
   medicineName: string;
   prescribedDose: string;
@@ -43,6 +140,12 @@ export interface TreatmentSchedule {
   notes?: string;
   coMedications?: string[];
   coMedNotes?: string;
+  captureMethod?: PrescriptionCaptureMethod;
+  verificationStatus?: PrescriptionVerificationStatus;
+  verifiedAt?: string;
+  verifiedByPatient?: boolean;
+  clarificationFlags?: ClarificationFlag[];
+  rawExtractedText?: string;
   createdAt: string;
   updatedAt: string;
   doses: ScheduledDose[];
@@ -53,23 +156,32 @@ export interface RadarWorkspaceState {
   frequency: RadarFrequency;
   firstDoseTime: string; // "HH:mm"
   selectedCoMeds: string[];
-  additionalMeds?: string[];
   updatedAt: string;
+}
+
+export interface DoseUpdateResult {
+  updated: boolean;
+  reason?: 'already_recorded' | 'rapid_duplicate_taken_warning' | 'not_found';
+  messageAr?: string;
+  messageEn?: string;
 }
 
 export const STORAGE_KEY = 'antibiotic_treatment_tracker_schedules';
 export const DELETED_SCHEDULES_KEY = 'antibiotic_treatment_tracker_deleted';
+export const PRESCRIPTIONS_STORAGE_KEY = 'aa_patient_saved_prescriptions';
+export const DELETED_PRESCRIPTIONS_KEY = 'aa_patient_deleted_prescriptions';
+export const TREATMENT_EVENTS_STORAGE_KEY = 'aa_patient_treatment_events';
 export const RADAR_WORKSPACE_KEY = 'aa_prescription_radar_workspace';
 export const NOTIF_FIRED_STORAGE_KEY = 'aa_fired_dose_notifications';
 const MIGRATED_LEGACY_SCHEDULES_PREFIX = 'aa_migrated_legacy_schedules_';
 const SCHEDULES_EVENT = 'aa-tracker-schedules-updated';
+const MAX_TREATMENT_EVENTS = 250;
 
 export const DEFAULT_RADAR_WORKSPACE: RadarWorkspaceState = {
   selectedAbx: 'ciprofloxacin',
   frequency: 'q12h',
   firstDoseTime: '08:00',
   selectedCoMeds: ['calcium_dairy', 'iron_zinc', 'probiotics', 'paracetamol'],
-  additionalMeds: [],
   updatedAt: '1970-01-01T00:00:00.000Z',
 };
 
@@ -100,6 +212,8 @@ export function formatRouteLabel(route: string, isAr = true): string {
       return isAr ? 'حقن (وريد/عضل)' : 'Injection';
     case 'topical':
       return isAr ? 'موضعي (كريم/مرهم)' : 'Topical';
+    case '':
+      return isAr ? 'غير محدد (يحتاج توضيح)' : 'Unspecified (Needs Clarification)';
     default:
       return route;
   }
@@ -119,8 +233,71 @@ export function formatFrequencyLabel(freq: string, isAr = true): string {
     case 'four_times_daily':
     case 'q6h':
       return isAr ? '4 مرات يومياً (كل 6 ساعات)' : '4 times daily (every 6h)';
+    case '':
+      return isAr ? 'غير محدد (يحتاج توضيح)' : 'Unspecified (Needs Clarification)';
     default:
       return freq;
+  }
+}
+
+export function formatVerificationStatusLabel(
+  status?: PrescriptionVerificationStatus,
+  isAr = true
+): string {
+  switch (status) {
+    case 'verified_by_patient':
+      return isAr
+        ? '✅ موثّقة ومؤكدة من الروشتة الورقية'
+        : '✅ Verified Against Physical Prescription';
+    case 'unverified_ocr':
+      return isAr
+        ? '⚠️ مستخرجة بالـ OCR — غير موثّقة (تتطلب المراجعة)'
+        : '⚠️ Unverified OCR Extraction — Requires Review';
+    case 'needs_clarification':
+      return isAr
+        ? '🚨 تحتاج توضيحاً مهنياً من الطبيب أو الصيدلي'
+        : '🚨 Flagged for Doctor / Pharmacist Clarification';
+    default:
+      return isAr
+        ? '✅ مدخلة ومؤكدة بواسطة المريض'
+        : '✅ Patient-Entered & Confirmed';
+  }
+}
+
+export function formatCaptureMethodLabel(
+  method?: PrescriptionCaptureMethod,
+  isAr = true
+): string {
+  switch (method) {
+    case 'ocr_upload':
+      return isAr ? 'رفع صورة روشتة (OCR)' : 'Prescription Image Upload (OCR)';
+    case 'camera_capture':
+      return isAr ? 'التقاط بالكاميرا (OCR)' : 'Camera Capture (OCR)';
+    case 'scanner_import':
+      return isAr ? 'استيراد من الماسح الذكي' : 'Imported from Smart Scanner';
+    case 'manual_entry':
+    default:
+      return isAr ? 'إدخال يدوي مباشر' : 'Direct Manual Entry';
+  }
+}
+
+export function formatDocumentedOutcomeLabel(
+  outcome?: DoseDocumentedOutcome,
+  isAr = true
+): string {
+  switch (outcome) {
+    case 'taken_on_time':
+      return isAr ? 'أُخذت في موعدها' : 'Taken on schedule';
+    case 'taken_late':
+      return isAr ? 'أُخذت متأخرة' : 'Taken late';
+    case 'missed_confirmed':
+      return isAr ? 'جرعة فائتة مؤكدة' : 'Confirmed missed dose';
+    case 'held_for_clarification':
+      return isAr ? 'مؤجلة لحين استشارة الطبيب/الصيدلي' : 'Held pending clinician clarification';
+    case 'skipped_clinician_advice':
+      return isAr ? 'تم إيقافها/تخطيها بتوجيه الطبيب' : 'Skipped per clinician advice';
+    default:
+      return '';
   }
 }
 
@@ -135,6 +312,25 @@ export function addMinutesToTime(hhmm: string, minutesToAdd: number): string {
   const outH = String(Math.floor(totalMinutes / 60)).padStart(2, '0');
   const outM = String(totalMinutes % 60).padStart(2, '0');
   return `${outH}:${outM}`;
+}
+
+export function getExpectedDosesPerDay(freq: string): number | null {
+  switch (freq) {
+    case 'once_daily':
+    case 'q24h':
+      return 1;
+    case 'twice_daily':
+    case 'q12h':
+      return 2;
+    case 'thrice_daily':
+    case 'q8h':
+      return 3;
+    case 'four_times_daily':
+    case 'q6h':
+      return 4;
+    default:
+      return null;
+  }
 }
 
 /**
@@ -205,12 +401,362 @@ export function computeEndDate(startDateStr: string, durationDays: number): stri
   return formatLocalDateYYYYMMDD(endObj);
 }
 
+export interface PrescriptionValidationInput {
+  antibioticId?: string;
+  medicineName: string;
+  prescribedDose: string;
+  route: string;
+  frequency: string;
+  doseTimes?: string[];
+  durationDays: number | null | undefined;
+  notes?: string;
+  coMedications?: string[];
+  rawExtractedText?: string;
+  isOcrUnverified?: boolean;
+  verifiedByPatient?: boolean;
+  editingScheduleId?: string | null;
+}
+
+export interface PrescriptionValidationResult {
+  flags: ClarificationFlag[];
+  blockingFlags: ClarificationFlag[];
+  warningFlags: ClarificationFlag[];
+  hasBlockingFlags: boolean;
+  canCreateSchedule: boolean;
+  verificationStatus: PrescriptionVerificationStatus;
+}
+
+function isPlaceholderOrUnreadable(value?: string | null): boolean {
+  const v = (value || '').trim().toLowerCase();
+  if (!v) return true;
+  return (
+    v === '?' ||
+    v === '??' ||
+    v === 'unknown' ||
+    v === 'unreadable' ||
+    v === 'missing' ||
+    v === 'n/a' ||
+    v === 'none' ||
+    v === 'غير واضح' ||
+    v === 'غير مقروء' ||
+    v === 'غير محدد' ||
+    v === 'غير مذكور'
+  );
+}
+
+/**
+ * Prescription Verification & Contradiction Detection Engine:
+ * - Never invents a medication dose, frequency, duration, or administration route.
+ * - Flags missing or contradictory instructions for professional clarification.
+ * - Integrates with the patient's allergy profile and co-medication safety rules.
+ * - Allows treatment scheduling ONLY after instructions are complete, non-contradictory,
+ *   and explicitly verified by the patient.
+ */
+export function validatePrescriptionInstructions(
+  input: PrescriptionValidationInput,
+  existingSchedules: TreatmentSchedule[] = [],
+  patientAllergies: AllergyRecord[] = []
+): PrescriptionValidationResult {
+  const flags: ClarificationFlag[] = [];
+
+  const medName = (input.medicineName || '').trim();
+  const dose = (input.prescribedDose || '').trim();
+  const route = (input.route || '').trim();
+  const freq = (input.frequency || '').trim();
+  const notes = (input.notes || '').trim();
+  const combinedText = `${dose} ${notes} ${input.rawExtractedText || ''}`.trim();
+
+  // 1. Missing required fields (never invent defaults)
+  if (isPlaceholderOrUnreadable(medName)) {
+    flags.push({
+      code: 'missing_medicine',
+      severity: 'blocking',
+      messageAr: 'اسم المضاد الحيوي مفقود أو غير مقروء في الروشتة — يجب التأكد منه من الطبيب أو الصيدلي.',
+      messageEn: 'Prescribed antibiotic name is missing or unreadable — clarify with your doctor or pharmacist.',
+    });
+  }
+
+  if (isPlaceholderOrUnreadable(dose) || !/\d/.test(dose)) {
+    flags.push({
+      code: 'missing_dose',
+      severity: 'blocking',
+      messageAr:
+        'الجرعة الموصوفة أو التركيز غير مكتوب بوضوح (يجب أن تتضمن كمية/تركيزاً محدداً مثل 500 مجم أو 5 مل). التطبيق لا يفترض جرعات تلقائياً.',
+      messageEn:
+        'Prescribed dose/strength is missing or incomplete (must include an explicit strength/amount such as 500 mg or 5 mL). Never guess a dose.',
+    });
+  }
+
+  if (
+    isPlaceholderOrUnreadable(route) ||
+    !['oral', 'suspension', 'injection', 'topical'].includes(route)
+  ) {
+    flags.push({
+      code: 'missing_route',
+      severity: 'blocking',
+      messageAr: 'طريقة الاستعمال (أقراص / شراب / حقن / موضعي) غير محددة — يرجى مراجعة الروشتة أو الصيدلي.',
+      messageEn: 'Administration route (oral, suspension, injection, or topical) is missing — please clarify.',
+    });
+  }
+
+  const expectedDosesPerDay = getExpectedDosesPerDay(freq);
+  if (isPlaceholderOrUnreadable(freq) || expectedDosesPerDay === null) {
+    flags.push({
+      code: 'missing_frequency',
+      severity: 'blocking',
+      messageAr: 'عدد الجرعات اليومية (التكرار الزمني) غير محدد — لا يمكن جدولة الجرعات بدون تكرار واضح.',
+      messageEn: 'Dosing frequency is missing or unrecognized — cannot schedule doses without verified frequency.',
+    });
+  }
+
+  const dur = input.durationDays;
+  if (dur === null || dur === undefined || Number.isNaN(Number(dur))) {
+    flags.push({
+      code: 'missing_duration',
+      severity: 'blocking',
+      messageAr: 'مدة الكورس العلاجي بالأيام غير محددة في الروشتة — يرجى استشارة الطبيب أو الصيدلي لتأكيد المدة.',
+      messageEn: 'Course duration in days is missing — please clarify the prescribed duration with your clinician.',
+    });
+  } else if (dur < 1 || dur > 60 || !Number.isInteger(Number(dur))) {
+    flags.push({
+      code: 'contradictory_duration',
+      severity: 'blocking',
+      messageAr: 'مدة الكورس المدخلة غير منطقية سريرياً (يجب أن تكون عدداً صحيحاً بين 1 و 60 يوماً حسب الروشتة).',
+      messageEn: 'Course duration is outside valid clinical bounds (must be an integer between 1 and 60 days).',
+    });
+  }
+
+  // 2. Contradictory Route vs Dosage Form checks
+  const doseAndNotes = `${dose} ${notes}`;
+  if (route === 'oral') {
+    if (/(\bvial\b|ampoule|\bamp\b|injection|\biv\b|\bim\b|حقن|حقنة|أمبول|امبول|فيال|وريد|عضل)/i.test(doseAndNotes)) {
+      flags.push({
+        code: 'contradictory_route_form',
+        severity: 'blocking',
+        messageAr:
+          'تعارض في التعليمات: تم اختيار طريقة الاستعمال «أقراص/كبسول فموي» بينما تذكر الجرعة أو الملاحظات «حقن/فيال/أمبول». يرجى مراجعة الطبيب أو الصيدلي.',
+        messageEn:
+          'Contradictory instructions: Route is set to "Oral Tablet/Capsule" while the dose/notes specify an injection/vial/ampoule. Please clarify with a professional.',
+      });
+    } else if (/(\bcream\b|ointment|topical|كريم|مرهم|دهان)/i.test(doseAndNotes)) {
+      flags.push({
+        code: 'contradictory_route_form',
+        severity: 'blocking',
+        messageAr:
+          'تعارض في التعليمات: تم اختيار «فموي» بينما تذكر الجرعة أو الملاحظات «كريم/مرهم موضعي».',
+        messageEn:
+          'Contradictory instructions: Route is set to "Oral" while dose/notes specify a topical cream/ointment.',
+      });
+    }
+  } else if (route === 'injection') {
+    if (/(tablet|tablets|capsule|capsules|\bsyrup\b|suspension|قرص|أقراص|اقراص|كبسول|كبسولة|شراب|معلق)/i.test(doseAndNotes)) {
+      flags.push({
+        code: 'contradictory_route_form',
+        severity: 'blocking',
+        messageAr:
+          'تعارض في التعليمات: تم اختيار طريقة الاستعمال «حقن» بينما تذكر الجرعة أو الملاحظات «أقراص/كبسول/شراب فموي».',
+        messageEn:
+          'Contradictory instructions: Route is set to "Injection" while dose/notes specify oral tablets, capsules, or syrup.',
+      });
+    }
+  } else if (route === 'topical') {
+    if (/(tablet|capsule|\bvial\b|ampoule|injection|قرص|أقراص|كبسول|حقن|أمبول|فيال)/i.test(doseAndNotes)) {
+      flags.push({
+        code: 'contradictory_route_form',
+        severity: 'blocking',
+        messageAr:
+          'تعارض في التعليمات: تم اختيار طريقة الاستعمال «موضعي» بينما تذكر الجرعة أو الملاحظات «أقراص/كبسول/حقن».',
+        messageEn:
+          'Contradictory instructions: Route is set to "Topical" while dose/notes specify tablets, capsules, or injections.',
+      });
+    }
+  } else if (route === 'suspension') {
+    if (/(tablet|capsule|\bvial\b|ampoule|\bcream\b|ointment|قرص|أقراص|كبسول|حقن|فيال|كريم|مرهم)/i.test(doseAndNotes)) {
+      flags.push({
+        code: 'contradictory_route_form',
+        severity: 'blocking',
+        messageAr:
+          'تعارض في التعليمات: تم اختيار «شراب معلق» بينما تذكر الجرعة أو الملاحظات شكلاً دوائياً مختلفاً (أقراص/حقن/مرهم).',
+        messageEn:
+          'Contradictory instructions: Route is set to "Oral Suspension" while dose/notes specify tablets, injections, or ointment.',
+      });
+    }
+  }
+
+  // 3. Contradictory Frequency vs Dose Times / Written Text checks
+  if (expectedDosesPerDay !== null) {
+    if (Array.isArray(input.doseTimes) && input.doseTimes.length > 0) {
+      if (input.doseTimes.length !== expectedDosesPerDay) {
+        flags.push({
+          code: 'contradictory_frequency',
+          severity: 'blocking',
+          messageAr: `تعارض في عدد المواعيد اليومية: التكرار المحدد (${expectedDosesPerDay} مرات يومياً) لا يطابق عدد مواعيد الجرعات المدخلة (${input.doseTimes.length}).`,
+          messageEn: `Contradictory schedule: Selected frequency (${expectedDosesPerDay}/day) does not match the number of dose times (${input.doseTimes.length}).`,
+        });
+      }
+      const uniqueTimes = new Set(input.doseTimes.map((t) => t.trim()));
+      if (uniqueTimes.size !== input.doseTimes.length) {
+        flags.push({
+          code: 'duplicate_dose_times',
+          severity: 'blocking',
+          messageAr: 'يوجد تكرار لنفس التوقيت مرتين في مواعيد الجرعات اليومية — يمنع النظام جدولة جرعتين في نفس اللحظة.',
+          messageEn: 'Duplicate daily dose times detected — two doses cannot be scheduled at the exact same clock time.',
+        });
+      }
+    }
+
+    const mentionsOnce = /(once\s*daily|every\s*24\s*(?:h|hr|hours)|\bq24h\b|مرة\s*واحدة\s*يوميا|كل\s*24\s*ساع)/i.test(combinedText);
+    const mentionsTwice = /(twice\s*daily|every\s*12\s*(?:h|hr|hours)|\bq12h\b|\bbid\b|مرتين\s*يوميا|كل\s*12\s*ساع)/i.test(combinedText);
+    const mentionsThrice = /(thrice\s*daily|three\s*times\s*daily|every\s*8\s*(?:h|hr|hours)|\bq8h\b|\btid\b|3\s*مرات\s*يوميا|ثلاث\s*مرات|كل\s*8\s*ساع)/i.test(combinedText);
+    const mentionsFour = /(four\s*times\s*daily|every\s*6\s*(?:h|hr|hours)|\bq6h\b|\bqid\b|4\s*مرات\s*يوميا|أربع\s*مرات|كل\s*6\s*ساع)/i.test(combinedText);
+
+    const textCounts: number[] = [];
+    if (mentionsOnce) textCounts.push(1);
+    if (mentionsTwice) textCounts.push(2);
+    if (mentionsThrice) textCounts.push(3);
+    if (mentionsFour) textCounts.push(4);
+
+    if (textCounts.length > 1 || (textCounts.length === 1 && textCounts[0] !== expectedDosesPerDay)) {
+      flags.push({
+        code: 'contradictory_frequency',
+        severity: 'blocking',
+        messageAr:
+          'تعارض في تكرار الجرعة: النص المكتوب في الجرعة أو الملاحظات يذكر تكراراً زمنياً مختلفاً عن عدد الجرعات اليومية المحدد. يرجى التأكد من الصيدلي أو الطبيب.',
+        messageEn:
+          'Contradictory dosing frequency: The written dose/notes mention a different daily interval than the selected frequency. Please clarify with your doctor or pharmacist.',
+      });
+    }
+  }
+
+  // 4. Contradictory Duration in written notes vs durationDays field
+  if (typeof dur === 'number' && dur >= 1 && dur <= 60) {
+    const durMatch = combinedText.match(/(?:for|لمدة|لمده)\s*(\d{1,2})\s*(?:days?|أيام|ايام|يوم)/i);
+    if (durMatch) {
+      const writtenDays = parseInt(durMatch[1], 10);
+      if (!isNaN(writtenDays) && writtenDays !== dur) {
+        flags.push({
+          code: 'contradictory_duration',
+          severity: 'blocking',
+          messageAr: `تعارض في مدة العلاج: الملاحظات تذكر (${writtenDays} أيام) بينما حقل المدة مضبوط على (${dur} أيام). يرجى توحيد المدة حسب الروشتة.`,
+          messageEn: `Contradictory duration: Written instructions state ${writtenDays} days while the duration field is set to ${dur} days. Please clarify.`,
+        });
+      }
+    }
+  }
+
+  // 5. Patient Allergy Safety Engine check
+  if (input.antibioticId && patientAllergies.length > 0) {
+    const allergyRes = checkDrugAllergySafety(input.antibioticId, patientAllergies);
+    if (allergyRes.matchLevel === 'exact_match') {
+      flags.push({
+        code: 'allergy_conflict',
+        severity: 'blocking',
+        messageAr: `🚨 خطر حساسية دوائية مسجلة: هذا الدواء يتطابق مع سجل حساسيتك (${allergyRes.matchedAllergy?.drugName || ''}). لا تبدأ الجدول العلاجي وراجع الطبيب فوراً!`,
+        messageEn: `🚨 Documented Allergy Conflict: This antibiotic matches your recorded allergy (${allergyRes.matchedAllergy?.drugName || ''}). Do not start this schedule; contact your physician immediately!`,
+      });
+    } else if (allergyRes.matchLevel === 'cross_reactivity') {
+      flags.push({
+        code: 'cross_allergy_risk',
+        severity: 'warning',
+        messageAr: `⚠️ تنبيه حساسية متصالبة (بيتا-لاكتام): لديك حساسية مسجلة من (${allergyRes.matchedAllergy?.drugName || ''}). تأكد من موافقة الطبيب قبل الاستخدام.`,
+        messageEn: `⚠️ Beta-Lactam Cross-Reactivity Warning: You have a recorded allergy to (${allergyRes.matchedAllergy?.drugName || ''}). Verify safety with your physician.`,
+      });
+    }
+  }
+
+  // 6. Severe Co-Medication Interaction check
+  const coMeds = input.coMedications || [];
+  const abxId = (input.antibioticId || '').toLowerCase();
+  if (
+    coMeds.includes('warfarin') &&
+    ['metronidazole', 'clarithromycin', 'erythromycin', 'ciprofloxacin', 'levofloxacin', 'moxifloxacin', 'co-trimoxazole'].includes(abxId)
+  ) {
+    flags.push({
+      code: 'severe_drug_interaction',
+      severity: 'warning',
+      messageAr: '🚨 تداخل دوائي عالي الخطورة مع الوارفارين (أدوية السيولة): يرفع خطر النزيف ويتطلب مراجعة الطبيب لمتابعة تحليل INR.',
+      messageEn: '🚨 High-risk interaction with Warfarin: Increases bleeding risk and requires physician INR monitoring.',
+    });
+  }
+  if (coMeds.includes('statins') && ['clarithromycin', 'erythromycin'].includes(abxId)) {
+    flags.push({
+      code: 'severe_drug_interaction',
+      severity: 'warning',
+      messageAr: '🚨 تداخل خطير مع أدوية الكوليسترول (Statins): كلاريثرومايسين/إريثرومايسين يثبطان تكسير الدواء ويرفعان خطر انحلال العضلات — استشر الطبيب أو الصيدلي.',
+      messageEn: '🚨 Severe CYP3A4 interaction with Statins: Clarithromycin/Erythromycin increase myopathy risk — consult your doctor or pharmacist.',
+    });
+  }
+  if (coMeds.includes('nsaids') && ['ciprofloxacin', 'levofloxacin', 'moxifloxacin'].includes(abxId)) {
+    flags.push({
+      code: 'severe_drug_interaction',
+      severity: 'warning',
+      messageAr: '⚠️ تحذير تداخل: الجمع بين الفلوروكينولونات والمسكنات القوية (NSAIDs) يزيد إجهاد الكلى والجهاز العصبي — استشر الطبيب.',
+      messageEn: '⚠️ Interaction warning: Combining fluoroquinolones with NSAIDs increases renal and CNS risk — consult your doctor.',
+    });
+  }
+
+  // 7. Duplicate active course check
+  if (medName || abxId) {
+    const duplicateCourse = existingSchedules.find((s) => {
+      if (input.editingScheduleId && s.id === input.editingScheduleId) return false;
+      const sameAbx = abxId && s.antibioticId && s.antibioticId.toLowerCase() === abxId;
+      const sameName =
+        medName &&
+        s.medicineName.trim().toLowerCase() === medName.toLowerCase();
+      return Boolean(sameAbx || sameName);
+    });
+    if (duplicateCourse) {
+      flags.push({
+        code: 'duplicate_active_course',
+        severity: 'warning',
+        messageAr: `⚠️ يوجد جدول علاجي آخر محفوظ لنفس الدواء (${duplicateCourse.medicineName}) — تأكد من عدم تكرار نفس المضاد الحيوي لتجنب الجرعة الزائدة.`,
+        messageEn: `⚠️ Another schedule is already saved for (${duplicateCourse.medicineName}) — verify you are not duplicating therapy.`,
+      });
+    }
+  }
+
+  const blockingFlags = flags.filter((f) => f.severity === 'blocking');
+  const warningFlags = flags.filter((f) => f.severity === 'warning');
+  const hasBlockingFlags = blockingFlags.length > 0;
+  const canCreateSchedule = !hasBlockingFlags && Boolean(input.verifiedByPatient);
+
+  let verificationStatus: PrescriptionVerificationStatus = 'needs_clarification';
+  if (hasBlockingFlags) {
+    verificationStatus = 'needs_clarification';
+  } else if (input.verifiedByPatient) {
+    verificationStatus = 'verified_by_patient';
+  } else if (input.isOcrUnverified) {
+    verificationStatus = 'unverified_ocr';
+  }
+
+  return {
+    flags,
+    blockingFlags,
+    warningFlags,
+    hasBlockingFlags,
+    canCreateSchedule,
+    verificationStatus,
+  };
+}
+
 export function getSchedulesStorageKey(uid?: string | null): string {
   return uid ? `${STORAGE_KEY}_${uid}` : STORAGE_KEY;
 }
 
 export function getDeletedSchedulesStorageKey(uid?: string | null): string {
   return uid ? `${DELETED_SCHEDULES_KEY}_${uid}` : DELETED_SCHEDULES_KEY;
+}
+
+export function getPrescriptionsStorageKey(uid?: string | null): string {
+  return uid ? `${PRESCRIPTIONS_STORAGE_KEY}_${uid}` : PRESCRIPTIONS_STORAGE_KEY;
+}
+
+export function getDeletedPrescriptionsStorageKey(uid?: string | null): string {
+  return uid ? `${DELETED_PRESCRIPTIONS_KEY}_${uid}` : DELETED_PRESCRIPTIONS_KEY;
+}
+
+export function getTreatmentEventsStorageKey(uid?: string | null): string {
+  return uid ? `${TREATMENT_EVENTS_STORAGE_KEY}_${uid}` : TREATMENT_EVENTS_STORAGE_KEY;
 }
 
 export function getRadarWorkspaceStorageKey(uid?: string | null): string {
@@ -255,14 +801,11 @@ export function normalizeRadarWorkspace(raw: any): RadarWorkspaceState {
   const selectedCoMeds = Array.isArray(raw.selectedCoMeds)
     ? raw.selectedCoMeds.filter((x: unknown): x is string => typeof x === 'string')
     : [...DEFAULT_RADAR_WORKSPACE.selectedCoMeds];
-  const additionalMeds = Array.isArray(raw.additionalMeds)
-    ? raw.additionalMeds.filter((x: unknown): x is string => typeof x === 'string' && Boolean(x.trim()))
-    : [];
   const updatedAt =
     typeof raw.updatedAt === 'string' && raw.updatedAt
       ? raw.updatedAt
       : DEFAULT_RADAR_WORKSPACE.updatedAt;
-  return { selectedAbx, frequency, firstDoseTime, selectedCoMeds, additionalMeds, updatedAt };
+  return { selectedAbx, frequency, firstDoseTime, selectedCoMeds, updatedAt };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -275,6 +818,153 @@ export function normalizeDeletedMap(raw: any): Record<string, string> {
     }
   }
   return out;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function normalizeClarificationFlags(raw: any): ClarificationFlag[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((f) => f !== null && typeof f === 'object')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((f: any) => ({
+      code: (typeof f.code === 'string' ? f.code : 'missing_dose') as ClarificationFlagCode,
+      severity: (f.severity === 'blocking' ? 'blocking' : 'warning') as 'blocking' | 'warning',
+      messageAr: typeof f.messageAr === 'string' ? f.messageAr : '',
+      messageEn: typeof f.messageEn === 'string' ? f.messageEn : '',
+    }))
+    .filter((f) => Boolean(f.messageAr || f.messageEn));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function normalizePrescriptions(raw: any): SavedPrescription[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((p) => p !== null && typeof p === 'object')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((p: any, idx: number) => {
+      const createdAt =
+        typeof p.createdAt === 'string' && p.createdAt ? p.createdAt : new Date().toISOString();
+      const updatedAt =
+        typeof p.updatedAt === 'string' && p.updatedAt ? p.updatedAt : createdAt;
+      const id =
+        typeof p.id === 'string' && p.id.trim()
+          ? p.id.trim()
+          : `rx-${Date.parse(createdAt) || Date.now()}-${idx}`;
+      const captureMethod: PrescriptionCaptureMethod = [
+        'manual_entry',
+        'ocr_upload',
+        'camera_capture',
+        'scanner_import',
+      ].includes(p.captureMethod)
+        ? p.captureMethod
+        : 'manual_entry';
+      const isOcrUnverified =
+        typeof p.isOcrUnverified === 'boolean'
+          ? p.isOcrUnverified
+          : captureMethod === 'ocr_upload' || captureMethod === 'camera_capture';
+      const verificationStatus: PrescriptionVerificationStatus = [
+        'unverified_ocr',
+        'needs_clarification',
+        'verified_by_patient',
+      ].includes(p.verificationStatus)
+        ? p.verificationStatus
+        : isOcrUnverified
+          ? 'unverified_ocr'
+          : 'verified_by_patient';
+      const durationDays =
+        typeof p.durationDays === 'number' && !isNaN(p.durationDays) && p.durationDays >= 1
+          ? Math.round(p.durationDays)
+          : null;
+
+      return {
+        id,
+        ...(typeof p.antibioticId === 'string' && p.antibioticId.trim()
+          ? { antibioticId: p.antibioticId.trim() }
+          : {}),
+        medicineName: typeof p.medicineName === 'string' ? p.medicineName.trim() : '',
+        prescribedDose: typeof p.prescribedDose === 'string' ? p.prescribedDose.trim() : '',
+        route: typeof p.route === 'string' ? p.route : '',
+        frequency: typeof p.frequency === 'string' ? p.frequency : '',
+        ...(typeof p.firstDoseTime === 'string' && p.firstDoseTime
+          ? { firstDoseTime: p.firstDoseTime }
+          : {}),
+        ...(Array.isArray(p.doseTimes) ? { doseTimes: p.doseTimes.map(String) } : {}),
+        ...(typeof p.startDate === 'string' && p.startDate ? { startDate: p.startDate } : {}),
+        durationDays,
+        ...(typeof p.notes === 'string' && p.notes.trim() ? { notes: p.notes.trim() } : {}),
+        ...(Array.isArray(p.coMedications)
+          ? {
+              coMedications: p.coMedications.filter(
+                (c: unknown): c is string => typeof c === 'string' && Boolean(c)
+              ),
+            }
+          : {}),
+        captureMethod,
+        ...(typeof p.rawExtractedText === 'string' && p.rawExtractedText.trim()
+          ? { rawExtractedText: p.rawExtractedText.trim() }
+          : {}),
+        ...(typeof p.imageFileName === 'string' && p.imageFileName.trim()
+          ? { imageFileName: p.imageFileName.trim() }
+          : {}),
+        isOcrUnverified,
+        verificationStatus,
+        ...(typeof p.verifiedAt === 'string' && p.verifiedAt ? { verifiedAt: p.verifiedAt } : {}),
+        ...(typeof p.verifiedByPatient === 'boolean'
+          ? { verifiedByPatient: p.verifiedByPatient }
+          : {}),
+        clarificationFlags: normalizeClarificationFlags(p.clarificationFlags),
+        ...(typeof p.linkedScheduleId === 'string' && p.linkedScheduleId
+          ? { linkedScheduleId: p.linkedScheduleId }
+          : {}),
+        createdAt,
+        updatedAt,
+      };
+    });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function normalizeTreatmentEvents(raw: any): TreatmentJourneyEvent[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((ev) => ev !== null && typeof ev === 'object')
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((ev: any, idx: number) => {
+      const timestamp =
+        typeof ev.timestamp === 'string' && ev.timestamp
+          ? ev.timestamp
+          : new Date().toISOString();
+      const id =
+        typeof ev.id === 'string' && ev.id.trim()
+          ? ev.id.trim()
+          : `ev-${Date.parse(timestamp) || Date.now()}-${idx}`;
+      return {
+        id,
+        type: (typeof ev.type === 'string'
+          ? ev.type
+          : 'prescription_captured') as TreatmentJourneyEventType,
+        timestamp,
+        ...(typeof ev.prescriptionId === 'string' && ev.prescriptionId
+          ? { prescriptionId: ev.prescriptionId }
+          : {}),
+        ...(typeof ev.scheduleId === 'string' && ev.scheduleId
+          ? { scheduleId: ev.scheduleId }
+          : {}),
+        ...(typeof ev.doseId === 'string' && ev.doseId ? { doseId: ev.doseId } : {}),
+        ...(typeof ev.medicineName === 'string' && ev.medicineName
+          ? { medicineName: ev.medicineName }
+          : {}),
+        ...(typeof ev.scheduledTime === 'string' && ev.scheduledTime
+          ? { scheduledTime: ev.scheduledTime }
+          : {}),
+        ...(typeof ev.actualTime === 'string' && ev.actualTime
+          ? { actualTime: ev.actualTime }
+          : {}),
+        summaryAr: typeof ev.summaryAr === 'string' ? ev.summaryAr : '',
+        summaryEn: typeof ev.summaryEn === 'string' ? ev.summaryEn : '',
+      };
+    })
+    .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+    .slice(0, MAX_TREATMENT_EVENTS);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -337,6 +1027,15 @@ export function normalizeSchedules(raw: any): TreatmentSchedule[] {
                 typeof d.statusUpdatedAt === 'string' && d.statusUpdatedAt
                   ? d.statusUpdatedAt
                   : takenAt || missedAt || undefined;
+              const documentedOutcome: DoseDocumentedOutcome | undefined = [
+                'taken_on_time',
+                'taken_late',
+                'missed_confirmed',
+                'held_for_clarification',
+                'skipped_clinician_advice',
+              ].includes(d.documentedOutcome)
+                ? d.documentedOutcome
+                : undefined;
 
               return {
                 id: doseId,
@@ -348,13 +1047,33 @@ export function normalizeSchedules(raw: any): TreatmentSchedule[] {
                 ...(takenAt ? { takenAt } : {}),
                 ...(missedAt ? { missedAt } : {}),
                 ...(statusUpdatedAt ? { statusUpdatedAt } : {}),
+                ...(documentedOutcome ? { documentedOutcome } : {}),
                 ...(typeof d.note === 'string' && d.note.trim() ? { note: d.note.trim() } : {}),
               };
             })
         : generateScheduleDoses(id, startDate, doseTimes, durationDays);
 
+      const captureMethod: PrescriptionCaptureMethod | undefined = [
+        'manual_entry',
+        'ocr_upload',
+        'camera_capture',
+        'scanner_import',
+      ].includes(s.captureMethod)
+        ? s.captureMethod
+        : undefined;
+      const verificationStatus: PrescriptionVerificationStatus | undefined = [
+        'unverified_ocr',
+        'needs_clarification',
+        'verified_by_patient',
+      ].includes(s.verificationStatus)
+        ? s.verificationStatus
+        : 'verified_by_patient';
+
       return {
         id,
+        ...(typeof s.prescriptionId === 'string' && s.prescriptionId.trim()
+          ? { prescriptionId: s.prescriptionId.trim() }
+          : {}),
         ...(typeof s.antibioticId === 'string' && s.antibioticId.trim()
           ? { antibioticId: s.antibioticId.trim() }
           : {}),
@@ -377,6 +1096,18 @@ export function normalizeSchedules(raw: any): TreatmentSchedule[] {
           : {}),
         ...(typeof s.coMedNotes === 'string' && s.coMedNotes.trim()
           ? { coMedNotes: s.coMedNotes.trim() }
+          : {}),
+        ...(captureMethod ? { captureMethod } : {}),
+        verificationStatus,
+        ...(typeof s.verifiedAt === 'string' && s.verifiedAt ? { verifiedAt: s.verifiedAt } : {}),
+        ...(typeof s.verifiedByPatient === 'boolean'
+          ? { verifiedByPatient: s.verifiedByPatient }
+          : {}),
+        ...(Array.isArray(s.clarificationFlags)
+          ? { clarificationFlags: normalizeClarificationFlags(s.clarificationFlags) }
+          : {}),
+        ...(typeof s.rawExtractedText === 'string' && s.rawExtractedText.trim()
+          ? { rawExtractedText: s.rawExtractedText.trim() }
           : {}),
         createdAt,
         updatedAt,
@@ -435,6 +1166,56 @@ export function mergeDeletedMaps(
     }
   }
   return out;
+}
+
+export function mergePrescriptions(
+  primary: SavedPrescription[],
+  secondary: SavedPrescription[],
+  deletedMap: Record<string, string> = {}
+): SavedPrescription[] {
+  const isDeleted = (p: SavedPrescription) => {
+    const delTs = deletedMap[p.id];
+    if (!delTs) return false;
+    const modTs = p.updatedAt || p.createdAt || '';
+    return !modTs || delTs >= modTs;
+  };
+
+  const map = new Map<string, SavedPrescription>();
+  for (const p of normalizePrescriptions(primary)) {
+    if (!isDeleted(p)) {
+      map.set(p.id, p);
+    }
+  }
+
+  for (const p of normalizePrescriptions(secondary)) {
+    if (isDeleted(p)) continue;
+    const existing = map.get(p.id);
+    if (!existing) {
+      map.set(p.id, p);
+    } else {
+      const existingTs = existing.updatedAt || existing.createdAt || '';
+      const incomingTs = p.updatedAt || p.createdAt || '';
+      map.set(p.id, incomingTs > existingTs ? p : existing);
+    }
+  }
+
+  return normalizePrescriptions(Array.from(map.values())).sort((a, b) =>
+    (b.createdAt || '').localeCompare(a.createdAt || '')
+  );
+}
+
+export function mergeTreatmentEvents(
+  primary: TreatmentJourneyEvent[],
+  secondary: TreatmentJourneyEvent[]
+): TreatmentJourneyEvent[] {
+  const map = new Map<string, TreatmentJourneyEvent>();
+  for (const ev of normalizeTreatmentEvents(secondary)) {
+    map.set(ev.id, ev);
+  }
+  for (const ev of normalizeTreatmentEvents(primary)) {
+    map.set(ev.id, ev);
+  }
+  return normalizeTreatmentEvents(Array.from(map.values()));
 }
 
 /**
@@ -543,6 +1324,8 @@ export function safeMergeGuestIntoCloud(
             status: gd.status,
             ...(gd.takenAt ? { takenAt: gd.takenAt } : {}),
             ...(gd.missedAt ? { missedAt: gd.missedAt } : {}),
+            ...(gd.documentedOutcome ? { documentedOutcome: gd.documentedOutcome } : {}),
+            ...(gd.note ? { note: gd.note } : {}),
             statusUpdatedAt: gd.statusUpdatedAt || gd.takenAt || gd.missedAt || new Date().toISOString(),
           };
         }
@@ -572,6 +1355,39 @@ export function loadDeletedMap(uid?: string | null): Record<string, string> {
     return raw ? normalizeDeletedMap(JSON.parse(raw)) : {};
   } catch {
     return {};
+  }
+}
+
+export function loadDeletedPrescriptionsMap(uid?: string | null): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const effectiveUid = uid !== undefined ? uid : auth?.currentUser?.uid ?? null;
+  try {
+    const raw = localStorage.getItem(getDeletedPrescriptionsStorageKey(effectiveUid));
+    return raw ? normalizeDeletedMap(JSON.parse(raw)) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function loadPrescriptions(uid?: string | null): SavedPrescription[] {
+  if (typeof window === 'undefined') return [];
+  const effectiveUid = uid !== undefined ? uid : auth?.currentUser?.uid ?? null;
+  try {
+    const raw = localStorage.getItem(getPrescriptionsStorageKey(effectiveUid));
+    return raw ? normalizePrescriptions(JSON.parse(raw)) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function loadTreatmentEvents(uid?: string | null): TreatmentJourneyEvent[] {
+  if (typeof window === 'undefined') return [];
+  const effectiveUid = uid !== undefined ? uid : auth?.currentUser?.uid ?? null;
+  try {
+    const raw = localStorage.getItem(getTreatmentEventsStorageKey(effectiveUid));
+    return raw ? normalizeTreatmentEvents(JSON.parse(raw)) : [];
+  } catch {
+    return [];
   }
 }
 
@@ -685,18 +1501,64 @@ export function downloadScheduleIcs(sch: TreatmentSchedule, isAr = true): void {
 }
 
 /**
+ * Fires a browser/system notification safely on both desktop and mobile Android browsers.
+ * On mobile Android Chrome, `new Notification()` on the window thread throws `Illegal constructor`
+ * and requires `ServiceWorkerRegistration.showNotification()`.
+ */
+export async function fireSystemNotificationSafely(
+  title: string,
+  body: string
+): Promise<{ delivered: boolean; error?: string }> {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return { delivered: false, error: 'Notifications API not supported in this browser.' };
+  }
+  if (Notification.permission !== 'granted') {
+    return { delivered: false, error: 'Notification permission is not granted.' };
+  }
+
+  try {
+    new Notification(title, { body });
+    return { delivered: true };
+  } catch (directErr) {
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg && typeof reg.showNotification === 'function') {
+          await reg.showNotification(title, { body });
+          return { delivered: true };
+        }
+      }
+    } catch (swErr) {
+      return {
+        delivered: false,
+        error: swErr instanceof Error ? swErr.message : String(directErr),
+      };
+    }
+    return {
+      delivered: false,
+      error: directErr instanceof Error ? directErr.message : 'Notification constructor failed.',
+    };
+  }
+}
+
+/**
  * Shared hook for browser notification permission and active in-tab dose reminders
  * across both Standalone Tracker (/tracker) and Prescription Radar (/prescription-radar).
+ * Gracefully handles permission denial, unsupported browsers, and mobile Android service worker fallbacks.
  */
 export function useDoseReminderNotifications(schedules: TreatmentSchedule[], isAr: boolean) {
   const [notifSupported, setNotifSupported] = useState(false);
-  const [notifPermission, setNotifPermission] = useState('default');
+  const [notifPermission, setNotifPermission] = useState<string>('default');
+  const [notifError, setNotifError] = useState<string | null>(null);
   const [activeDueBanner, setActiveDueBanner] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window) {
       setNotifSupported(true);
       setNotifPermission(Notification.permission);
+    } else {
+      setNotifSupported(false);
+      setNotifPermission('unsupported');
     }
   }, []);
 
@@ -727,16 +1589,12 @@ export function useDoseReminderNotifications(schedules: TreatmentSchedule[], isA
               : `⏰ Time for your dose: ${sch.medicineName} (${sch.prescribedDose}) — ${formatTime12Hour(dHHMM, false)}`;
             setActiveDueBanner(alertText);
             if (notifSupported && notifPermission === 'granted') {
-              try {
-                new Notification(
-                  isAr ? `⏰ موعد جرعة الدواء: ${sch.medicineName}` : `⏰ Dose Reminder: ${sch.medicineName}`,
-                  {
-                    body: isAr
-                      ? `الجرعة الموصوفة: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, true)}). يرجى تأكيد الجرعة في المتابع العلاجي.`
-                      : `Prescribed dose: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, false)}). Please confirm in your tracker.`,
-                  }
-                );
-              } catch {}
+              void fireSystemNotificationSafely(
+                isAr ? `⏰ موعد جرعة الدواء: ${sch.medicineName}` : `⏰ Dose Reminder: ${sch.medicineName}`,
+                isAr
+                  ? `الجرعة الموصوفة: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, true)}). يرجى تأكيد الجرعة في المتابع العلاجي.`
+                  : `Prescribed dose: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, false)}). Please confirm in your tracker.`
+              );
             }
           }
         });
@@ -755,31 +1613,82 @@ export function useDoseReminderNotifications(schedules: TreatmentSchedule[], isA
   }, [notifSupported, notifPermission, schedules, isAr]);
 
   const requestNotifPermission = useCallback(async () => {
-    if (!notifSupported) return;
+    setNotifError(null);
+    if (!notifSupported || typeof window === 'undefined' || !('Notification' in window)) {
+      setNotifError(
+        isAr
+          ? 'هذا المتصفح لا يدعم إشعارات الويب. استخدم زر «منبهات الموبايل (.ics)» لإضافة مواعيد الجرعات لتقويم الهاتف.'
+          : 'This browser does not support Web Notifications. Please use the "Phone Alarms (.ics)" button to add dose alarms to your phone calendar.'
+      );
+      return;
+    }
+
+    if (Notification.permission === 'denied') {
+      setNotifPermission('denied');
+      setNotifError(
+        isAr
+          ? 'تم حظر الإشعارات مسبقاً من إعدادات المتصفح. يرجى السماح بالإشعارات من قفل شريط العنوان في المتصفح، أو استخدام «منبهات الموبايل (.ics)».'
+          : 'Notifications are blocked in your browser settings. Please allow notifications in your browser address bar, or use "Phone Alarms (.ics)".'
+      );
+      return;
+    }
+
     try {
       const perm = await Notification.requestPermission();
       setNotifPermission(perm);
       if (perm === 'granted') {
-        new Notification(
+        const res = await fireSystemNotificationSafely(
           isAr ? 'تم تفعيل تنبيهات المتصفح 🔔' : 'Browser Reminders Enabled 🔔',
-          {
-            body: isAr
-              ? 'سيظهر لك إشعار منبثق على الشاشة عند حلول موعد الجرعة طالما أن الموقع أو المتصفح مفتوح.'
-              : 'A system notification will pop up at scheduled dose times while this browser remains open.',
-          }
+          isAr
+            ? 'سيظهر لك إشعار منبثق على الشاشة عند حلول موعد الجرعة طالما أن الموقع أو المتصفح مفتوح.'
+            : 'A system notification will pop up at scheduled dose times while this browser remains open.'
+        );
+        if (!res.delivered) {
+          setActiveDueBanner(
+            isAr
+              ? '🔔 تم تفعيل التنبيهات داخل الصفحة بنجاح (إشعارات النظام مقيدة على هذا الجهاز، لذا ستظهر التنبيهات داخل الصفحة أو عبر ملف .ics).'
+              : '🔔 In-app reminders enabled (system popups are restricted on this device; use .ics alarms for native phone alerts).'
+          );
+        }
+      } else if (perm === 'denied') {
+        setNotifError(
+          isAr
+            ? 'لم يتم منح إذن الإشعارات. يمكنك الاعتماد على التنبيهات داخل الصفحة أو تحميل ملف «منبهات الموبايل (.ics)».'
+            : 'Notification permission was declined. You can still use in-page alerts or download "Phone Alarms (.ics)".'
         );
       }
     } catch (err) {
       console.error('Notification error:', err);
+      setNotifError(
+        isAr
+          ? 'تعذر تفعيل إشعارات المتصفح على هذا الجهاز. يرجى استخدام «منبهات الموبايل (.ics)».'
+          : 'Could not enable browser notifications on this device. Please use "Phone Alarms (.ics)".'
+      );
     }
   }, [notifSupported, isAr]);
+
+  const sendTestNotification = useCallback(async () => {
+    setNotifError(null);
+    const sampleMsg = isAr
+      ? '🔔 اختبار تنبيه الجرعة: التنبيهات داخل التطبيق تعمل بنجاح بينما الصفحة مفتوحة.'
+      : '🔔 Test Dose Reminder: In-app dose alerts are working while this page is open.';
+    setActiveDueBanner(sampleMsg);
+    if (notifSupported && notifPermission === 'granted') {
+      await fireSystemNotificationSafely(
+        isAr ? '🔔 اختبار تنبيه الجرعة' : '🔔 Dose Reminder Test',
+        sampleMsg
+      );
+    }
+  }, [notifSupported, notifPermission, isAr]);
 
   return {
     notifSupported,
     notifPermission,
+    notifError,
     activeDueBanner,
     setActiveDueBanner,
     requestNotifPermission,
+    sendTestNotification,
   };
 }
 
@@ -788,6 +1697,12 @@ export function useSyncedSchedules() {
   const uid = user?.uid ?? null;
 
   const [schedules, setSchedulesState] = useState<TreatmentSchedule[]>(() => loadSchedules(uid));
+  const [prescriptions, setPrescriptionsState] = useState<SavedPrescription[]>(() =>
+    loadPrescriptions(uid)
+  );
+  const [treatmentEvents, setTreatmentEventsState] = useState<TreatmentJourneyEvent[]>(() =>
+    loadTreatmentEvents(uid)
+  );
   const [radarWorkspace, setRadarWorkspaceState] = useState<RadarWorkspaceState>(() =>
     loadRadarWorkspace(uid)
   );
@@ -804,6 +1719,16 @@ export function useSyncedSchedules() {
   const schedulesRef = useRef<TreatmentSchedule[]>(schedules);
   schedulesRef.current = schedules;
   const deletedMapRef = useRef<Record<string, string>>(loadDeletedMap(uid));
+
+  const prescriptionsRef = useRef<SavedPrescription[]>(prescriptions);
+  prescriptionsRef.current = prescriptions;
+  const deletedPrescriptionsMapRef = useRef<Record<string, string>>(
+    loadDeletedPrescriptionsMap(uid)
+  );
+
+  const treatmentEventsRef = useRef<TreatmentJourneyEvent[]>(treatmentEvents);
+  treatmentEventsRef.current = treatmentEvents;
+
   const radarWorkspaceRef = useRef<RadarWorkspaceState>(radarWorkspace);
   radarWorkspaceRef.current = radarWorkspace;
   const hasPendingLocalWriteRef = useRef<boolean>(false);
@@ -813,7 +1738,10 @@ export function useSyncedSchedules() {
       targetUid: string,
       nextSchedules: TreatmentSchedule[],
       nextDeletedMap: Record<string, string>,
-      nextRadarWorkspace?: RadarWorkspaceState
+      nextRadarWorkspace?: RadarWorkspaceState,
+      nextPrescriptions?: SavedPrescription[],
+      nextDeletedPrescriptions?: Record<string, string>,
+      nextTreatmentEvents?: TreatmentJourneyEvent[]
     ): Promise<boolean> => {
       if (!targetUid || !configured || !db) {
         setSyncStatus('local_only');
@@ -834,6 +1762,10 @@ export function useSyncedSchedules() {
         let resolvedSchedules = nextSchedules;
         let resolvedDeleted = nextDeletedMap;
         let resolvedRadar = nextRadarWorkspace || radarWorkspaceRef.current;
+        let resolvedPrescriptions = nextPrescriptions || prescriptionsRef.current;
+        let resolvedDeletedPrescriptions =
+          nextDeletedPrescriptions || deletedPrescriptionsMapRef.current;
+        let resolvedEvents = nextTreatmentEvents || treatmentEventsRef.current;
 
         try {
           await runTransaction(db, async (tx) => {
@@ -847,6 +1779,26 @@ export function useSyncedSchedules() {
               : [];
             resolvedSchedules = mergeSchedules(nextSchedules, remoteSchedules, resolvedDeleted);
 
+            const remoteDelRx = normalizeDeletedMap(data?.deletedPrescriptionIds);
+            resolvedDeletedPrescriptions = mergeDeletedMaps(
+              remoteDelRx,
+              resolvedDeletedPrescriptions
+            );
+
+            const remotePrescriptions = Array.isArray(data?.prescriptions)
+              ? normalizePrescriptions(data?.prescriptions)
+              : [];
+            resolvedPrescriptions = mergePrescriptions(
+              resolvedPrescriptions,
+              remotePrescriptions,
+              resolvedDeletedPrescriptions
+            );
+
+            const remoteEvents = Array.isArray(data?.treatmentEvents)
+              ? normalizeTreatmentEvents(data?.treatmentEvents)
+              : [];
+            resolvedEvents = mergeTreatmentEvents(resolvedEvents, remoteEvents);
+
             if (data?.radarWorkspace) {
               const remoteRadar = normalizeRadarWorkspace(data.radarWorkspace);
               if (remoteRadar.updatedAt > resolvedRadar.updatedAt) {
@@ -859,6 +1811,9 @@ export function useSyncedSchedules() {
               {
                 schedules: stripUndefined(resolvedSchedules),
                 deletedScheduleIds: stripUndefined(resolvedDeleted),
+                prescriptions: stripUndefined(resolvedPrescriptions),
+                deletedPrescriptionIds: stripUndefined(resolvedDeletedPrescriptions),
+                treatmentEvents: stripUndefined(resolvedEvents),
                 radarWorkspace: stripUndefined(resolvedRadar),
                 updatedAt: serverTimestamp(),
               },
@@ -871,6 +1826,9 @@ export function useSyncedSchedules() {
             {
               schedules: stripUndefined(resolvedSchedules),
               deletedScheduleIds: stripUndefined(resolvedDeleted),
+              prescriptions: stripUndefined(resolvedPrescriptions),
+              deletedPrescriptionIds: stripUndefined(resolvedDeletedPrescriptions),
+              treatmentEvents: stripUndefined(resolvedEvents),
               radarWorkspace: stripUndefined(resolvedRadar),
               updatedAt: serverTimestamp(),
             },
@@ -891,6 +1849,18 @@ export function useSyncedSchedules() {
             JSON.stringify(stripUndefined(resolvedDeleted))
           );
           localStorage.setItem(
+            getPrescriptionsStorageKey(targetUid),
+            JSON.stringify(stripUndefined(resolvedPrescriptions))
+          );
+          localStorage.setItem(
+            getDeletedPrescriptionsStorageKey(targetUid),
+            JSON.stringify(stripUndefined(resolvedDeletedPrescriptions))
+          );
+          localStorage.setItem(
+            getTreatmentEventsStorageKey(targetUid),
+            JSON.stringify(stripUndefined(resolvedEvents))
+          );
+          localStorage.setItem(
             getRadarWorkspaceStorageKey(targetUid),
             JSON.stringify(stripUndefined(resolvedRadar))
           );
@@ -898,8 +1868,20 @@ export function useSyncedSchedules() {
 
         deletedMapRef.current = resolvedDeleted;
         schedulesRef.current = resolvedSchedules;
+        deletedPrescriptionsMapRef.current = resolvedDeletedPrescriptions;
+        prescriptionsRef.current = resolvedPrescriptions;
+        treatmentEventsRef.current = resolvedEvents;
+
         setSchedulesState((prev) =>
           JSON.stringify(prev) === JSON.stringify(resolvedSchedules) ? prev : resolvedSchedules
+        );
+        setPrescriptionsState((prev) =>
+          JSON.stringify(prev) === JSON.stringify(resolvedPrescriptions)
+            ? prev
+            : resolvedPrescriptions
+        );
+        setTreatmentEventsState((prev) =>
+          JSON.stringify(prev) === JSON.stringify(resolvedEvents) ? prev : resolvedEvents
         );
 
         if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -914,7 +1896,7 @@ export function useSyncedSchedules() {
         setSyncStatus('synced');
         return true;
       } catch (err: unknown) {
-        console.error('Failed to synchronize treatment schedules to Cloud Firestore:', err);
+        console.error('Failed to synchronize treatment journey to Cloud Firestore:', err);
         hasPendingLocalWriteRef.current = true;
         const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
         setSyncStatus(isOffline ? 'offline_pending' : 'error');
@@ -938,11 +1920,18 @@ export function useSyncedSchedules() {
       hydratedUidRef.current = null;
       hasPendingLocalWriteRef.current = false;
       deletedMapRef.current = loadDeletedMap(null);
+      deletedPrescriptionsMapRef.current = loadDeletedPrescriptionsMap(null);
       const guestSchedules = loadSchedules(null);
+      const guestPrescriptions = loadPrescriptions(null);
+      const guestEvents = loadTreatmentEvents(null);
       const guestRadar = loadRadarWorkspace(null);
       schedulesRef.current = guestSchedules;
+      prescriptionsRef.current = guestPrescriptions;
+      treatmentEventsRef.current = guestEvents;
       radarWorkspaceRef.current = guestRadar;
       setSchedulesState(guestSchedules);
+      setPrescriptionsState(guestPrescriptions);
+      setTreatmentEventsState(guestEvents);
       setRadarWorkspaceState(guestRadar);
       setInitialLoading(false);
       setSyncStatus('local_only');
@@ -952,6 +1941,8 @@ export function useSyncedSchedules() {
 
     const cachedDeleted = loadDeletedMap(uid);
     deletedMapRef.current = cachedDeleted;
+    const cachedDelRx = loadDeletedPrescriptionsMap(uid);
+    deletedPrescriptionsMapRef.current = cachedDelRx;
 
     let cachedScoped: TreatmentSchedule[] | null = null;
     try {
@@ -960,6 +1951,14 @@ export function useSyncedSchedules() {
         cachedScoped = normalizeSchedules(JSON.parse(cachedScopedRaw));
       }
     } catch {}
+
+    const cachedRx = loadPrescriptions(uid);
+    prescriptionsRef.current = cachedRx;
+    setPrescriptionsState(cachedRx);
+
+    const cachedEvents = loadTreatmentEvents(uid);
+    treatmentEventsRef.current = cachedEvents;
+    setTreatmentEventsState(cachedEvents);
 
     const cachedRadar = loadRadarWorkspace(uid);
     radarWorkspaceRef.current = cachedRadar;
@@ -996,14 +1995,35 @@ export function useSyncedSchedules() {
         const mergedDeleted = mergeDeletedMaps(cloudDeleted, cachedDeleted);
         deletedMapRef.current = mergedDeleted;
 
+        const cloudDelRx = normalizeDeletedMap(data?.deletedPrescriptionIds);
+        const mergedDelRx = mergeDeletedMaps(cloudDelRx, cachedDelRx);
+        deletedPrescriptionsMapRef.current = mergedDelRx;
+
+        const cloudRx = Array.isArray(data?.prescriptions)
+          ? normalizePrescriptions(data?.prescriptions)
+          : [];
+        const cloudEvents = Array.isArray(data?.treatmentEvents)
+          ? normalizeTreatmentEvents(data?.treatmentEvents)
+          : [];
+
         const migrationKey = `${MIGRATED_LEGACY_SCHEDULES_PREFIX}${uid}`;
         const alreadyMigrated = localStorage.getItem(migrationKey) === '1';
         let guestSchedules: TreatmentSchedule[] = [];
+        let guestPrescriptions: SavedPrescription[] = [];
+        let guestEvents: TreatmentJourneyEvent[] = [];
         if (!alreadyMigrated) {
           try {
             const rawGuest = localStorage.getItem(STORAGE_KEY);
             if (rawGuest) {
               guestSchedules = normalizeSchedules(JSON.parse(rawGuest));
+            }
+            const rawGuestRx = localStorage.getItem(PRESCRIPTIONS_STORAGE_KEY);
+            if (rawGuestRx) {
+              guestPrescriptions = normalizePrescriptions(JSON.parse(rawGuestRx));
+            }
+            const rawGuestEv = localStorage.getItem(TREATMENT_EVENTS_STORAGE_KEY);
+            if (rawGuestEv) {
+              guestEvents = normalizeTreatmentEvents(JSON.parse(rawGuestEv));
             }
           } catch {}
         }
@@ -1030,6 +2050,26 @@ export function useSyncedSchedules() {
           shouldWriteToCloud = true;
         }
 
+        let resolvedPrescriptions = mergePrescriptions(cloudRx, cachedRx, mergedDelRx);
+        if (!alreadyMigrated && guestPrescriptions.length > 0) {
+          resolvedPrescriptions = mergePrescriptions(
+            resolvedPrescriptions,
+            guestPrescriptions,
+            mergedDelRx
+          );
+          shouldWriteToCloud = true;
+        } else if (JSON.stringify(resolvedPrescriptions) !== JSON.stringify(cloudRx)) {
+          shouldWriteToCloud = true;
+        }
+
+        let resolvedEvents = mergeTreatmentEvents(cloudEvents, cachedEvents);
+        if (!alreadyMigrated && guestEvents.length > 0) {
+          resolvedEvents = mergeTreatmentEvents(resolvedEvents, guestEvents);
+          shouldWriteToCloud = true;
+        } else if (JSON.stringify(resolvedEvents) !== JSON.stringify(cloudEvents)) {
+          shouldWriteToCloud = true;
+        }
+
         let resolvedRadar = cachedRadar;
         if (data?.radarWorkspace) {
           const cloudRadar = normalizeRadarWorkspace(data.radarWorkspace);
@@ -1050,25 +2090,54 @@ export function useSyncedSchedules() {
             JSON.stringify(stripUndefined(mergedDeleted))
           );
           localStorage.setItem(
+            getPrescriptionsStorageKey(uid),
+            JSON.stringify(stripUndefined(resolvedPrescriptions))
+          );
+          localStorage.setItem(
+            getDeletedPrescriptionsStorageKey(uid),
+            JSON.stringify(stripUndefined(mergedDelRx))
+          );
+          localStorage.setItem(
+            getTreatmentEventsStorageKey(uid),
+            JSON.stringify(stripUndefined(resolvedEvents))
+          );
+          localStorage.setItem(
             getRadarWorkspaceStorageKey(uid),
             JSON.stringify(stripUndefined(resolvedRadar))
           );
-          if (!alreadyMigrated && guestSchedules.length > 0) {
+          if (
+            !alreadyMigrated &&
+            (guestSchedules.length > 0 || guestPrescriptions.length > 0 || guestEvents.length > 0)
+          ) {
             localStorage.setItem(migrationKey, '1');
             localStorage.removeItem(STORAGE_KEY);
+            localStorage.removeItem(PRESCRIPTIONS_STORAGE_KEY);
+            localStorage.removeItem(TREATMENT_EVENTS_STORAGE_KEY);
           }
         } catch {}
 
         hydratedUidRef.current = uid;
         schedulesRef.current = resolved;
+        prescriptionsRef.current = resolvedPrescriptions;
+        treatmentEventsRef.current = resolvedEvents;
         radarWorkspaceRef.current = resolvedRadar;
         setSchedulesState(resolved);
+        setPrescriptionsState(resolvedPrescriptions);
+        setTreatmentEventsState(resolvedEvents);
         setRadarWorkspaceState(resolvedRadar);
         setInitialLoading(false);
 
         const isOffline = typeof navigator !== 'undefined' && navigator.onLine === false;
         if (shouldWriteToCloud) {
-          await pushStateToCloud(uid, resolved, mergedDeleted, resolvedRadar);
+          await pushStateToCloud(
+            uid,
+            resolved,
+            mergedDeleted,
+            resolvedRadar,
+            resolvedPrescriptions,
+            mergedDelRx,
+            resolvedEvents
+          );
         } else if (isOffline || snap.metadata.fromCache) {
           setSyncStatus(isOffline ? 'offline_pending' : 'synced');
           if (!isOffline) setLastSyncedAt(new Date().toISOString());
@@ -1102,6 +2171,10 @@ export function useSyncedSchedules() {
         const mergedDeleted = mergeDeletedMaps(deletedMapRef.current, remoteDeleted);
         deletedMapRef.current = mergedDeleted;
 
+        const remoteDelRx = normalizeDeletedMap(data?.deletedPrescriptionIds);
+        const mergedDelRx = mergeDeletedMaps(deletedPrescriptionsMapRef.current, remoteDelRx);
+        deletedPrescriptionsMapRef.current = mergedDelRx;
+
         if (Array.isArray(data?.schedules)) {
           const remoteSchedules = normalizeSchedules(data?.schedules);
           const mergedSchedules = hasPendingLocalWriteRef.current
@@ -1122,6 +2195,44 @@ export function useSyncedSchedules() {
           schedulesRef.current = mergedSchedules;
           setSchedulesState((prev) =>
             JSON.stringify(prev) === JSON.stringify(mergedSchedules) ? prev : mergedSchedules
+          );
+        }
+
+        if (Array.isArray(data?.prescriptions)) {
+          const remoteRx = normalizePrescriptions(data?.prescriptions);
+          const mergedRx = hasPendingLocalWriteRef.current
+            ? mergePrescriptions(prescriptionsRef.current, remoteRx, mergedDelRx)
+            : mergePrescriptions(remoteRx, prescriptionsRef.current, mergedDelRx);
+
+          try {
+            localStorage.setItem(
+              getPrescriptionsStorageKey(uid),
+              JSON.stringify(stripUndefined(mergedRx))
+            );
+            localStorage.setItem(
+              getDeletedPrescriptionsStorageKey(uid),
+              JSON.stringify(stripUndefined(mergedDelRx))
+            );
+          } catch {}
+
+          prescriptionsRef.current = mergedRx;
+          setPrescriptionsState((prev) =>
+            JSON.stringify(prev) === JSON.stringify(mergedRx) ? prev : mergedRx
+          );
+        }
+
+        if (Array.isArray(data?.treatmentEvents)) {
+          const remoteEv = normalizeTreatmentEvents(data?.treatmentEvents);
+          const mergedEv = mergeTreatmentEvents(treatmentEventsRef.current, remoteEv);
+          try {
+            localStorage.setItem(
+              getTreatmentEventsStorageKey(uid),
+              JSON.stringify(stripUndefined(mergedEv))
+            );
+          } catch {}
+          treatmentEventsRef.current = mergedEv;
+          setTreatmentEventsState((prev) =>
+            JSON.stringify(prev) === JSON.stringify(mergedEv) ? prev : mergedEv
           );
         }
 
@@ -1172,7 +2283,10 @@ export function useSyncedSchedules() {
           uid,
           schedulesRef.current,
           deletedMapRef.current,
-          radarWorkspaceRef.current
+          radarWorkspaceRef.current,
+          prescriptionsRef.current,
+          deletedPrescriptionsMapRef.current,
+          treatmentEventsRef.current
         );
       } else {
         setSyncStatus('synced');
@@ -1199,6 +2313,22 @@ export function useSyncedSchedules() {
           JSON.stringify(prev) === JSON.stringify(detail.schedules) ? prev : detail.schedules
         );
       }
+      if (Array.isArray(detail.prescriptions)) {
+        prescriptionsRef.current = detail.prescriptions;
+        setPrescriptionsState((prev) =>
+          JSON.stringify(prev) === JSON.stringify(detail.prescriptions)
+            ? prev
+            : detail.prescriptions
+        );
+      }
+      if (Array.isArray(detail.treatmentEvents)) {
+        treatmentEventsRef.current = detail.treatmentEvents;
+        setTreatmentEventsState((prev) =>
+          JSON.stringify(prev) === JSON.stringify(detail.treatmentEvents)
+            ? prev
+            : detail.treatmentEvents
+        );
+      }
       if (detail.radarWorkspace) {
         radarWorkspaceRef.current = detail.radarWorkspace;
         setRadarWorkspaceState((prev) =>
@@ -1212,8 +2342,109 @@ export function useSyncedSchedules() {
     return () => window.removeEventListener(SCHEDULES_EVENT, handler);
   }, [uid]);
 
+  const appendTreatmentEvents = useCallback(
+    (newEvents: Omit<TreatmentJourneyEvent, 'id' | 'timestamp'>[], customNowIso?: string) => {
+      if (newEvents.length === 0) return treatmentEventsRef.current;
+      const nowIso = customNowIso || new Date().toISOString();
+      const stamped: TreatmentJourneyEvent[] = newEvents.map((ev, idx) => ({
+        ...ev,
+        id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${idx}`,
+        timestamp: nowIso,
+      }));
+      const merged = stripUndefined(
+        mergeTreatmentEvents([...stamped, ...treatmentEventsRef.current], [])
+      );
+      treatmentEventsRef.current = merged;
+      setTreatmentEventsState(merged);
+      try {
+        localStorage.setItem(getTreatmentEventsStorageKey(uid), JSON.stringify(merged));
+        window.dispatchEvent(
+          new CustomEvent(SCHEDULES_EVENT, { detail: { uid, treatmentEvents: merged } })
+        );
+      } catch {}
+      return merged;
+    },
+    [uid]
+  );
+
+  const updatePrescriptions = useCallback(
+    (
+      updater: SavedPrescription[] | ((prev: SavedPrescription[]) => SavedPrescription[]),
+      eventToRecord?: Omit<TreatmentJourneyEvent, 'id' | 'timestamp'>
+    ) => {
+      const prev = prescriptionsRef.current;
+      const nextRaw = typeof updater === 'function' ? updater(prev) : updater;
+      const nowIso = new Date().toISOString();
+
+      const nextIds = new Set(nextRaw.map((p) => p.id));
+      const updatedDeletedRx = { ...deletedPrescriptionsMapRef.current };
+      for (const oldRx of prev) {
+        if (!nextIds.has(oldRx.id)) {
+          updatedDeletedRx[oldRx.id] = nowIso;
+        }
+      }
+
+      const stampedRaw = nextRaw.map((p) => {
+        const oldMatch = prev.find((old) => old.id === p.id);
+        if (!oldMatch || JSON.stringify(oldMatch) !== JSON.stringify(p)) {
+          return { ...p, updatedAt: nowIso };
+        }
+        return p;
+      });
+
+      const next = stripUndefined(normalizePrescriptions(stampedRaw));
+      deletedPrescriptionsMapRef.current = updatedDeletedRx;
+      prescriptionsRef.current = next;
+      setPrescriptionsState(next);
+
+      const nextEvents = eventToRecord
+        ? appendTreatmentEvents([eventToRecord], nowIso)
+        : treatmentEventsRef.current;
+
+      try {
+        localStorage.setItem(getPrescriptionsStorageKey(uid), JSON.stringify(next));
+        localStorage.setItem(
+          getDeletedPrescriptionsStorageKey(uid),
+          JSON.stringify(stripUndefined(updatedDeletedRx))
+        );
+        window.dispatchEvent(
+          new CustomEvent(SCHEDULES_EVENT, {
+            detail: { uid, prescriptions: next, treatmentEvents: nextEvents },
+          })
+        );
+      } catch (err) {
+        console.error('Failed to save prescriptions locally:', err);
+      }
+
+      if (uid && configured && db) {
+        void pushStateToCloud(
+          uid,
+          schedulesRef.current,
+          deletedMapRef.current,
+          radarWorkspaceRef.current,
+          next,
+          updatedDeletedRx,
+          nextEvents
+        );
+      } else {
+        setSyncStatus('local_only');
+      }
+    },
+    [uid, appendTreatmentEvents, pushStateToCloud]
+  );
+
+  const deletePrescriptionById = useCallback(
+    (prescriptionId: string) => {
+      updatePrescriptions((prev) => prev.filter((p) => p.id !== prescriptionId));
+    },
+    [updatePrescriptions]
+  );
+
   const updateSchedules = useCallback(
-    (updater: TreatmentSchedule[] | ((prev: TreatmentSchedule[]) => TreatmentSchedule[])) => {
+    (
+      updater: TreatmentSchedule[] | ((prev: TreatmentSchedule[]) => TreatmentSchedule[]),
+      eventsToRecord?: Omit<TreatmentJourneyEvent, 'id' | 'timestamp'>[]
+    ) => {
       const prev = schedulesRef.current;
       const nextRaw = typeof updater === 'function' ? updater(prev) : updater;
       const nowIso = new Date().toISOString();
@@ -1239,6 +2470,11 @@ export function useSyncedSchedules() {
       schedulesRef.current = next;
       setSchedulesState(next);
 
+      const nextEvents =
+        eventsToRecord && eventsToRecord.length > 0
+          ? appendTreatmentEvents(eventsToRecord, nowIso)
+          : treatmentEventsRef.current;
+
       try {
         localStorage.setItem(getSchedulesStorageKey(uid), JSON.stringify(next));
         localStorage.setItem(
@@ -1246,68 +2482,264 @@ export function useSyncedSchedules() {
           JSON.stringify(stripUndefined(updatedDeleted))
         );
         window.dispatchEvent(
-          new CustomEvent(SCHEDULES_EVENT, { detail: { uid, schedules: next } })
+          new CustomEvent(SCHEDULES_EVENT, {
+            detail: { uid, schedules: next, treatmentEvents: nextEvents },
+          })
         );
       } catch (err) {
         console.error('Failed to save schedules locally:', err);
       }
 
       if (uid && configured && db) {
-        void pushStateToCloud(uid, next, updatedDeleted, radarWorkspaceRef.current);
+        void pushStateToCloud(
+          uid,
+          next,
+          updatedDeleted,
+          radarWorkspaceRef.current,
+          prescriptionsRef.current,
+          deletedPrescriptionsMapRef.current,
+          nextEvents
+        );
       } else {
         setSyncStatus('local_only');
       }
     },
-    [uid, pushStateToCloud]
+    [uid, appendTreatmentEvents, pushStateToCloud]
   );
 
   const deleteScheduleById = useCallback(
     (scheduleId: string) => {
-      updateSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
+      const target = schedulesRef.current.find((s) => s.id === scheduleId);
+      updateSchedules(
+        (prev) => prev.filter((s) => s.id !== scheduleId),
+        target
+          ? [
+              {
+                type: 'schedule_deleted',
+                scheduleId,
+                medicineName: target.medicineName,
+                summaryAr: `تم حذف جدول العلاج للدواء: ${target.medicineName}`,
+                summaryEn: `Deleted treatment schedule for: ${target.medicineName}`,
+              },
+            ]
+          : undefined
+      );
     },
     [updateSchedules]
   );
 
+  /**
+   * Records a dose status transition ('taken', 'missed', or 'upcoming' undo) with:
+   * - Strict duplicate dose event prevention (blocks recording the same status twice on the same dose)
+   * - Safety warning if another dose of the same medication was just marked taken within 30 minutes
+   * - Recording of both scheduledTime and actual timestamp (`takenAt` / `missedAt`)
+   * - Optional patient documentation note & outcome (`documentedOutcome`)
+   */
   const updateDoseStatus = useCallback(
-    (scheduleId: string, doseId: string, newStatus: DoseStatus) => {
-      const nowIso = new Date().toISOString();
-      updateSchedules((prev) =>
-        prev.map((sch) => {
-          if (sch.id !== scheduleId) return sch;
-          const updatedDoses = sch.doses.map((d) => {
-            if (d.id !== doseId) return d;
-            const { takenAt: _oldTaken, missedAt: _oldMissed, ...rest } = d;
-            if (newStatus === 'taken') {
+    (
+      scheduleId: string,
+      doseId: string,
+      newStatus: DoseStatus,
+      options?: {
+        note?: string;
+        documentedOutcome?: DoseDocumentedOutcome;
+        actualTimeIso?: string;
+        allowRapidConsecutiveTaken?: boolean;
+      }
+    ): DoseUpdateResult => {
+      const nowIso = options?.actualTimeIso || new Date().toISOString();
+      const targetSch = schedulesRef.current.find((s) => s.id === scheduleId);
+      if (!targetSch) {
+        return { updated: false, reason: 'not_found' };
+      }
+      const targetDose = targetSch.doses.find((d) => d.id === doseId);
+      if (!targetDose) {
+        return { updated: false, reason: 'not_found' };
+      }
+
+      const nextNote = options?.note !== undefined ? options.note.trim() : targetDose.note || '';
+      const nextOutcome = options?.documentedOutcome ?? targetDose.documentedOutcome;
+
+      // 1. Prevent duplicate dose event on the exact same dose slot
+      if (
+        targetDose.status === newStatus &&
+        (targetDose.note || '') === nextNote &&
+        targetDose.documentedOutcome === nextOutcome
+      ) {
+        appendTreatmentEvents(
+          [
+            {
+              type: 'duplicate_dose_blocked',
+              scheduleId,
+              doseId,
+              medicineName: targetSch.medicineName,
+              scheduledTime: targetDose.scheduledTime,
+              actualTime: nowIso,
+              summaryAr: `تم منع تسجيل مكرر لنفس الجرعة (اليوم ${targetDose.dayNumber} - الجرعة ${targetDose.doseNumberInDay}) من ${targetSch.medicineName}.`,
+              summaryEn: `Blocked duplicate dose event for Day ${targetDose.dayNumber} Dose #${targetDose.doseNumberInDay} (${targetSch.medicineName}).`,
+            },
+          ],
+          nowIso
+        );
+        return {
+          updated: false,
+          reason: 'already_recorded',
+          messageAr: 'تم تسجيل هذه الجرعة بالفعل بنفس الحالة — تم منع التكرار لحماية دقة سجل الجرعات.',
+          messageEn: 'This dose is already recorded with the same status — duplicate dose event prevented.',
+        };
+      }
+
+      // 2. Warn/prevent accidental double dose within 30 minutes on the same schedule
+      if (newStatus === 'taken' && !options?.allowRapidConsecutiveTaken) {
+        const nowMs = Date.parse(nowIso) || Date.now();
+        const recentOtherTaken = targetSch.doses.find((d) => {
+          if (d.id === doseId || d.status !== 'taken' || !d.takenAt) return false;
+          const takenMs = Date.parse(d.takenAt);
+          return !isNaN(takenMs) && Math.abs(nowMs - takenMs) < 30 * 60 * 1000;
+        });
+
+        if (recentOtherTaken) {
+          // Still allow recording if it is a past day's retrospective log, but if both are today/adjacent, warn if scheduled times differ
+          const sameScheduledDate =
+            recentOtherTaken.scheduledTime.slice(0, 10) === targetDose.scheduledTime.slice(0, 10);
+          if (sameScheduledDate && recentOtherTaken.dayNumber === targetDose.dayNumber) {
+            // Record the dose if user explicitly clicked it, OR return safety warning?
+            //Wait: let's check if we should record it only when confirmed or if we should block unconfirmed rapid double-dosing within 2 minutes!
+            const takenMs = Date.parse(recentOtherTaken.takenAt!);
+            if (Math.abs(nowMs - takenMs) < 60 * 1000) {
+              appendTreatmentEvents(
+                [
+                  {
+                    type: 'duplicate_dose_blocked',
+                    scheduleId,
+                    doseId,
+                    medicineName: targetSch.medicineName,
+                    scheduledTime: targetDose.scheduledTime,
+                    actualTime: nowIso,
+                    summaryAr: `تنبيه أمان: تم رصد محاولة تسجيل جرعتين متتاليتين خلال أقل من دقيقة للدواء ${targetSch.medicineName} — لا تضاعف الجرعة أبداً.`,
+                    summaryEn: `Safety guard: Prevented logging two consecutive doses within 1 minute for ${targetSch.medicineName} — never double a dose.`,
+                  },
+                ],
+                nowIso
+              );
               return {
-                ...rest,
-                status: 'taken' as const,
-                takenAt: nowIso,
-                statusUpdatedAt: nowIso,
+                updated: false,
+                reason: 'rapid_duplicate_taken_warning',
+                messageAr:
+                  '⚠️ تنبيه سلامة دوائية: لقد سجلت جرعة أخرى من نفس المضاد الحيوي منذ لحظات! لا تضاعف الجرعة أبداً ولا تأخذ جرعة تعويضية. إذا كنت توثق جرعة سابقة أخذتها في موعدها الفعلي، استخدم خيار «توثيق متقدم للجرعة».',
+                messageEn:
+                  '⚠️ Medication Safety Alert: You just logged another dose of this antibiotic moments ago! Never double a dose or take a replacement dose. To log a past dose retrospectively, use "Document Dose Details".',
               };
             }
-            if (newStatus === 'missed') {
+          }
+        }
+      }
+
+      let eventItem: Omit<TreatmentJourneyEvent, 'id' | 'timestamp'>;
+      if (newStatus === 'taken') {
+        const outcome: DoseDocumentedOutcome =
+          options?.documentedOutcome ||
+          (new Date(nowIso) > new Date(new Date(targetDose.scheduledTime).getTime() + 60 * 60 * 1000)
+            ? 'taken_late'
+            : 'taken_on_time');
+        eventItem = {
+          type: 'dose_taken',
+          scheduleId,
+          doseId,
+          medicineName: targetSch.medicineName,
+          scheduledTime: targetDose.scheduledTime,
+          actualTime: nowIso,
+          summaryAr: `✅ تم تسجيل أخذ الجرعة ${targetDose.doseNumberInDay} (اليوم ${targetDose.dayNumber}) من ${targetSch.medicineName} (${formatDocumentedOutcomeLabel(outcome, true)})${nextNote ? ` — ملاحظة: ${nextNote}` : ''}`,
+          summaryEn: `✅ Recorded Dose #${targetDose.doseNumberInDay} (Day ${targetDose.dayNumber}) of ${targetSch.medicineName} as Taken (${formatDocumentedOutcomeLabel(outcome, false)})${nextNote ? ` — Note: ${nextNote}` : ''}`,
+        };
+      } else if (newStatus === 'missed') {
+        const outcome: DoseDocumentedOutcome =
+          options?.documentedOutcome || 'missed_confirmed';
+        eventItem = {
+          type:
+            outcome === 'held_for_clarification' || outcome === 'skipped_clinician_advice'
+              ? 'dose_documented'
+              : 'dose_missed',
+          scheduleId,
+          doseId,
+          medicineName: targetSch.medicineName,
+          scheduledTime: targetDose.scheduledTime,
+          actualTime: nowIso,
+          summaryAr: `❌ تم توثيق الجرعة ${targetDose.doseNumberInDay} (اليوم ${targetDose.dayNumber}) من ${targetSch.medicineName}: ${formatDocumentedOutcomeLabel(outcome, true)}${nextNote ? ` — ملاحظة: ${nextNote}` : ''}`,
+          summaryEn: `❌ Documented Dose #${targetDose.doseNumberInDay} (Day ${targetDose.dayNumber}) of ${targetSch.medicineName}: ${formatDocumentedOutcomeLabel(outcome, false)}${nextNote ? ` — Note: ${nextNote}` : ''}`,
+        };
+      } else {
+        eventItem = {
+          type: 'dose_undone',
+          scheduleId,
+          doseId,
+          medicineName: targetSch.medicineName,
+          scheduledTime: targetDose.scheduledTime,
+          actualTime: nowIso,
+          summaryAr: `↩ تم التراجع عن حالة الجرعة ${targetDose.doseNumberInDay} (اليوم ${targetDose.dayNumber}) من ${targetSch.medicineName} وإعادتها إلى غير مسجلة.`,
+          summaryEn: `↩ Reset status for Dose #${targetDose.doseNumberInDay} (Day ${targetDose.dayNumber}) of ${targetSch.medicineName}.`,
+        };
+      }
+
+      updateSchedules(
+        (prev) =>
+          prev.map((sch) => {
+            if (sch.id !== scheduleId) return sch;
+            const updatedDoses = sch.doses.map((d) => {
+              if (d.id !== doseId) return d;
+              const {
+                takenAt: _oldTaken,
+                missedAt: _oldMissed,
+                documentedOutcome: _oldOutcome,
+                note: _oldNote,
+                ...rest
+              } = d;
+              if (newStatus === 'taken') {
+                const outcome: DoseDocumentedOutcome =
+                  options?.documentedOutcome ||
+                  (new Date(nowIso) >
+                  new Date(new Date(d.scheduledTime).getTime() + 60 * 60 * 1000)
+                    ? 'taken_late'
+                    : 'taken_on_time');
+                return {
+                  ...rest,
+                  status: 'taken' as const,
+                  takenAt: nowIso,
+                  statusUpdatedAt: nowIso,
+                  documentedOutcome: outcome,
+                  ...(nextNote ? { note: nextNote } : {}),
+                };
+              }
+              if (newStatus === 'missed') {
+                const outcome: DoseDocumentedOutcome =
+                  options?.documentedOutcome || 'missed_confirmed';
+                return {
+                  ...rest,
+                  status: 'missed' as const,
+                  missedAt: nowIso,
+                  statusUpdatedAt: nowIso,
+                  documentedOutcome: outcome,
+                  ...(nextNote ? { note: nextNote } : {}),
+                };
+              }
               return {
                 ...rest,
-                status: 'missed' as const,
-                missedAt: nowIso,
+                status: 'upcoming' as const,
                 statusUpdatedAt: nowIso,
               };
-            }
+            });
             return {
-              ...rest,
-              status: 'upcoming' as const,
-              statusUpdatedAt: nowIso,
+              ...sch,
+              updatedAt: nowIso,
+              doses: updatedDoses,
             };
-          });
-          return {
-            ...sch,
-            updatedAt: nowIso,
-            doses: updatedDoses,
-          };
-        })
+          }),
+        [eventItem]
       );
+
+      return { updated: true };
     },
-    [updateSchedules]
+    [updateSchedules, appendTreatmentEvents]
   );
 
   const updateRadarWorkspace = useCallback(
@@ -1329,7 +2761,15 @@ export function useSyncedSchedules() {
       } catch {}
 
       if (uid && configured && db) {
-        void pushStateToCloud(uid, schedulesRef.current, deletedMapRef.current, next);
+        void pushStateToCloud(
+          uid,
+          schedulesRef.current,
+          deletedMapRef.current,
+          next,
+          prescriptionsRef.current,
+          deletedPrescriptionsMapRef.current,
+          treatmentEventsRef.current
+        );
       }
     },
     [uid, pushStateToCloud]
@@ -1341,7 +2781,10 @@ export function useSyncedSchedules() {
       uid,
       schedulesRef.current,
       deletedMapRef.current,
-      radarWorkspaceRef.current
+      radarWorkspaceRef.current,
+      prescriptionsRef.current,
+      deletedPrescriptionsMapRef.current,
+      treatmentEventsRef.current
     );
   }, [uid, pushStateToCloud]);
 
@@ -1352,6 +2795,11 @@ export function useSyncedSchedules() {
     setSchedules: updateSchedules,
     deleteScheduleById,
     updateDoseStatus,
+    prescriptions,
+    setPrescriptions: updatePrescriptions,
+    deletePrescriptionById,
+    treatmentEvents,
+    recordTreatmentEvents: appendTreatmentEvents,
     radarWorkspace,
     updateRadarWorkspace,
     syncing,
@@ -1453,4 +2901,109 @@ export function generateScheduleDoses(
   }
 
   return doses;
+}
+
+/**
+ * Builds a complete, structured Patient Treatment Journey Report object for export or printing.
+ * Explicitly separates Missing Records (Overdue Unconfirmed) from Confirmed Missed Doses.
+ */
+export function buildPatientTreatmentReportPayload(params: {
+  patientName?: string;
+  userEmail?: string | null;
+  syncStatus: CloudSyncStatus;
+  prescriptions: SavedPrescription[];
+  schedules: TreatmentSchedule[];
+  treatmentEvents: TreatmentJourneyEvent[];
+  generatedAt?: string;
+  now?: Date;
+}) {
+  const generatedAt = params.generatedAt || new Date().toISOString();
+  const now = params.now || new Date();
+
+  const scheduleSummaries = params.schedules.map((sch) => {
+    const stats = calculateScheduleProgress(sch, now);
+    return {
+      id: sch.id,
+      prescriptionId: sch.prescriptionId || null,
+      medicineName: sch.medicineName,
+      prescribedDose: sch.prescribedDose,
+      route: sch.route,
+      frequency: sch.frequency,
+      doseTimes: sch.doseTimes,
+      startDate: sch.startDate,
+      endDate: sch.endDate,
+      durationDays: sch.durationDays,
+      verificationStatus: sch.verificationStatus || 'verified_by_patient',
+      verifiedAt: sch.verifiedAt || sch.createdAt,
+      captureMethod: sch.captureMethod || 'manual_entry',
+      clarificationFlags: sch.clarificationFlags || [],
+      notes: sch.notes || '',
+      adherenceSummary: {
+        totalScheduledDoses: stats.totalDoses,
+        recordedTakenDoses: stats.takenCount,
+        confirmedMissedDoses: stats.missedCount,
+        missingRecordsOverdueUnconfirmed: stats.unconfirmedCount,
+        upcomingFutureDoses: stats.upcomingCount,
+        recordedAdherencePercent: stats.progressPercent,
+      },
+      doseRecords: sch.doses.map((d) => {
+        const computedStatus = getDoseStatus(d, now);
+        return {
+          doseId: d.id,
+          dayNumber: d.dayNumber,
+          doseNumberInDay: d.doseNumberInDay,
+          scheduledTimestamp: d.scheduledTime,
+          status: computedStatus,
+          statusCategory:
+            computedStatus === 'taken'
+              ? 'CONFIRMED_TAKEN'
+              : computedStatus === 'missed'
+                ? 'CONFIRMED_MISSED'
+                : computedStatus === 'unconfirmed'
+                  ? 'MISSING_RECORD_OVERDUE_UNCONFIRMED'
+                  : 'UPCOMING_SCHEDULED',
+          actualRecordedTimestamp:
+            d.status === 'taken' ? d.takenAt || null : d.status === 'missed' ? d.missedAt || null : null,
+          documentedOutcome: d.documentedOutcome || null,
+          patientNote: d.note || null,
+        };
+      }),
+    };
+  });
+
+  return {
+    reportTitle: 'Patient Antibiotic Treatment Journey & Dose History Report',
+    generatedAt,
+    patientName: params.patientName || 'Patient',
+    accountEmail: params.userEmail || 'Guest / Local Session',
+    cloudSyncStatus: params.syncStatus,
+    clinicalSafetyDisclaimer:
+      'Self-maintained patient tracking report. Not a substitute for professional medical advice. Missing records (Overdue Unconfirmed) indicate unrecorded past dose slots and are distinct from Confirmed Missed Doses. Never double a dose or take an unprescribed replacement dose.',
+    prescriptions: params.prescriptions,
+    treatmentSchedules: scheduleSummaries,
+    treatmentJourneyEvents: params.treatmentEvents.slice(0, 100),
+  };
+}
+
+export function downloadTreatmentReportJson(params: {
+  patientName?: string;
+  userEmail?: string | null;
+  syncStatus: CloudSyncStatus;
+  prescriptions: SavedPrescription[];
+  schedules: TreatmentSchedule[];
+  treatmentEvents: TreatmentJourneyEvent[];
+}): void {
+  const payload = buildPatientTreatmentReportPayload(params);
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: 'application/json;charset=utf-8',
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const datePart = formatLocalDateYYYYMMDD();
+  a.download = `patient-treatment-journey-report-${datePart}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }

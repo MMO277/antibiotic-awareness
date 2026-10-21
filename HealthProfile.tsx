@@ -1,8 +1,8 @@
 import { createPortal } from 'react-dom';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
-import { EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
+import { useAuth } from './authContext';
 import {
   AllergyRecord,
   MedicationRecord,
@@ -10,19 +10,30 @@ import {
   useSyncedHealthProfile,
   AllergySeverity,
   EvidenceStatus,
-  PregnancyLactationStatus,
-  OrganFunctionStatus,
 } from './allergyData';
-import { formatFrequencyLabel } from './trackerData';
 import {
-  evaluateMedicationSafety,
-  resolveMedicationIdentity,
-} from './medicationSafetyEngine';
+  useSyncedSchedules,
+  calculateScheduleProgress,
+  formatFrequencyLabel,
+  formatRouteLabel,
+  formatVerificationStatusLabel,
+  formatCaptureMethodLabel,
+  formatTimestampReadable,
+  downloadScheduleIcs,
+  downloadTreatmentReportJson,
+} from './trackerData';
 
 export default function HealthProfile() {
   const { lang } = useLang();
   const isAr = lang === 'ar';
+  const { user } = useAuth();
   const { profile, setProfile, syncing } = useSyncedHealthProfile();
+  const {
+    schedules,
+    prescriptions,
+    treatmentEvents,
+    syncStatus: journeySyncStatus,
+  } = useSyncedSchedules();
 
   // Personal info edit state
   const [editingPersonal, setEditingPersonal] = useState(false);
@@ -30,16 +41,6 @@ export default function HealthProfile() {
   const [ageInput, setAgeInput] = useState(profile.age);
   const [bloodInput, setBloodInput] = useState(profile.bloodType);
   const [contactInput, setContactInput] = useState(profile.emergencyContact);
-  const [pregnancyInput, setPregnancyInput] = useState<PregnancyLactationStatus>(
-    profile.pregnancyStatus || 'unknown'
-  );
-  const [renalInput, setRenalInput] = useState<OrganFunctionStatus>(
-    profile.renalStatus || 'unknown'
-  );
-  const [hepaticInput, setHepaticInput] = useState<OrganFunctionStatus>(
-    profile.hepaticStatus || 'unknown'
-  );
-  const [notesInput, setNotesInput] = useState(profile.notes);
 
   // Modal states
   const [showAllergyModal, setShowAllergyModal] = useState(false);
@@ -57,7 +58,7 @@ export default function HealthProfile() {
   const [medDrugName, setMedDrugName] = useState('');
   const [medDose, setMedDose] = useState('');
   const [medFreq, setMedFreq] = useState('twice_daily');
-  const [medRoute, setMedRoute] = useState('oral');
+  const medRoute = 'oral';
   const [medStatus, setMedStatus] = useState<'active' | 'completed' | 'discontinued'>('active');
 
   // Keep form inputs in sync when cloud profile finishes hydrating or updates from another device
@@ -67,39 +68,8 @@ export default function HealthProfile() {
       setAgeInput(profile.age);
       setBloodInput(profile.bloodType);
       setContactInput(profile.emergencyContact);
-      setPregnancyInput(profile.pregnancyStatus || 'unknown');
-      setRenalInput(profile.renalStatus || 'unknown');
-      setHepaticInput(profile.hepaticStatus || 'unknown');
-      setNotesInput(profile.notes);
     }
-  }, [
-    profile.displayName,
-    profile.age,
-    profile.bloodType,
-    profile.emergencyContact,
-    profile.pregnancyStatus,
-    profile.renalStatus,
-    profile.hepaticStatus,
-    profile.notes,
-    editingPersonal,
-  ]);
-
-  // Run the centralized Medication Safety Engine on the user's active profile medications & allergies
-  const profileSafetyAssessment = useMemo(() => {
-    const activeMeds = profile.medications.filter((m) => m.status === 'active');
-    return evaluateMedicationSafety({
-      medications: activeMeds.map((m) => ({
-        id: m.id,
-        rawName: m.drugName,
-        activeIngredientId: m.activeIngredients || undefined,
-        prescribedDose: m.prescribedDose,
-        route: m.route,
-        sourceType: 'profile_active',
-      })),
-      healthProfile: profile,
-      includeProfileActiveMedications: false, // already supplied explicitly above
-    });
-  }, [profile]);
+  }, [profile.displayName, profile.age, profile.bloodType, profile.emergencyContact, editingPersonal]);
 
   const savePersonalInfo = (e: FormEvent) => {
     e.preventDefault();
@@ -109,10 +79,6 @@ export default function HealthProfile() {
       age: ageInput.trim(),
       bloodType: bloodInput.trim(),
       emergencyContact: contactInput.trim(),
-      pregnancyStatus: pregnancyInput,
-      renalStatus: renalInput,
-      hepaticStatus: hepaticInput,
-      notes: notesInput.trim(),
     }));
     setEditingPersonal(false);
   };
@@ -146,14 +112,10 @@ export default function HealthProfile() {
   const addMedication = (e: FormEvent) => {
     e.preventDefault();
     if (!medDrugName.trim()) return;
-    const resolved = resolveMedicationIdentity({
-      rawName: medDrugName.trim(),
-      route: medRoute,
-    });
     const newMed: MedicationRecord = {
       id: `med-${Date.now()}`,
       drugName: medDrugName.trim(),
-      activeIngredients: resolved.activeIngredientId || '',
+      activeIngredients: '',
       prescribedDose: medDose.trim(),
       route: medRoute,
       frequency: medFreq,
@@ -165,7 +127,6 @@ export default function HealthProfile() {
     setMedDrugName('');
     setMedDose('');
     setMedFreq('twice_daily');
-    setMedRoute('oral');
   };
 
   const deleteMedication = (id: string) => {
@@ -184,21 +145,20 @@ export default function HealthProfile() {
     downloadAnchor.remove();
   };
 
+  const exportFullTreatmentJourney = () => {
+    downloadTreatmentReportJson({
+      patientName: profile.displayName || user?.displayName || undefined,
+      userEmail: user?.email,
+      syncStatus: journeySyncStatus,
+      prescriptions,
+      schedules,
+      treatmentEvents,
+    });
+  };
+
   const clearAllData = () => {
     if (window.confirm(isAr ? 'تحذير: سيتم مسح جميع بيانات الحساسية والأدوية المسجلة. هل توافق؟' : 'Warning: All stored health data will be deleted. Proceed?')) {
-      setProfile({
-        displayName: '',
-        age: '',
-        gender: '',
-        bloodType: '',
-        emergencyContact: '',
-        notes: '',
-        allergies: [],
-        medications: [],
-        pregnancyStatus: 'unknown',
-        renalStatus: 'unknown',
-        hepaticStatus: 'unknown',
-      });
+      setProfile({ displayName: '', age: '', gender: '', bloodType: '', emergencyContact: '', notes: '', allergies: [], medications: [] });
     }
   };
 
@@ -215,16 +175,14 @@ export default function HealthProfile() {
     }
   };
 
-  const activeMedsCount = profile.medications.filter((m) => m.status === 'active').length;
-
   return (
     <main className="wrap stack">
       <header className="page-head">
-        <h1>👤 {isAr ? 'ملف صحتي وحساسيتي الدوائية' : 'My Health Profile & Allergy Passport'}</h1>
+        <h1>👤 {isAr ? 'ملف صحتي وحساسيتي ورحلة علاجي' : 'My Health Profile, Allergy Passport & Treatment Journey'}</h1>
         <p className="muted">
           {isAr
-            ? 'سجل شخصي متكامل لتوثيق حساسيتك الدوائية وأدويتك الحالية وحالتك الصحية، متصل بمحرك السلامة الدوائية المركزي لحمايتك من تكرار المواد الفعالة والتداخلات الخطيرة.'
-            : 'Personal health dashboard documenting your drug allergies, active medications, and clinical factors, connected to the centralized Medication Safety Engine.'}
+            ? 'سجل شخصي متكامل لتوثيق حساسيتك الدوائية، روشتاتك الموثّقة، وجداول جرعاتك المحفوظة في حسابك عبر جميع أجهزتك.'
+            : 'Personal health dashboard documenting your drug allergies, verified prescriptions, and treatment schedules synced across your devices.'}
           {syncing && (
             <span style={{ marginInlineStart: '8px', fontSize: '0.85em' }}>
               ({isAr ? 'جارٍ مزامنة بياناتك السحابية...' : 'Syncing cloud data...'})
@@ -237,19 +195,19 @@ export default function HealthProfile() {
       <section className="card highlight-card profile-banner">
         <div className="banner-content">
           <div>
-            <h2>🛡️ {isAr ? 'فاحص الحساسية ورادار السلامة الدوائية' : 'Smart Allergy & Prescription Safety Check'}</h2>
+            <h2>🛡️ {isAr ? 'فاحص الحساسية والأمان الدوائي' : 'Smart Allergy Safety Check'}</h2>
             <p className="small">
               {isAr
-                ? 'تحقق فوراً مما إذا كان أي مضاد حيوي يحتوي على مواد فعالة تطابق حساسيتك المسجلة أو يتكرر مع أدويتك الحالية.'
-                : 'Instantly check whether any antibiotic matches your recorded allergies or duplicates your active medications.'}
+                ? 'تحقق فوراً مما إذا كان أي مضاد حيوي يحتوي على مواد فعالة تطابق حساسيتك المسجلة أو يسبب حساسية متصالبة (Cross-Reactivity).'
+                : 'Instantly check whether any antibiotic matches your recorded allergies or shares cross-reactive ingredients.'}
             </p>
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <Link to="/allergy-checker" className="btn btn-listen-all">
-              ⚡ {isAr ? 'افحص حساسية دواء' : 'Allergy Checker'}
+              ⚡ {isAr ? 'افحص أمان دواء الآن' : 'Check a Medicine'}
             </Link>
             <Link to="/prescription-radar" className="btn-secondary">
-              📡 {isAr ? 'رادار الروشتة الكاملة' : 'Prescription Radar'}
+              📡 {isAr ? 'رادار الروشتة ورحلة العلاج' : 'Prescription Radar & Journey'}
             </Link>
           </div>
         </div>
@@ -262,105 +220,23 @@ export default function HealthProfile() {
           <span className="kpi-label">{isAr ? 'أدوية تسبب حساسية ⚠️' : 'Documented Allergies'}</span>
         </div>
         <div className="kpi-item taken">
-          <span className="kpi-num">{activeMedsCount}</span>
-          <span className="kpi-label">{isAr ? 'أدوية أتناولها حالياً 💊' : 'Active Medications'}</span>
+          <span className="kpi-num">{schedules.length}</span>
+          <span className="kpi-label">{isAr ? 'جداول علاجية مفعّلة 🗓️' : 'Active Treatment Schedules'}</span>
         </div>
         <div className="kpi-item upcoming">
-          <span className="kpi-num">{profile.medications.filter((m) => m.status === 'completed').length}</span>
-          <span className="kpi-label">{isAr ? 'أدوية مكتملة سابقة' : 'Past Courses'}</span>
+          <span className="kpi-num">{prescriptions.length}</span>
+          <span className="kpi-label">{isAr ? 'روشتات محفوظة بالحساب 📋' : 'Saved Prescriptions'}</span>
+        </div>
+        <div className="kpi-item">
+          <span className="kpi-num">{profile.medications.filter((m) => m.status === 'active').length}</span>
+          <span className="kpi-label">{isAr ? 'أدوية بسجل الملف 💊' : 'Profile Medications'}</span>
         </div>
       </div>
 
-      {/* Live Centralized Medication Safety Engine Assessment for Active Profile Medications */}
-      {activeMedsCount > 0 && (
-        <section
-          className={`card result-card ${
-            profileSafetyAssessment.overallStatus === 'urgent_review'
-              ? 'severe'
-              : profileSafetyAssessment.overallStatus === 'warning_review' ||
-                  profileSafetyAssessment.overallStatus === 'caution_verify' ||
-                  profileSafetyAssessment.overallStatus === 'incomplete_check'
-                ? 'moderate'
-                : 'safe'
-          }`}
-        >
-          <div className="card-head-row">
-            <div>
-              <h2>
-                🔬{' '}
-                {isAr
-                  ? 'نتيجة فحص محرك السلامة الدوائية لأدويتك الحالية:'
-                  : 'Medication Safety Engine Assessment of Your Active Medications:'}
-              </h2>
-              <p className="small" style={{ margin: '4px 0 0' }}>
-                {profileSafetyAssessment.completeness.summaryBanner[lang]}
-              </p>
-            </div>
-          </div>
-
-          {profileSafetyAssessment.findings.length > 0 && (
-            <div className="stack" style={{ gap: '10px', marginTop: '12px' }}>
-              {profileSafetyAssessment.findings.map((f) => (
-                <div
-                  key={f.id}
-                  style={{
-                    padding: '12px 14px',
-                    borderRadius: '10px',
-                    background: 'var(--card-bg)',
-                    border: '1.5px solid var(--line)',
-                  }}
-                >
-                  <div className="row wrapRow" style={{ justifyContent: 'space-between', gap: '8px' }}>
-                    <strong>{f.title[lang]}</strong>
-                    <span
-                      className={`sev-badge ${
-                        f.severity === 'urgent'
-                          ? 'severe'
-                          : f.severity === 'warning' || f.severity === 'caution'
-                            ? 'moderate'
-                            : 'safe'
-                      }`}
-                      style={{ marginBottom: 0, fontSize: '0.76rem' }}
-                    >
-                      {f.severity === 'urgent'
-                        ? isAr
-                          ? 'عاجل / خطير'
-                          : 'Urgent'
-                        : f.severity === 'warning'
-                          ? isAr
-                            ? 'تحذير سريري'
-                            : 'Warning'
-                          : f.severity === 'caution'
-                            ? isAr
-                              ? 'يتطلب التحقق'
-                              : 'Caution / Verify'
-                            : isAr
-                              ? 'إرشاد'
-                              : 'Info'}
-                    </span>
-                  </div>
-                  <p className="small" style={{ margin: '6px 0' }}>
-                    {f.reason[lang]}
-                  </p>
-                  <p className="small" style={{ margin: '0 0 4px' }}>
-                    <b>{isAr ? 'الخطوة الموصى بها:' : 'Recommended Next Step:'}</b> {f.nextStep[lang]}
-                  </p>
-                  <small className="muted">
-                    {isAr ? 'المصدر:' : 'Source:'} {f.source.title[lang]}
-                    {f.source.updatedDate ? ` · ${f.source.updatedDate}` : ''} ·{' '}
-                    {f.dataCompleteness.uncertaintyNote[lang]}
-                  </small>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* Personal Identity & Clinical Factors Card */}
+      {/* Personal Identity Card */}
       <section className="card stack">
         <div className="card-head-row">
-          <h2>📋 {isAr ? 'البيانات الشخصية والعوامل الصحية للمريض:' : 'Patient Details & Clinical Factors:'}</h2>
+          <h2>📋 {isAr ? 'البيانات الشخصية للمريض:' : 'Patient Details:'}</h2>
           <button type="button" className="btn-secondary" onClick={() => setEditingPersonal(!editingPersonal)}>
             {editingPersonal ? (isAr ? 'إلغاء' : 'Cancel') : (isAr ? '✏️ تعديل البيانات' : '✏️ Edit')}
           </button>
@@ -375,7 +251,7 @@ export default function HealthProfile() {
               </div>
               <div className="form-group">
                 <label><b>{isAr ? 'العمر:' : 'Age:'}</b></label>
-                <input value={ageInput} onChange={(e) => setAgeInput(e.target.value)} placeholder={isAr ? 'مثال: 45 سنة أو 5 سنوات' : 'e.g. 45 or 5 years'} />
+                <input value={ageInput} onChange={(e) => setAgeInput(e.target.value)} placeholder={isAr ? 'مثال: 45 سنة' : 'e.g. 45'} />
               </div>
             </div>
             <div className="form-row">
@@ -388,50 +264,6 @@ export default function HealthProfile() {
                 <input value={contactInput} onChange={(e) => setContactInput(e.target.value)} placeholder="01xxxxxxxxx" />
               </div>
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label><b>{isAr ? 'حالة الحمل / الرضاعة (اختياري):' : 'Pregnancy / Lactation Status:'}</b></label>
-                <select
-                  value={pregnancyInput}
-                  onChange={(e) => setPregnancyInput(e.target.value as PregnancyLactationStatus)}
-                >
-                  <option value="unknown">{isAr ? 'غير محدد' : 'Unspecified'}</option>
-                  <option value="none">{isAr ? 'لا يوجد' : 'None'}</option>
-                  <option value="pregnant">{isAr ? 'حامل 🤰' : 'Pregnant 🤰'}</option>
-                  <option value="breastfeeding">{isAr ? 'مرضع 🤱' : 'Breastfeeding 🤱'}</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label><b>{isAr ? 'وظائف الكلى (اختياري):' : 'Renal Function:'}</b></label>
-                <select
-                  value={renalInput}
-                  onChange={(e) => setRenalInput(e.target.value as OrganFunctionStatus)}
-                >
-                  <option value="unknown">{isAr ? 'غير محدد' : 'Unspecified'}</option>
-                  <option value="normal">{isAr ? 'طبيعية' : 'Normal'}</option>
-                  <option value="impaired">{isAr ? 'قصور كلوي (يتطلب مراجعة الجرعات)' : 'Renal Impairment'}</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label><b>{isAr ? 'وظائف الكبد (اختياري):' : 'Hepatic Function:'}</b></label>
-                <select
-                  value={hepaticInput}
-                  onChange={(e) => setHepaticInput(e.target.value as OrganFunctionStatus)}
-                >
-                  <option value="unknown">{isAr ? 'غير محدد' : 'Unspecified'}</option>
-                  <option value="normal">{isAr ? 'طبيعية' : 'Normal'}</option>
-                  <option value="impaired">{isAr ? 'قصور كبدي (يتطلب مراجعة الجرعات)' : 'Hepatic Impairment'}</option>
-                </select>
-              </div>
-            </div>
-            <div className="form-group">
-              <label><b>{isAr ? 'ملاحظات صحية إضافية:' : 'Additional Health Notes:'}</b></label>
-              <input
-                value={notesInput}
-                onChange={(e) => setNotesInput(e.target.value)}
-                placeholder={isAr ? 'مثال: أنيميا الفول، سكري، ضغط...' : 'e.g. G6PD deficiency, diabetes...'}
-              />
-            </div>
             <button type="submit" className="btn" style={{ alignSelf: 'flex-start' }}>
               💾 {isAr ? 'حفظ البيانات' : 'Save'}
             </button>
@@ -442,43 +274,127 @@ export default function HealthProfile() {
             <div><b>{isAr ? 'العمر:' : 'Age:'}</b> {profile.age || '—'}</div>
             <div><b>{isAr ? 'فصيلة الدم:' : 'Blood Type:'}</b> {profile.bloodType || '—'}</div>
             <div><b>{isAr ? 'هاتف الطوارئ:' : 'Emergency Phone:'}</b> {profile.emergencyContact || '—'}</div>
-            <div>
-              <b>{isAr ? 'الحمل/الرضاعة:' : 'Pregnancy/Lactation:'}</b>{' '}
-              {profile.pregnancyStatus === 'pregnant'
-                ? isAr
-                  ? 'حامل 🤰'
-                  : 'Pregnant'
-                : profile.pregnancyStatus === 'breastfeeding'
-                  ? isAr
-                    ? 'مرضع 🤱'
-                    : 'Breastfeeding'
-                  : profile.pregnancyStatus === 'none'
-                    ? isAr
-                      ? 'لا يوجد'
-                      : 'None'
-                    : '—'}
-            </div>
-            <div>
-              <b>{isAr ? 'الكلى / الكبد:' : 'Renal / Hepatic:'}</b>{' '}
-              {profile.renalStatus === 'impaired'
-                ? isAr
-                  ? 'قصور كلوي ⚠️'
-                  : 'Renal Impairment ⚠️'
-                : profile.hepaticStatus === 'impaired'
-                  ? isAr
-                    ? 'قصور كبدي ⚠️'
-                    : 'Hepatic Impairment ⚠️'
-                  : profile.renalStatus === 'normal' || profile.hepaticStatus === 'normal'
-                    ? isAr
-                      ? 'طبيعي'
-                      : 'Normal'
-                    : '—'}
-            </div>
-            {profile.notes && (
-              <div style={{ gridColumn: '1 / -1' }}>
-                <b>{isAr ? 'ملاحظات صحية:' : 'Health Notes:'}</b> {profile.notes}
-              </div>
+          </div>
+        )}
+      </section>
+
+      {/* Integrated Complete Patient Treatment Journey Card */}
+      <section className="card stack" style={{ borderTop: '4px solid #0284c7' }}>
+        <div className="card-head-row" style={{ flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h2>
+              🗓️{' '}
+              {isAr
+                ? 'رحلتي العلاجية وروشتاتي المحفوظة بحسابي (Complete Treatment Journey):'
+                : 'My Saved Treatment Journey & Verified Prescriptions:'}
+            </h2>
+            <p className="small muted">
+              {isAr
+                ? 'الروشتات الملتقطة، حالة التوثيق الطبي، وجداول الجرعات اليومية المتزامنة مع حسابك عبر الأجهزة.'
+                : 'Captured prescriptions, verification status, and active dose schedules synchronized with your account.'}
+            </p>
+          </div>
+          <div className="row wrapRow" style={{ gap: '8px' }}>
+            <Link to="/prescription-radar" className="btn small">
+              📡 {isAr ? 'التقاط/فحص روشتة في الرادار' : 'Open Prescription Radar'}
+            </Link>
+            <Link to="/tracker" className="btn-secondary small">
+              ⏱️ {isAr ? 'متابع الجرعات والتقرير' : 'Open Dose Tracker'}
+            </Link>
+            {(schedules.length > 0 || prescriptions.length > 0) && (
+              <button type="button" className="btn-secondary small" onClick={exportFullTreatmentJourney}>
+                📥 {isAr ? 'تصدير تقرير الرحلة العلاجية (JSON)' : 'Export Journey Report (JSON)'}
+              </button>
             )}
+          </div>
+        </div>
+
+        {schedules.length === 0 && prescriptions.length === 0 ? (
+          <div className="empty-state-box">
+            <span>📡</span>
+            <p>
+              {isAr
+                ? 'لا توجد روشتات أو جداول علاجية محفوظة بعد. يمكنك تصوير الروشتة أو إدخالها في رادار الروشتة لبدء رحلة العلاج.'
+                : 'No saved prescriptions or active treatment schedules yet. Capture or enter a prescription in Prescription Radar to begin.'}
+            </p>
+          </div>
+        ) : (
+          <div className="stack" style={{ gap: '12px' }}>
+            {schedules.map((sch) => {
+              const stats = calculateScheduleProgress(sch);
+              return (
+                <div key={sch.id} className="med-record-card" style={{ padding: '14px' }}>
+                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
+                        <h4 style={{ margin: 0 }}>💊 {sch.medicineName}</h4>
+                        <span className="verification-badge verified">
+                          {formatVerificationStatusLabel(sch.verificationStatus, isAr)}
+                        </span>
+                        {sch.captureMethod && (
+                          <span className="badge">{formatCaptureMethodLabel(sch.captureMethod, isAr)}</span>
+                        )}
+                      </div>
+                      <p className="small muted" style={{ margin: '4px 0' }}>
+                        {[
+                          sch.prescribedDose,
+                          formatRouteLabel(sch.route, isAr),
+                          formatFrequencyLabel(sch.frequency, isAr),
+                          `${sch.durationDays} ${isAr ? 'أيام' : 'days'} (${sch.startDate} → ${sch.endDate})`,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </p>
+                      <p className="small" style={{ margin: '4px 0 0' }}>
+                        <b>{isAr ? 'الالتزام المسجل:' : 'Recorded Adherence:'}</b> {stats.progressPercent}% (
+                        {isAr ? 'تم أخذها:' : 'Taken:'} {stats.takenCount}/{stats.totalDoses} ·{' '}
+                        {isAr ? 'فائتة مؤكدة:' : 'Confirmed Missed:'} {stats.missedCount} ·{' '}
+                        {isAr ? 'غير مسجلة:' : 'Missing Record:'} {stats.unconfirmedCount})
+                      </p>
+                    </div>
+                    <div className="row wrapRow" style={{ gap: '6px' }}>
+                      <button
+                        type="button"
+                        className="btn-secondary small"
+                        onClick={() => downloadScheduleIcs(sch, isAr)}
+                      >
+                        📅 {isAr ? 'منبهات (.ics)' : 'Alarms (.ics)'}
+                      </button>
+                      <Link to="/tracker" className="btn small">
+                        ⏱️ {isAr ? 'تسجيل الجرعات' : 'Log Doses'}
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {prescriptions
+              .filter((rx) => !rx.linkedScheduleId || rx.verificationStatus !== 'verified_by_patient')
+              .map((rx) => (
+                <div key={rx.id} className="rx-queue-card">
+                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
+                        <strong>📋 {rx.medicineName}</strong>
+                        <span
+                          className={`verification-badge ${
+                            rx.verificationStatus === 'needs_clarification' ? 'clarify' : 'unverified'
+                          }`}
+                        >
+                          {formatVerificationStatusLabel(rx.verificationStatus, isAr)}
+                        </span>
+                      </div>
+                      <small className="muted">
+                        {isAr ? 'تاريخ الحفظ:' : 'Saved:'} {formatTimestampReadable(rx.updatedAt, isAr)}
+                      </small>
+                    </div>
+                    <Link to="/prescription-radar" className="btn-secondary small">
+                      🔍 {isAr ? 'مراجعة وتوثيق في الرادار' : 'Review & Verify in Radar'}
+                    </Link>
+                  </div>
+                </div>
+              ))}
           </div>
         )}
       </section>
@@ -536,9 +452,7 @@ export default function HealthProfile() {
                       {isAr ? 'حالة التوثيق:' : 'Evidence:'}{' '}
                       {all.evidenceStatus === 'clinically_verified'
                         ? (isAr ? 'مؤكدة طبياً بفحص الحساسية ✅' : 'Clinically Verified')
-                        : all.evidenceStatus === 'suspected'
-                          ? (isAr ? 'مشتبه بها' : 'Suspected')
-                          : (isAr ? 'أبلغ عنها المريض' : 'Patient-Reported')}
+                        : (isAr ? 'أبلغ عنها المريض' : 'Patient-Reported')}
                     </small>
                   </div>
                 </div>
@@ -555,8 +469,8 @@ export default function HealthProfile() {
             <h2>💊 {isAr ? 'قائمة أدويتي الحالية والسابقة:' : 'My Medications:'}</h2>
             <p className="small muted">
               {isAr
-                ? 'سجل للأدوية التي تتناولها حالياً للرجوع إليها وفحص تداخلاتها وتكرار موادها الفعالة تلقائياً.'
-                : 'List of your active and past prescriptions for automated medication reconciliation.'}
+                ? 'سجل للأدوية التي تتناولها حالياً للرجوع إليها وفحص تداخلاتها.'
+                : 'List of your active and past prescriptions for medication reconciliation.'}
             </p>
           </div>
           <button type="button" className="btn-secondary" onClick={() => setShowMedModal(true)}>
@@ -571,51 +485,34 @@ export default function HealthProfile() {
           </div>
         ) : (
           <div className="med-cards-stack">
-            {profile.medications.map((m) => {
-              const resolved = resolveMedicationIdentity({
-                rawName: m.drugName,
-                activeIngredientId: m.activeIngredients || undefined,
-                route: m.route,
-              });
-              return (
-                <div key={m.id} className="med-record-card">
-                  <div className="med-record-head">
-                    <div>
-                      <h4>{m.drugName}</h4>
-                      <span className="small muted">
-                        {[m.prescribedDose, formatFrequencyLabel(m.frequency, isAr)].filter(Boolean).join(' · ')}
-                      </span>
-                      {resolved.activeIngredient && (
-                        <div className="small" style={{ color: 'var(--teal-dark)', marginTop: '2px' }}>
-                          🧬 {isAr ? resolved.activeIngredient.nameAr : resolved.activeIngredient.nameEn}
-                        </div>
-                      )}
-                      {resolved.resolutionStatus === 'unresolved' && (
-                        <div className="small muted" style={{ marginTop: '2px' }}>
-                          ⚠️ {isAr ? 'مادة فعالة غير متحققة بالسجل المحلي' : 'Unverified active ingredient'}
-                        </div>
-                      )}
-                    </div>
-                    <div className="med-record-actions">
-                      <span className={`status-pill ${m.status === 'active' ? 'taken' : 'upcoming'}`}>
-                        {m.status === 'active'
+            {profile.medications.map((m) => (
+              <div key={m.id} className="med-record-card">
+                <div className="med-record-head">
+                  <div>
+                    <h4>{m.drugName}</h4>
+                    <span className="small muted">
+                      {[m.prescribedDose, formatFrequencyLabel(m.frequency, isAr)].filter(Boolean).join(' · ')}
+                    </span>
+                  </div>
+                  <div className="med-record-actions">
+                    <span className={`status-pill ${m.status === 'active' ? 'taken' : 'upcoming'}`}>
+                      {m.status === 'active'
+                        ? isAr
+                          ? 'حالي'
+                          : 'Active'
+                        : m.status === 'discontinued'
                           ? isAr
-                            ? 'حالي'
-                            : 'Active'
-                          : m.status === 'discontinued'
-                            ? isAr
-                              ? 'متوقف'
-                              : 'Discontinued'
-                            : isAr
-                              ? 'مكتمل'
-                              : 'Past'}
-                      </span>
-                      <button type="button" className="undo-btn" onClick={() => deleteMedication(m.id)}>✕</button>
-                    </div>
+                            ? 'متوقف'
+                            : 'Discontinued'
+                          : isAr
+                            ? 'مكتمل'
+                            : 'Past'}
+                    </span>
+                    <button type="button" className="undo-btn" onClick={() => deleteMedication(m.id)}>✕</button>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         )}
       </section>
@@ -623,7 +520,10 @@ export default function HealthProfile() {
       {/* Footer Management Controls */}
       <div className="profile-footer-actions">
         <button type="button" className="btn-secondary" onClick={exportProfileData}>
-          📥 {isAr ? 'تصدير وحفظ الملف (JSON)' : 'Export Profile (JSON)'}
+          📥 {isAr ? 'تصدير وحفظ الملف الصحي (JSON)' : 'Export Health Profile (JSON)'}
+        </button>
+        <button type="button" className="btn-secondary" onClick={exportFullTreatmentJourney}>
+          📄 {isAr ? 'تصدير تقرير رحلة العلاج الكامل (JSON)' : 'Export Complete Treatment Journey (JSON)'}
         </button>
         <button type="button" className="btn-secondary danger" onClick={clearAllData}>
           🗑️ {isAr ? 'مسح بيانات الملف' : 'Reset Profile'}
@@ -717,19 +617,8 @@ export default function HealthProfile() {
 
             <form onSubmit={addMedication} className="stack modal-form">
               <div className="form-group">
-                <label><b>{isAr ? 'اسم الدواء (تجاري أو علمي):' : 'Medication Name (Brand or Generic):'} *</b></label>
-                <input
-                  list="profile-med-suggestions"
-                  value={medDrugName}
-                  onChange={(e) => setMedDrugName(e.target.value)}
-                  placeholder={isAr ? 'مثال: أوجمنتين 1 جم، هاي بيوتك، ماريفان...' : 'e.g. Augmentin 1g, Hibiotic, Marevan...'}
-                  required
-                />
-                <datalist id="profile-med-suggestions">
-                  {EGYPTIAN_COMMERCIAL_PRODUCTS.map((p) => (
-                    <option key={p.productId} value={isAr ? p.tradeNameAr : p.tradeNameEn} />
-                  ))}
-                </datalist>
+                <label><b>{isAr ? 'اسم الدواء:' : 'Medication Name:'} *</b></label>
+                <input value={medDrugName} onChange={(e) => setMedDrugName(e.target.value)} required />
               </div>
               <div className="form-row">
                 <div className="form-group">
@@ -746,24 +635,13 @@ export default function HealthProfile() {
                   </select>
                 </div>
               </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label><b>{isAr ? 'طريق الإعطاء:' : 'Route:'}</b></label>
-                  <select value={medRoute} onChange={(e) => setMedRoute(e.target.value)}>
-                    <option value="oral">{isAr ? 'عن طريق الفم (Oral)' : 'Oral'}</option>
-                    <option value="parenteral_iv_im">{isAr ? 'حقن وريدي/عضلي (IV/IM)' : 'Parenteral (IV/IM)'}</option>
-                    <option value="topical">{isAr ? 'موضعي جلدي (Topical)' : 'Topical'}</option>
-                    <option value="ophthalmic_otic">{isAr ? 'قطرة عين/أذن' : 'Ophthalmic / Otic'}</option>
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label><b>{isAr ? 'الحالة:' : 'Status:'}</b></label>
-                  <select value={medStatus} onChange={(e) => setMedStatus(e.target.value as 'active' | 'completed' | 'discontinued')}>
-                    <option value="active">{isAr ? 'حالي' : 'Active'}</option>
-                    <option value="completed">{isAr ? 'مكتمل' : 'Completed'}</option>
-                    <option value="discontinued">{isAr ? 'متوقف' : 'Discontinued'}</option>
-                  </select>
-                </div>
+              <div className="form-group">
+                <label><b>{isAr ? 'الحالة:' : 'Status:'}</b></label>
+                <select value={medStatus} onChange={(e) => setMedStatus(e.target.value as 'active' | 'completed' | 'discontinued')}>
+                  <option value="active">{isAr ? 'حالي' : 'Active'}</option>
+                  <option value="completed">{isAr ? 'مكتمل' : 'Completed'}</option>
+                  <option value="discontinued">{isAr ? 'متوقف' : 'Discontinued'}</option>
+                </select>
               </div>
               <div className="modal-actions">
                 <button type="submit" className="btn">💾 {isAr ? 'حفظ الدواء' : 'Save'}</button>

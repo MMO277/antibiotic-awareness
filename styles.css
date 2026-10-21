@@ -4733,3 +4733,182 @@ html body .ow-page .ow-stage .ow-controls .ow-action-stack {
   opacity: 1 !important;
   z-index: 26 !important;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   COMPLETE PATIENT TREATMENT JOURNEY — OCR Capture, Verification Gate,
+   Clarification Flags, Verification Badges, Mobile Android & Dark Theme
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.rx-capture-box {
+  background: var(--tint);
+  border: 1.5px dashed var(--teal);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.ocr-status-banner {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.ocr-status-banner.loading {
+  background: #eff6ff;
+  border: 1px solid #93c5fd;
+  color: #1e40af;
+}
+[data-theme="dark"] .ocr-status-banner.loading {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #93c5fd;
+}
+.ocr-status-banner.error {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+[data-theme="dark"] .ocr-status-banner.error {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #fcd34d;
+}
+
+.ocr-unverified-banner {
+  background: #fffbeb;
+  border: 1.5px solid #f59e0b;
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #92400e;
+}
+[data-theme="dark"] .ocr-unverified-banner {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #fcd34d;
+}
+
+.ocr-field-tag {
+  display: inline-block;
+  margin-inline-start: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+}
+[data-theme="dark"] .ocr-field-tag {
+  background: rgba(245, 158, 11, 0.22);
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.clarification-gate-box {
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+.clarification-gate-box.blocking {
+  background: #fef2f2;
+  border: 1.5px solid #ef4444;
+  color: #991b1b;
+}
+[data-theme="dark"] .clarification-gate-box.blocking {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+.clarification-gate-box.warning {
+  background: #fffbeb;
+  border: 1.5px solid #f59e0b;
+  color: #92400e;
+}
+[data-theme="dark"] .clarification-gate-box.warning {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.45);
+  color: #fcd34d;
+}
+
+.verification-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--tint);
+  border: 1.5px solid var(--teal);
+  cursor: pointer;
+}
+.verification-checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.verification-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.verification-badge.verified {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+[data-theme="dark"] .verification-badge.verified {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.45);
+}
+.verification-badge.unverified {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+[data-theme="dark"] .verification-badge.unverified {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fde68a;
+  border-color: rgba(245, 158, 11, 0.45);
+}
+.verification-badge.clarify {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+[data-theme="dark"] .verification-badge.clarify {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+.rx-verification-queue-box {
+  background: var(--tint);
+  border: 1.5px solid #f59e0b;
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.rx-queue-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+@media (max-width: 640px) {
+  .rx-capture-box,
+  .rx-verification-queue-box,
+  .rx-queue-card {
+    padding: 10px 12px;
+  }
+  .verification-badge {
+    font-size: 0.72rem;
+    padding: 2px 8px;
+  }
+}
