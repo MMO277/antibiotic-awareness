@@ -206,7 +206,7 @@ export default function Tracker() {
       const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
       const mimeType = file.type || 'image/jpeg';
 
-      const extracted = await analyzePrescriptionImageWithVision(base64Data, mimeType, lang);
+      const extracted = await analyzePrescriptionImageWithVision(base64Data, mimeType, lang, file.name);
       setOcrExtraction(extracted);
       setRawExtractedText(extracted.rawExtractedText);
 

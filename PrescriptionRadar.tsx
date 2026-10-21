@@ -742,7 +742,7 @@ export default function PrescriptionRadar() {
       const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
       const mimeType = file.type || 'image/jpeg';
 
-      const extracted = await analyzePrescriptionImageWithVision(base64Data, mimeType, lang);
+      const extracted = await analyzePrescriptionImageWithVision(base64Data, mimeType, lang, file.name);
       setOcrExtraction(extracted);
       setRawExtractedText(extracted.rawExtractedText);
 
@@ -2640,10 +2640,19 @@ export default function PrescriptionRadar() {
                     )}
                   </label>
                   <input
+                    list="radar-med-suggestions"
                     value={medName}
                     onChange={(e) => setMedName(e.target.value)}
-                    placeholder={isAr ? 'مثال: سيبروفلوكساسين / أوجمنتين' : 'e.g. Ciprofloxacin / Augmentin'}
+                    placeholder={isAr ? 'مثال: سيبروفلوكساسين / أوجمنتين / زيثروماكس' : 'e.g. Ciprofloxacin / Augmentin / Zithromax'}
                   />
+                  <datalist id="radar-med-suggestions">
+                    {ACTIVE_INGREDIENTS.map((ing) => (
+                      <option
+                        key={ing.id}
+                        value={isAr ? `${ing.nameAr} (${ing.nameEn})` : `${ing.nameEn} (${ing.nameAr})`}
+                      />
+                    ))}
+                  </datalist>
                 </div>
 
                 <div className="form-row">
