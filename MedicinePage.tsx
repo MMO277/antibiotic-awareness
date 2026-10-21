@@ -7,6 +7,8 @@ import StatusBadge from './StatusBadge';
 import QRBlock from './QRBlock';
 import Disclaimer from './Disclaimer';
 import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
+import { useSyncedHealthProfile } from './allergyData';
+import { evaluateMedicationSafety } from './medicationSafetyEngine';
 
 const ORDER: TextField[] = [
   'approvedUses',
@@ -29,11 +31,13 @@ export default function MedicinePage() {
   const { id = '' } = useParams();
   const { t, lang } = useLang();
   const isAr = lang === 'ar';
+  const { profile } = useSyncedHealthProfile();
 
   // Initialize synchronously from local verified database so it opens in 0ms and never fails
   const [m, setM] = useState<Medicine | null | undefined>(() => findLocalMedicine(id) ?? undefined);
 
   useEffect(() => {
+    let active = true;
     const localMed = findLocalMedicine(id);
     if (localMed) {
       setM(localMed);
@@ -42,12 +46,17 @@ export default function MedicinePage() {
     }
     fetchOne(id)
       .then((res) => {
+        if (!active) return;
         if (res) setM(res);
         else if (!localMed) setM(null);
       })
       .catch(() => {
+        if (!active) return;
         if (!localMed) setM(null);
       });
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   const commercialPackages = useMemo(
@@ -58,6 +67,19 @@ export default function MedicinePage() {
   const ingMeta = useMemo(
     () => (m ? ACTIVE_INGREDIENTS.find((a) => a.id === m.id) : undefined),
     [m]
+  );
+
+  // Centralized Medication Safety Assessment for this medicine against the patient's Health Profile
+  const safetyAssessment = useMemo(
+    () =>
+      m
+        ? evaluateMedicationSafety({
+            medications: [m.id],
+            healthProfile: profile,
+            includeProfileActiveMedications: true,
+          })
+        : null,
+    [m, profile]
   );
 
   if (m === undefined) return <main className="wrap"><p>{t('loading')}</p></main>;
@@ -79,6 +101,9 @@ export default function MedicinePage() {
       <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <Link to="/medicines">← {t('navMedicines')}</Link>
         <div className="row" style={{ gap: '8px' }}>
+          <Link to="/prescription-radar" className="btn ghost small">
+            📡 {isAr ? 'فحص في رادار الروشتة' : 'Prescription Radar'}
+          </Link>
           <Link to="/allergy-checker" className="btn ghost small">
             🛡️ {isAr ? 'فحص الحساسية الدوائية' : 'Allergy Safety Check'}
           </Link>
@@ -127,6 +152,77 @@ export default function MedicinePage() {
           )}
         </div>
       </header>
+
+      {/* Centralized Medication Safety Engine Assessment Card for this Medicine + User Profile */}
+      {safetyAssessment && (
+        <section
+          className={`card result-card ${
+            safetyAssessment.overallStatus === 'urgent_review'
+              ? 'severe'
+              : safetyAssessment.overallStatus === 'warning_review' ||
+                  safetyAssessment.overallStatus === 'caution_verify' ||
+                  safetyAssessment.overallStatus === 'incomplete_check'
+                ? 'moderate'
+                : 'safe'
+          }`}
+          style={{ padding: '16px 20px' }}
+        >
+          <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+            <div>
+              <strong>
+                🛡️{' '}
+                {isAr
+                  ? 'تقييم محرك السلامة الدوائية مع ملفك الصحي:'
+                  : 'Medication Safety Engine Check Against Your Profile:'}
+              </strong>
+              <p className="small" style={{ margin: '4px 0 0' }}>
+                {safetyAssessment.completeness.summaryBanner[lang]}
+              </p>
+            </div>
+            <div className="row wrapRow" style={{ gap: '6px' }}>
+              <Link to="/health-profile" className="btn-secondary small">
+                👤 {isAr ? 'ملفي الصحي' : 'My Profile'}
+              </Link>
+              <Link to="/prescription-radar" className="btn small">
+                📡 {isAr ? 'فحص روشتة كاملة' : 'Full Rx Check'}
+              </Link>
+            </div>
+          </div>
+
+          {safetyAssessment.findings.length > 0 && (
+            <div className="stack" style={{ gap: '8px', marginTop: '10px' }}>
+              {safetyAssessment.findings.map((f) => (
+                <div
+                  key={f.id}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--line)',
+                  }}
+                >
+                  <div style={{ fontWeight: 700 }}>{f.title[lang]}</div>
+                  <p className="small" style={{ margin: '4px 0' }}>
+                    {f.reason[lang]}
+                  </p>
+                  <p className="small" style={{ margin: 0 }}>
+                    <b>{isAr ? 'التوجيه:' : 'Next Step:'}</b> {f.nextStep[lang]}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {safetyAssessment.completeness.missingProfileFields.length > 0 && (
+            <p className="small muted" style={{ margin: '8px 0 0' }}>
+              ℹ️{' '}
+              {isAr
+                ? 'ملاحظة اكتمال البيانات: يمكنك إضافة العمر وسجل الحساسية والأدوية الحالية في «ملف صحتي» لتخصيص فحص الأمان بدقة أكبر.'
+                : 'Data Completeness Note: Add your age, allergies, and active medications in "My Health Profile" for full personalized screening.'}
+            </p>
+          )}
+        </section>
+      )}
 
       {/* Prominent QR & Barcode Card for mobile and box scanning */}
       <section className="card highlight-card qr-top-card">

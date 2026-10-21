@@ -2,12 +2,21 @@ import { Medicine } from './types';
 
 /** Arabic-friendly normalisation: removes diacritics/tatweel and unifies alef/yaa/taa-marbuta. */
 export const norm = (s: string) =>
-  s
+  (s || '')
     .toLowerCase()
     .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
     .replace(/[إأآٱ]/g, 'ا')
     .replace(/ى/g, 'ي')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
     .replace(/ة/g, 'ه')
+    .trim();
+
+/** Normalizes medication/brand strings by stripping punctuation while preserving Arabic & Latin tokens. */
+export const normalizeMedToken = (s: string): string =>
+  norm(s)
+    .replace(/[^a-z0-9\u0600-\u06FF\s+-]/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
 export type SearchMode = 'all' | 'name' | 'ingredient' | 'maker' | 'barcode';

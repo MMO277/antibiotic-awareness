@@ -3,12 +3,16 @@ import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useAuth } from './authContext';
-import { ACTIVE_INGREDIENTS } from './egyptianDrugDatabase';
+import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 import {
   useSyncedHealthProfile,
   checkDrugAllergySafety,
   DrugProfileCheckResult,
 } from './allergyData';
+import {
+  evaluateMedicationSafety,
+  SafetyFinding,
+} from './medicationSafetyEngine';
 import {
   TreatmentSchedule,
   ScheduledDose,
@@ -113,16 +117,6 @@ export const CO_MEDICATIONS: CoMedItem[] = [
   },
 ];
 
-interface RadarFinding {
-  coMedId: string;
-  coMedName: string;
-  level: 'danger' | 'separate' | 'safe';
-  titleAr: string;
-  titleEn: string;
-  ruleAr: string;
-  ruleEn: string;
-}
-
 export default function PrescriptionRadar() {
   const { lang } = useLang();
   const isAr = lang === 'ar';
@@ -156,10 +150,26 @@ export default function PrescriptionRadar() {
   const frequency = radarWorkspace.frequency;
   const firstDoseTime = radarWorkspace.firstDoseTime || '08:00';
   const selectedCoMeds = radarWorkspace.selectedCoMeds;
+  const additionalMeds = radarWorkspace.additionalMeds || [];
+
+  const [newExtraMedInput, setNewExtraMedInput] = useState('');
 
   const setSelectedAbx = (val: string) => updateRadarWorkspace({ selectedAbx: val });
   const setFrequency = (val: RadarFrequency) => updateRadarWorkspace({ frequency: val });
   const setFirstDoseTime = (val: string) => updateRadarWorkspace({ firstDoseTime: val });
+
+  const addExtraMedication = (medLabel: string) => {
+    const clean = medLabel.trim();
+    if (!clean) return;
+    updateRadarWorkspace({ additionalMeds: [...additionalMeds, clean] });
+    setNewExtraMedInput('');
+  };
+
+  const removeExtraMedication = (idx: number) => {
+    updateRadarWorkspace({
+      additionalMeds: additionalMeds.filter((_, i) => i !== idx),
+    });
+  };
 
   // Automatically calculated daily dose times from `firstDoseTime` + `frequency`
   const autoRadarDoseTimes = useMemo(
@@ -185,6 +195,22 @@ export default function PrescriptionRadar() {
     [selectedAbx, profile.allergies]
   );
 
+  // Centralized Medication Safety Engine Assessment (connects primary antibiotic, additional prescription drugs,
+  // co-medications, Egyptian commercial catalog, recorded allergies, and health-profile contraindications)
+  const safetyAssessment = useMemo(
+    () =>
+      evaluateMedicationSafety({
+        medications: [
+          { rawName: selectedAbx, activeIngredientId: selectedAbx, sourceType: 'prescription' },
+          ...additionalMeds.map((m) => ({ rawName: m, sourceType: 'prescription' as const })),
+        ],
+        coMedicationIds: selectedCoMeds,
+        healthProfile: profile,
+        includeProfileActiveMedications: true,
+      }),
+    [selectedAbx, additionalMeds, selectedCoMeds, profile]
+  );
+
   // Modal & Form states for saving/editing a prescription into the cross-device tracker
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
@@ -199,206 +225,6 @@ export default function PrescriptionRadar() {
   const [notes, setNotes] = useState('');
   const [formError, setFormError] = useState('');
   const [reportGeneratedAt, setReportGeneratedAt] = useState<string>(() => new Date().toISOString());
-
-  // Analyze multi-drug prescription interactions & timing rules
-  const findings = useMemo<RadarFinding[]>(() => {
-    const list: RadarFinding[] = [];
-    const isQuinolone = ['ciprofloxacin', 'levofloxacin', 'moxifloxacin', 'ofloxacin'].includes(selectedAbx);
-    const isTetracycline = ['doxycycline', 'tetracycline'].includes(selectedAbx);
-    const isMacrolide = ['azithromycin', 'clarithromycin', 'erythromycin', 'spiramycin'].includes(selectedAbx);
-    const isMetro = ['metronidazole', 'tinidazole'].includes(selectedAbx);
-
-    selectedCoMeds.forEach((cid) => {
-      const item = CO_MEDICATIONS.find((c) => c.id === cid);
-      if (!item) return;
-      const name = isAr ? item.nameAr : item.nameEn;
-
-      if (cid === 'calcium_dairy') {
-        if (isQuinolone || isTetracycline) {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'separate',
-            titleAr: '⚠️ تعارض امتصاص قوي (مخلبة كيميائية Chelation)',
-            titleEn: '⚠️ Major Absorption Chelation — Separate by 2 Hours',
-            ruleAr:
-              'الكالسيوم والحليب يرتبطان بالمضاد الحيوي في المعدة ويمنعان امتصاصه بنسبة تصل إلى 50%. افصل بينهما ساعتين على الأقل.',
-            ruleEn:
-              'Calcium and dairy bind to this antibiotic in the gut, reducing absorption by up to 50%. Separate by at least 2 hours.',
-          });
-        } else {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'safe',
-            titleAr: '✅ لا يوجد تعارض في الامتصاص مع الألبان',
-            titleEn: '✅ No Absorption Conflict with Dairy',
-            ruleAr: 'يمكن تناول منتجات الألبان بأمان مع هذا المضاد الحيوي دون تأثر مفعوله.',
-            ruleEn: 'Dairy products do not block the absorption of this antibiotic.',
-          });
-        }
-      } else if (cid === 'iron_zinc') {
-        if (isQuinolone || isTetracycline || selectedAbx === 'cefdinir') {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'separate',
-            titleAr: '⚠️ فصل زمني إلزامي (ساعتين إلى 3 ساعات)',
-            titleEn: '⚠️ Mandatory 2–3 Hour Separation',
-            ruleAr:
-              'أقراص الحديد والزنك تُبطل امتصاص هذا المضاد الحيوي إذا أُخذت في نفس الوقت. خذ الحديد بعد جرعة المضاد بـ 3 إلى 4 ساعات على الأقل.',
-            ruleEn:
-              'Iron and zinc supplements strongly chelate this antibiotic. Take iron at least 3–4 hours apart from your antibiotic dose.',
-          });
-        } else {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'safe',
-            titleAr: '✅ آمن ويفضل الفصل ساعة لراحة المعدة',
-            titleEn: '✅ Safe (1-hour spacing recommended for stomach comfort)',
-            ruleAr: 'لا يوجد تفاعل كيميائي مباشر، ويفضل أخذ الحديد بعد الغداء لتقليل ثقل المعدة.',
-            ruleEn: 'No direct chemical chelation; taking iron after lunch minimizes stomach upset.',
-          });
-        }
-      } else if (cid === 'antacids') {
-        if (isQuinolone || isTetracycline || isMacrolide || selectedAbx === 'cefuroxime') {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'separate',
-            titleAr: '⚠️ مضادات الحموضة تقلل امتصاص المضاد الحيوي',
-            titleEn: '⚠️ Antacids Reduce Antibiotic Absorption',
-            ruleAr:
-              'أملاح الألومنيوم والماغنيسيوم تقلل امتصاص الدواء. يجب الفصل ساعتين على الأقل قبل أو بعد جرعة المضاد الحيوي.',
-            ruleEn:
-              'Aluminum/magnesium antacids reduce bioavailability. Separate by at least 2 hours before or after the antibiotic.',
-          });
-        } else {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'safe',
-            titleAr: '✅ آمن عند الفصل البسيط',
-            titleEn: '✅ Safe with Standard Spacing',
-            ruleAr: 'لا يؤثر بشكل جوهري على امتصاص هذا المضاد الحيوي.',
-            ruleEn: 'Does not significantly alter absorption of this antibiotic.',
-          });
-        }
-      } else if (cid === 'nsaids') {
-        if (isQuinolone) {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'danger',
-            titleAr: '🚫 تحذير: تجنب الجمع مع المسكنات القوية (NSAIDs)',
-            titleEn: '🚫 Warning: Avoid Combining Quinolones with NSAIDs',
-            ruleAr:
-              'الجمع بين الفلوروكينولونات (مثل سيبروفار/تافانيك) والمسكنات المضادة للالتهاب (كتافلام/بروفين) يزيد خطر تنبيه الجهاز العصبي والإجهاد الكلوي. راجع الطبيب المعالج أو الصيدلي قبل الجمع بينهما.',
-            ruleEn:
-              'Combining fluoroquinolones with NSAIDs increases CNS excitation and renal strain risk. Consult your prescribing doctor or pharmacist before combining them.',
-          });
-        } else {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'separate',
-            titleAr: '⚠️ يُؤخذ بعد الأكل فقط مع شرب كوب ماء كامل',
-            titleEn: '⚠️ Take Strictly After Meals with Water',
-            ruleAr:
-              'لتجنب التهاب جدار المعدة أو إجهاد الكلى، لا تأخذ المسكن على معدة فارغة أبداً.',
-            ruleEn: 'Never take NSAIDs on an empty stomach to protect gastric mucosa and kidneys.',
-          });
-        }
-      } else if (cid === 'paracetamol') {
-        list.push({
-          coMedId: cid,
-          coMedName: name,
-          level: 'safe',
-          titleAr: '✅ آمن تماماً ولا يتعارض مع المضاد الحيوي',
-          titleEn: '✅ Completely Safe — No Interaction',
-          ruleAr:
-            'الباراسيتامول لا يتعارض كيميائياً مع المضاد الحيوي عند استخدامه وفق تعليمات الطبيب أو الصيدلي.',
-          ruleEn:
-            'Paracetamol has no direct absorption or metabolic conflict with this antibiotic when used as directed by your doctor or pharmacist.',
-        });
-      } else if (cid === 'probiotics') {
-        list.push({
-          coMedId: cid,
-          coMedName: name,
-          level: 'separate',
-          titleAr: '💡 ممتاز لحماية الأمعاء — بشرط الفصل ساعتين!',
-          titleEn: '💡 Great for Gut Protection — Must Separate by 2 Hours!',
-          ruleAr:
-            'إذا أخذت البروبيوتيك أو الزبادي في نفس لحظة المضاد الحيوي، سيقتل المضاد البكتيريا النافعة فوراً! خذه بعد جرعة المضاد بساعتين.',
-          ruleEn:
-            'Taking probiotics at the exact same time as the antibiotic kills the beneficial bacteria. Take 2 hours after your antibiotic dose.',
-        });
-      } else if (cid === 'warfarin') {
-        if (isMetro || isMacrolide || isQuinolone || selectedAbx === 'sulfamethoxazole-trimethoprim') {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'danger',
-            titleAr: '🚨 تفاعل خطير: يرفع سيولة الدم (INR) وخطر النزيف',
-            titleEn: '🚨 High-Risk Interaction: Elevates INR & Bleeding Risk',
-            ruleAr:
-              'هذا المضاد الحيوي يثبط تكسير الوارفارين في الكبد مما يضاعف خطر النزيف. يجب مراجعة الطبيب فوراً لقياس سيولة الدم (INR) أو تعديل الجرعة.',
-            ruleEn:
-              'This antibiotic inhibits Warfarin metabolism, sharply increasing bleeding risk. Consult your physician for INR monitoring.',
-          });
-        } else {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'separate',
-            titleAr: '⚠️ راقب تحليل السيولة (INR) عند استخدام أي مضاد حيوي',
-            titleEn: '⚠️ Monitor INR During Any Antibiotic Course',
-            ruleAr: 'أي مضاد حيوي قد يقلل بكتيريا الأمعاء المنتجة لفيتامين K؛ أبلغ طبيبك دائماً.',
-            ruleEn: 'All antibiotics can alter gut vitamin K flora; inform your physician.',
-          });
-        }
-      } else if (cid === 'statins') {
-        if (selectedAbx === 'clarithromycin' || selectedAbx === 'erythromycin') {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'danger',
-            titleAr: '🚨 تفاعل خطير (CYP3A4): خطر انحلال العضلات',
-            titleEn: '🚨 Severe CYP3A4 Interaction: Myopathy Risk',
-            ruleAr:
-              'كلاريثرومايسين وإريثرومايسين يمنعان تكسير أدوية الكوليسترول (أتور/زوكور). يجب استشارة الطبيب المعالج أو الصيدلي قبل تناولهما معاً.',
-            ruleEn:
-              'Clarithromycin/Erythromycin strongly inhibit statin metabolism. Consult your prescribing doctor or pharmacist before taking them together.',
-          });
-        } else {
-          list.push({
-            coMedId: cid,
-            coMedName: name,
-            level: 'safe',
-            titleAr: '✅ آمن مع جرعة المساء المعتادة',
-            titleEn: '✅ Safe with Standard Evening Dose',
-            ruleAr: 'لا يوجد تثبيط إنزيمي مباشر مع هذا المضاد الحيوي؛ استمر على جرعة الكوليسترول مساءً.',
-            ruleEn: 'No direct CYP3A4 inhibition with this antibiotic; continue evening statin dose.',
-          });
-        }
-      } else if (cid === 'contraceptives') {
-        list.push({
-          coMedId: cid,
-          coMedName: name,
-          level: 'separate',
-          titleAr: 'ℹ️ تنبيه في حال حدوث قيء أو إسهال شديد',
-          titleEn: 'ℹ️ Backup Advice Only if Severe Vomiting/Diarrhea Occurs',
-          ruleAr:
-            'المضادات الحيوية العادية (غير الريفامبيسين) لا تُبطل مفعول حبوب منع الحمل مباشرة، إلا إذا تسبب المضاد في قيء أو إسهال شديد يمنع امتصاص القرص.',
-          ruleEn:
-            'Non-rifamycin antibiotics do not directly reduce pill efficacy unless severe vomiting or diarrhea prevents pill absorption.',
-        });
-      }
-    });
-
-    return list;
-  }, [selectedAbx, selectedCoMeds, isAr]);
 
   // Build 24-Hour Smart Daily Schedule slots dynamically from `firstDoseTime` & `autoRadarDoseTimes`
   const dailySlots = useMemo(() => {
@@ -1089,41 +915,279 @@ export default function PrescriptionRadar() {
         </div>
       </section>
 
-      {/* Step 3: Radar Findings */}
+      {/* Step 2B: Add Additional Medications in Prescription (Detects Brand Duplicates & Combination Overlaps) */}
       <section className="card stack no-print">
         <h2 style={{ margin: 0 }}>
-          3️⃣ {isAr ? 'نتيجة فحص رادار الروشتة الكاملة:' : '3. Multi-Drug Prescription Radar Findings:'}
+          ➕{' '}
+          {isAr
+            ? 'أضف أي أدوية أو أسماء تجارية أخرى في نفس الروشتة (لفحص تكرار المادة الفعالة والتداخلات):'
+            : 'Add Other Brand/Generic Medicines in the Same Prescription (Screens for Duplicate Ingredients & Overlaps):'}
         </h2>
-        <div className="stack" style={{ gap: '10px' }}>
-          {findings.map((f) => {
-            const bg =
-              f.level === 'danger' ? '#fef2f2' : f.level === 'separate' ? '#fffbeb' : '#f0fdf4';
-            const border =
-              f.level === 'danger' ? '#f87171' : f.level === 'separate' ? '#fbbf24' : '#86efac';
-            const color =
-              f.level === 'danger' ? '#991b1b' : f.level === 'separate' ? '#92400e' : '#065f46';
+        <p className="small muted" style={{ margin: 0 }}>
+          {isAr
+            ? 'يكتشف محرك السلامة الدوائية تلقائياً إذا كان هناك دواءان مختلفان في الاسم التجاري يحتويان على نفس المادة الفعالة (مثل أوجمنتين + هاي بيوتك)، أو تداخل في دواء مركب (مثل أوجمنتين + إيموكس)، أو اسم دواء غير واضح الهوية.'
+            : 'The Medication Safety Engine automatically detects if two different brands share the same active ingredient (e.g. Augmentin + Hibiotic), share a combination component (e.g. Augmentin + E-Mox), or have an unverified identity.'}
+        </p>
 
-            return (
-              <div
-                key={f.coMedId}
+        <div className="row wrapRow" style={{ gap: '8px' }}>
+          <input
+            list="radar-extra-meds-list"
+            value={newExtraMedInput}
+            onChange={(e) => setNewExtraMedInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                addExtraMedication(newExtraMedInput);
+              }
+            }}
+            placeholder={
+              isAr
+                ? 'اكتب اسم الدواء التجاري أو العلمي (مثال: Hibiotic 1g، أوجمنتين، إيموكس، فلاجيل)...'
+                : 'Type trade or generic name (e.g. Hibiotic 1g, Augmentin, E-Mox, Flagyl)...'
+            }
+          />
+          <button
+            type="button"
+            className="btn small"
+            onClick={() => addExtraMedication(newExtraMedInput)}
+          >
+            ➕ {isAr ? 'إضافة للفحص' : 'Add to Check'}
+          </button>
+          <datalist id="radar-extra-meds-list">
+            {EGYPTIAN_COMMERCIAL_PRODUCTS.map((p) => (
+              <option key={p.productId} value={isAr ? p.tradeNameAr : p.tradeNameEn} />
+            ))}
+          </datalist>
+        </div>
+
+        {/* Quick Clinical Test Scenarios for Duplicate & Overlap Verification */}
+        <div className="row wrapRow" style={{ gap: '6px', alignItems: 'center' }}>
+          <small className="muted">
+            <b>{isAr ? 'تجربة فورية:' : 'Quick Test:'}</b>
+          </small>
+          <button
+            type="button"
+            className="chip"
+            onClick={() => {
+              updateRadarWorkspace({
+                selectedAbx: 'amoxicillin-clavulanic-acid',
+                additionalMeds: [isAr ? 'هاي بيوتك 1 جم أقراص' : 'Hibiotic 1g Tablets'],
+              });
+            }}
+          >
+            🧪 {isAr ? 'اختبار تكرار مادتين: أوجمنتين + هاي بيوتك' : 'Test Duplicate Brand: Augmentin + Hibiotic'}
+          </button>
+          <button
+            type="button"
+            className="chip"
+            onClick={() => {
+              updateRadarWorkspace({
+                selectedAbx: 'amoxicillin-clavulanic-acid',
+                additionalMeds: [isAr ? 'إيموكس 500 مجم كبسول' : 'E-Mox 500mg Capsules'],
+              });
+            }}
+          >
+            🧪 {isAr ? 'اختبار تداخل مركب: أوجمنتين + إيموكس' : 'Test Combo Overlap: Augmentin + E-Mox'}
+          </button>
+          {additionalMeds.length > 0 && (
+            <button
+              type="button"
+              className="chip"
+              onClick={() => updateRadarWorkspace({ additionalMeds: [] })}
+            >
+              ↺ {isAr ? 'مسح الأدوية الإضافية' : 'Clear Extra Meds'}
+            </button>
+          )}
+        </div>
+
+        {additionalMeds.length > 0 && (
+          <div className="row wrapRow" style={{ gap: '8px' }}>
+            {additionalMeds.map((m, idx) => (
+              <span
+                key={idx}
+                className="badge"
                 style={{
-                  background: bg,
-                  border: `1px solid ${border}`,
-                  color,
-                  borderRadius: '12px',
-                  padding: '14px 16px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  fontSize: '0.88rem',
+                  background: 'var(--tint)',
+                  color: 'var(--ink)',
+                  border: '1px solid var(--teal)',
                 }}
               >
-                <div style={{ fontWeight: 800, marginBottom: '4px' }}>
-                  {f.coMedName} — {isAr ? f.titleAr : f.titleEn}
-                </div>
-                <p className="small" style={{ margin: 0, lineHeight: 1.6 }}>
-                  {isAr ? f.ruleAr : f.ruleEn}
-                </p>
-              </div>
-            );
-          })}
+                💊 {m}
+                <button
+                  type="button"
+                  onClick={() => removeExtraMedication(idx)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--danger)',
+                    fontWeight: 800,
+                    padding: '0 2px',
+                  }}
+                  aria-label="Remove medication"
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Step 3: Consolidated Medication Safety Engine Findings */}
+      <section className="card stack no-print">
+        <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+          <h2 style={{ margin: 0 }}>
+            3️⃣{' '}
+            {isAr
+              ? 'التقييم الموحد لمحرك السلامة الدوائية (تكرار المواد الفعالة · الحساسية · التداخلات · الملف الصحي):'
+              : '3. Consolidated Medication Safety Engine Assessment (Duplicates · Allergies · Interactions · Profile):'}
+          </h2>
+          <span className="badge">
+            {isAr
+              ? `إجمالي الملاحظات: ${safetyAssessment.findings.length}`
+              : `Total Findings: ${safetyAssessment.findings.length}`}
+          </span>
         </div>
+
+        {/* Summary Status Banner */}
+        <div
+          className={`notice ${
+            safetyAssessment.overallStatus === 'urgent_review' ||
+            safetyAssessment.overallStatus === 'warning_review'
+              ? 'alert'
+              : ''
+          }`}
+        >
+          <strong>{safetyAssessment.completeness.summaryBanner[lang]}</strong>
+        </div>
+
+        {/* Consolidated Deduplicated Findings List */}
+        {safetyAssessment.findings.length === 0 ? (
+          <div className="notice">
+            {isAr
+              ? 'لم يتم رصد تعارضات مباشرة في العناصر المحددة حالياً. تذكر أن عدم ظهور تنبيهات لا يعني ضمان أمان الروشتة مطلقاً — التزم دائماً بإرشادات الطبيب والصيدلي.'
+              : 'No direct conflicts detected among currently selected items. Remember that "no alerts found" never guarantees complete prescription safety — always follow your physician and pharmacist’s guidance.'}
+          </div>
+        ) : (
+          <div className="stack" style={{ gap: '10px' }}>
+            {safetyAssessment.findings.map((f: SafetyFinding) => {
+              const cardClass =
+                f.severity === 'urgent'
+                  ? 'severe'
+                  : f.severity === 'warning' || f.severity === 'caution'
+                    ? 'moderate'
+                    : 'safe';
+              const sevLabel =
+                f.severity === 'urgent'
+                  ? isAr
+                    ? '🚨 عاجل / خطورة عالية'
+                    : '🚨 Urgent / High Risk'
+                  : f.severity === 'warning'
+                    ? isAr
+                      ? '⚠️ تحذير يستدعي مراجعة الطبيب/الصيدلي'
+                      : '⚠️ Warning — Prompt Professional Review'
+                    : f.severity === 'caution'
+                      ? isAr
+                        ? '🟡 تنبيه فصل زمني / تحقق'
+                        : '🟡 Caution — Spacing / Verification'
+                      : isAr
+                        ? '✅ إرشاد دوائي آمن'
+                        : '✅ Informational Guidance';
+
+              return (
+                <div
+                  key={f.id}
+                  className={`card result-card ${cardClass}`}
+                  style={{ padding: '14px 16px' }}
+                >
+                  <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span className={`sev-badge ${cardClass}`} style={{ marginBottom: 0 }}>
+                      {sevLabel}
+                    </span>
+                    {f.involvedIngredients.length > 0 && (
+                      <small className="muted">
+                        <b>{isAr ? 'المكونات المعنية:' : 'Involved Components:'}</b>{' '}
+                        {f.involvedIngredients.join(' + ')}
+                      </small>
+                    )}
+                  </div>
+
+                  <div style={{ fontWeight: 800, fontSize: '1.02rem', marginBottom: '4px' }}>
+                    {f.involvedMedicines.map((m) => m[lang]).join(' + ')} — {f.title[lang]}
+                  </div>
+
+                  <p className="small" style={{ margin: '0 0 6px', lineHeight: 1.6 }}>
+                    {f.reason[lang]}
+                  </p>
+
+                  <p className="small" style={{ margin: '0 0 6px' }}>
+                    <b>{isAr ? 'التصرف الموصى به:' : 'Recommended Next Step:'}</b> {f.nextStep[lang]}
+                  </p>
+
+                  {f.nursingNote && (
+                    <p className="small muted" style={{ margin: '0 0 6px' }}>
+                      🩺 {f.nursingNote[lang]}
+                    </p>
+                  )}
+
+                  <div
+                    className="small muted"
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      justifyContent: 'space-between',
+                      gap: '8px',
+                      borderTop: '1px dashed var(--line)',
+                      paddingTop: '6px',
+                      fontSize: '0.78rem',
+                    }}
+                  >
+                    <span>
+                      📚 <b>{isAr ? 'المصدر:' : 'Source:'}</b>{' '}
+                      {f.source.url ? (
+                        <a href={f.source.url} target="_blank" rel="noopener noreferrer">
+                          {f.source.title[lang]}
+                        </a>
+                      ) : (
+                        f.source.title[lang]
+                      )}
+                      {f.source.updatedDate
+                        ? ` (${isAr ? 'تحديث/مراجعة:' : 'Updated:'} ${f.source.updatedDate})`
+                        : ''}
+                    </span>
+                    <span>
+                      🔍 <b>{isAr ? 'حالة التحقق:' : 'Verification:'}</b>{' '}
+                      {f.dataCompleteness.uncertaintyNote[lang]}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Data Completeness & Coverage Limitations Footer */}
+        {(safetyAssessment.completeness.missingProfileFields.length > 0 ||
+          safetyAssessment.completeness.unverifiedInteractionPairs.length > 0) && (
+          <div className="notice compact">
+            <strong>
+              ℹ️ {isAr ? 'شفافية اكتمال البيانات ونطاق التغطية:' : 'Data Completeness & Coverage Scope:'}{' '}
+            </strong>
+            <span className="small">
+              {safetyAssessment.completeness.missingProfileFields.length > 0 &&
+                (isAr
+                  ? `لم يتم تسجيل (${safetyAssessment.completeness.missingProfileFields.join('، ')}) في ملفك الصحي الشخصي؛ قد توجد احتياطات إضافية تعتمد على العمر أو حالة الكلى/الكبد. `
+                  : `Profile fields (${safetyAssessment.completeness.missingProfileFields.join(', ')}) are not recorded yet; age or organ-specific precautions could not be fully personalized. `)}
+              {safetyAssessment.safetyDisclaimer[lang]}
+            </span>
+          </div>
+        )}
       </section>
 
       {/* Step 4: 24-Hour Smart Daily Timeline */}

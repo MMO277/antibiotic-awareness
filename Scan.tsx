@@ -1,4 +1,6 @@
-import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useSyncedHealthProfile } from './allergyData';
+import { evaluateMedicationSafety } from './medicationSafetyEngine';
 import { Link, useNavigate } from 'react-router-dom';
 import { Html5Qrcode } from 'html5-qrcode';
 import { useLang } from './i18n';
@@ -432,7 +434,9 @@ export default function Scan() {
   const L = (ar: string, en: string) => (isAr ? ar : en);
   const nav = useNavigate();
   const { items } = useApproved();
+  const { profile } = useSyncedHealthProfile();
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scanSeqRef = useRef<number>(0);
 
   const [running, setRunning] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -976,6 +980,7 @@ export default function Scan() {
    * Reads ANY Arabic or English antibiotic name from the image and displays ALL drug details
    */
   async function processUnifiedImage(fileOrBlob: File, dataUrl: string, fileNameHint: string) {
+    const seq = ++scanSeqRef.current;
     setBusy(true);
     setMsg('');
     setScanResult(null);
@@ -999,6 +1004,7 @@ export default function Scan() {
       /* fallback to raw dataUrl */
     }
 
+    if (seq !== scanSeqRef.current) return;
     if (inspected.nativeBarcode) {
       setBusy(false);
       setStatusStep('');
@@ -1015,6 +1021,7 @@ export default function Scan() {
       } catch {
         /* ignore */
       }
+      if (seq !== scanSeqRef.current) return;
       if (bcText) {
         setBusy(false);
         setStatusStep('');
@@ -1054,6 +1061,7 @@ export default function Scan() {
         );
 
         // Match using the combined bilingual extracted text first
+        if (seq !== scanSeqRef.current) return;
         const combinedText = `${aiAnalysis.detectedDrugName || ''} ${aiAnalysis.rawExtractedText || ''}`;
         const matched = matchDrugFromText(combinedText, 'ai_vision');
 
@@ -1097,6 +1105,7 @@ export default function Scan() {
         : '📖 Reading English and Arabic characters locally from image...'
     );
     const localOcrText = await performClientSideOcr(inspected.normalizedDataUrl);
+    if (seq !== scanSeqRef.current) return;
     if (localOcrText) {
       const ocrMatched = matchDrugFromText(localOcrText, 'local_ocr');
       if (ocrMatched.matchedIngredientId) {
@@ -1213,6 +1222,23 @@ export default function Scan() {
   const matchedIngMeta = scanResult?.matchedIngredientId
     ? ACTIVE_INGREDIENTS.find((a) => a.id === scanResult.matchedIngredientId)
     : undefined;
+
+  const scanSafetyAssessment = useMemo(() => {
+    if (!scanResult) return null;
+    return evaluateMedicationSafety({
+      medications: [
+        {
+          rawName: scanResult.matchedTradeName || scanResult.detectedText,
+          activeIngredientId: scanResult.matchedIngredientId,
+          barcode: scanResult.barcode || undefined,
+          strength: scanResult.strength,
+          sourceType: 'manual_check',
+        },
+      ],
+      healthProfile: profile,
+      includeProfileActiveMedications: true,
+    });
+  }, [scanResult, profile]);
 
   return (
     <main className="wrap narrow stack">
@@ -1537,6 +1563,57 @@ export default function Scan() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Centralized Medication Safety Engine Check for Scanned Product */}
+            {scanSafetyAssessment && (
+              <div
+                style={{
+                  marginTop: '10px',
+                  padding: '12px 14px',
+                  borderRadius: '10px',
+                  background:
+                    scanSafetyAssessment.overallStatus === 'urgent_review'
+                      ? '#fef2f2'
+                      : scanSafetyAssessment.overallStatus === 'warning_review' ||
+                          scanSafetyAssessment.overallStatus === 'caution_verify' ||
+                          scanSafetyAssessment.overallStatus === 'incomplete_check'
+                        ? '#fffbeb'
+                        : '#ffffff',
+                  border:
+                    scanSafetyAssessment.overallStatus === 'urgent_review'
+                      ? '2px solid #ef4444'
+                      : '1px solid #cbd5e1',
+                }}
+              >
+                <div style={{ fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}>
+                  🛡️{' '}
+                  {isAr
+                    ? 'تقييم محرك السلامة الدوائية مع ملفك الصحي:'
+                    : 'Medication Safety Engine Check Against Your Profile:'}
+                </div>
+                <p className="small" style={{ margin: '0 0 6px', color: '#334155' }}>
+                  {scanSafetyAssessment.completeness.summaryBanner[lang]}
+                </p>
+                {scanSafetyAssessment.findings.map((f) => (
+                  <div
+                    key={f.id}
+                    style={{
+                      padding: '8px 10px',
+                      marginTop: '6px',
+                      borderRadius: '8px',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                    }}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{f.title[lang]}</div>
+                    <div className="small" style={{ color: '#334155' }}>{f.reason[lang]}</div>
+                    <div className="small" style={{ fontWeight: 600, marginTop: '2px' }}>
+                      {isAr ? 'الخطوة التالية:' : 'Next Step:'} {f.nextStep[lang]}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
 

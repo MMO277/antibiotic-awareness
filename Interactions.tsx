@@ -3,20 +3,26 @@ import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useApproved } from './medicinesApi';
 import { pick } from './types';
-import { TARGETS, RULES, COMMON_QUICK_CHECKS, InteractionRule, Severity } from './interactionsData';
+import {
+  TARGETS,
+  COMMON_QUICK_CHECKS,
+  InteractionRule,
+  Severity,
+  findInteractionRule,
+  INTERACTION_SOURCES,
+} from './interactionsData';
 
 export default function Interactions() {
   const { lang } = useLang();
+  const isAr = lang === 'ar';
   const { items } = useApproved();
   const meds = items ?? [];
 
   const [selectedMed, setSelectedMed] = useState('ciprofloxacin');
   const [selectedTarget, setSelectedTarget] = useState('dairy');
 
-  // Find matching rule
-  const matchedRule: InteractionRule | undefined = RULES.find(
-    (r) => r.antibioticId === selectedMed && r.targetId === selectedTarget,
-  );
+  // Resolve matching rule using centralized interaction lookup (exact + verified class-level rules)
+  const matchedRule: InteractionRule | undefined = findInteractionRule(selectedMed, selectedTarget);
 
   const currentMedObj = meds.find((m) => m.id === selectedMed);
   const currentTargetObj = TARGETS.find((t) => t.id === selectedTarget);
@@ -31,19 +37,19 @@ export default function Interactions() {
       case 'severe':
         return (
           <span className="sev-badge severe">
-            🔴 {lang === 'ar' ? 'تعارض خطير / ممنوع الجمع بينهما' : 'Severe / Contraindicated'}
+            🔴 {isAr ? 'تعارض خطير / يتطلب مراجعة طبية عاجلة' : 'Severe / Prompt Clinical Review Required'}
           </span>
         );
       case 'moderate':
         return (
           <span className="sev-badge moderate">
-            🟡 {lang === 'ar' ? 'تفاعل متوسط — يلزم الفصل الزمني' : 'Moderate — Timing Separation Required'}
+            🟡 {isAr ? 'تفاعل متوسط — يلزم الفصل الزمني أو المراقبة' : 'Moderate — Timing Separation / Monitoring Required'}
           </span>
         );
       case 'safe':
         return (
           <span className="sev-badge safe">
-            🟢 {lang === 'ar' ? 'آمن تماماً وموصى به' : 'Safe & Recommended'}
+            🟢 {isAr ? 'إرشاد آمن وموصى به وفق المراجع' : 'Safe & Recommended per Reference'}
           </span>
         );
     }
@@ -52,17 +58,17 @@ export default function Interactions() {
   return (
     <main className="wrap stack">
       <header className="page-head">
-        <h1>{lang === 'ar' ? 'فاحص التفاعلات الدوائية والغذائية' : 'Drug & Food Interaction Checker'}</h1>
+        <h1>{isAr ? 'فاحص التفاعلات الدوائية والغذائية' : 'Drug & Food Interaction Checker'}</h1>
         <p className="muted">
-          {lang === 'ar'
-            ? 'أداة سريرية تفاعلية لفحص التداخلات بين المضادات الحيوية والأطعمة (كالحليب)، المكملات (كالحديد)، والأدوية الأخرى لضمان الإعطاء الآمن وسلامة المريض.'
-            : 'Interactive clinical tool to evaluate interactions between antibiotics, foods, minerals, and concurrent medications to ensure safe patient administration.'}
+          {isAr
+            ? 'أداة سريرية تفاعلية لفحص التداخلات الموثقة بين المضادات الحيوية والأطعمة (كالحليب)، المكملات (كالحديد)، والأدوية المتزامنة لضمان الإعطاء الآمن وسلامة المريض.'
+            : 'Interactive clinical tool evaluating documented interactions between antibiotics, foods, minerals, and concurrent medications.'}
         </p>
       </header>
 
       {/* Quick check chips */}
       <section className="card stack">
-        <h2>⚡ {lang === 'ar' ? 'فحص سريع لأشهر التداخلات الشائعة:' : 'Common Quick Checks:'}</h2>
+        <h2>⚡ {isAr ? 'فحص سريع لأشهر التداخلات الشائعة:' : 'Common Quick Checks:'}</h2>
         <div className="chips">
           {COMMON_QUICK_CHECKS.map((c, i) => (
             <button
@@ -79,11 +85,11 @@ export default function Interactions() {
 
       {/* Selection card */}
       <section className="card stack">
-        <h2>🔍 {lang === 'ar' ? 'اختر العناصر للفحص السريري:' : 'Select Items to Check:'}</h2>
+        <h2>🔍 {isAr ? 'اختر العناصر للفحص السريري:' : 'Select Items to Check:'}</h2>
         <div className="check-grid">
           <div className="field-group">
             <label>
-              <b>1. {lang === 'ar' ? 'المضاد الحيوي:' : 'Antibiotic:'}</b>
+              <b>1. {isAr ? 'المضاد الحيوي:' : 'Antibiotic:'}</b>
             </label>
             <select
               className="select-input"
@@ -101,7 +107,7 @@ export default function Interactions() {
 
           <div className="field-group">
             <label>
-              <b>2. {lang === 'ar' ? 'الطعام أو الدواء المتفاعل:' : 'Interacting Food or Medication:'}</b>
+              <b>2. {isAr ? 'الطعام أو الدواء المتفاعل:' : 'Interacting Food or Medication:'}</b>
             </label>
             <select
               className="select-input"
@@ -109,21 +115,21 @@ export default function Interactions() {
               onChange={(e) => setSelectedTarget(e.target.value)}
               aria-label="Select Interacting Target"
             >
-              <optgroup label={lang === 'ar' ? 'الأطعمة والمشروبات' : 'Foods & Beverages'}>
+              <optgroup label={isAr ? 'الأطعمة والمشروبات' : 'Foods & Beverages'}>
                 {TARGETS.filter((t) => t.category === 'food').map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.icon} {t.name[lang]}
                   </option>
                 ))}
               </optgroup>
-              <optgroup label={lang === 'ar' ? 'المعادن والمكملات' : 'Minerals & Supplements'}>
+              <optgroup label={isAr ? 'المعادن والمكملات' : 'Minerals & Supplements'}>
                 {TARGETS.filter((t) => t.category === 'supplement').map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.icon} {t.name[lang]}
                   </option>
                 ))}
               </optgroup>
-              <optgroup label={lang === 'ar' ? 'الأدوية الشائعة' : 'Common Medications'}>
+              <optgroup label={isAr ? 'الأدوية الشائعة' : 'Common Medications'}>
                 {TARGETS.filter((t) => t.category === 'drug').map((t) => (
                   <option key={t.id} value={t.id}>
                     {t.icon} {t.name[lang]}
@@ -145,52 +151,75 @@ export default function Interactions() {
 
           <div className="result-body stack">
             <div className="result-section">
-              <h4>🔬 {lang === 'ar' ? 'الآلية والتأثير العلمي:' : 'Mechanism of Interaction:'}</h4>
+              <h4>🔬 {isAr ? 'الآلية والتأثير العلمي:' : 'Mechanism of Interaction:'}</h4>
               <p>{matchedRule.mechanism[lang]}</p>
             </div>
 
             <div className="result-section">
-              <h4>⏱️ {lang === 'ar' ? 'التصرف الطبي الموصى به وكيفية الفصل:' : 'Clinical Management & Spacing:'}</h4>
-              <p><b>{matchedRule.management[lang]}</b></p>
+              <h4>⏱️ {isAr ? 'التصرف الطبي الموصى به وكيفية الفصل:' : 'Clinical Management & Spacing:'}</h4>
+              <p>
+                <b>{matchedRule.management[lang]}</b>
+              </p>
             </div>
 
             <div className="nursing-box">
-              <h4>🩺 {lang === 'ar' ? 'توجيه وتمريض سريري (Nursing Stewardship Note):' : 'Nursing Clinical Stewardship Note:'}</h4>
+              <h4>🩺 {isAr ? 'توجيه وتمريض سريري (Nursing Stewardship Note):' : 'Nursing Clinical Stewardship Note:'}</h4>
               <p>{matchedRule.nursingTip[lang]}</p>
             </div>
 
-            {currentMedObj && (
-              <div className="med-link-row">
-                <Link to={`/medicine/${currentMedObj.id}`} className="btn-secondary">
-                  📖 {lang === 'ar' ? `فتح صفحة دواء ${pick(currentMedObj.genericName, lang)} وسعره وبدائله` : `View ${pick(currentMedObj.genericName, lang)} details`}
-                </Link>
+            {matchedRule.source && (
+              <div className="small muted" style={{ borderTop: '1px solid var(--line)', paddingTop: '8px' }}>
+                <b>{isAr ? 'المصدر الموثق:' : 'Supporting Source:'}</b>{' '}
+                <a href={matchedRule.source.url} target="_blank" rel="noopener noreferrer">
+                  {matchedRule.source.title}
+                </a>
+                {matchedRule.source.updated ? ` · ${isAr ? 'تاريخ التحديث:' : 'Updated:'} ${matchedRule.source.updated}` : ''}
               </div>
             )}
+
+            <div className="med-link-row row wrapRow" style={{ gap: '8px' }}>
+              {currentMedObj && (
+                <Link to={`/medicine/${currentMedObj.id}`} className="btn-secondary">
+                  📖 {isAr ? `فتح صفحة دواء ${pick(currentMedObj.genericName, lang)} وسعره وبدائله` : `View ${pick(currentMedObj.genericName, lang)} details`}
+                </Link>
+              )}
+              <Link to="/prescription-radar" className="btn ghost">
+                📡 {isAr ? 'فحص الروشتة الكاملة في الرادار' : 'Check Full Prescription in Radar'}
+              </Link>
+            </div>
           </div>
         </section>
       ) : (
-        <section className="card result-card safe">
+        <section className="card result-card moderate">
           <div className="result-header">
-            {severityBadge('safe')}
+            <span className="sev-badge moderate">
+              ℹ️ {isAr ? 'لا يوجد تداخل مباشر مسجل في قاعدة البيانات لهذه الثنائية' : 'No Direct Interaction Rule Recorded for This Pair'}
+            </span>
             <h3>
-              {lang === 'ar'
-                ? `لا يوجد تداخل سريري خطير معروف بين ${currentMedObj ? pick(currentMedObj.genericName, lang) : ''} و ${currentTargetObj ? currentTargetObj.name[lang] : ''}`
-                : `No severe direct interaction documented between ${currentMedObj ? pick(currentMedObj.genericName, lang) : ''} and ${currentTargetObj ? currentTargetObj.name[lang] : ''}`}
+              {isAr
+                ? `لم يُرصد تعارض مباشر موثق في السجل الحالي بين ${currentMedObj ? pick(currentMedObj.genericName, lang) : ''} و ${currentTargetObj ? currentTargetObj.name[lang] : ''}`
+                : `No direct interaction rule recorded in the current dataset between ${currentMedObj ? pick(currentMedObj.genericName, lang) : ''} and ${currentTargetObj ? currentTargetObj.name[lang] : ''}`}
             </h3>
           </div>
           <div className="result-body stack">
             <p>
-              {lang === 'ar'
-                ? 'وفق المراجع الدوائية المعتمدة (MedlinePlus و FDA)، لا يوجد تعارض مباشر يمنع امتصاص أو فاعلية الدواء مع هذا العنصر. ينصح دائماً بتناول المضاد مع كوب ماء وفير.'
-                : 'According to clinical reference monographs, there is no significant pharmacokinetic inhibition reported between these two items.'}
+              {isAr
+                ? 'تنبيه شفافية: عدم وجود تداخل مسجل في هذه الأداة لا يعني ضمان الأمان التام في جميع الحالات المرضية. راجع دائماً قسم «التداخلات الدوائية والغذائية» في النشرة السريرية للدواء واستشر الطبيب أو الصيدلي.'
+                : 'Transparency Note: Absence of a recorded rule in this dataset does not guarantee complete safety for every patient context. Always review the full drug monograph and consult your doctor or pharmacist.'}
             </p>
             <div className="nursing-box">
-              <h4>🩺 {lang === 'ar' ? 'توجيه تمريضي عام:' : 'General Nursing Tip:'}</h4>
+              <h4>🩺 {isAr ? 'توجيه تمريضي عام:' : 'General Nursing Tip:'}</h4>
               <p>
-                {lang === 'ar'
-                  ? 'احرص على تثقيف المريض بالالتزام بمواعيد الجرعات الدقيقة، وعدم تناول أي أدوية جديدة أو مكملات دون إبلاغ الفريق التمريضي أو الصيدلي.'
-                  : 'Always emphasize strict adherence to scheduled dosing intervals and patient medication reconciliation.'}
+                {isAr
+                  ? 'احرص على تثقيف المريض بالالتزام بمواعيد الجرعات الدقيقة مع كوب ماء كامل، وعدم تناول أي أدوية جديدة أو مكملات دون إبلاغ الطبيب أو الصيدلي.'
+                  : 'Always emphasize strict adherence to scheduled dosing intervals with a full glass of water and complete medication reconciliation.'}
               </p>
+            </div>
+            <div className="small muted">
+              <b>{isAr ? 'المرجع:' : 'Reference:'}</b>{' '}
+              <a href={INTERACTION_SOURCES.medlineplus_fda.url} target="_blank" rel="noopener noreferrer">
+                {INTERACTION_SOURCES.medlineplus_fda.title}
+              </a>
             </div>
           </div>
         </section>
