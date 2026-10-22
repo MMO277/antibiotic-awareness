@@ -53,6 +53,8 @@ export interface EgyptianCommercialProduct {
   barcodeType: 'EAN-13' | 'GS1-GTIN' | 'UNAVAILABLE';
   barcodeStatus: 'verified' | 'unverified_pending';
   barcodeVerifiedBy: string;
+  /** Product-specific evidence URL for the barcode verification record. */
+  barcodeSourceUrl?: string;
   equivalenceGroupKey: string;
 }
 
