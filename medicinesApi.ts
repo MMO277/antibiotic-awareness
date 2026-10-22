@@ -116,7 +116,8 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
   const merged: Medicine = {
     ...local,
     ...remote,
-    status: 'approved',
+    // Preserve the actual review state; merging must never promote a draft to approved.
+    status: remote.status || local.status,
     brands: mergedBrands.length > 0 ? mergedBrands : local.brands,
     barcodes: mergedBarcodes.length > 0 ? mergedBarcodes : local.barcodes,
     sources: local.sources && local.sources.length > 0 ? local.sources : remote.sources,
