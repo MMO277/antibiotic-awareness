@@ -122,8 +122,8 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
     brands: mergedBrands.length > 0 ? mergedBrands : local.brands,
     barcodes: mergedBarcodes.length > 0 ? mergedBarcodes : local.barcodes,
     sources: local.sources && local.sources.length > 0 ? local.sources : remote.sources,
-    lastReviewed: remote.lastReviewed || local.lastReviewed || '2026-10-14',
-    reviewedBy: remote.reviewedBy || local.reviewedBy || 'هيئة التمريض السريري / Clinical Review',
+    lastReviewed: remote.lastReviewed || local.lastReviewed || '',
+    reviewedBy: remote.reviewedBy || local.reviewedBy || '',
   };
 
   for (const f of TEXT_FIELDS) {
