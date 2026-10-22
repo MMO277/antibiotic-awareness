@@ -2498,6 +2498,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
           html.bh-gaming body .ms-wrapper.ms-immersive .ms-hud-controls {
             position: absolute !important;
             inset: 0 !important;
+            inset-inline: 0 !important;
             top: 0 !important;
             bottom: 0 !important;
             left: 0 !important;
@@ -2507,15 +2508,16 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
             direction: ltr !important;
             display: block !important;
             pointer-events: none !important;
-            z-index: 35 !important;
+            z-index: 18 !important;
           }
           html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-joystick-zone,
           html.bh-gaming body .ms-wrapper.ms-immersive .ms-joystick-zone {
             position: absolute !important;
+            direction: ltr !important;
+            inset-inline-start: max(14px, env(safe-area-inset-left, 0px)) !important;
+            inset-inline-end: auto !important;
             left: max(14px, env(safe-area-inset-left, 0px)) !important;
             right: auto !important;
-            inset-inline-start: auto !important;
-            inset-inline-end: auto !important;
             bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
             top: auto !important;
             display: flex !important;
@@ -2525,15 +2527,16 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
             pointer-events: auto !important;
             visibility: visible !important;
             opacity: 1 !important;
-            z-index: 36 !important;
+            z-index: 19 !important;
           }
           html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-action-zone,
           html.bh-gaming body .ms-wrapper.ms-immersive .ms-action-zone {
             position: absolute !important;
+            direction: ltr !important;
+            inset-inline-start: auto !important;
+            inset-inline-end: max(14px, env(safe-area-inset-right, 0px)) !important;
             right: max(14px, env(safe-area-inset-right, 0px)) !important;
             left: auto !important;
-            inset-inline-start: auto !important;
-            inset-inline-end: auto !important;
             bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
             top: auto !important;
             display: flex !important;
@@ -2543,7 +2546,7 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
             pointer-events: auto !important;
             visibility: visible !important;
             opacity: 1 !important;
-            z-index: 36 !important;
+            z-index: 19 !important;
           }
         `}</style>
           <div
@@ -2560,23 +2563,25 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
               height: '100%',
               direction: 'ltr',
               pointerEvents: 'none',
-              zIndex: 35,
+              zIndex: 18,
             }}
           >
             <div
               className="ms-joystick-zone"
+              dir="ltr"
               style={{
                 position: 'absolute',
-                left: '14px',
+                left: 'max(14px, env(safe-area-inset-left, 0px))',
                 right: 'auto',
-                bottom: '14px',
+                bottom: 'max(14px, env(safe-area-inset-bottom, 0px))',
                 top: 'auto',
+                direction: 'ltr',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
                 gap: '5px',
                 pointerEvents: 'auto',
-                zIndex: 36,
+                zIndex: 19,
               }}
             >
               <div
@@ -2636,18 +2641,20 @@ function Cartoon3DGameInner({ config, uid, initial, remote, localOffer }: InnerG
 
             <div
               className="ms-action-zone"
+              dir="ltr"
               style={{
                 position: 'absolute',
-                right: '14px',
+                right: 'max(14px, env(safe-area-inset-right, 0px))',
                 left: 'auto',
-                bottom: '14px',
+                bottom: 'max(14px, env(safe-area-inset-bottom, 0px))',
                 top: 'auto',
+                direction: 'ltr',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-end',
                 gap: '6px',
                 pointerEvents: 'auto',
-                zIndex: 36,
+                zIndex: 19,
               }}
             >
               <button

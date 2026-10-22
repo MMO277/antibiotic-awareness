@@ -1178,7 +1178,7 @@ export default function BacteriaHunter() {
 
         {/* Mobile controls */}
         {isInGame && (
-          <div className="bh-mobile-controls">
+          <div className="bh-mobile-controls" dir="ltr">
             <Joystick joyRef={joyRef} size={100} />
             <div className="bh-mobile-right">
               <button

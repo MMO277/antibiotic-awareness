@@ -66,6 +66,7 @@ export default function OpenWorldGame() {
 
   const keysRef = useRef<Record<string, boolean>>({});
   const joyVecRef = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
+  const joyTouchIdRef = useRef<number | null>(null);
   const playerPosRef = useRef<THREE.Vector3>(new THREE.Vector3(0, 0, -8));
   const playerRotYRef = useRef<number>(Math.PI);
 
@@ -1070,6 +1071,7 @@ export default function OpenWorldGame() {
   };
 
   const stopJoystick = () => {
+    joyTouchIdRef.current = null;
     joyVecRef.current = { x: 0, z: 0 };
     const el = joyBaseRef.current;
     const knob = el?.querySelector('.ow-joystick-knob') as HTMLElement | null;
@@ -1126,6 +1128,7 @@ html body .ow-page .ow-layout {
 html body .ow-page .ow-stage .ow-controls {
   position: absolute !important;
   inset: 0 !important;
+  inset-inline: 0 !important;
   top: 0 !important;
   bottom: 0 !important;
   left: 0 !important;
@@ -1135,27 +1138,29 @@ html body .ow-page .ow-stage .ow-controls {
   direction: ltr !important;
   display: block !important;
   pointer-events: none !important;
-  z-index: 25 !important;
+  z-index: 18 !important;
 }
 html body .ow-page .ow-stage .ow-controls .ow-joystick {
   position: absolute !important;
+  direction: ltr !important;
+  inset-inline-start: max(14px, env(safe-area-inset-left, 0px)) !important;
+  inset-inline-end: auto !important;
   left: max(14px, env(safe-area-inset-left, 0px)) !important;
   right: auto !important;
-  inset-inline-start: auto !important;
-  inset-inline-end: auto !important;
   bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
   top: auto !important;
   pointer-events: auto !important;
   visibility: visible !important;
   opacity: 1 !important;
-  z-index: 26 !important;
+  z-index: 19 !important;
 }
 html body .ow-page .ow-stage .ow-controls .ow-action-stack {
   position: absolute !important;
+  direction: ltr !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: max(14px, env(safe-area-inset-right, 0px)) !important;
   right: max(14px, env(safe-area-inset-right, 0px)) !important;
   left: auto !important;
-  inset-inline-start: auto !important;
-  inset-inline-end: auto !important;
   bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
   top: auto !important;
   display: grid !important;
@@ -1164,7 +1169,7 @@ html body .ow-page .ow-stage .ow-controls .ow-action-stack {
   pointer-events: auto !important;
   visibility: visible !important;
   opacity: 1 !important;
-  z-index: 26 !important;
+  z-index: 19 !important;
 }
 
 /* Complete Clinical Modal Classes for OpenWorldClinicalModals.tsx */
@@ -1582,20 +1587,22 @@ html body .ow-page .ow-stage .ow-controls .ow-action-stack {
               height: '100%',
               direction: 'ltr',
               pointerEvents: 'none',
-              zIndex: 25,
+              zIndex: 18,
             }}
           >
             <div
               ref={joyBaseRef}
               className="ow-joystick"
+              dir="ltr"
               style={{
                 position: 'absolute',
-                left: '14px',
+                left: 'max(14px, env(safe-area-inset-left, 0px))',
                 right: 'auto',
-                bottom: '14px',
+                bottom: 'max(14px, env(safe-area-inset-bottom, 0px))',
                 top: 'auto',
+                direction: 'ltr',
                 pointerEvents: 'auto',
-                zIndex: 26,
+                zIndex: 19,
               }}
               role="group"
               aria-label={isAr ? 'عصا الحركة' : 'Movement joystick'}
@@ -1604,6 +1611,7 @@ html body .ow-page .ow-stage .ow-controls .ow-action-stack {
                   autoLandscapeTriedRef.current = true;
                   void tryEnterLandscapeFullscreen();
                 }
+                joyTouchIdRef.current = e.pointerId;
                 const el = e.currentTarget;
                 try {
                   el.setPointerCapture(e.pointerId);
@@ -1611,22 +1619,31 @@ html body .ow-page .ow-stage .ow-controls .ow-action-stack {
                 updateJoystick(e.clientX, e.clientY);
               }}
               onPointerMove={(e) => {
+                if (joyTouchIdRef.current !== null && joyTouchIdRef.current !== e.pointerId) return;
                 if (e.buttons === 0 && e.pointerType === 'mouse') return;
                 updateJoystick(e.clientX, e.clientY);
               }}
-              onPointerUp={stopJoystick}
+              onPointerUp={(e) => {
+                if (joyTouchIdRef.current === null || joyTouchIdRef.current === e.pointerId) {
+                  stopJoystick();
+                }
+              }}
               onPointerCancel={stopJoystick}
               onLostPointerCapture={stopJoystick}
               onTouchStart={(e) => {
                 if (e.changedTouches.length > 0) {
                   const t = e.changedTouches[0];
+                  joyTouchIdRef.current = t.identifier;
                   updateJoystick(t.clientX, t.clientY);
                 }
               }}
               onTouchMove={(e) => {
-                if (e.changedTouches.length > 0) {
-                  const t = e.changedTouches[0];
-                  updateJoystick(t.clientX, t.clientY);
+                for (let i = 0; i < e.changedTouches.length; i++) {
+                  const t = e.changedTouches[i];
+                  if (joyTouchIdRef.current === null || t.identifier === joyTouchIdRef.current) {
+                    updateJoystick(t.clientX, t.clientY);
+                    break;
+                  }
                 }
               }}
               onTouchEnd={stopJoystick}
@@ -1638,17 +1655,19 @@ html body .ow-page .ow-stage .ow-controls .ow-action-stack {
 
             <div
               className="ow-action-stack"
+              dir="ltr"
               style={{
                 position: 'absolute',
-                right: '14px',
+                right: 'max(14px, env(safe-area-inset-right, 0px))',
                 left: 'auto',
-                bottom: '14px',
+                bottom: 'max(14px, env(safe-area-inset-bottom, 0px))',
                 top: 'auto',
+                direction: 'ltr',
                 display: 'grid',
                 justifyItems: 'end',
                 gap: '7px',
                 pointerEvents: 'auto',
-                zIndex: 26,
+                zIndex: 19,
               }}
             >
               {gameState.carriedItemId && (

@@ -4022,7 +4022,7 @@ label,
 /* ─── RTL adjustments ─── */
 [dir="rtl"] .bh-controls-hint { text-align: end; }
 [dir="rtl"] .bh-edu-end { text-align: end; }
-[dir="rtl"] .bh-mobile-controls { flex-direction: row-reverse; }
+.bh-mobile-controls, [dir="rtl"] .bh-mobile-controls { direction: ltr !important; flex-direction: row !important; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    BACTERIA HUNTER — GAMING MODE (fullscreen / immersive layout)

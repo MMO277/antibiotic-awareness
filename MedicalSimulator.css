@@ -707,12 +707,14 @@
 .ms-hud-controls {
   position: absolute;
   bottom: 10px;
+  left: 12px;
+  right: 12px;
   inset-inline: 12px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   pointer-events: none;
-  z-index: 9;
+  z-index: 18;
 }
 
 /* Movement stays on the physical left, independent of Arabic/English direction. */
@@ -1383,6 +1385,7 @@ html body .ms-wrapper .ms-viewport .ms-hud-controls,
 html.bh-gaming body .ms-wrapper.ms-immersive .ms-hud-controls {
   position: absolute !important;
   inset: 0 !important;
+  inset-inline: 0 !important;
   top: 0 !important;
   bottom: 0 !important;
   left: 0 !important;
@@ -1392,15 +1395,16 @@ html.bh-gaming body .ms-wrapper.ms-immersive .ms-hud-controls {
   direction: ltr !important;
   display: block !important;
   pointer-events: none !important;
-  z-index: 35 !important;
+  z-index: 18 !important;
 }
 html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-joystick-zone,
 html.bh-gaming body .ms-wrapper.ms-immersive .ms-joystick-zone {
   position: absolute !important;
+  direction: ltr !important;
+  inset-inline-start: max(14px, env(safe-area-inset-left, 0px)) !important;
+  inset-inline-end: auto !important;
   left: max(14px, env(safe-area-inset-left, 0px)) !important;
   right: auto !important;
-  inset-inline-start: auto !important;
-  inset-inline-end: auto !important;
   bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
   top: auto !important;
   display: flex !important;
@@ -1410,15 +1414,16 @@ html.bh-gaming body .ms-wrapper.ms-immersive .ms-joystick-zone {
   pointer-events: auto !important;
   visibility: visible !important;
   opacity: 1 !important;
-  z-index: 36 !important;
+  z-index: 19 !important;
 }
 html body .ms-wrapper .ms-viewport .ms-hud-controls .ms-action-zone,
 html.bh-gaming body .ms-wrapper.ms-immersive .ms-action-zone {
   position: absolute !important;
+  direction: ltr !important;
+  inset-inline-start: auto !important;
+  inset-inline-end: max(14px, env(safe-area-inset-right, 0px)) !important;
   right: max(14px, env(safe-area-inset-right, 0px)) !important;
   left: auto !important;
-  inset-inline-start: auto !important;
-  inset-inline-end: auto !important;
   bottom: max(14px, env(safe-area-inset-bottom, 0px)) !important;
   top: auto !important;
   display: flex !important;
@@ -1428,5 +1433,5 @@ html.bh-gaming body .ms-wrapper.ms-immersive .ms-action-zone {
   pointer-events: auto !important;
   visibility: visible !important;
   opacity: 1 !important;
-  z-index: 36 !important;
+  z-index: 19 !important;
 }
