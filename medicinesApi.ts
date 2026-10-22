@@ -45,8 +45,10 @@ function seedToMedicine(s: any): Medicine {
           (p.priceEgp ? ' - ' + p.priceEgp.toFixed(2) + ' ج.م' : ''),
         manufacturer: p.manufacturer,
         barcode: p.barcode || '',
-        verified: true,
-        sourceUrl: 'https://edaegypt.gov.eg',
+        // Never mark a missing or pending barcode as verified.
+        verified: p.barcodeStatus === 'verified' && Boolean(p.barcode) && Boolean(p.barcodeSourceUrl),
+        // A barcode is not treated as verified without product-specific supporting evidence.
+        sourceUrl: p.barcodeSourceUrl || '',
       });
     }
   });
@@ -56,8 +58,9 @@ function seedToMedicine(s: any): Medicine {
     .filter((b) => b.verified && b.barcode?.trim())
     .map((b) => b.barcode.trim());
   m.sources = s.sources || [];
-  m.lastReviewed = '2026-10-14';
-  m.reviewedBy = 'هيئة التمريض السريري / Clinical Review';
+  // Do not invent a review date or reviewer for seed records; populate only after documented review.
+  m.lastReviewed = '';
+  m.reviewedBy = '';
   m.notes = s.notes || '';
   return m;
 }
@@ -68,11 +71,19 @@ export const ALL_LOCAL_MEDICINES: Medicine[] = SEED.map(seedToMedicine);
 function normalize(id: string, d: any): Medicine {
   const m = emptyMedicine(id);
   for (const f of TEXT_FIELDS) m[f] = { ar: d?.[f]?.ar ?? '', en: d?.[f]?.en ?? '' };
-  m.status = d?.status ?? 'approved';
+  // Missing review status is not evidence of approval; keep legacy records out of the approved state.
+  m.status = d?.status ?? 'pending_review';
   m.brands = Array.isArray(d?.brands) ? d.brands : [];
-  m.barcodes = Array.isArray(d?.barcodes) ? d.barcodes : [];
+  // A barcode is searchable only when its brand record explicitly marks it verified.
+  const verifiedBrandBarcodes = m.brands
+    .filter((b) => b?.verified === true && typeof b.barcode === 'string' && b.barcode.trim())
+    .map((b) => b.barcode.trim());
+  const storedBarcodes = Array.isArray(d?.barcodes) ? d.barcodes : [];
+  m.barcodes = Array.from(new Set(storedBarcodes.filter((code: unknown) =>
+    typeof code === 'string' && verifiedBrandBarcodes.includes(code.trim())
+  )));
   m.sources = Array.isArray(d?.sources) ? d.sources : [];
-  m.lastReviewed = d?.lastReviewed ?? '2026-10-14';
+  m.lastReviewed = typeof d?.lastReviewed === 'string' ? d.lastReviewed : '';
   m.reviewedBy = d?.reviewedBy ?? '';
   m.notes = d?.notes ?? '';
   return m;
@@ -98,24 +109,23 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
     }
   });
   const mergedBrands = Array.from(brandMap.values());
-
-  const mergedBarcodes = Array.from(
-    new Set([
-      ...(local.barcodes || []),
-      ...(remote.barcodes || []),
-      ...mergedBrands.map((b) => b.barcode?.trim()).filter(Boolean),
-    ])
-  );
+  // Never promote an unverified remote brand/barcode by merging it with local data.
+  const mergedBarcodes = Array.from(new Set(
+    mergedBrands
+      .filter((b) => b.verified === true && typeof b.barcode === 'string' && b.barcode.trim())
+      .map((b) => b.barcode.trim())
+  ));
 
   const merged: Medicine = {
     ...local,
     ...remote,
-    status: 'approved',
+    // Preserve the actual review state; merging must never promote a draft to approved.
+    status: remote.status || local.status,
     brands: mergedBrands.length > 0 ? mergedBrands : local.brands,
     barcodes: mergedBarcodes.length > 0 ? mergedBarcodes : local.barcodes,
     sources: local.sources && local.sources.length > 0 ? local.sources : remote.sources,
-    lastReviewed: remote.lastReviewed || local.lastReviewed || '2026-10-14',
-    reviewedBy: remote.reviewedBy || local.reviewedBy || 'هيئة التمريض السريري / Clinical Review',
+    lastReviewed: remote.lastReviewed || local.lastReviewed || '',
+    reviewedBy: remote.reviewedBy || local.reviewedBy || '',
   };
 
   for (const f of TEXT_FIELDS) {
@@ -149,7 +159,7 @@ export function findLocalMedicine(id: string): Medicine | null {
 
   // 3. Barcode match
   const byBarcode = ALL_LOCAL_MEDICINES.find(
-    (m) => m.barcodes.includes(clean) || m.brands.some((b) => b.barcode === clean)
+    (m) => m.barcodes.includes(clean) || m.brands.some((b) => b.verified === true && b.barcode?.trim() === clean)
   );
   if (byBarcode) return byBarcode;
 

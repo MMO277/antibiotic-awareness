@@ -81,7 +81,7 @@ export function emptyMedicine(id = ''): Medicine {
     brands: [],
     barcodes: [],
     sources: [],
-    lastReviewed: '2026-10-13',
+    lastReviewed: '',
     reviewedBy: '',
     notes: '',
   };

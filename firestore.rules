@@ -12,123 +12,109 @@ service cloud.firestore {
     function validUserDocWrite() {
       let d = request.resource.data;
       return (!('schedules' in d) || d.schedules is list)
-        && (!('deletedScheduleIds' in d) || d.deletedScheduleIds is map)
-        && (!('prescriptions' in d) || d.prescriptions is list)
-        && (!('deletedPrescriptionIds' in d) || d.deletedPrescriptionIds is map)
-        && (!('treatmentEvents' in d) || d.treatmentEvents is list)
-        && (!('radarWorkspace' in d) || d.radarWorkspace is map)
-        && (!('healthProfile' in d) || d.healthProfile is map)
-        && (!('learnDone' in d) || d.learnDone is list);
+          && (!('deletedScheduleIds' in d) || d.deletedScheduleIds is map)
+          && (!('prescriptions' in d) || d.prescriptions is list)
+          && (!('deletedPrescriptionIds' in d) || d.deletedPrescriptionIds is map)
+          && (!('treatmentEvents' in d) || d.treatmentEvents is list)
+          && (!('radarWorkspace' in d) || d.radarWorkspace is map)
+          && (!('healthProfile' in d) || d.healthProfile is map)
+          && (!('learnDone' in d) || d.learnDone is list);
     }
 
     function roleDocPath() {
       return /databases/$(database)/documents/roles/$(request.auth.uid);
     }
 
-    // true only if the signed-in user has a roles/{uid} document whose role is in `list`
-    function hasRole(list) {
-      return isSignedIn() && exists(roleDocPath()) && get(roleDocPath()).data.role in list;
+    function userHasRoleIn(allowedRoles) {
+      return isSignedIn()
+          && exists(roleDocPath())
+          && (get(roleDocPath()).data.role in allowedRoles);
     }
 
-    function isStaff() { return hasRole(['editor', 'reviewer', 'admin']); }
-    function isReviewer() { return hasRole(['reviewer', 'admin']); }
+    function isEditor() { return userHasRoleIn(['editor', 'admin']); }
+    function isReviewer() { return userHasRoleIn(['reviewer', 'admin']); }
+    function isAdmin() { return userHasRoleIn(['admin']); }
 
-    // Admin switch: show source-based records that are not clinically reviewed yet.
-    // If the settings document does not exist, the switch counts as ON.
-    function previewOn() {
-      let p = /databases/$(database)/documents/settings/public;
-      return !exists(p) || get(p).data.get('showUnreviewed', true) != false;
-    }
-
-    function validMedicine() {
+    function validMedicineSchema() {
       let d = request.resource.data;
-      return d.status in ['draft', 'pending_review', 'approved', 'archived']
-        && d.sources is list
-        && d.brands is list
-        && d.barcodes is list
-        // previewPublic must be true only for draft/pending records that have a source
-        && d.previewPublic is bool
-        && d.previewPublic == ((d.status == 'draft' || d.status == 'pending_review') && d.sources.size() > 0)
-        // approval needs at least one source, a review date and a reviewer name
-        && (d.status != 'approved' || (
-              d.sources.size() > 0
-              && d.lastReviewed is string && d.lastReviewed.size() > 0
-              && d.reviewedBy is string && d.reviewedBy.size() > 0));
+      return d.genericName is string && d.genericName.size() > 0
+          && d.status in ['draft', 'pending_review', 'approved', 'archived'];
     }
 
-    // ---------- medicines ----------
-    match /medicines/{id} {
-      // The public can read approved records, and (while the admin switch is ON)
-      // source-based records flagged previewPublic. Staff can read everything.
-      allow read: if (resource != null
-                      && (resource.data.status == 'approved'
-                          || (resource.data.previewPublic == true && previewOn())))
-                  || isStaff();
-
-      // Editors may only save Draft / Pending Review.
-      // Reviewers and admins may also approve and archive.
-      allow create, update: if isStaff()
-        && validMedicine()
-        && (request.resource.data.status in ['draft', 'pending_review'] || isReviewer());
-
-      allow delete: if hasRole(['admin']);
-    }
-
-    // ---------- site settings ----------
-    match /settings/{doc} {
-      allow read: if true;
-      allow write: if hasRole(['admin']);
-    }
-
-    // ---------- roles (who is editor / reviewer / admin) ----------
-    // The FIRST admin is created by hand in the Firebase console (see README).
-    match /roles/{uid} {
-      allow read: if isSignedIn() && (request.auth.uid == uid || hasRole(['admin']));
-      allow write: if hasRole(['admin']);
-    }
-
-    // ---------- personal patient data (strictly owner-only) ----------
+    // ---------- rules ----------
     match /users/{uid} {
-      allow read: if isOwner(uid);
+      allow read: if isOwner(uid) || isAdmin();
       allow create, update: if isOwner(uid) && validUserDocWrite();
-      allow delete: if isOwner(uid);
-      match /{subcollection=**} {
-        allow read, write: if isOwner(uid);
-      }
+      allow delete: if isAdmin();
     }
 
-    // ---------- optional research survey ----------
-    match /researchConfig/{doc} {
+    match /medicines/{id} {
+      allow read: if resource.data.status == 'approved' || isEditor() || isReviewer();
+      allow create: if isEditor() && validMedicineSchema()
+          && request.resource.data.status in ['draft', 'pending_review'];
+      allow update: if (
+            isEditor()
+            && validMedicineSchema()
+            && (
+                 (resource.data.status in ['draft', 'pending_review'] && request.resource.data.status in ['draft', 'pending_review'])
+              || (resource.data.status == 'approved' && request.resource.data.status == 'pending_review')
+            )
+          ) || (
+            isReviewer()
+            && validMedicineSchema()
+            && request.resource.data.status in ['draft', 'pending_review', 'approved', 'archived']
+          );
+      allow delete: if isAdmin();
+    }
+
+    match /roles/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /surveyResponses/{id} {
+      allow create: if request.resource.data.keys().hasAll(['createdMs', 'phase', 'age', 'answers'])
+          && request.resource.data.createdMs is number
+          && request.resource.data.phase in ['pre', 'post']
+          && request.resource.data.age is number
+          && request.resource.data.answers is map;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /surveyConfig/{docId} {
       allow read: if true;
-      allow write: if hasRole(['admin']);
+      allow write: if isAdmin();
     }
 
-    match /researchResponses/{id} {
-      // Anonymous create is allowed only while the admin has switched the survey ON.
-      allow create: if exists(/databases/$(database)/documents/researchConfig/main)
-        && get(/databases/$(database)/documents/researchConfig/main).data.enabled == true
-        && request.resource.data.keys().hasOnly(['phase', 'name', 'age', 'answers', 'consent', 'lang', 'createdAt'])
-        && request.resource.data.keys().hasAll(['phase', 'name', 'age', 'answers', 'consent', 'lang', 'createdAt'])
-        && request.resource.data.phase in ['pre', 'post']
-        && request.resource.data.consent == true
-        && request.resource.data.name is string
-        && request.resource.data.name.size() >= 2
-        && request.resource.data.name.size() <= 60
-        && request.resource.data.age is int
-        && request.resource.data.age >= 1
-        && request.resource.data.age <= 120
-        && request.resource.data.answers is list
-        && request.resource.data.answers.size() <= 30
-        && request.resource.data.lang in ['ar', 'en']
-        && request.resource.data.createdAt == request.time;
-      allow read: if hasRole(['admin']);
+    // ---------- قواعد أمان قياس الأثر والتعلم الجديدة (Learning & Assessment Analytics) ----------
+    match /assessmentPairs/{id} {
+      allow create: if request.resource.data.keys().hasAll(['topicId', 'createdMs', 'preScore', 'preTotal', 'status'])
+          && request.resource.data.topicId is string
+          && request.resource.data.createdMs is number
+          && request.resource.data.preScore is number
+          && request.resource.data.preTotal is number
+          && request.resource.data.status == 'started'
+          && !('email' in request.resource.data)
+          && !('name' in request.resource.data)
+          && !('phone' in request.resource.data);
+
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'postScore', 'postTotal', 'scoreDelta', 'improved', 'completedMs', 'status', 'updatedAt'
+          ])
+          && request.resource.data.status in ['completed', 'abandoned']
+          && request.resource.data.postScore is number;
+
+      allow read, delete: if isAdmin();
+    }
+
+    match /learningAnalytics/{id} {
+      allow create: if request.resource.data.keys().hasAll(['eventType', 'topicId', 'createdMs'])
+          && request.resource.data.eventType in ['lesson_start', 'lesson_complete', 'quiz_start', 'quiz_complete']
+          && request.resource.data.topicId is string
+          && request.resource.data.createdMs is number;
+
+      allow read, delete: if isAdmin();
       allow update: if false;
-      allow delete: if hasRole(['admin']);
-    }
-
-    // everything else is closed
-    match /{document=**} {
-      allow read, write: if false;
     }
   }
 }
