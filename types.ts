@@ -371,12 +371,25 @@ export const tr = (
   return en;
 };
 
+let emergencyTextTransform: ((text: string, lang: Lang) => string) | null = null;
+
+export function registerEmergencyTextTransform(
+  fn: (text: string, lang: Lang) => string
+): void {
+  emergencyTextTransform = fn;
+}
+
 export const pick = (b: Bi | undefined, lang: Lang): string => {
   if (!b) return '';
-  if (b[lang]) return b[lang] as string;
-  const base = b.en || b.ar || '';
-  if (lang === 'fr' || lang === 'es') {
-    return localizeFallbackText(base, lang);
+  let out: string;
+  if (b[lang]) {
+    out = b[lang] as string;
+  } else {
+    const base = b.en || b.ar || '';
+    out =
+      lang === 'fr' || lang === 'es'
+        ? localizeFallbackText(base, lang)
+        : base;
   }
-  return base;
+  return emergencyTextTransform ? emergencyTextTransform(out, lang) : out;
 };

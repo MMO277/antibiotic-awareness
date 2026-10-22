@@ -1,4 +1,5 @@
-import { pick } from './types';
+import { pick, tr } from './types';
+import { useEmergencyLocation } from './emergencyLocation';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -16,6 +17,7 @@ type ActiveSection = 'wizard' | 'qr_share' | 'privacy_governance';
 export default function GreenPrescription() {
   const { lang } = useLang();
   const isAr = lang === 'ar';
+  const { emergency, countryName } = useEmergencyLocation();
 
   const [section, setSection] = useState<ActiveSection>('wizard');
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -526,9 +528,13 @@ export default function GreenPrescription() {
                     </h3>
                     <ul style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.8 }}>
                       <li>
-                        {isAr
-                          ? 'اطلب المساعدة الطبية الطارئة فوراً (في مصر: اتصل بالإسعاف على رقم 123، أو اتصل بخدمات الطوارئ المحلية في بلدك).'
-                          : 'Contact local emergency services immediately (in Egypt: dial 123 for ambulance).'}
+                        {tr(
+                          lang,
+                          `اطلب المساعدة الطبية الطارئة فوراً (${countryName}: اتصل بالطوارئ على رقم ${emergency.number}).`,
+                          `Contact local emergency services immediately (${countryName}: dial ${emergency.number}).`,
+                          `Contactez immédiatement les services d’urgence (${countryName} : appelez le ${emergency.number}).`,
+                          `Contacte de inmediato a los servicios de emergencia (${countryName}: llame al ${emergency.number}).`
+                        )}
                       </li>
                       <li>
                         {isAr
@@ -544,8 +550,15 @@ export default function GreenPrescription() {
                   </div>
 
                   <div className="row wrapRow no-print" style={{ gap: '10px' }}>
-                    <a href="tel:123" className="btn danger" style={{ fontSize: '1.05rem', padding: '12px 24px' }}>
-                      📞 {isAr ? 'اتصال بخدمات الإسعاف (123)' : 'Call Emergency Ambulance (123)'}
+                    <a href={`tel:${emergency.number}`} className="btn danger" style={{ fontSize: '1.05rem', padding: '12px 24px' }}>
+                      📞{' '}
+                      {tr(
+                        lang,
+                        `اتصال بخدمات الطوارئ (${countryName}: ${emergency.number})`,
+                        `Call Emergency Services (${countryName}: ${emergency.number})`,
+                        `Appeler les urgences (${countryName} : ${emergency.number})`,
+                        `Llamar a emergencias (${countryName}: ${emergency.number})`
+                      )}
                     </a>
                     <button type="button" className="btn ghost" onClick={resetAll}>
                       🔄 {isAr ? 'ابدأ من جديد' : 'Start Over'}

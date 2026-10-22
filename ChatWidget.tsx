@@ -1,4 +1,5 @@
-import { pick } from './types';
+import { pick, tr } from './types';
+import { useEmergencyLocation, pickCountryName } from './emergencyLocation';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -53,6 +54,7 @@ const WIDGET_CHIPS: Record<string, string[]> = {
 export default function ChatWidget() {
   const { lang } = useLang();
   const isAr = lang === 'ar';
+  const { emergency, countryName, selectedOverride, setCountryOverride, countriesList } = useEmergencyLocation();
   const { items } = useApproved();
   const meds = useMemo(() => items ?? [], [items]);
   const passages = useMemo(() => buildPassages(meds), [meds]);
@@ -185,10 +187,24 @@ export default function ChatWidget() {
               setSosOpen(true);
               setIsOpen(false);
             }}
-            aria-label={isAr ? 'طوارئ الحساسية والإسعاف 123' : 'Emergency SOS 123'}
+            aria-label={tr(
+              lang,
+              `طوارئ الحساسية والإسعاف (${countryName}: ${emergency.number})`,
+              `Emergency SOS (${countryName}: ${emergency.number})`,
+              `Urgences SOS (${countryName} : ${emergency.number})`,
+              `Emergencias SOS (${countryName}: ${emergency.number})`
+            )}
           >
             <span className="fab-icon">🚨</span>
-            <span className="fab-label">{isAr ? 'طوارئ 123' : 'SOS 123'}</span>
+            <span className="fab-label">
+              {tr(
+                lang,
+                `طوارئ ${emergency.number}`,
+                `SOS ${emergency.number}`,
+                `SOS ${emergency.number}`,
+                `SOS ${emergency.number}`
+              )}
+            </span>
             <span className="sos-pulse-dot"></span>
           </button>
 
@@ -249,8 +265,61 @@ export default function ChatWidget() {
               </ul>
             </div>
 
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+                flexWrap: 'wrap',
+                background: 'var(--tint, #f1f5f9)',
+                border: '1px solid var(--line, #cbd5e1)',
+                borderRadius: '10px',
+                padding: '8px 10px',
+                fontSize: '0.84rem',
+              }}
+            >
+              <span>
+                {emergency.flag}{' '}
+                <b>
+                  {tr(
+                    lang,
+                    `الدولة: ${countryName}`,
+                    `Country: ${countryName}`,
+                    `Pays : ${countryName}`,
+                    `País: ${countryName}`
+                  )}
+                </b>
+              </span>
+              <select
+                value={selectedOverride}
+                onChange={(e) => setCountryOverride(e.target.value)}
+                aria-label={tr(lang, 'تغيير الدولة لرقم الطوارئ', 'Change emergency country', 'Changer le pays d’urgence', 'Cambiar país de emergencia')}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '6px',
+                  border: '1px solid var(--line, #cbd5e1)',
+                  background: 'var(--card-bg, #fff)',
+                  color: 'var(--ink, #12303f)',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  maxWidth: '185px',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="AUTO">
+                  📍 {tr(lang, 'تحديد تلقائي للموقع', 'Auto-detect location', 'Détection auto', 'Detección automática')}
+                </option>
+                {countriesList.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.flag} {pickCountryName(c, lang)} ({c.number})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <a
-              href="tel:123"
+              href={`tel:${emergency.number}`}
               className="btn danger"
               style={{
                 display: 'flex',
@@ -261,7 +330,14 @@ export default function ChatWidget() {
                 padding: '12px',
               }}
             >
-              📞 {isAr ? 'اتصال فوري بالإسعاف المصري (123)' : 'Call Egypt Ambulance Now (123)'}
+              📞{' '}
+              {tr(
+                lang,
+                `اتصال فوري بالطوارئ — ${countryName} (${emergency.number})`,
+                `Call Emergency Now — ${countryName} (${emergency.number})`,
+                `Appeler les urgences — ${countryName} (${emergency.number})`,
+                `Llamar a emergencias — ${countryName} (${emergency.number})`
+              )}
             </a>
 
             <Link

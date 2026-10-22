@@ -1,4 +1,5 @@
 import type { Lang } from './types';
+import { getCurrentEmergencyInfo } from './emergencyLocation';
 // geminiApi.ts - Multi-Engine Bilingual AI Vision, Deterministic Prescription OCR & Clinical Assistant
 
 import {
@@ -149,6 +150,11 @@ export async function askGemini(
   history: ChatMessage[] = []
 ): Promise<string> {
   const key = getApiKey();
+  const emerg = getCurrentEmergencyInfo();
+  const dynamicSystemPrompt = SYSTEM_PROMPT.replace(
+    'الإسعاف المصري (123)',
+    `طوارئ ${emerg.name.ar} (${emerg.number})`
+  );
 
   if (key && key.startsWith('AIza')) {
     try {
@@ -172,7 +178,7 @@ export async function askGemini(
           'x-goog-api-key': key,
         },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+          systemInstruction: { parts: [{ text: dynamicSystemPrompt }] },
           contents,
           generationConfig: { temperature: 0.25, maxOutputTokens: 700 },
         }),
@@ -189,7 +195,7 @@ export async function askGemini(
   }
 
   const messages = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: dynamicSystemPrompt },
     ...history.slice(-6).map((m) => ({
       role: m.who === 'me' ? 'user' : 'assistant',
       content: m.text,

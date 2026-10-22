@@ -6,6 +6,7 @@ import { useAuth } from './authContext';
 import Disclaimer from './Disclaimer';
 import ChatWidget from './ChatWidget';
 import LogoutModal from './LogoutModal';
+import { useEmergencyLocation } from './emergencyLocation';
 
 // ── Safe, Zero-DOM-Mutation Universal Page TextNode & Attribute Localizer (FR / ES) ──
 const textNodeState = new WeakMap<Text, { baseEn: string; lastOut: string }>();
@@ -101,6 +102,7 @@ interface NavItem {
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useLang();
+  const { emergency, countryName } = useEmergencyLocation();
   const isAr = lang === 'ar';
   const pageDir: 'rtl' | 'ltr' = isAr ? 'rtl' : 'ltr';
   const { pathname } = useLocation();
@@ -832,9 +834,19 @@ export default function Layout({ children }: { children: ReactNode }) {
                 </a>
               </li>
               <li style={{ marginTop: '8px' }}>
-                <span style={{ color: '#fca5a5', fontWeight: 700 }}>
-                  🚑 {tr(lang, 'طوارئ الإسعاف المصري: 123', 'Egypt Emergency Ambulance: 123', 'Urgences Ambulance (Égypte) : 123 / Europe : 112', 'Ambulancia de Emergencia (Egipto): 123 / 112')}
-                </span>
+                <a
+                  href={`tel:${emergency.number}`}
+                  style={{ color: '#fca5a5', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  🚑{' '}
+                  {tr(
+                    lang,
+                    `طوارئ الإسعاف (${emergency.flag} ${countryName}): ${emergency.number}`,
+                    `Emergency Services (${emergency.flag} ${countryName}): ${emergency.number}`,
+                    `Urgences Médicales (${emergency.flag} ${countryName}) : ${emergency.number}`,
+                    `Emergencias Médicas (${emergency.flag} ${countryName}): ${emergency.number}`
+                  )}
+                </a>
               </li>
             </ul>
           </div>

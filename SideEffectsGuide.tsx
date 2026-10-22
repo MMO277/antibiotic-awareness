@@ -1,10 +1,12 @@
-import { pick } from './types';
+import { pick, tr } from './types';
+import { useEmergencyLocation, formatEmergencyText, pickCountryName } from './emergencyLocation';
 import { useState } from 'react';
 import { useLang } from './i18n';
 import { SYMPTOMS_LIST, EMERGENCY_WARNINGS, SymptomDetail, SymptomSeverity } from './sideEffectsData';
 
 export default function SideEffectsGuide() {
   const { lang } = useLang();
+  const { emergency, countryName, selectedOverride, setCountryOverride, countriesList } = useEmergencyLocation();
   const [selectedSymptomId, setSelectedSymptomId] = useState<string>('anaphylaxis_breathing');
 
   const selectedSymptom: SymptomDetail | undefined = SYMPTOMS_LIST.find((s) => s.id === selectedSymptomId);
@@ -37,13 +39,50 @@ export default function SideEffectsGuide() {
           <span className="emerg-icon">🚨</span>
           <div>
             <h2>{lang === 'ar' ? 'علامات الطوارئ الخطيرة (طلب الإسعاف فوراً):' : 'Emergency Warning Signs (Seek Help Immediately):'}</h2>
-            <p className="emerg-text">{pick(EMERGENCY_WARNINGS, lang)}</p>
+            <p className="emerg-text">{formatEmergencyText(pick(EMERGENCY_WARNINGS, lang), emergency, lang)}</p>
           </div>
         </div>
-        <div className="emerg-action-row">
-          <span className="emerg-call">
-            📞 <b>{lang === 'ar' ? 'رقم الإسعاف في مصر: 123' : 'Emergency Ambulance: 123 (Egypt)'}</b>
-          </span>
+        <div className="emerg-action-row" style={{ flexWrap: 'wrap', gap: '10px' }}>
+          <a
+            href={`tel:${emergency.number}`}
+            className="emerg-call"
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            📞{' '}
+            <b>
+              {tr(
+                lang,
+                `رقم الطوارئ في ${countryName} (${emergency.flag}): ${emergency.number}`,
+                `Emergency Number in ${countryName} (${emergency.flag}): ${emergency.number}`,
+                `Numéro d’urgence — ${countryName} (${emergency.flag}) : ${emergency.number}`,
+                `Número de emergencia — ${countryName} (${emergency.flag}): ${emergency.number}`
+              )}
+            </b>
+          </a>
+          <select
+            value={selectedOverride}
+            onChange={(e) => setCountryOverride(e.target.value)}
+            aria-label={tr(lang, 'تغيير الدولة لرقم الطوارئ', 'Change emergency country', 'Changer le pays d’urgence', 'Cambiar país de emergencia')}
+            style={{
+              padding: '5px 10px',
+              borderRadius: '8px',
+              border: '1px solid rgba(220, 38, 38, 0.35)',
+              background: 'rgba(255, 255, 255, 0.92)',
+              color: '#7f1d1d',
+              fontSize: '0.84rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            <option value="AUTO">
+              📍 {tr(lang, `تحديد تلقائي (${countryName}: ${emergency.number})`, `Auto-detect (${countryName}: ${emergency.number})`, `Auto-détection (${countryName} : ${emergency.number})`, `Detección automática (${countryName}: ${emergency.number})`)}
+            </option>
+            {countriesList.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.flag} {pickCountryName(c, lang)} — {c.number}
+              </option>
+            ))}
+          </select>
           <small className="emerg-sub">
             {lang === 'ar'
               ? 'لا تنتظر ولا تكمل أي استبيان في حالات الطوارئ؛ توجه فوراً لأقرب مستشفى!'
@@ -100,7 +139,14 @@ export default function SideEffectsGuide() {
                 : 'e.g. Swollen throat/tongue, wheezing, severe breathing distress, collapse, or blistering skin rash.'}
             </p>
             <div className="cat-action">
-              <b>{lang === 'ar' ? 'التصرف:' : 'Action:'}</b> {lang === 'ar' ? 'اتصل بالإسعاف (123) وتوجه لأقرب طوارئ فوراً دون تأخير.' : 'Call ambulance (123) and seek immediate emergency care.'}
+              <b>{lang === 'ar' ? 'التصرف:' : 'Action:'}</b>{' '}
+              {tr(
+                lang,
+                `اتصل بالطوارئ (${emergency.number}) وتوجه لأقرب طوارئ فوراً دون تأخير.`,
+                `Call emergency services (${emergency.number}) and seek immediate emergency care.`,
+                `Appelez les urgences (${emergency.number}) et consultez immédiatement.`,
+                `Llame a emergencias (${emergency.number}) y acuda de inmediato a urgencias.`
+              )}
             </div>
           </div>
         </div>
@@ -147,7 +193,7 @@ export default function SideEffectsGuide() {
 
               <div className="sym-section action-highlight">
                 <h4>⚡ {lang === 'ar' ? 'ما يجب عليك فعله الآن (الإجراء الفوري):' : 'What You Should Do Now:'}</h4>
-                <p><b>{pick(selectedSymptom.immediateAction, lang)}</b></p>
+                <p><b>{formatEmergencyText(pick(selectedSymptom.immediateAction, lang), emergency, lang)}</b></p>
               </div>
 
               <div className="sym-section offending-drugs">

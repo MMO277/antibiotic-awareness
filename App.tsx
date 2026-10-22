@@ -16,6 +16,7 @@ import { configured } from './firebase';
 import { useLang } from './i18n';
 import Layout from './Layout';
 import { AuthProvider } from './authContext';
+import { EmergencyLocationProvider } from './emergencyLocation';
 import AuthModal from './AuthModal';
 import Home from './Home';
 import Medicines from './Medicines';
@@ -96,7 +97,8 @@ function NotFound() {
 export default function App() {
   return (
     <AuthProvider>
-      <Layout>
+      <EmergencyLocationProvider>
+        <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/medicines" element={<Medicines />} />
@@ -178,8 +180,9 @@ export default function App() {
           <Route path="/admin/medicine/:id" element={configured ? <Editor /> : <ConfigMissing />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Layout>
-      <AuthModal />
+        </Layout>
+        <AuthModal />
+      </EmergencyLocationProvider>
     </AuthProvider>
   );
 }

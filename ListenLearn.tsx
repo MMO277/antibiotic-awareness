@@ -1,4 +1,5 @@
 import { pick } from './types';
+import { useEmergencyLocation, formatEmergencyText } from './emergencyLocation';
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from './i18n';
 import { LISTEN_TOPICS, ListenTopic } from './listenData';
@@ -11,6 +12,7 @@ import {
 
 export default function ListenLearn() {
   const { lang, setLang } = useLang();
+  const { emergency } = useEmergencyLocation();
   const [selectedTopicId, setSelectedTopicId] = useState<string>('what-are-antibiotics');
   const [selectedTopic, setSelectedTopic] = useState<ListenTopic>(LISTEN_TOPICS[0]);
   const [currentParagraphIdx, setCurrentParagraphIdx] = useState<number>(-1);
@@ -86,7 +88,7 @@ export default function ListenLearn() {
     const p = selectedTopic.paragraphs[index];
     if (!p) return;
     setCurrentParagraphIdx(index);
-    await playerRef.current?.speakText(pick(p.text, lang), lang, rate, () => {
+    await playerRef.current?.speakText(formatEmergencyText(pick(p.text, lang), emergency, lang), lang, rate, () => {
       setCurrentParagraphIdx(-1);
     });
   };
@@ -105,7 +107,7 @@ export default function ListenLearn() {
       setCurrentParagraphIdx(idx);
       const p = selectedTopic.paragraphs[idx];
       idx++;
-      await playerRef.current?.speakText(pick(p.text, lang), lang, rate, () => {
+      await playerRef.current?.speakText(formatEmergencyText(pick(p.text, lang), emergency, lang), lang, rate, () => {
         speakNext();
       });
     };
@@ -165,7 +167,7 @@ export default function ListenLearn() {
             <span className="topic-icon">{selectedTopic.icon}</span>
             <div>
               <h2>{pick(selectedTopic.title, lang)}</h2>
-              <p className="small muted">{pick(selectedTopic.summary, lang)}</p>
+              <p className="small muted">{formatEmergencyText(pick(selectedTopic.summary, lang), emergency, lang)}</p>
             </div>
           </div>
           <div className="status-pill-wrap">
@@ -244,7 +246,7 @@ export default function ListenLearn() {
         {selectedTopic.emergencyNote && (
           <div className="alert urgent" style={{ marginTop: '14px' }}>
             <strong>🚨 {lang === 'ar' ? 'تنبيه طوارئ فوري:' : 'Urgent Emergency Notice:'} </strong>
-            {pick(selectedTopic.emergencyNote, lang)}
+            {formatEmergencyText(pick(selectedTopic.emergencyNote, lang), emergency, lang)}
           </div>
         )}
 
@@ -269,7 +271,7 @@ export default function ListenLearn() {
                     🔊 {lang === 'ar' ? 'استمع للفقرة' : 'Listen'}
                   </button>
                 </div>
-                <p className="p-text">{pick(p.text, lang)}</p>
+                <p className="p-text">{formatEmergencyText(pick(p.text, lang), emergency, lang)}</p>
               </div>
             );
           })}

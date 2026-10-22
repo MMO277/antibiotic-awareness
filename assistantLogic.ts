@@ -4,6 +4,7 @@ import { MYTHS } from './contentData';
 import { Bi, FIELD_LABELS, Lang, Medicine, pick, TextField } from './types';
 import { EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 import * as R from './assistantReplies';
+import { getCurrentEmergencyInfo, formatEmergencyText } from './emergencyLocation';
 import type { Link, PKind, ConditionKind } from './assistantReplies';
 
 export interface Ref { title: string; url: string; publisher?: string }
@@ -349,7 +350,19 @@ export function respond(passages: Passage[], meds: Medicine[], raw: string): Rep
   const x = norm(q);
   const v = classify(q);
   if (v === 'injection') return { kind: 'text', text: R.INJECTION, tone: 'warn' };
-  if (v === 'emergency') return { kind: 'text', text: R.EMERGENCY, tone: 'alert' };
+  if (v === 'emergency') {
+    const info = getCurrentEmergencyInfo();
+    return {
+      kind: 'text',
+      text: {
+        ar: formatEmergencyText(R.EMERGENCY.ar, info, 'ar'),
+        en: `This could indicate severe anaphylaxis or an acute emergency. Stop chatting and seek emergency care immediately: call emergency services (${info.number} in ${info.name.en}) or go to the nearest ER.`,
+        fr: `Cela pourrait indiquer une urgence allergique grave. Arrêtez la discussion et appelez immédiatement les secours (${info.number} — ${info.name.fr}) ou rendez-vous aux urgences.`,
+        es: `Esto podría indicar una emergencia alérgica grave. Detenga el chat y llame de inmediato a emergencias (${info.number} — ${info.name.es}) o acuda a urgencias.`,
+      },
+      tone: 'alert',
+    };
+  }
 
   const small = smallTalk(x);
   if (small) return { kind: 'text', text: small.text, links: small.links };
