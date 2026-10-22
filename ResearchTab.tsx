@@ -1,10 +1,10 @@
-import { pick } from './types';
 import { useEffect, useState } from 'react';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { useLang } from './i18n';
 import { QUESTIONS } from './quizData';
 import { byAge, Dist, distribution, perQuestion, Resp, Row, toRow } from './researchStats';
+import { pick } from './types';
 
 function Bars({ d }: { d: Dist }) {
   const { t } = useLang();
@@ -35,6 +35,10 @@ export default function ResearchTab() {
   const [phase, setPhase] = useState<'all' | 'pre' | 'post'>('all');
 
   async function loadRows() {
+    if (!db) {
+      setRows([]);
+      return;
+    }
     try {
       const snap = await getDocs(collection(db, 'surveyResponses'));
       const surveyDocs = snap.docs.filter((d) => {
@@ -77,6 +81,10 @@ export default function ResearchTab() {
   }
 
   useEffect(() => {
+    if (!db) {
+      setRows([]);
+      return;
+    }
     getDoc(doc(db, 'surveyConfig', 'main'))
       .then((s) => {
         if (s.exists()) {
@@ -86,9 +94,11 @@ export default function ResearchTab() {
       })
       .catch(() => {});
     loadRows();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function save() {
+    if (!db) return;
     const finalRef = ref.trim() || 'AMR-EDU-2026';
     if (enabled && !ref.trim()) {
       setRef(finalRef);
@@ -101,7 +111,7 @@ export default function ResearchTab() {
       });
       setMsg(t('saved'));
     } catch {
-      setMsg(t('resSaveFail'));
+      setMsg(t('actionFailed'));
     }
   }
 
@@ -136,25 +146,26 @@ export default function ResearchTab() {
   }
 
   async function clearAll() {
-    if (!window.confirm(t('resConfirmClear'))) return;
+    if (!db) return;
+    if (!window.confirm(t('confirmDel'))) return;
     try {
       const snap = await getDocs(collection(db, 'surveyResponses'));
       const surveyDocs = snap.docs.filter((d) => {
         const x = d.data();
         return !(x.answers && typeof x.answers === 'object' && !Array.isArray(x.answers) && x.answers._recordType === 'learning_analytics');
       });
-      await Promise.all(surveyDocs.map((d) => deleteDoc(doc(db, 'surveyResponses', d.id))));
+      await Promise.all(surveyDocs.map((d) => deleteDoc(doc(db!, 'surveyResponses', d.id))));
       setRows([]);
-      setMsg(t('resCleared'));
+      setMsg(t('saved'));
     } catch {
-      setMsg(t('resClearFail'));
+      setMsg(t('actionFailed'));
     }
   }
 
   return (
     <div className="space-y-6">
       <div className="card space-y-4">
-        <h2 className="text-xl font-bold">{t('resAdminTitle')}</h2>
+        <h2 className="text-xl font-bold">{t('tabResearch')}</h2>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <label className="flex items-center gap-2 cursor-pointer font-medium">
@@ -162,7 +173,7 @@ export default function ResearchTab() {
             {t('resEnable')}
           </label>
           <div>
-            <label className="block text-sm font-medium mb-1">{t('resEthicsRef')}</label>
+            <label className="block text-sm font-medium mb-1">{t('resEthics')}</label>
             <input
               type="text"
               value={ref}
@@ -184,18 +195,18 @@ export default function ResearchTab() {
 
       <div className="card space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h3 className="text-lg font-bold">{t('resResultsTitle')} ({filtered.length})</h3>
+          <h3 className="text-lg font-bold">{t('resStats')} ({filtered.length})</h3>
           <div className="flex items-center gap-2">
-            <select value={phase} onChange={(e) => setPhase(e.target.value as any)} className="input-field py-1">
-              <option value="all">{t('resFilterAll')}</option>
-              <option value="pre">{t('resPre')}</option>
-              <option value="post">{t('resPost')}</option>
+            <select value={phase} onChange={(e) => setPhase(e.target.value as 'all' | 'pre' | 'post')} className="input-field py-1">
+              <option value="all">{t('resAll')}</option>
+              <option value="pre">{t('pre')}</option>
+              <option value="post">{t('post')}</option>
             </select>
             <button onClick={exportCSV} disabled={!rows || rows.length === 0} className="btn-secondary py-1 text-sm">
               {t('resExport')}
             </button>
             <button onClick={clearAll} disabled={!rows || rows.length === 0} className="btn-danger py-1 text-sm">
-              {t('resClear')}
+              {t('resDelete')}
             </button>
           </div>
         </div>
@@ -203,32 +214,39 @@ export default function ResearchTab() {
         {rows === null ? (
           <p className="text-gray-500">{t('loading')}</p>
         ) : filtered.length === 0 ? (
-          <p className="text-gray-500">{t('resNoResp')}</p>
+          <p className="text-gray-500">{t('resNoData')}</p>
         ) : (
           <div className="space-y-6">
             <div>
-              <h4 className="font-bold mb-2">{t('resOverallDist')}</h4>
+              <h4 className="font-bold mb-2">{t('resStats')}</h4>
               <Bars d={overall} />
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
-              {Object.entries(ageGroups).map(([group, dist]) => (
-                <div key={group} className="border p-3 rounded-lg">
-                  <h5 className="font-semibold text-sm mb-1">{t('resAgeGroup')} {group}</h5>
+              {ageGroups.map(({ g, d: dist }) => (
+                <div key={g.key} className="border p-3 rounded-lg">
+                  <h5 className="font-semibold text-sm mb-1">{t('resByAge')}: {pick(g, lang)}</h5>
                   <Bars d={dist} />
                 </div>
               ))}
             </div>
 
             <div>
-              <h4 className="font-bold mb-2">{t('resPerQ')}</h4>
+              <h4 className="font-bold mb-2">{t('resByQ')}</h4>
               <div className="space-y-3">
-                {qStats.map((qs, i) => {
+                {qStats.map((pctCorrect, i) => {
                   const text = pick(QUESTIONS[i]?.q, lang);
+                  const qDist: Dist = {
+                    n: filtered.length,
+                    know: pctCorrect,
+                    partial: 0,
+                    dont: Math.max(0, 100 - pctCorrect),
+                    avg: pctCorrect,
+                  };
                   return (
                     <div key={i} className="border-b pb-2">
-                      <p className="text-xs font-medium mb-1">Q{i + 1}. {text}</p>
-                      <Bars d={qs} />
+                      <p className="text-xs font-medium mb-1">Q{i + 1}. {text} ({pctCorrect}%)</p>
+                      <Bars d={qDist} />
                     </div>
                   );
                 })}

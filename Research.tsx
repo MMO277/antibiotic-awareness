@@ -76,7 +76,7 @@ export default function Research() {
   if (cfg === null || !cfg.enabled) {
     return (
       <div className="card text-center p-8">
-        <p className="text-gray-500">{t('resDisabled')}</p>
+        <p className="text-gray-500">{t('resClosed')}</p>
       </div>
     );
   }
@@ -85,7 +85,6 @@ export default function Research() {
     return (
       <div className="card text-center p-8">
         <h2 className="text-2xl font-bold text-emerald-600 mb-2">{t('resThanks')}</h2>
-        <p className="text-gray-600">{t('resRecorded')}</p>
       </div>
     );
   }
@@ -94,11 +93,11 @@ export default function Research() {
     <div className="space-y-6">
       <div className="card">
         <h2 className="text-xl font-bold mb-2">{t('resTitle')}</h2>
-        <p className="text-gray-600 text-sm mb-4">{t('resIntro')}</p>
+        <p className="text-gray-600 text-sm mb-4">{t('resConsentText')}</p>
 
         {cfg.ethicsApprovalRef && (
           <div className="text-xs bg-gray-50 p-3 rounded-lg border text-gray-600 mb-4">
-            <b>{t('resEthicsRef')}:</b> {cfg.ethicsApprovalRef}
+            <b>{t('resEthics')}:</b> {cfg.ethicsApprovalRef}
           </div>
         )}
 
@@ -106,7 +105,7 @@ export default function Research() {
 
         <label className="flex items-center gap-2 mt-4 cursor-pointer text-sm font-medium">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="rounded text-emerald-600" />
-          {t('resConsent')}
+          {t('resConsentCheck')}
         </label>
       </div>
 
@@ -115,7 +114,7 @@ export default function Research() {
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">{t('resName')}</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-field" placeholder={t('optional')} />
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">{t('resAge')} *</label>
@@ -124,28 +123,28 @@ export default function Research() {
             <div>
               <label className="block text-sm font-medium mb-1">{t('resPhase')} *</label>
               <select value={phase} onChange={(e) => setPhase(e.target.value as 'pre' | 'post')} className="input-field">
-                <option value="pre">{t('resPre')}</option>
-                <option value="post">{t('resPost')}</option>
+                <option value="pre">{t('pre')}</option>
+                <option value="post">{t('post')}</option>
               </select>
             </div>
           </div>
 
           <hr className="my-4" />
 
-          <h3 className="font-bold text-lg mb-2">{t('resQuestions')}</h3>
+          <h3 className="font-bold text-lg mb-2">{t('question')}</h3>
           <div className="space-y-6">
             {QUESTIONS.map((q, qIdx) => {
-              const text = pick(q, lang, 'q');
-              const opts = [pick(q, lang, 'opt0'), pick(q, lang, 'opt1'), pick(q, lang, 'opt2')];
+              const text = pick(q.q, lang);
+              const opts = q.options.map((opt) => pick(opt, lang));
               return (
-                <div key={q.id} className="border-b pb-4 last:border-b-0">
+                <div key={qIdx} className="border-b pb-4 last:border-b-0">
                   <p className="font-medium text-sm mb-2">{qIdx + 1}. {text}</p>
                   <div className="space-y-1 pl-2">
                     {opts.map((opt, oIdx) => (
                       <label key={oIdx} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded">
                         <input
                           type="radio"
-                          name={`q-${q.id}`}
+                          name={`q-${qIdx}`}
                           checked={answers[qIdx] === oIdx}
                           onChange={() => {
                             const next = [...answers];
@@ -165,7 +164,7 @@ export default function Research() {
           {msg && <p className="text-sm text-red-600">{msg}</p>}
 
           <button onClick={submit} disabled={!canSubmit} className="btn-primary w-full py-3 text-base">
-            {busy ? t('saving') : t('submit')}
+            {busy ? t('loading') : t('resSubmit')}
           </button>
         </div>
       )}
