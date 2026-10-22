@@ -5,7 +5,7 @@ import { db, configured } from './firebase';
 import { useAuth } from './authContext';
 import { useLang } from './i18n';
 import { STEPS } from './contentData';
-import { pick } from './types';
+import { pick, tr } from './types';
 import Disclaimer from './Disclaimer';
 import { PRE_ASSESSMENT_QUESTIONS, POST_ASSESSMENT_QUESTIONS } from './assessmentData';
 import {
@@ -38,7 +38,7 @@ export default function Learn() {
   const { user, loading: authLoading } = useAuth();
   const uid = user?.uid ?? null;
 
-  const L = (ar: string, en: string) => (lang === 'ar' ? ar : en);
+  const L = (ar: string, en: string, fr?: string, es?: string) => tr(lang, ar, en, fr, es);
   const [idx, setIdx] = useState(0);
   const [sel, setSel] = useState<number | null>(null);
   const [done, setDone] = useState<string[]>(() => loadDone(uid));
@@ -173,11 +173,20 @@ export default function Learn() {
 
   return (
     <main className="wrap narrow stack">
-      <h1>{L('رحلة التعلم: مقاومة مضادات الميكروبات', 'Learning journey: antimicrobial resistance')}</h1>
+      <h1>
+        {L(
+          'رحلة التعلم: مقاومة مضادات الميكروبات',
+          'Learning journey: antimicrobial resistance',
+          'Parcours d’apprentissage : la résistance aux antimicrobiens',
+          'Ruta de aprendizaje: resistencia a los antimicrobianos'
+        )}
+      </h1>
       <p className="muted">
         {L(
           'ست خطوات قصيرة، مع اختبار سريع بعد كل منها. المادة التعليمية صياغة المنصة استناداً للمصادر الرسمية.',
-          'Six short steps, each with a quick check. The wording is the project’s own, based on the official sources.'
+          'Six short steps, each with a quick check. The wording is the project’s own, based on the official sources.',
+          'Six étapes courtes, chacune suivie d’une vérification rapide basée sur les sources officielles.',
+          'Seis pasos breves, cada uno con una comprobación rápida basada en fuentes oficiales.'
         )}
       </p>
 
@@ -185,7 +194,7 @@ export default function Learn() {
         <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Learn progress">
           <span style={{ width: `${pct}%` }} />
         </div>
-        <p className="small muted">{L('المكتمل', 'Completed')} {done.length} / {STEPS.length}</p>
+        <p className="small muted">{L('المكتمل', 'Completed', 'Terminé', 'Completado')} {done.length} / {STEPS.length}</p>
       </div>
 
       <div className="chips" role="tablist">
@@ -200,7 +209,7 @@ export default function Learn() {
         <h2>{idx + 1}. {pick(step.title, lang)}</h2>
         {pick(step.body, lang).split('\n\n').map((p, k) => <p key={k}>{p}</p>)}
 
-        <h3>{L('اختبر فهمك', 'Check your understanding')}</h3>
+        <h3>{L('اختبر فهمك', 'Check your understanding', 'Vérifiez votre compréhension', 'Comprueba tu comprensión')}</h3>
         <p>{pick(step.check.q, lang)}</p>
         <div className="options">
           {step.check.options.map((o, k) => {
@@ -214,7 +223,7 @@ export default function Learn() {
         </div>
         {sel !== null && <p className="why">{pick(step.check.why, lang)}</p>}
 
-        <p className="small muted">{L('المصادر:', 'Sources:')}</p>
+        <p className="small muted">{L('المصادر:', 'Sources:', 'Sources :', 'Fuentes:')}</p>
         <ul className="srclist small">
           {step.sources.map((s) => (
             <li key={s.url}>
@@ -225,24 +234,35 @@ export default function Learn() {
         </ul>
 
         <div className="row wrapRow">
-          {idx > 0 && <button className="btn ghost" onClick={() => setIdx(idx - 1)}>{L('السابق', 'Previous')}</button>}
-          {idx < STEPS.length - 1 && <button className="btn" onClick={() => setIdx(idx + 1)}>{L('التالي', 'Next')}</button>}
+          {idx > 0 && <button className="btn ghost" onClick={() => setIdx(idx - 1)}>{L('السابق', 'Previous', 'Précédent', 'Anterior')}</button>}
+          {idx < STEPS.length - 1 && <button className="btn" onClick={() => setIdx(idx + 1)}>{L('التالي', 'Next', 'Suivant', 'Siguiente')}</button>}
         </div>
       </article>
 
       {done.length === STEPS.length && (
         <div className="notice">
-          <strong>{L('أحسنت! أكملت رحلة التعلم.', 'Well done! You completed the journey. ')}</strong>
-          <Link to="/quiz">{L('جرب اختبار المعرفة الآن', 'Try the knowledge quiz')}</Link>
+          <strong>
+            {L(
+              'أحسنت! أكملت رحلة التعلم.',
+              'Well done! You completed the journey. ',
+              'Bravo ! Vous avez terminé le parcours. ',
+              '¡Bien hecho! Has completado el recorrido. '
+            )}
+          </strong>
+          <Link to="/quiz">
+            {L('جرب اختبار المعرفة الآن', 'Try the knowledge quiz', 'Essayez le quiz de connaissances', 'Prueba el cuestionario de conocimientos')}
+          </Link>
         </div>
       )}
-      <button className="btn ghost small" onClick={reset}>{L('إعادة الضبط', 'Reset progress')}</button>
+      <button className="btn ghost small" onClick={reset}>
+        {L('إعادة الضبط', 'Reset progress', 'Réinitialiser la progression', 'Reiniciar progreso')}
+      </button>
       <Disclaimer />
 
       {showPreModal && (
         <PrePostAssessmentModal
           mode="pre"
-          topicTitle={lang === 'ar' ? step.title.ar : step.title.en}
+          topicTitle={pick(step.title, lang)}
           questions={PRE_ASSESSMENT_QUESTIONS}
           onComplete={(score, total) => {
             setPreScore(score);
@@ -256,7 +276,7 @@ export default function Learn() {
       {showPostModal && (
         <PrePostAssessmentModal
           mode="post"
-          topicTitle={lang === 'ar' ? step.title.ar : step.title.en}
+          topicTitle={pick(step.title, lang)}
           questions={POST_ASSESSMENT_QUESTIONS}
           onComplete={(score, total) => {
             recordPostAssessment(step.id, score, total, preScore ?? 0);

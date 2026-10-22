@@ -176,7 +176,7 @@ export default function MedicinePage() {
                   : 'Medication Safety Engine Check Against Your Profile:'}
               </strong>
               <p className="small" style={{ margin: '4px 0 0' }}>
-                {safetyAssessment.completeness.summaryBanner[lang]}
+                {pick(safetyAssessment.completeness.summaryBanner, lang)}
               </p>
             </div>
             <div className="row wrapRow" style={{ gap: '6px' }}>
@@ -201,12 +201,12 @@ export default function MedicinePage() {
                     border: '1px solid var(--line)',
                   }}
                 >
-                  <div style={{ fontWeight: 700 }}>{f.title[lang]}</div>
+                  <div style={{ fontWeight: 700 }}>{pick(f.title, lang)}</div>
                   <p className="small" style={{ margin: '4px 0' }}>
-                    {f.reason[lang]}
+                    {pick(f.reason, lang)}
                   </p>
                   <p className="small" style={{ margin: 0 }}>
-                    <b>{isAr ? 'التوجيه:' : 'Next Step:'}</b> {f.nextStep[lang]}
+                    <b>{isAr ? 'التوجيه:' : 'Next Step:'}</b> {pick(f.nextStep, lang)}
                   </p>
                 </div>
               ))}
@@ -296,17 +296,17 @@ export default function MedicinePage() {
                         </td>
                         <td>
                           <span dir="ltr"><b>{pkg.strength}</b></span>
-                          <div className="small muted">{pkg.dosageFormLabel[lang]}</div>
+                          <div className="small muted">{pick(pkg.dosageFormLabel, lang)}</div>
                         </td>
                         <td>
-                          <div>{pkg.packDetails[lang]}</div>
+                          <div>{pick(pkg.packDetails, lang)}</div>
                           <div className="small muted">{pkg.manufacturer} ({pkg.countryOfOrigin})</div>
                         </td>
                         <td>
                           <b style={{ color: '#15803d' }}>
                             {pkg.priceEgp ? `${pkg.priceEgp.toFixed(2)} ${isAr ? 'ج.م' : 'EGP'}` : '—'}
                           </b>
-                          <div className="small muted">{pkg.unitPriceNote[lang]}</div>
+                          <div className="small muted">{pick(pkg.unitPriceNote, lang)}</div>
                         </td>
                         <td dir="ltr">
                           {pkg.barcode ? (
@@ -349,7 +349,7 @@ export default function MedicinePage() {
                 <h2>
                   {f === 'priceEgypt' && <span>💰 </span>}
                   {f === 'substitutes' && <span>🔄 </span>}
-                  {FIELD_LABELS[f][lang]}
+                  {pick(FIELD_LABELS[f], lang)}
                 </h2>
                 <p className="pre">{v}</p>
                 {f === 'dosingReference' && <p className="small muted">{t('dosingNote')}</p>}

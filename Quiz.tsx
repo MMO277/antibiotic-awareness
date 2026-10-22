@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLang } from './i18n';
 import { QUESTIONS, Question } from './quizData';
-import { pick } from './types';
+import { pick, tr } from './types';
 
 export default function Quiz() {
   const { t, lang } = useLang();
@@ -46,9 +46,13 @@ export default function Quiz() {
     <main className="wrap narrow stack">
       <h1>📝 {t('navQuiz')}</h1>
       <p className="muted">
-        {isAr
-          ? 'اختبر معلوماتك ووعيك الدوائي حول الاستخدام الآمن للمضادات الحيوية وتصحيح المفاهيم الشائعة.'
-          : 'Test your awareness and clinical knowledge about antibiotic safety and common misconceptions.'}
+        {tr(
+          lang,
+          'اختبر معلوماتك ووعيك الدوائي حول الاستخدام الآمن للمضادات الحيوية وتصحيح المفاهيم الشائعة.',
+          'Test your awareness and clinical knowledge about antibiotic safety and common misconceptions.',
+          'Testez vos connaissances sur l’utilisation sûre des antibiotiques et les idées reçues courantes.',
+          'Pon a prueba tus conocimientos sobre el uso seguro de los antibióticos y los mitos frecuentes.'
+        )}
       </p>
 
       {finished ? (
@@ -57,23 +61,31 @@ export default function Quiz() {
             {score >= Math.ceil(QUESTIONS.length * 0.75) ? '🏆' : '📚'}
           </div>
           <h2>
-            {isAr ? 'اكتمل الاختبار بنجاح!' : 'Quiz Completed!'}
+            {tr(lang, 'اكتمل الاختبار بنجاح!', 'Quiz Completed!', 'Quiz Terminé !', '¡Cuestionario Completado!')}
           </h2>
           <p className="big" style={{ margin: '8px 0' }}>
             {score} / {QUESTIONS.length}
           </p>
           <p className="muted" style={{ maxWidth: '42ch', margin: '0 auto 16px' }}>
             {score >= Math.ceil(QUESTIONS.length * 0.75)
-              ? isAr
-                ? 'ممتاز! لديك وعي دوائي عالي يساهم في حماية المجتمع من المقاومة البكتيرية.'
-                : 'Excellent! You have strong antibiotic awareness helping curb antimicrobial resistance.'
-              : isAr
-                ? 'جيد جداً! تصفح دليل الأدوية والمقالات بالمنصة لتعزيز معلوماتك الطبية.'
-                : 'Good effort! Review the platform articles and guidelines to strengthen your antibiotic knowledge.'}
+              ? tr(
+                  lang,
+                  'ممتاز! لديك وعي دوائي عالي يساهم في حماية المجتمع من المقاومة البكتيرية.',
+                  'Excellent! You have strong antibiotic awareness helping curb antimicrobial resistance.',
+                  'Excellent ! Vous avez une très bonne maîtrise du bon usage des antibiotiques.',
+                  '¡Excelente! Tienes una sólida conciencia sobre el uso responsable de los antibióticos.'
+                )
+              : tr(
+                  lang,
+                  'جيد جداً! تصفح دليل الأدوية والمقالات بالمنصة لتعزيز معلوماتك الطبية.',
+                  'Good effort! Review the platform articles and guidelines to strengthen your antibiotic knowledge.',
+                  'Bon effort ! Consultez les articles et guides de la plateforme pour renforcer vos connaissances.',
+                  '¡Buen intento! Revisa los artículos y guías de la plataforma para reforzar tus conocimientos.'
+                )}
           </p>
           <div className="row" style={{ justifyContent: 'center', gap: '10px' }}>
             <button type="button" className="btn" onClick={handleRestart}>
-              🔄 {isAr ? 'إعادة الاختبار' : 'Retake Quiz'}
+              🔄 {tr(lang, 'إعادة الاختبار', 'Retake Quiz', 'Recommencer le Quiz', 'Repetir Cuestionario')}
             </button>
           </div>
         </div>
@@ -81,10 +93,16 @@ export default function Quiz() {
         <div className="card stack" style={{ padding: '20px' }}>
           <div className="head" style={{ marginBottom: '8px' }}>
             <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1' }}>
-              {isAr ? `السؤال ${currentIdx + 1} من ${QUESTIONS.length}` : `Question ${currentIdx + 1} of ${QUESTIONS.length}`}
+              {tr(
+                lang,
+                `السؤال ${currentIdx + 1} من ${QUESTIONS.length}`,
+                `Question ${currentIdx + 1} of ${QUESTIONS.length}`,
+                `Question ${currentIdx + 1} sur ${QUESTIONS.length}`,
+                `Pregunta ${currentIdx + 1} de ${QUESTIONS.length}`
+              )}
             </span>
             <span className="small muted">
-              {isAr ? `النتيجة: ${score}` : `Score: ${score}`}
+              {tr(lang, `النتيجة: ${score}`, `Score: ${score}`, `Score : ${score}`, `Puntuación: ${score}`)}
             </span>
           </div>
 
@@ -144,7 +162,7 @@ export default function Quiz() {
               }}
             >
               <b style={{ color: '#0369a1', display: 'block', marginBottom: '4px' }}>
-                💡 {isAr ? 'التوضيح الطبي:' : 'Clinical Explanation:'}
+                💡 {tr(lang, 'التوضيح الطبي:', 'Clinical Explanation:', 'Explication médicale :', 'Explicación clínica:')}
               </b>
               <p style={{ margin: 0, fontSize: '0.92rem', color: '#0c4a6e', lineHeight: 1.6 }}>
                 {pick(q.why, lang)}
@@ -153,11 +171,11 @@ export default function Quiz() {
           )}
 
           {selectedOpt !== null && (
-            <div className="row" style={{ justifyContent: 'flex-end', marginTop: '16px' }}>
+            <div className="row" style={{ justifyContent: 'flex-end', marginTop: '12px' }}>
               <button type="button" className="btn" onClick={handleNext}>
                 {currentIdx + 1 < QUESTIONS.length
-                  ? isAr ? 'السؤال التالي ←' : 'Next Question →'
-                  : isAr ? 'عرض النتيجة النهائية 🏆' : 'View Final Result 🏆'}
+                  ? tr(lang, 'السؤال التالي ←', 'Next Question →', 'Question suivante →', 'Siguiente pregunta →')
+                  : tr(lang, 'عرض النتيجة النهائية 🏆', 'View Final Score 🏆', 'Voir le score final 🏆', 'Ver puntuación final 🏆')}
               </button>
             </div>
           )}

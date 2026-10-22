@@ -304,13 +304,13 @@ export default function CompareDrugs() {
                 </tr>
                 <tr>
                   <td><b>{isAr ? 'الشكل الصيدلاني وطريق الإعطاء' : 'Dosage Form & Route'}</b></td>
-                  <td>{pkgA.dosageFormLabel[lang]} — {pkgA.routeLabel[lang]}</td>
-                  <td>{pkgB.dosageFormLabel[lang]} — {pkgB.routeLabel[lang]}</td>
+                  <td>{pick(pkgA.dosageFormLabel, lang)} — {pick(pkgA.routeLabel, lang)}</td>
+                  <td>{pick(pkgB.dosageFormLabel, lang)} — {pick(pkgB.routeLabel, lang)}</td>
                 </tr>
                 <tr>
                   <td><b>{isAr ? 'حجم وتفاصيل العبوة' : 'Package Details'}</b></td>
-                  <td>{pkgA.packDetails[lang]}</td>
-                  <td>{pkgB.packDetails[lang]}</td>
+                  <td>{pick(pkgA.packDetails, lang)}</td>
+                  <td>{pick(pkgB.packDetails, lang)}</td>
                 </tr>
                 <tr>
                   <td><b>{isAr ? 'الشركة المصنعة وبلد المنشأ' : 'Manufacturer'}</b></td>
@@ -323,13 +323,13 @@ export default function CompareDrugs() {
                     <span className="badge approved" style={{ fontSize: '0.95rem' }}>
                       {pkgA.priceEgp ? `${pkgA.priceEgp.toFixed(2)} ج.م` : '—'}
                     </span>
-                    <div className="small muted">{pkgA.unitPriceNote[lang]}</div>
+                    <div className="small muted">{pick(pkgA.unitPriceNote, lang)}</div>
                   </td>
                   <td>
                     <span className="badge approved" style={{ fontSize: '0.95rem' }}>
                       {pkgB.priceEgp ? `${pkgB.priceEgp.toFixed(2)} ج.م` : '—'}
                     </span>
-                    <div className="small muted">{pkgB.unitPriceNote[lang]}</div>
+                    <div className="small muted">{pick(pkgB.unitPriceNote, lang)}</div>
                   </td>
                 </tr>
                 <tr>

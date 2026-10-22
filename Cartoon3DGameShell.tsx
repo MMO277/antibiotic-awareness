@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import * as THREE from 'three';
 import { useLang } from './i18n';
 import { useAuth } from './authContext';
-import { Bilingual, pick } from './types';
+import { Bilingual, Lang, pick } from './types';
 import { mapScreenDeltaToLandscape, useGamingMode } from './useGamingMode';
 import Disclaimer from './Disclaimer';
 import { ScenarioChoice, ScenarioSource } from './medicalSimulatorScenarios';
@@ -196,7 +196,7 @@ function MicroscopeMiniGameWidget({
   lang,
 }: {
   config: MicroscopeMiniGameConfig;
-  lang: 'ar' | 'en';
+  lang: Lang;
 }) {
   const isAr = lang === 'ar';
   const [mag, setMag] = useState<'10x' | '40x' | '100x'>('10x');
@@ -326,7 +326,7 @@ function AstReportWidget({
   lang,
 }: {
   config: AstReportConfig;
-  lang: 'ar' | 'en';
+  lang: Lang;
 }) {
   const isAr = lang === 'ar';
   return (
@@ -403,7 +403,7 @@ function TriageCardWidget({
   lang,
 }: {
   config: TriageCardConfig;
-  lang: 'ar' | 'en';
+  lang: Lang;
 }) {
   const isAr = lang === 'ar';
   return (
@@ -465,7 +465,7 @@ function NursingChecklistWidget({
   lang,
 }: {
   config: NursingChecklistConfig;
-  lang: 'ar' | 'en';
+  lang: Lang;
 }) {
   const isAr = lang === 'ar';
   return (
@@ -508,7 +508,7 @@ function MysteryClueCardWidget({
   lang,
 }: {
   config: MysteryClueCardConfig;
-  lang: 'ar' | 'en';
+  lang: Lang;
 }) {
   const isAr = lang === 'ar';
   return (

@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -18,7 +19,7 @@ import {
   VoiceRecognitionHandle,
 } from './speechService';
 
-const WIDGET_CHIPS = {
+const WIDGET_CHIPS: Record<string, string[]> = {
   ar: [
     'هل المضاد الحيوي يعالج البرد؟',
     'مخاطر حقنة البرد الشعبية؟',
@@ -32,6 +33,20 @@ const WIDGET_CHIPS = {
     'Best antibiotic for dental pain?',
     'What if I miss a dose?',
     'Does milk interact with antibiotics?',
+  ],
+  fr: [
+    'Les antibiotiques soignent-ils le rhume ?',
+    'Dangers des injections contre le rhume ?',
+    'Antibiotique et douleur dentaire ?',
+    'Que faire en cas d’oubli de dose ?',
+    'Le lait bloque-t-il l’antibiotique ?',
+  ],
+  es: [
+    '¿Los antibióticos curan el resfriado?',
+    '¿Peligros de la inyección para el resfriado?',
+    '¿Antibiótico para el dolor dental?',
+    '¿Qué hacer si olvido una dosis?',
+    '¿La leche afecta al antibiótico?',
   ],
 };
 
@@ -331,7 +346,7 @@ export default function ChatWidget() {
                 return (
                   <div key={i} className="msg bot">
                     <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <strong className="small" style={{ color: '#0b3c5d' }}>{r.lead[lang]}</strong>
+                      <strong className="small" style={{ color: '#0b3c5d' }}>{pick(r.lead, lang)}</strong>
                       <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
                         🔊
                       </button>
@@ -339,7 +354,7 @@ export default function ChatWidget() {
                     {r.hits.map((p) => (
                       <div key={p.id} style={{ marginBottom: '6px' }}>
                         <p style={{ whiteSpace: 'pre-line', lineHeight: 1.7, margin: '4px 0' }}>
-                          {cleanAssistantMarkdown(p.text[lang])}
+                          {cleanAssistantMarkdown(pick(p.text, lang))}
                         </p>
                         <div className="src">
                           <Link to={p.link ?? '/'} onClick={() => setIsOpen(false)}>🔗 {p.label}</Link>
@@ -358,7 +373,7 @@ export default function ChatWidget() {
                 >
                   <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
                     <p style={{ margin: 0, whiteSpace: 'pre-line', lineHeight: 1.7 }}>
-                      {cleanAssistantMarkdown(r.text[lang])}
+                      {cleanAssistantMarkdown(pick(r.text, lang))}
                     </p>
                     <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
                       🔊
@@ -369,7 +384,7 @@ export default function ChatWidget() {
                       {r.links.map((l, k) => (
                         <span key={l.to + k}>
                           {k > 0 && ' · '}
-                          <Link to={l.to} onClick={() => setIsOpen(false)}>💊 {l.label[lang]}</Link>
+                          <Link to={l.to} onClick={() => setIsOpen(false)}>💊 {pick(l.label, lang)}</Link>
                         </span>
                       ))}
                     </div>
@@ -386,7 +401,7 @@ export default function ChatWidget() {
           </div>
 
           <div className="popup-chips">
-            {WIDGET_CHIPS[lang].map((c) => (
+            {(WIDGET_CHIPS[lang] || WIDGET_CHIPS.en).map((c) => (
               <button key={c} type="button" className="chip" onClick={() => ask(c)} disabled={loading}>
                 {c}
               </button>

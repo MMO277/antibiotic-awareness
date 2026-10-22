@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { createPortal } from 'react-dom';
 import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -430,7 +431,7 @@ export default function HealthProfile() {
                     <div>
                       <h3 className="allergy-drug-name">⚠️ {all.drugName}</h3>
                       <span className="small muted">
-                        <b>{isAr ? 'العائلة الدوائية:' : 'Family:'}</b> {cat ? cat.name[lang] : all.allergenKey}
+                        <b>{isAr ? 'العائلة الدوائية:' : 'Family:'}</b> {cat ? pick(cat.name, lang) : all.allergenKey}
                       </span>
                     </div>
                     <div className="allergy-badges">
@@ -555,7 +556,7 @@ export default function HealthProfile() {
                 <select value={allergenKey} onChange={(e) => setAllergenKey(e.target.value)}>
                   {ALLERGEN_CATEGORIES.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name[lang]} ({c.examples[lang]})
+                      {pick(c.name, lang)} ({pick(c.examples, lang)})
                     </option>
                   ))}
                 </select>

@@ -4821,3 +4821,135 @@ html.bh-gaming .ms-wrapper.ms-immersive .ms-action-zone { position: absolute !im
     padding: 2px 8px;
   }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+   MULTI-LANGUAGE SWITCHER (AR | EN | FR | ES) — HEADER DROPDOWN & DRAWER BAR
+   ══════════════════════════════════════════════════════════════════════════ */
+.lang.lang-switcher-wrap {
+  position: relative;
+  padding: 0 !important;
+  overflow: visible;
+}
+
+.lang-trigger-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 5px 11px;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lang-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  min-width: 175px;
+  background: #0f2942;
+  border: 1px solid rgba(94, 234, 212, 0.45);
+  border-radius: 12px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.38);
+  padding: 6px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.lang-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #e2e8f0;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: start;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.lang-dropdown-item:hover,
+.lang-dropdown-item:focus-visible {
+  background: rgba(23, 184, 196, 0.22);
+  color: #ffffff;
+}
+
+.lang-dropdown-item.active {
+  background: rgba(23, 184, 196, 0.32);
+  color: #5eead4;
+}
+
+.lang-item-flag {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.lang-item-name {
+  flex: 1;
+}
+
+.lang-item-code {
+  font-size: 0.72rem;
+  opacity: 0.75;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.lang-item-check {
+  color: #5eead4;
+  font-weight: 800;
+}
+
+.drawer-lang-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.drawer-lang-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.drawer-lang-pill:hover {
+  background: rgba(23, 184, 196, 0.2);
+  color: #ffffff;
+}
+
+.drawer-lang-pill.active {
+  background: rgba(23, 184, 196, 0.32);
+  border-color: #2dd4bf;
+  color: #ffffff;
+}

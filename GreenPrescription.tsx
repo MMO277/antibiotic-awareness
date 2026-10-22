@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -270,10 +271,10 @@ export default function GreenPrescription() {
                     >
                       <div style={{ fontSize: '2rem' }}>{p.icon}</div>
                       <h3 style={{ margin: 0, color: '#14532d', fontSize: '1.1rem' }}>
-                        {p.title[lang]}
+                        {pick(p.title, lang)}
                       </h3>
                       <p className="small muted" style={{ margin: 0 }}>
-                        {p.subtitle[lang]}
+                        {pick(p.subtitle, lang)}
                       </p>
                       <span style={{ color: '#15803d', fontWeight: 700, fontSize: '0.88rem', marginTop: '4px' }}>
                         {isAr ? 'اختيار ومتابعة فحص الأمان ←' : 'Select & Continue →'}
@@ -291,7 +292,7 @@ export default function GreenPrescription() {
               <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <span className="badge approved" style={{ marginBottom: '4px' }}>
-                    {currentPlan.icon} {currentPlan.title[lang]}
+                    {currentPlan.icon} {pick(currentPlan.title, lang)}
                   </span>
                   <h2 id="step2-heading" style={{ margin: 0, color: '#166534' }}>
                     2️⃣ {isAr ? 'أسئلة فرز السلامة وعلامات الخطر (إلزامية قبل عرض الخطة)' : 'Step 2: Mandatory Safety & Red-Flag Screening'}
@@ -325,7 +326,7 @@ export default function GreenPrescription() {
                         checked={selectedRedFlags.includes(rf.id)}
                         onChange={() => toggleRedFlag(rf.id)}
                       />
-                      <span>{rf.text[lang]}</span>
+                      <span>{pick(rf.text, lang)}</span>
                     </label>
                   ))}
 
@@ -375,7 +376,7 @@ export default function GreenPrescription() {
                         checked={selectedHighRisks.includes(hr.id)}
                         onChange={() => toggleHighRisk(hr.id)}
                       />
-                      <span>{hr.text[lang]}</span>
+                      <span>{pick(hr.text, lang)}</span>
                     </label>
                   ))}
 
@@ -661,7 +662,7 @@ export default function GreenPrescription() {
                         </h2>
                         <div className="small muted">
                           {isAr ? 'الشكوى المختارة:' : 'Selected Pathway:'}{' '}
-                          <b>{currentPlan.title[lang]}</b>
+                          <b>{pick(currentPlan.title, lang)}</b>
                         </div>
                       </div>
                     </div>
@@ -696,7 +697,7 @@ export default function GreenPrescription() {
                       </h3>
                       <ul style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.8 }}>
                         {currentPlan.whatToDoNow.map((item, idx) => (
-                          <li key={idx} style={{ marginBottom: '6px' }}>{item[lang]}</li>
+                          <li key={idx} style={{ marginBottom: '6px' }}>{pick(item, lang)}</li>
                         ))}
                       </ul>
                     </div>
@@ -708,7 +709,7 @@ export default function GreenPrescription() {
                       </h3>
                       <ul style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.8 }}>
                         {currentPlan.whatToAvoid.map((item, idx) => (
-                          <li key={idx} style={{ marginBottom: '6px' }}>{item[lang]}</li>
+                          <li key={idx} style={{ marginBottom: '6px' }}>{pick(item, lang)}</li>
                         ))}
                       </ul>
                     </div>
@@ -721,7 +722,7 @@ export default function GreenPrescription() {
                     </h3>
                     <ul style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.8, color: '#78350f' }}>
                       {currentPlan.whenToSeekHelp.map((item, idx) => (
-                        <li key={idx} style={{ marginBottom: '4px' }}>{item[lang]}</li>
+                        <li key={idx} style={{ marginBottom: '4px' }}>{pick(item, lang)}</li>
                       ))}
                     </ul>
                   </div>
@@ -731,7 +732,7 @@ export default function GreenPrescription() {
                     <h4 style={{ margin: '0 0 4px' }}>
                       🔄 {isAr ? 'إذا ساءت الأعراض أو لم تتحسن:' : 'If Symptoms Worsen or Do Not Improve:'}
                     </h4>
-                    <p style={{ margin: 0 }}>{currentPlan.ifSymptomsWorsen[lang]}</p>
+                    <p style={{ margin: 0 }}>{pick(currentPlan.ifSymptomsWorsen, lang)}</p>
                   </div>
 
                   {/* Mandatory Disclaimer & Review Metadata */}
@@ -751,9 +752,9 @@ export default function GreenPrescription() {
                     </div>
                     <div style={{ marginTop: '4px' }}>
                       <b>{isAr ? 'المصدر وحالة المراجعة:' : 'Source & Review Status:'} </b>
-                      {currentPlan.reviewMeta.sourceTitle[lang]} ·{' '}
+                      {pick(currentPlan.reviewMeta.sourceTitle, lang)} ·{' '}
                       {isAr ? 'تاريخ المراجعة:' : 'Last Reviewed:'} {currentPlan.reviewMeta.lastReviewed} ·{' '}
-                      {currentPlan.reviewMeta.approvalStatus[lang]}
+                      {pick(currentPlan.reviewMeta.approvalStatus, lang)}
                     </div>
                   </div>
                 </article>

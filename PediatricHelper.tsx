@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { useState } from 'react';
 import { useLang } from './i18n';
 import {
@@ -69,7 +70,7 @@ export default function PediatricHelper() {
           >
             {PEDIATRIC_SUSPENSIONS.map((med) => (
               <option key={med.id} value={med.id}>
-                {med.tradeName[lang]}
+                {pick(med.tradeName, lang)}
               </option>
             ))}
           </select>
@@ -266,7 +267,7 @@ export default function PediatricHelper() {
             </div>
           ) : (
             <p className="storage-instruction-text">
-              💡 <b>{lang === 'ar' ? 'إرشاد التخزين:' : 'Storage Instruction:'}</b> {selectedMed.storageNote[lang]}
+              💡 <b>{lang === 'ar' ? 'إرشاد التخزين:' : 'Storage Instruction:'}</b> {pick(selectedMed.storageNote, lang)}
             </p>
           )}
         </div>
@@ -282,10 +283,10 @@ export default function PediatricHelper() {
                 <span className="step-icon">{step.icon}</span>
                 <span className="step-num-pill">{lang === 'ar' ? `الخطوة ${step.stepNumber}` : `Step ${step.stepNumber}`}</span>
               </div>
-              <h3>{step.title[lang]}</h3>
-              <p className="step-inst">{step.instruction[lang]}</p>
+              <h3>{pick(step.title, lang)}</h3>
+              <p className="step-inst">{pick(step.instruction, lang)}</p>
               <div className="step-warning">
-                <small>⚠️ <b>{step.nursingWarning[lang]}</b></small>
+                <small>⚠️ <b>{pick(step.nursingWarning, lang)}</b></small>
               </div>
             </div>
           ))}

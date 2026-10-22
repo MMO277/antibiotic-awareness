@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { useEffect, useState } from 'react';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
@@ -223,7 +224,7 @@ export default function ResearchTab() {
               <h4 className="font-bold mb-2">{t('resPerQ')}</h4>
               <div className="space-y-3">
                 {qStats.map((qs, i) => {
-                  const text = pick(QUESTIONS[i], lang, 'q');
+                  const text = pick(QUESTIONS[i]?.q, lang);
                   return (
                     <div key={i} className="border-b pb-2">
                       <p className="text-xs font-medium mb-1">Q{i + 1}. {text}</p>

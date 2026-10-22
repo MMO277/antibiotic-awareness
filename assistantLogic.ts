@@ -11,7 +11,7 @@ export interface Passage {
   id: string;
   label: string;
   title: Bi;
-  text: Record<Lang, string>;
+  text: Bi;
   link?: string;
   refs: Ref[];
   unreviewed?: boolean;
@@ -399,14 +399,14 @@ export interface ChatUiMessage {
   isAi?: boolean;
 }
 
-export function extractAnswerPlainText(m: ChatUiMessage, lang: 'ar' | 'en'): string {
+export function extractAnswerPlainText(m: ChatUiMessage, lang: Lang): string {
   if (m.text) return m.text;
   const r = m.reply;
   if (!r) return '';
   if (r.kind === 'answer') {
-    return `${r.lead[lang]} ${r.hits.map((h) => h.text[lang]).join(' ')}`;
+    return `${pick(r.lead, lang)} ${r.hits.map((h) => pick(h.text, lang)).join(' ')}`;
   }
-  return r.text[lang] || '';
+  return pick(r.text, lang);
 }
 
 

@@ -221,9 +221,9 @@ export default function AllergyChecker() {
                   🧬 {isAr ? 'تحليل الهوية الدوائية والمواد الفعالة:' : 'Resolved Medication Identity & Components:'}{' '}
                 </strong>
                 <span>
-                  {primaryResolved.displayName[lang]} —{' '}
+                  {pick(primaryResolved.displayName, lang)} —{' '}
                   <b>{isAr ? 'المكونات الكيميائية الفعالة:' : 'Active Components:'}</b>{' '}
-                  {primaryResolved.componentsDisplay.map((c) => c[lang]).join(' + ')}
+                  {primaryResolved.componentsDisplay.map((c) => pick(c, lang)).join(' + ')}
                   {primaryResolved.isCombination
                     ? isAr
                       ? ' (مستحضر مركب من أكثر من مادة فعالة)'
@@ -237,7 +237,7 @@ export default function AllergyChecker() {
                   ⚠️ {isAr ? 'حالة التحقق من الهوية الدوائية:' : 'Medication Identity Status:'}{' '}
                 </strong>
                 <span>
-                  {primaryResolved.uncertaintyReasons[0]?.[lang] ||
+                  {pick(primaryResolved.uncertaintyReasons[0], lang) ||
                     (isAr
                       ? 'تعذر التحقق من المادة الفعالة لهذا الاسم في قاعدة البيانات؛ لا يفترض النظام الأمان تلقائياً.'
                       : 'Could not resolve active ingredient in the verified database; safety is never assumed.')}
@@ -280,25 +280,25 @@ export default function AllergyChecker() {
             </span>
           )}
 
-          <h3>{result.title[lang]}</h3>
+          <h3>{pick(result.title, lang)}</h3>
         </div>
 
         <div className="result-body stack">
           <div className="result-section">
             <h4>🔬 {isAr ? 'التحليل السريري للمطابقة:' : 'Clinical Matching Analysis:'}</h4>
-            <p>{result.explanation[lang]}</p>
+            <p>{pick(result.explanation, lang)}</p>
           </div>
 
           <div className="result-section action-highlight">
             <h4>⚡ {isAr ? 'التصرف الطبي الموصى به:' : 'Recommended Clinical Action:'}</h4>
             <p>
-              <b>{result.clinicalAction[lang]}</b>
+              <b>{pick(result.clinicalAction, lang)}</b>
             </p>
           </div>
 
           <div className="nursing-box">
             <h4>🩺 {isAr ? 'توجيه وتمريض سريري (Nursing Safety Protocol):' : 'Nursing Safety Protocol:'}</h4>
-            <p>{result.nursingWarning[lang]}</p>
+            <p>{pick(result.nursingWarning, lang)}</p>
           </div>
 
           {/* Consolidated Engine Alerts (if this drug also duplicates an active profile medication or triggers a profile contraindication) */}
@@ -327,15 +327,15 @@ export default function AllergyChecker() {
                       border: '1px solid var(--line)',
                     }}
                   >
-                    <strong>{f.title[lang]}</strong>
+                    <strong>{pick(f.title, lang)}</strong>
                     <p className="small" style={{ margin: '4px 0' }}>
-                      {f.reason[lang]}
+                      {pick(f.reason, lang)}
                     </p>
                     <p className="small" style={{ margin: 0 }}>
-                      <b>{isAr ? 'الخطوة التالية:' : 'Next Step:'}</b> {f.nextStep[lang]}
+                      <b>{isAr ? 'الخطوة التالية:' : 'Next Step:'}</b> {pick(f.nextStep, lang)}
                     </p>
                     <small className="muted">
-                      {isAr ? 'المصدر:' : 'Source:'} {f.source.title[lang]}
+                      {isAr ? 'المصدر:' : 'Source:'} {pick(f.source.title, lang)}
                       {f.source.updatedDate ? ` (${f.source.updatedDate})` : ''}
                     </small>
                   </div>
@@ -398,7 +398,7 @@ export default function AllergyChecker() {
       {/* Clinical Disclaimer */}
       <section className="notice alert">
         <strong>⚠️ {isAr ? 'إخلاء مسؤولية سريري:' : 'Clinical Disclaimer:'} </strong>
-        {safetyAssessment.safetyDisclaimer[lang]}
+        {pick(safetyAssessment.safetyDisclaimer, lang)}
       </section>
     </main>
   );

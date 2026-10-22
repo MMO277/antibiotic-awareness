@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -18,7 +19,7 @@ import {
   VoiceRecognitionHandle,
 } from './speechService';
 
-const CHIPS = {
+const CHIPS: Record<string, string[]> = {
   ar: [
     'هل المضاد الحيوي يعالج البرد والزكام؟',
     'ما هي مخاطر حقنة البرد (مجموعة البرد)؟',
@@ -40,6 +41,28 @@ const CHIPS = {
     'Do antibiotics cause diarrhea, and how does yogurt help?',
     'Do antibiotics reduce birth control pill efficacy?',
     'Do antibiotics cure toothaches and dental pain?',
+  ],
+  fr: [
+    'Les antibiotiques soignent-ils le rhume ou la grippe ?',
+    'Quels sont les dangers des injections miracles contre le rhume ?',
+    'Puis-je arrêter l’antibiotique dès que je me sens mieux ?',
+    'Que faire si j’oublie une dose d’antibiotique ?',
+    'Le lait interagit-il avec certains antibiotiques ?',
+    'Comment conserver un sirop antibiotique pédiatrique ?',
+    'Les antibiotiques causent-ils la diarrhée ?',
+    'Les antibiotiques diminuent-ils l’effet de la pilule contraceptive ?',
+    'Les antibiotiques guérissent-ils les maux de dents ?',
+  ],
+  es: [
+    '¿Los antibióticos curan el resfriado o la gripe?',
+    '¿Cuáles son los peligros de las inyecciones mezcladas para el resfriado?',
+    '¿Puedo suspender el antibiótico cuando me sienta mejor?',
+    '¿Qué debo hacer si olvido una dosis?',
+    '¿La leche interactúa con los antibióticos?',
+    '¿Cómo almacenar las suspensiones pediátricas de antibióticos?',
+    '¿Los antibióticos causan diarrea y cómo ayuda el yogur?',
+    '¿Los antibióticos reducen la eficacia de los anticonceptivos?',
+    '¿Los antibióticos curan el dolor de muelas?',
   ],
 };
 
@@ -390,7 +413,7 @@ export default function Assistant() {
               return (
                 <div key={i} className="msg bot">
                   <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <strong style={{ color: '#0b3c5d', fontSize: '0.95rem' }}>{r.lead[lang]}</strong>
+                    <strong style={{ color: '#0b3c5d', fontSize: '0.95rem' }}>{pick(r.lead, lang)}</strong>
                     <button
                       type="button"
                       className="chip"
@@ -410,7 +433,7 @@ export default function Assistant() {
                         marginBottom: '8px',
                       }}
                     >
-                      <FormattedClinicalText text={p.text[lang]} />
+                      <FormattedClinicalText text={pick(p.text, lang)} />
                       <div className="src" style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid #eef6f8' }}>
                         <Link to={p.link ?? '/'} style={{ fontWeight: 700 }}>🔗 {p.label}</Link>
                         {p.unreviewed && <> · {t('unreviewed')}</>}
@@ -449,7 +472,7 @@ export default function Assistant() {
                     🔊 {isAr ? 'اسمع الإجابة' : 'Listen'}
                   </button>
                 </div>
-                <FormattedClinicalText text={r.text[lang]} />
+                <FormattedClinicalText text={pick(r.text, lang)} />
                 {r.links && r.links.length > 0 && (
                   <div
                     className="row wrapRow"
@@ -474,7 +497,7 @@ export default function Assistant() {
                           fontSize: '0.84rem',
                         }}
                       >
-                        💊 {l.label[lang]}
+                        💊 {pick(l.label, lang)}
                       </Link>
                     ))}
                   </div>
@@ -491,7 +514,7 @@ export default function Assistant() {
           <div ref={end} />
         </div>
         <div className="chips">
-          {CHIPS[lang].map((c) => (
+          {(CHIPS[lang] || CHIPS.en).map((c) => (
             <button key={c} type="button" className="chip" onClick={() => ask(c)} disabled={loading}>
               {c}
             </button>

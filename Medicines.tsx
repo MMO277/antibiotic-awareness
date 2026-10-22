@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useApproved } from './medicinesApi';
 import { norm, searchMeds } from './search';
-import { pick } from './types';
+import { pick, tr } from './types';
 import SkeletonCard from './SkeletonCard';
 import {
   ACTIVE_INGREDIENTS,
@@ -256,11 +256,13 @@ export default function Medicines() {
               setSp(e.target.value ? { q: e.target.value } : {}, { replace: true });
               setPage(1);
             }}
-            placeholder={
-              isAr
-                ? 'ابحث بالاسم التجاري (عربي/إنجليزي)، المادة الفعالة، الباركود الخطي (622...)، الشركة، أو التركيز...'
-                : 'Search by trade name, active ingredient, barcode (622...), manufacturer, or strength...'
-            }
+            placeholder={tr(
+              lang,
+              'ابحث بالاسم التجاري (عربي/إنجليزي)، المادة الفعالة، الباركود الخطي (622...)، الشركة، أو التركيز...',
+              'Search by trade name, active ingredient, barcode (622...), manufacturer, or strength...',
+              'Rechercher par principe actif (DCI), nom commercial, code-barres (622…), fabricant ou dosage…',
+              'Buscar por principio activo (DCI), marca comercial, código de barras (622…), fabricante o dosis…'
+            )}
             aria-label={t('search')}
           />
         </div>
@@ -310,7 +312,7 @@ export default function Medicines() {
                 <option value="all">{isAr ? 'جميع الأشكال الدوائية' : 'All Dosage Forms'}</option>
                 {(Object.keys(DOSAGE_FORM_LABELS) as DosageFormType[]).map((k) => (
                   <option key={k} value={k}>
-                    {DOSAGE_FORM_LABELS[k][lang]}
+                    {pick(DOSAGE_FORM_LABELS[k], lang)}
                   </option>
                 ))}
               </select>
@@ -331,7 +333,7 @@ export default function Medicines() {
                 <option value="all">{isAr ? 'كل طرق الإعطاء' : 'All Routes'}</option>
                 {(Object.keys(ROUTE_LABELS) as AdministrationRoute[]).map((r) => (
                   <option key={r} value={r}>
-                    {ROUTE_LABELS[r][lang]}
+                    {pick(ROUTE_LABELS[r], lang)}
                   </option>
                 ))}
               </select>
@@ -471,11 +473,11 @@ export default function Medicines() {
                       </div>
                       <div>
                         <b>{isAr ? 'التركيز والشكل:' : 'Strength & Form:'} </b>
-                        <span dir="ltr">{p.strength}</span> — {p.dosageFormLabel[lang]}
+                        <span dir="ltr">{p.strength}</span> — {pick(p.dosageFormLabel, lang)}
                       </div>
                       <div>
                         <b>{isAr ? 'العبوة:' : 'Package:'} </b>
-                        {p.packDetails[lang]}
+                        {pick(p.packDetails, lang)}
                       </div>
                       <div>
                         <b>{isAr ? 'الشركة المصنعة:' : 'Manufacturer:'} </b>
@@ -752,9 +754,9 @@ export default function Medicines() {
             >
               <div className="small" style={{ lineHeight: 1.8 }}>
                 <div><b>{isAr ? 'التركيز:' : 'Strength:'}</b> <span dir="ltr">{selectedProduct.strength}</span></div>
-                <div><b>{isAr ? 'الشكل الصيدلاني:' : 'Dosage Form:'}</b> {selectedProduct.dosageFormLabel[lang]}</div>
-                <div><b>{isAr ? 'طريق الإعطاء:' : 'Route:'}</b> {selectedProduct.routeLabel[lang]}</div>
-                <div><b>{isAr ? 'تفاصيل العبوة:' : 'Package:'}</b> {selectedProduct.packDetails[lang]}</div>
+                <div><b>{isAr ? 'الشكل الصيدلاني:' : 'Dosage Form:'}</b> {pick(selectedProduct.dosageFormLabel, lang)}</div>
+                <div><b>{isAr ? 'طريق الإعطاء:' : 'Route:'}</b> {pick(selectedProduct.routeLabel, lang)}</div>
+                <div><b>{isAr ? 'تفاصيل العبوة:' : 'Package:'}</b> {pick(selectedProduct.packDetails, lang)}</div>
                 <div><b>{isAr ? 'الشركة المصنعة:' : 'Manufacturer:'}</b> {selectedProduct.manufacturer} ({selectedProduct.countryOfOrigin})</div>
               </div>
 
@@ -764,7 +766,7 @@ export default function Medicines() {
                   <span style={{ color: '#15803d', fontWeight: 700, fontSize: '1.05rem' }}>
                     {selectedProduct.priceEgp ? `${selectedProduct.priceEgp.toFixed(2)} ج.م` : 'غير متاح'}
                   </span>{' '}
-                  ({selectedProduct.unitPriceNote[lang]})
+                  ({pick(selectedProduct.unitPriceNote, lang)})
                 </div>
                 <div><b>{isAr ? 'تاريخ ومصدر السعر:' : 'Price Source:'}</b> {selectedProduct.priceUpdatedDate} — {selectedProduct.priceSource}</div>
                 <div style={{ marginTop: '8px' }}>
@@ -858,7 +860,7 @@ export default function Medicines() {
                                 </b>
                               </td>
                               <td>{alt.manufacturer}</td>
-                              <td>{alt.packDetails[lang]}</td>
+                              <td>{pick(alt.packDetails, lang)}</td>
                               <td>
                                 <b>{alt.priceEgp ? `${alt.priceEgp.toFixed(2)} ج.م` : '—'}</b>
                                 {diff > 0 && (
@@ -895,7 +897,7 @@ export default function Medicines() {
                         style={{ textAlign: isAr ? 'right' : 'left' }}
                         onClick={() => setSelectedProduct(alt)}
                       >
-                        {isAr ? alt.tradeNameAr : alt.tradeNameEn} ({alt.strength} - {alt.dosageFormLabel[lang]}) —{' '}
+                        {isAr ? alt.tradeNameAr : alt.tradeNameEn} ({alt.strength} - {pick(alt.dosageFormLabel, lang)}) —{' '}
                         {alt.priceEgp ? `${alt.priceEgp} ج.م` : ''}
                       </button>
                     ))}

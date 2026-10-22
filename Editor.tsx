@@ -3,7 +3,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from './auth';
 import { useLang } from './i18n';
 import { fetchOne, saveMedicine, validateForApproval } from './medicinesApi';
-import { Brand, emptyMedicine, FIELD_LABELS, Medicine, Status, TEXT_FIELDS, TextField } from './types';
+import { Brand, emptyMedicine, FIELD_LABELS, Lang, Medicine, pick, Status, TEXT_FIELDS, TextField } from './types';
 import { SOURCE_HINTS } from './seedData';
 
 export default function Editor() {
@@ -37,7 +37,7 @@ export default function Editor() {
 
   const statuses: Status[] = reviewer ? ['draft', 'pending_review', 'approved', 'archived'] : ['draft', 'pending_review'];
   const upd = (patch: Partial<Medicine>) => setM({ ...m, ...patch });
-  const setText = (f: TextField, l: 'ar' | 'en', v: string) => upd({ [f]: { ...m[f], [l]: v } } as Partial<Medicine>);
+  const setText = (f: TextField, l: Lang, v: string) => upd({ [f]: { ...m[f], [l]: v } } as Partial<Medicine>);
   const setBrand = (i: number, patch: Partial<Brand>) =>
     upd({ brands: m.brands.map((b, k) => (k === i ? { ...b, ...patch } : b)) });
 
@@ -76,7 +76,7 @@ export default function Editor() {
 
       {TEXT_FIELDS.map((f) => (
         <div key={f} className="card form">
-          <h3>{FIELD_LABELS[f][lang]}</h3>
+          <h3>{pick(FIELD_LABELS[f], lang)}</h3>
           <label>{t('arabic')}</label>
           <textarea dir="rtl" rows={f === 'genericName' || f === 'drugClass' ? 1 : 4} value={m[f].ar} onChange={(e) => setText(f, 'ar', e.target.value)} />
           <label>{t('english')}</label>

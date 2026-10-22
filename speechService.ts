@@ -1,3 +1,5 @@
+import { Lang } from './types';
+
 export interface SpeechState {
   supported: boolean;
   hasVoice: boolean;
@@ -11,6 +13,13 @@ export interface VoiceRecognitionHandle {
   stop: () => void;
 }
 
+const BCP47_MAP: Record<Lang, string> = {
+  ar: 'ar-EG',
+  en: 'en-US',
+  fr: 'fr-FR',
+  es: 'es-ES',
+};
+
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 }
@@ -21,20 +30,28 @@ export function isVoiceRecognitionSupported(): boolean {
 }
 
 export function startVoiceRecognition(
-  lang: 'ar' | 'en',
+  lang: Lang,
   onResult: (transcript: string) => void,
   onError?: (err: string) => void,
   onEnd?: () => void
 ): VoiceRecognitionHandle | null {
   if (!isVoiceRecognitionSupported()) {
-    onError?.(lang === 'ar' ? 'المتصفح لا يدعم الإدخال الصوتي المباشر.' : 'Voice recognition not supported in this browser.');
+    const errMsg =
+      lang === 'ar'
+        ? 'المتصفح لا يدعم الإدخال الصوتي المباشر.'
+        : lang === 'fr'
+        ? 'La reconnaissance vocale n’est pas prise en charge par ce navigateur.'
+        : lang === 'es'
+        ? 'El reconocimiento de voz no es compatible con este navegador.'
+        : 'Voice recognition not supported in this browser.';
+    onError?.(errMsg);
     return null;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
   const recognition = new SpeechRec();
-  recognition.lang = lang === 'ar' ? 'ar-EG' : 'en-US';
+  recognition.lang = BCP47_MAP[lang] || 'en-US';
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
@@ -92,24 +109,29 @@ export function getVoices(): Promise<SpeechSynthesisVoice[]> {
   });
 }
 
-export function findVoiceForLang(voices: SpeechSynthesisVoice[], lang: 'ar' | 'en'): SpeechSynthesisVoice | null {
+export function findVoiceForLang(voices: SpeechSynthesisVoice[], lang: Lang): SpeechSynthesisVoice | null {
   if (lang === 'ar') {
     const eg = voices.find((v) => v.lang === 'ar-EG' || v.lang === 'ar_EG');
     if (eg) return eg;
     const sa = voices.find((v) => v.lang === 'ar-SA' || v.lang === 'ar_SA');
     if (sa) return sa;
-    const anyAr = voices.find((v) => v.lang.toLowerCase().startsWith('ar'));
-    if (anyAr) return anyAr;
-    return null;
-  } else {
-    const us = voices.find((v) => v.lang === 'en-US' || v.lang === 'en_US');
-    if (us) return us;
-    const gb = voices.find((v) => v.lang === 'en-GB' || v.lang === 'en_GB');
-    if (gb) return gb;
-    const anyEn = voices.find((v) => v.lang.toLowerCase().startsWith('en'));
-    if (anyEn) return anyEn;
-    return null;
+    return voices.find((v) => v.lang.toLowerCase().startsWith('ar')) || null;
   }
+  if (lang === 'fr') {
+    const fr = voices.find((v) => v.lang === 'fr-FR' || v.lang === 'fr_FR');
+    if (fr) return fr;
+    return voices.find((v) => v.lang.toLowerCase().startsWith('fr')) || null;
+  }
+  if (lang === 'es') {
+    const es = voices.find((v) => v.lang === 'es-ES' || v.lang === 'es_ES' || v.lang === 'es-MX');
+    if (es) return es;
+    return voices.find((v) => v.lang.toLowerCase().startsWith('es')) || null;
+  }
+  const us = voices.find((v) => v.lang === 'en-US' || v.lang === 'en_US');
+  if (us) return us;
+  const gb = voices.find((v) => v.lang === 'en-GB' || v.lang === 'en_GB');
+  if (gb) return gb;
+  return voices.find((v) => v.lang.toLowerCase().startsWith('en')) || null;
 }
 
 export class SpeechPlayer {
@@ -150,7 +172,7 @@ export class SpeechPlayer {
 
   public async speakText(
     text: string,
-    lang: 'ar' | 'en',
+    lang: Lang,
     rate = 1.0,
     onEnd?: () => void
   ): Promise<boolean> {
@@ -164,7 +186,7 @@ export class SpeechPlayer {
     const voice = findVoiceForLang(this.voices, lang);
     const u = new SpeechSynthesisUtterance(text);
     this.utterance = u;
-    u.lang = lang === 'ar' ? 'ar-EG' : 'en-US';
+    u.lang = BCP47_MAP[lang] || 'en-US';
     u.rate = rate;
     if (voice) {
       u.voice = voice;
@@ -196,7 +218,7 @@ const sharedPlayer = new SpeechPlayer();
 
 export function speakText(
   text: string,
-  lang: 'ar' | 'en',
+  lang: Lang,
   rate = 1.0,
   onEnd?: () => void
 ): Promise<boolean> {

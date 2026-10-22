@@ -77,7 +77,7 @@ export default function Interactions() {
               className={`chip ${selectedMed === c.antibioticId && selectedTarget === c.targetId ? 'active-chip' : ''}`}
               onClick={() => applyQuickCheck(c.antibioticId, c.targetId)}
             >
-              {c.label[lang]}
+              {pick(c.label, lang)}
             </button>
           ))}
         </div>
@@ -118,21 +118,21 @@ export default function Interactions() {
               <optgroup label={isAr ? 'الأطعمة والمشروبات' : 'Foods & Beverages'}>
                 {TARGETS.filter((t) => t.category === 'food').map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.icon} {t.name[lang]}
+                    {t.icon} {pick(t.name, lang)}
                   </option>
                 ))}
               </optgroup>
               <optgroup label={isAr ? 'المعادن والمكملات' : 'Minerals & Supplements'}>
                 {TARGETS.filter((t) => t.category === 'supplement').map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.icon} {t.name[lang]}
+                    {t.icon} {pick(t.name, lang)}
                   </option>
                 ))}
               </optgroup>
               <optgroup label={isAr ? 'الأدوية الشائعة' : 'Common Medications'}>
                 {TARGETS.filter((t) => t.category === 'drug').map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.icon} {t.name[lang]}
+                    {t.icon} {pick(t.name, lang)}
                   </option>
                 ))}
               </optgroup>
@@ -146,25 +146,25 @@ export default function Interactions() {
         <section className={`card result-card ${matchedRule.severity}`}>
           <div className="result-header">
             {severityBadge(matchedRule.severity)}
-            <h3>{matchedRule.title[lang]}</h3>
+            <h3>{pick(matchedRule.title, lang)}</h3>
           </div>
 
           <div className="result-body stack">
             <div className="result-section">
               <h4>🔬 {isAr ? 'الآلية والتأثير العلمي:' : 'Mechanism of Interaction:'}</h4>
-              <p>{matchedRule.mechanism[lang]}</p>
+              <p>{pick(matchedRule.mechanism, lang)}</p>
             </div>
 
             <div className="result-section">
               <h4>⏱️ {isAr ? 'التصرف الطبي الموصى به وكيفية الفصل:' : 'Clinical Management & Spacing:'}</h4>
               <p>
-                <b>{matchedRule.management[lang]}</b>
+                <b>{pick(matchedRule.management, lang)}</b>
               </p>
             </div>
 
             <div className="nursing-box">
               <h4>🩺 {isAr ? 'توجيه وتمريض سريري (Nursing Stewardship Note):' : 'Nursing Clinical Stewardship Note:'}</h4>
-              <p>{matchedRule.nursingTip[lang]}</p>
+              <p>{pick(matchedRule.nursingTip, lang)}</p>
             </div>
 
             {matchedRule.source && (
@@ -197,8 +197,8 @@ export default function Interactions() {
             </span>
             <h3>
               {isAr
-                ? `لم يُرصد تعارض مباشر موثق في السجل الحالي بين ${currentMedObj ? pick(currentMedObj.genericName, lang) : ''} و ${currentTargetObj ? currentTargetObj.name[lang] : ''}`
-                : `No direct interaction rule recorded in the current dataset between ${currentMedObj ? pick(currentMedObj.genericName, lang) : ''} and ${currentTargetObj ? currentTargetObj.name[lang] : ''}`}
+                ? `لم يُرصد تعارض مباشر موثق في السجل الحالي بين ${currentMedObj ? pick(currentMedObj.genericName, lang) : ''} و ${currentTargetObj ? pick(currentTargetObj.name, lang) : ''}`
+                : `No direct interaction rule recorded in the current dataset between ${currentMedObj ? pick(currentMedObj.genericName, lang) : ''} and ${currentTargetObj ? pick(currentTargetObj.name, lang) : ''}`}
             </h3>
           </div>
           <div className="result-body stack">

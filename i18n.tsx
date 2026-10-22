@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Lang } from './types';
+import { Lang, isValidLang, SUPPORTED_LANGS } from './types';
 
 const D: Record<Lang, Record<string, string>> = {
   ar: {
@@ -230,6 +230,234 @@ const D: Record<Lang, Record<string, string>> = {
     resColName: 'Name', resColAge: 'Age', resColScore: 'Score', resColLevel: 'Level',
     resMethodNote: 'Knows: 75% or more correct. Partial: 50% to 74%. Does not know: below 50%. These cut-offs are for display only, not a validated instrument.',
   },
+  fr: {
+    appName: 'Sensibilisation aux Antibiotiques',
+    navLearn: 'Apprendre', navMyth: 'Mythe ou Réalité', navMethod: 'Méthodologie', navGame: 'Chasseur de Bactéries 🎮',
+    navGames: 'Centre de Jeux Éducatifs 🎮',
+    navSimulator: 'Simulateur Médical 3D 🏥',
+    gamesTitle: 'Centre de Jeux et Simulation Médicale 🎮',
+    gamesSubtitle: 'Jeux éducatifs interactifs 3D et 2D conçus pour renforcer le bon usage des antibiotiques et la sécurité des patients.',
+    playNow: 'Jouer maintenant',
+    launchSimulator: 'Lancer le Simulateur 3D',
+    exitGame: 'Quitter le jeu',
+    simCampaignTitle: 'Campagne Progressive en 10 Niveaux',
+    simOriginalTitle: '5 Scénarios Cliniques Fondamentaux',
+    simLockedLabel: 'Verrouillé — Terminez d’abord le niveau précédent',
+    simUnlockedLabel: 'Déverrouillé',
+    simCompletedLabel: 'Terminé ✓',
+    simInspectClue: 'Inspecter l’indice 3D',
+    unreviewed: 'Non révisé cliniquement',
+    previewToggle: 'Afficher aux visiteurs les fiches issues de sources officielles non encore révisées (avec avertissement)',
+    previewToggleHelp: 'Seules les fiches ayant au moins une source sont affichées. Désactivez pour n’afficher que les fiches approuvées.',
+    diagTitle: 'Cause du problème :',
+    diagMissing: 'Aucun document dans la collection roles avec cet UID. Créez-le avec exactement cet UID.',
+    diagInvalid: 'Le champ role existe mais sa valeur est incorrecte (admin, reviewer ou editor en minuscules).',
+    diagRules: 'Les règles Firestore bloquent la lecture. Ouvrez l’onglet Rules, collez firestore.rules et publiez.',
+    diagOther: 'Impossible de joindre la base de données. Vérifiez Firestore et votre connexion.',
+    searchBy: 'Rechercher par', byName: 'Nom', byIngredient: 'Principe actif', byMaker: 'Laboratoire fabricant',
+    classFilter: 'Toutes les classes thérapeutiques',
+    makerHint: 'La recherche par fabricant fonctionne sur les marques vérifiées ayant un fabricant renseigné.',
+    quickSummary: 'Résumé rapide',
+    urgentTitle: 'Consultez les urgences médicales :',
+    urgentText: 'en cas de gonflement du visage, des lèvres ou de la gorge, de difficulté à respirer ou avaler, d’éruption cutanée grave ou de diarrhée sévère ou sanglante.',
+    publisher: 'Éditeur', updated: 'Mise à jour de la source', accessed: 'Date de consultation',
+    yourUid: 'Voici votre identifiant de compte (UID). Copiez-le comme nom de document dans la collection roles de Firestore.',
+    tagline: '',
+    navHome: 'Accueil', navMedicines: 'Médicaments', navGreenRx: 'Ordonnance Verte 🌿', navWAAW: 'Semaine Mondiale AMR (Nov) 🌍', navCompare: 'Comparer 2 Médicaments ⚖️', navRadar: 'Radar d’Ordonnance & Horaires 24h 📡', navInteractions: 'Interactions ⚡', navSafeDisposal: 'Élimination Sûre ♻️', navTracker: 'Suivi du Traitement ⏱️', navSideEffects: 'Effets Indésirables & Urgences 🚨', navListen: 'Écouter & Apprendre 🎧', navHealthProfile: 'Mon Profil Santé 👤', navAllergyChecker: 'Vérificateur d’Allergies 🛡️', navPediatric: 'Calculateur Pédiatrique 👶', navArticles: 'Articles', navQuiz: 'Quiz',
+    navScan: 'Scanner QR', navResearch: 'Enquête de recherche', navAdmin: 'Administration',
+    rxCaptureTitle: 'Capture d’Ordonnance (OCR) ou Saisie Manuelle',
+    rxUnverifiedOcrBadge: '⚠️ Extraction OCR non vérifiée — Révision requise',
+    rxVerifiedBadge: '✅ Vérifié par rapport à l’ordonnance papier',
+    rxClarificationBadge: '🚨 À clarifier avec le médecin ou le pharmacien',
+    rxMissingRecordLabel: 'Dose non enregistrée (en retard non confirmée)',
+    rxConfirmedMissedLabel: 'Dose oubliée confirmée',
+    heroTitle: 'Utiliser les antibiotiques à bon escient protège tout le monde',
+    heroSub: 'Consultez des informations éducatives sur les antibiotiques courants, validées par des professionnels qualifiés. Ce site est à but éducatif et ne remplace ni le médecin ni le pharmacien.',
+    searchPh: 'Rechercher par DCI, nom commercial ou principe actif', search: 'Rechercher', scanBtn: 'Scanner QR ou code-barres',
+    articlesTitle: 'Articles de sensibilisation', quizTitle: 'Testez vos connaissances', seeAll: 'Tout voir', read: 'Lire l’article',
+    startQuiz: 'Commencer le quiz', quizIntro: 'Un court quiz sur le bon usage des antibiotiques, avec une explication pour chaque réponse.',
+    medsTitle: 'Base de données des antibiotiques',
+    noApproved: 'Aucune fiche approuvée pour le moment. Les fiches apparaissent après validation par un professionnel qualifié.',
+    noResults: 'Aucun résultat correspondant.',
+    loadError: 'Impossible de charger les données. Vérifiez votre connexion et les paramètres Firebase.',
+    loading: 'Chargement…', notFound: 'Cette page ou fiche n’est pas disponible.', back: 'Retour',
+    brands: 'Noms commerciaux vérifiés', brandName: 'Nom commercial', manufacturer: 'Fabricant', barcode: 'Code-barres',
+    sources: 'Sources officielles', lastReviewed: 'Dernière révision', reviewedBy: 'Révisé par', status: 'Statut',
+    st_draft: 'Brouillon', st_pending_review: 'En attente de révision', st_approved: 'Approuvé', st_archived: 'Archivé',
+    previewWarn: 'Cette fiche n’a pas encore fait l’objet d’une révision clinique. Il s’agit d’un résumé éducatif basé sur la source indiquée en bas de page. Demandez toujours conseil à votre médecin ou pharmacien.',
+    unverified: 'Non vérifié', notEntered: 'Non renseigné',
+    dosingNote: 'Référence posologique à titre informatif uniquement. Ce site ne calcule pas de doses personnelles ; la posologie est fixée par le médecin ou le pharmacien.',
+    qrTitle: 'Code QR pour cette page', qrDownload: 'Télécharger PNG', qrPrint: 'Imprimer',
+    disclaimerTitle: 'Avis médical important',
+    disclaimer: 'Ce site est uniquement éducatif. Il ne fournit ni diagnostic, ni prescription, ni calcul de dose personnelle, et ne remplace pas un médecin ou un pharmacien. Ne commencez ni n’arrêtez aucun médicament sans avis médical. En cas d’urgence, appelez les secours ou rendez-vous aux urgences les plus proches.',
+    articlePending: 'Contenu éducatif général en attente de validation par un professionnel qualifié.',
+    scanTitle: 'Scanner un code QR ou code-barres', scanStart: 'Activer la caméra', scanStop: 'Arrêter la caméra',
+    scanHint: 'Un code QR ouvre la fiche du médicament. Un code-barres est comparé aux produits vérifiés de la base.',
+    scanManual: 'Ou saisissez le numéro du code-barres', scanGo: 'Vérifier',
+    scanNoMatch: 'Aucun produit vérifié correspondant. Cela ne signifie pas que le produit est dangereux ou contrefait, seulement qu’il n’est pas encore répertorié.',
+    cameraError: 'Impossible de démarrer la caméra. Autorisez l’accès ou saisissez le numéro manuellement.',
+    score: 'Votre score', of: 'sur', correct: 'correct', wrong: 'incorrect', restart: 'Recommencer le quiz',
+    next: 'Suivant', finish: 'Terminer', question: 'Question',
+    resTitle: 'Enquête de recherche pré-test / post-test (facultatif)',
+    resClosed: 'L’enquête est actuellement désactivée. Elle n’est activée qu’après approbation du comité d’éthique.',
+    resEthics: 'Référence d’approbation éthique', resConsentTitle: 'Consentement éclairé',
+    resConsentText: 'La participation est volontaire. Vos réponses sont enregistrées à des fins éducatives et restent confidentielles. Vous pouvez arrêter à tout moment avant l’envoi.',
+    resConsentCheck: 'J’accepte de participer volontairement à cette recherche', resPhase: 'Phase', pre: 'Pré-test', post: 'Post-test',
+    resCode: 'Votre code aléatoire (conservez-le pour le post-test)', resGen: 'Générer un code',
+    resSubmit: 'Envoyer', resThanks: 'Merci pour votre participation. Vos réponses ont été enregistrées.',
+    resAnswerAll: 'Veuillez répondre à toutes les questions et donner votre consentement.', resFail: 'Échec de l’envoi. Veuillez réessayer.',
+    adminTitle: 'Tableau de bord administrateur', email: 'E-mail', password: 'Mot de passe', signIn: 'Connexion', signOut: 'Déconnexion',
+    signInFail: 'Échec de la connexion. Vérifiez vos identifiants.',
+    noRole: 'Votre compte est connecté mais sans rôle attribué. Demandez un rôle éditeur ou réviseur à l’administrateur.',
+    tabMeds: 'Médicaments', tabResearch: 'Recherche', tabUsers: 'Utilisateurs',
+    newMed: 'Nouveau médicament', starter: 'Charger la liste initiale (brouillons)', starterDone: 'Brouillons créés :',
+    all: 'Tous', edit: 'Modifier', approve: 'Approuver', submitReview: 'Soumettre pour révision', archive: 'Archiver',
+    restore: 'Remettre en brouillon', del: 'Supprimer', confirmDel: 'Supprimer définitivement ?', cannotApprove: 'Approbation impossible. Manquant :',
+    actionFailed: 'Échec de l’opération (permissions insuffisantes).', save: 'Enregistrer', saved: 'Enregistré.', cancel: 'Annuler',
+    badId: 'ID : lettres anglaises minuscules, chiffres et tirets uniquement (ex. amoxicillin).',
+    idExists: 'Cet ID est déjà utilisé.', editorStatus: 'Les éditeurs peuvent uniquement enregistrer en Brouillon ou En attente.',
+    medId: 'ID (utilisé dans l’URL et le code QR)', arabic: 'Arabe', english: 'Anglais',
+    addBrand: 'Ajouter une marque', addSource: 'Ajouter une source', verifiedBrand: 'Vérifié depuis une source officielle',
+    sourceTitle: 'Titre de la source', sourceUrl: 'URL exacte de la page (https)', internalNotes: 'Notes internes',
+    editorBackToReview: 'La modification d’une fiche approuvée la renvoie en « En attente de révision ».',
+    sourceHints: 'Points de départ pour les réviseurs (collez l’URL exacte de la page) :',
+    uid: 'ID utilisateur (UID)', role: 'Rôle', grant: 'Accorder / modifier', remove: 'Retirer',
+    usersHelp: 'Créez d’abord l’utilisateur dans Firebase Authentication, puis copiez l’UID ici.',
+    resEnable: 'Activer l’enquête', resExport: 'Exporter CSV', resSaved: 'Enregistré.',
+    resAdminNote: 'N’activez l’enquête qu’après approbation du comité d’éthique.',
+    navAssistant: 'Assistant IA',
+    asstTitle: 'Assistant éducatif', asstIntro: 'Posez vos questions sur les antibiotiques, la résistance et le bon usage. L’assistant répond à partir du contenu vérifié du site.',
+    asstHello: 'Bonjour ! Posez une question ou choisissez un sujet ci-dessous. Je fournis uniquement des informations éducatives générales.',
+    asstPlaceholder: 'Écrivez votre question ici…', asstSend: 'Envoyer', asstFromSite: 'Extrait du contenu du site :', asstChecked: 'Date de réponse :',
+    asstNone: 'Je n’ai pas trouvé de réponse dans le contenu du site et je ne devinerai pas. Consultez un pharmacien ou un médecin.',
+    asstEmergency: 'Cela pourrait être une urgence médicale. Arrêtez la discussion et appelez immédiatement les secours ou rendez-vous aux urgences.',
+    asstPersonal: 'Je ne peux pas choisir un antibiotique, une dose ou une durée, ni vous dire d’arrêter un traitement. Consultez un médecin ou un pharmacien.',
+    asstInjection: 'Je ne peux pas modifier mes règles de sécurité. Je peux répondre aux questions générales sur les antibiotiques.',
+    asstScope: 'Information éducative générale uniquement, ne remplace ni le médecin ni le pharmacien. Ne saisissez pas de données personnelles.',
+    resName: 'Nom', resAge: 'Âge',
+    resBadInfo: 'Entrez votre nom (au moins 2 caractères) et votre âge (1 à 120).',
+    resMinor: 'Si vous avez moins de 18 ans, l’autorisation d’un parent ou tuteur est requise.',
+    resStats: 'Pourcentages de connaissances', resRespondents: 'Participants', resAvg: 'Moyenne de bonnes réponses', resAll: 'Tous',
+    lvlKnow: 'Maîtrise', lvlPartial: 'Connaissance partielle', lvlDont: 'Connaissance insuffisante',
+    resByAge: 'Par tranche d’âge', resByQ: 'Bonnes réponses par question', resNoData: 'Aucune réponse pour le moment.',
+    resNoAge: 'Les anciennes réponses sans âge ne sont pas comptabilisées ici.', resDelete: 'Supprimer la réponse',
+    resColName: 'Nom', resColAge: 'Âge', resColScore: 'Score', resColLevel: 'Niveau',
+    resMethodNote: 'Maîtrise : ≥75 % de bonnes réponses. Partielle : 50 % à 74 %. Insuffisante : <50 %. Seuils indicatifs.',
+  },
+  es: {
+    appName: 'Conciencia sobre los Antibióticos',
+    navLearn: 'Aprender', navMyth: 'Mito o Realidad', navMethod: 'Metodología', navGame: 'Cazador de Bacterias 🎮',
+    navGames: 'Centro de Juegos Educativos 🎮',
+    navSimulator: 'Simulador Médico 3D 🏥',
+    gamesTitle: 'Centro de Juegos y Simulación Médica 🎮',
+    gamesSubtitle: 'Juegos educativos interactivos 3D y 2D diseñados para fortalecer el uso prudente de antibióticos y la seguridad del paciente.',
+    playNow: 'Jugar ahora',
+    launchSimulator: 'Iniciar Simulador 3D',
+    exitGame: 'Salir del juego',
+    simCampaignTitle: 'Campaña Progresiva de 10 Niveles',
+    simOriginalTitle: '5 Escenarios Clínicos Principales',
+    simLockedLabel: 'Bloqueado — Completa primero el nivel anterior',
+    simUnlockedLabel: 'Desbloqueado',
+    simCompletedLabel: 'Completado ✓',
+    simInspectClue: 'Inspeccionar pista 3D',
+    unreviewed: 'No revisado clínicamente',
+    previewToggle: 'Mostrar registros basados en fuentes oficiales aún no revisados clínicamente (con advertencia clara)',
+    previewToggleHelp: 'Solo se muestran registros con al menos una fuente. Desactívelo para que los visitantes vean solo registros aprobados.',
+    diagTitle: 'Causa del problema:',
+    diagMissing: 'No existe un documento en la colección roles con este UID. Créelo exactamente con este UID.',
+    diagInvalid: 'El campo role existe pero su valor es incorrecto (debe ser admin, reviewer o editor en minúsculas).',
+    diagRules: 'Las reglas de Firestore bloquean la lectura. Abra la pestaña Rules, pegue firestore.rules y pulse Publish.',
+    diagOther: 'No se pudo conectar con la base de datos. Verifique Firestore y su conexión.',
+    searchBy: 'Buscar por', byName: 'Nombre', byIngredient: 'Principio activo', byMaker: 'Laboratorio fabricante',
+    classFilter: 'Todas las clases farmacológicas',
+    makerHint: 'La búsqueda por fabricante funciona en marcas verificadas que tienen un fabricante registrado.',
+    quickSummary: 'Resumen rápido',
+    urgentTitle: 'Busque atención médica urgente:',
+    urgentText: 'si presenta hinchazón de cara, labios o garganta, dificultad para respirar o tragar, erupción cutánea grave o diarrea intensa o con sangre.',
+    publisher: 'Editorial / Fuente', updated: 'Última actualización', accessed: 'Fecha de consulta',
+    yourUid: 'Este es el ID de su cuenta (UID). Cópielo y úselo como nombre del documento en la colección roles de Firestore.',
+    tagline: '',
+    navHome: 'Inicio', navMedicines: 'Medicamentos', navGreenRx: 'Receta Verde 🌿', navWAAW: 'Semana Mundial RAM (Nov) 🌍', navCompare: 'Comparar 2 Fármacos ⚖️', navRadar: 'Radar de Recetas y Horario 24h 📡', navInteractions: 'Interacciones ⚡', navSafeDisposal: 'Eliminación Segura ♻️', navTracker: 'Seguimiento de Dosis ⏱️', navSideEffects: 'Efectos Secundarios y Urgencias 🚨', navListen: 'Escuchar y Aprender 🎧', navHealthProfile: 'Mi Perfil de Salud 👤', navAllergyChecker: 'Verificador de Alergias 🛡️', navPediatric: 'Calculadora Pediátrica 👶', navArticles: 'Artículos', navQuiz: 'Cuestionarios',
+    navScan: 'Escanear QR', navResearch: 'Encuesta de investigación', navAdmin: 'Administración',
+    rxCaptureTitle: 'Captura de Receta (OCR) o Ingreso Manual',
+    rxUnverifiedOcrBadge: '⚠️ Extracción OCR no verificada — Requiere revisión',
+    rxVerifiedBadge: '✅ Verificado con la receta física',
+    rxClarificationBadge: '🚨 Requiere aclaración del médico o farmacéutico',
+    rxMissingRecordLabel: 'Sin registro (atrasada sin confirmar)',
+    rxConfirmedMissedLabel: 'Dosis olvidada confirmada',
+    heroTitle: 'El uso responsable de los antibióticos nos protege a todos',
+    heroSub: 'Consulte información educativa sobre antibióticos comunes revisada por profesionales cualificados. Este sitio es solo educativo y no sustituye al médico ni al farmacéutico.',
+    searchPh: 'Buscar por nombre genérico, marca comercial o principio activo', search: 'Buscar', scanBtn: 'Escanear QR o código de barras',
+    articlesTitle: 'Artículos de concienciación', quizTitle: 'Pon a prueba tus conocimientos', seeAll: 'Ver todo', read: 'Leer artículo',
+    startQuiz: 'Iniciar cuestionario', quizIntro: 'Un breve cuestionario sobre el uso seguro de los antibióticos, con explicación en cada respuesta.',
+    medsTitle: 'Base de datos de antibióticos',
+    noApproved: 'Aún no hay registros aprobados. Los registros aparecen aquí tras ser revisados por un profesional cualificado.',
+    noResults: 'No se encontraron resultados coincidentes.',
+    loadError: 'No se pudieron cargar los datos. Verifique su conexión y la configuración de Firebase.',
+    loading: 'Cargando…', notFound: 'Esta página o registro no está disponible.', back: 'Volver',
+    brands: 'Marcas comerciales verificadas', brandName: 'Marca comercial', manufacturer: 'Fabricante', barcode: 'Código de barras',
+    sources: 'Fuentes oficiales', lastReviewed: 'Última revisión', reviewedBy: 'Revisado por', status: 'Estado',
+    st_draft: 'Borrador', st_pending_review: 'Pendiente de revisión', st_approved: 'Aprobado', st_archived: 'Archivado',
+    previewWarn: 'Este registro aún no ha sido revisado clínicamente. Es un resumen educativo basado en la fuente indicada al final de la página. No lo utilice como consejo médico; consulte a su médico o farmacéutico.',
+    unverified: 'No verificado', notEntered: 'Aún no ingresado',
+    dosingNote: 'Referencia de dosificación solo con fines informativos. Este sitio no calcula dosis personales; la dosis la decide un médico o farmacéutico.',
+    qrTitle: 'Código QR de esta página', qrDownload: 'Descargar PNG', qrPrint: 'Imprimir',
+    disclaimerTitle: 'Aviso importante',
+    disclaimer: 'Este sitio web es únicamente educativo. No diagnostica, prescribe ni calcula dosis personales, y no sustituye al médico ni al farmacéutico. No inicie ni suspenda ningún medicamento sin consejo profesional. En caso de emergencia, llame al número de emergencias local o acuda a urgencias.',
+    articlePending: 'Contenido educativo general pendiente de revisión por un profesional cualificado.',
+    scanTitle: 'Escanear código QR o código de barras', scanStart: 'Iniciar cámara', scanStop: 'Detener cámara',
+    scanHint: 'Un código QR abre la ficha del medicamento. El código de barras se compara solo con productos verificados en la base de datos.',
+    scanManual: 'O escriba el número del código de barras', scanGo: 'Verificar',
+    scanNoMatch: 'Ningún producto verificado coincide. Esto no significa que el producto sea inseguro o falso, solo que aún no figura en la base de datos verificada.',
+    cameraError: 'No se pudo iniciar la cámara. Permita el acceso a la cámara o escriba el número manualmente.',
+    score: 'Tu puntuación', of: 'de', correct: 'correcto', wrong: 'incorrecto', restart: 'Reiniciar cuestionario',
+    next: 'Siguiente', finish: 'Finalizar', question: 'Pregunta',
+    resTitle: 'Encuesta de investigación pre-test / post-test (opcional)',
+    resClosed: 'La encuesta está desactivada actualmente. Solo se activa tras la aprobación del comité de ética.',
+    resEthics: 'Referencia de aprobación ética', resConsentTitle: 'Consentimiento informado',
+    resConsentText: 'La participación es voluntaria. Guardaremos su nombre y edad con sus respuestas para este proyecto educativo de forma confidencial. Puede detenerse en cualquier momento antes de enviar.',
+    resConsentCheck: 'Acepto participar voluntariamente en esta investigación', resPhase: 'Fase', pre: 'Pre-test', post: 'Post-test',
+    resCode: 'Su código aleatorio (guárdelo para el post-test)', resGen: 'Generar código',
+    resSubmit: 'Enviar', resThanks: 'Gracias por participar. Sus respuestas han sido guardadas.',
+    resAnswerAll: 'Responda todas las preguntas y otorgue su consentimiento.', resFail: 'No se pudo enviar. Inténtelo más tarde.',
+    adminTitle: 'Panel de administración', email: 'Correo electrónico', password: 'Contraseña', signIn: 'Iniciar sesión', signOut: 'Cerrar sesión',
+    signInFail: 'Error al iniciar sesión. Verifique sus datos.',
+    noRole: 'Su cuenta ha iniciado sesión pero no tiene permisos. Solicite al administrador el rol de editor o revisor.',
+    tabMeds: 'Medicamentos', tabResearch: 'Investigación', tabUsers: 'Usuarios',
+    newMed: 'Nuevo medicamento', starter: 'Cargar lista inicial (borradores)', starterDone: 'Borradores creados:',
+    all: 'Todos', edit: 'Editar', approve: 'Aprobar', submitReview: 'Enviar a revisión', archive: 'Archivar',
+    restore: 'Volver a borrador', del: 'Eliminar', confirmDel: '¿Eliminar permanentemente?', cannotApprove: 'No se puede aprobar. Falta:',
+    actionFailed: 'Error en la operación (puede no tener permisos).', save: 'Guardar', saved: 'Guardado.', cancel: 'Cancelar',
+    badId: 'ID: solo letras minúsculas en inglés, números y guiones (ej. amoxicillin).',
+    idExists: 'Este ID ya está en uso.', editorStatus: 'Los editores solo pueden guardar como Borrador o Pendiente de revisión.',
+    medId: 'ID (usado en la URL y código QR)', arabic: 'Árabe', english: 'Inglés',
+    addBrand: 'Añadir marca', addSource: 'Añadir fuente', verifiedBrand: 'Verificado de una fuente oficial',
+    sourceTitle: 'Título de la fuente', sourceUrl: 'URL exacta de la página (https)', internalNotes: 'Notas internas',
+    editorBackToReview: 'Editar un registro aprobado lo devuelve a «Pendiente de revisión».',
+    sourceHints: 'Puntos de partida para revisores (pegue la URL exacta de la página):',
+    uid: 'ID de usuario (UID)', role: 'Rol', grant: 'Otorgar / cambiar', remove: 'Quitar',
+    usersHelp: 'Cree primero el usuario en Firebase Authentication y luego copie el UID aquí.',
+    resEnable: 'Habilitar encuesta', resExport: 'Exportar CSV', resSaved: 'Guardado.',
+    resAdminNote: 'Habilite la encuesta solo tras la aprobación ética e ingrese la referencia.',
+    navAssistant: 'Asistente IA',
+    asstTitle: 'Asistente educativo', asstIntro: 'Pregunte sobre antibióticos, resistencia y uso seguro. El asistente responde solo con el contenido verificado del sitio.',
+    asstHello: '¡Hola! Escriba una pregunta o elija una opción abajo. Soy solo para educación general: no diagnostico ni receto medicamentos.',
+    asstPlaceholder: 'Escriba su pregunta aquí…', asstSend: 'Enviar', asstFromSite: 'Del contenido del sitio:', asstChecked: 'Respondido el:',
+    asstNone: 'No encontré una respuesta a esto en el contenido del sitio y no adivinaré. Consulte a un farmacéutico o médico.',
+    asstEmergency: 'Esto podría ser una emergencia. Detenga el chat y busque atención médica urgente ahora: llame a una ambulancia o acuda a urgencias.',
+    asstPersonal: 'No puedo elegir un antibiótico, dosis o duración, ni indicarle que suspenda un medicamento. Consulte a un médico o farmacéutico.',
+    asstInjection: 'No puedo cambiar mis reglas de seguridad ni revelar detalles del sistema. Puedo responder preguntas generales sobre antibióticos.',
+    asstScope: 'Solo educación general, no sustituye al médico ni al farmacéutico. No escriba datos personales aquí.',
+    resName: 'Nombre', resAge: 'Edad',
+    resBadInfo: 'Ingrese su nombre (al menos 2 caracteres) y su edad (1 a 120).',
+    resMinor: 'Si es menor de 18 años, necesita el permiso de su padre, madre o tutor.',
+    resStats: 'Porcentajes de conocimiento', resRespondents: 'Participantes', resAvg: 'Promedio de respuestas correctas', resAll: 'Todos',
+    lvlKnow: 'Conoce', lvlPartial: 'Conocimiento parcial', lvlDont: 'No conoce',
+    resByAge: 'Por grupo de edad', resByQ: 'Respuestas correctas por pregunta', resNoData: 'Aún no hay respuestas.',
+    resNoAge: 'Las respuestas antiguas sin edad no se contabilizan aquí.', resDelete: 'Eliminar respuesta',
+    resColName: 'Nombre', resColAge: 'Edad', resColScore: 'Puntuación', resColLevel: 'Nivel',
+    resMethodNote: 'Conoce: ≥75 % correctas. Parcial: 50 % a 74 %. No conoce: <50 %. Umbrales solo de visualización.',
+  },
 };
 
 interface Ctx {
@@ -240,20 +468,38 @@ interface Ctx {
 const LangCtx = createContext<Ctx>({ lang: 'ar', setLang: () => {}, t: (k) => k });
 export const useLang = () => useContext(LangCtx);
 
+export { SUPPORTED_LANGS };
+
 export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => (localStorage.getItem('lang') === 'en' ? 'en' : 'ar'));
+  const [lang, setLangState] = useState<Lang>(() => {
+    try {
+      const saved = localStorage.getItem('lang');
+      if (isValidLang(saved)) return saved;
+    } catch {
+      /* ignore */
+    }
+    return 'ar';
+  });
+
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    // Keep the tab title consistent with the static <title> in index.html (bilingual site identity).
-    document.title = lang === 'ar'
-      ? `${D.ar.appName} | ${D.en.appName}`
-      : `${D.en.appName} | ${D.ar.appName}`;
+    const currentAppName = D[lang]?.appName || D.en.appName;
+    document.title =
+      lang === 'ar'
+        ? `${D.ar.appName} | ${D.en.appName}`
+        : `${currentAppName} | ${D.ar.appName}`;
   }, [lang]);
+
   const setLang = (l: Lang) => {
-    localStorage.setItem('lang', l);
+    try {
+      localStorage.setItem('lang', l);
+    } catch {
+      /* ignore */
+    }
     setLangState(l);
   };
-  const t = (key: string) => D[lang][key] ?? key;
+
+  const t = (key: string) => D[lang]?.[key] ?? D.en[key] ?? D.ar[key] ?? key;
   return <LangCtx.Provider value={{ lang, setLang, t }}>{children}</LangCtx.Provider>;
 }

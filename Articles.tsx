@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useLang } from './i18n';
 import { ARTICLES, Article } from './articlesData';
-import { pick } from './types';
+import { pick, tr } from './types';
 
 export default function Articles() {
   const { t, lang } = useLang();
@@ -12,9 +12,13 @@ export default function Articles() {
     <main className="wrap narrow stack">
       <h1>📰 {t('navArticles')}</h1>
       <p className="muted">
-        {isAr
-          ? 'مقالات وإرشادات توعوية مبسطة حول الاستخدام الرشيد للمضادات الحيوية والوقاية من المقاومة البكتيرية.'
-          : 'Educational articles and clinical guides on responsible antibiotic use and antimicrobial resistance prevention.'}
+        {tr(
+          lang,
+          'مقالات وإرشادات توعوية مبسطة حول الاستخدام الرشيد للمضادات الحيوية والوقاية من المقاومة البكتيرية.',
+          'Educational articles and clinical guides on responsible antibiotic use and antimicrobial resistance prevention.',
+          'Articles éducatifs et guides cliniques sur le bon usage des antibiotiques et la prévention de l’antibiorésistance.',
+          'Artículos educativos y guías clínicas sobre el uso responsable de los antibióticos y la prevención de la resistencia antimicrobiana.'
+        )}
       </p>
 
       <div className="stack" style={{ gap: '12px', marginTop: '8px' }}>
@@ -32,7 +36,7 @@ export default function Articles() {
               {pick(art.summary, lang)}
             </p>
             <span className="more" style={{ display: 'inline-block', marginTop: '6px' }}>
-              {isAr ? 'اقرأ المقال كاملاً ←' : 'Read Full Article →'}
+              {tr(lang, 'اقرأ المقال كاملاً ←', 'Read Full Article →', 'Lire l’article complet →', 'Leer el artículo completo →')}
             </span>
           </Link>
         ))}
@@ -52,7 +56,7 @@ export function ArticlePage() {
     return (
       <main className="wrap narrow stack">
         <p className="alert">{t('notFound')}</p>
-        <Link to="/articles" className="btn ghost">← {t('navArticles')}</Link>
+        <Link to="/articles" className="btn ghost">{isAr ? '→' : '←'} {t('navArticles')}</Link>
       </main>
     );
   }
@@ -62,7 +66,7 @@ export function ArticlePage() {
   return (
     <main className="wrap narrow stack">
       <Link to="/articles" className="small muted" style={{ textDecoration: 'none', marginBottom: '6px' }}>
-        ← {t('navArticles')}
+        {isAr ? '→' : '←'} {t('navArticles')}
       </Link>
 
       <article className="card stack" style={{ padding: '24px' }}>
@@ -85,7 +89,7 @@ export function ArticlePage() {
 
       <div className="row" style={{ marginTop: '12px' }}>
         <Link to="/articles" className="btn ghost">
-          ← {isAr ? 'العودة لجميع المقالات' : 'Back to All Articles'}
+          {isAr ? '→' : '←'} {tr(lang, 'العودة لجميع المقالات', 'Back to All Articles', 'Retour à tous les articles', 'Volver a todos los artículos')}
         </Link>
       </div>
     </main>

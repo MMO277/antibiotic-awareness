@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { createPortal } from 'react-dom';
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -1539,11 +1540,11 @@ export default function PrescriptionRadar() {
             <div>
               <strong>
                 🛡️ {isAr ? 'فحص سجل الحساسية الدوائية:' : 'Patient Allergy Safety Check:'}{' '}
-                {allergyCheck.title[lang]}
+                {pick(allergyCheck.title, lang)}
               </strong>
               <p className="small" style={{ margin: '4px 0 0' }}>
-                {allergyCheck.explanation[lang]}{' '}
-                <b>{allergyCheck.clinicalAction[lang]}</b>
+                {pick(allergyCheck.explanation, lang)}{' '}
+                <b>{pick(allergyCheck.clinicalAction, lang)}</b>
               </p>
             </div>
             <Link to="/allergy-checker" className="btn-secondary small">
@@ -2399,7 +2400,7 @@ export default function PrescriptionRadar() {
             <b>{isAr ? 'المضاد الحيوي المحدد:' : 'Selected Antibiotic:'}</b>{' '}
             {isAr ? `${currentAbx.nameAr} (${currentAbx.nameEn})` : `${currentAbx.nameEn} (${currentAbx.nameAr})`} ·{' '}
             <b>{isAr ? 'وقت بدء أول جرعة:' : 'First Dose Start:'}</b> {formatTime12Hour(firstDoseTime, isAr)} ·{' '}
-            <b>{isAr ? 'فحص الحساسية:' : 'Allergy Check:'}</b> {allergyCheck.title[lang]}
+            <b>{isAr ? 'فحص الحساسية:' : 'Allergy Check:'}</b> {pick(allergyCheck.title, lang)}
           </p>
           <ul className="small" style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.6 }}>
             {dailySlots.map((s, i) => (

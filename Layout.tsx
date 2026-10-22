@@ -1,6 +1,7 @@
 import { ReactNode, useRef, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { useLang } from './i18n';
+import { useLang, SUPPORTED_LANGS } from './i18n';
+import { tr } from './types';
 import { useAuth } from './authContext';
 import Disclaimer from './Disclaimer';
 import ChatWidget from './ChatWidget';
@@ -8,14 +9,22 @@ import LogoutModal from './LogoutModal';
 
 function useDarkMode() {
   const [dark, setDark] = useState<boolean>(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved) return saved === 'dark';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    try {
+      const saved = localStorage.getItem('theme');
+      if (saved) return saved === 'dark';
+    } catch {
+      /* ignore */
+    }
+    return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    localStorage.setItem('theme', dark ? 'dark' : 'light');
+    try {
+      localStorage.setItem('theme', dark ? 'dark' : 'light');
+    } catch {
+      /* ignore */
+    }
   }, [dark]);
 
   return { dark, toggle: () => setDark((d) => !d) };
@@ -36,13 +45,17 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerClosing, setDrawerClosing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const authCtx = useAuth();
   const user = authCtx.user;
   const openAuthModal = authCtx.openAuthModal;
 
   const hamburgerBtnRef = useRef<HTMLButtonElement>(null);
   const drawerCloseBtnRef = useRef<HTMLButtonElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
+
+  const currentLangMeta = SUPPORTED_LANGS.find((l) => l.code === lang) || SUPPORTED_LANGS[0];
 
   const openDrawer = () => {
     if (closeTimerRef.current) {
@@ -82,7 +95,6 @@ export default function Layout({ children }: { children: ReactNode }) {
   };
 
   const handleExitGuestMode = () => {
-    // Exit Guest Mode safely without calling Firebase sign-out
     try {
       sessionStorage.removeItem('aa_lamp_seen');
       sessionStorage.removeItem('aa_guest_mode');
@@ -108,8 +120,19 @@ export default function Layout({ children }: { children: ReactNode }) {
     if (drawerOpen) {
       closeDrawer(false);
     }
+    setLangMenuOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
+        setLangMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -119,7 +142,6 @@ export default function Layout({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Prevent unintended background scrolling while the sidebar is open
   useEffect(() => {
     if (!drawerOpen) return;
     const prevOverflow = document.body.style.overflow;
@@ -129,7 +151,6 @@ export default function Layout({ children }: { children: ReactNode }) {
     };
   }, [drawerOpen]);
 
-  // Escape-key dismissal and initial focus management
   useEffect(() => {
     if (!drawerOpen || drawerClosing) return;
     const focusTimer = window.setTimeout(() => {
@@ -177,19 +198,19 @@ export default function Layout({ children }: { children: ReactNode }) {
   ];
 
   const quickBarItems = [
-    { to: '/', label: isAr ? 'الرئيسية' : 'Home', icon: '🏠' },
-    { to: '/medicines', label: isAr ? 'السجل الدوائي (206)' : 'Registry (206)', icon: '💊' },
-    { to: '/games', label: isAr ? 'الألعاب والمحاكاة 3D' : 'Games & 3D Sim', icon: '🎮' },
-    { to: '/green-prescription', label: isAr ? 'الروشتة الخضرا' : 'Green Rx', icon: '🌿' },
-    { to: '/awareness-week', label: isAr ? 'حملة نوفمبر العالمية' : 'WAAW Campaign', icon: '🌍' },
-    { to: '/compare', label: isAr ? 'مقارنة دواءين' : 'Compare Drugs', icon: '⚖️' },
-    { to: '/prescription-radar', label: isAr ? 'رادار الروشتة 24س' : 'Rx Radar 24h', icon: '📡' },
-    { to: '/scan', label: isAr ? 'مسح الباركود' : 'Scan Barcode', icon: '📷' },
-    { to: '/allergy-checker', label: isAr ? 'فاحص الحساسية' : 'Allergy Check', icon: '🛡️' },
-    { to: '/pediatric-helper', label: isAr ? 'حاسبة الأطفال' : 'Pediatrics', icon: '👶' },
-    { to: '/interactions', label: isAr ? 'التداخلات' : 'Interactions', icon: '⚡' },
-    { to: '/tracker', label: isAr ? 'متابع الجرعات' : 'Dose Tracker', icon: '⏱️' },
-    { to: '/safe-disposal', label: isAr ? 'التخلص الآمن' : 'Safe Disposal', icon: '♻️' },
+    { to: '/', label: tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio'), icon: '🏠' },
+    { to: '/medicines', label: tr(lang, 'السجل الدوائي (206)', 'Registry (206)', 'Registre (206)', 'Registro (206)'), icon: '💊' },
+    { to: '/games', label: tr(lang, 'الألعاب والمحاكاة 3D', 'Games & 3D Sim', 'Jeux & Sim 3D', 'Juegos y Sim 3D'), icon: '🎮' },
+    { to: '/green-prescription', label: tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde'), icon: '🌿' },
+    { to: '/awareness-week', label: tr(lang, 'حملة نوفمبر العالمية', 'WAAW Campaign', 'Campagne WAAW', 'Campaña WAAW'), icon: '🌍' },
+    { to: '/compare', label: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar'), icon: '⚖️' },
+    { to: '/prescription-radar', label: tr(lang, 'رادار الروشتة 24س', 'Rx Radar 24h', 'Radar Rx 24h', 'Radar Rx 24h'), icon: '📡' },
+    { to: '/scan', label: tr(lang, 'مسح الباركود', 'Scan Barcode', 'Scanner Code', 'Escanear Código'), icon: '📷' },
+    { to: '/allergy-checker', label: tr(lang, 'فاحص الحساسية', 'Allergy Check', 'Allergies', 'Alergias'), icon: '🛡️' },
+    { to: '/pediatric-helper', label: tr(lang, 'حاسبة الأطفال', 'Pediatrics', 'Pédiatrie', 'Pediatría'), icon: '👶' },
+    { to: '/interactions', label: tr(lang, 'التداخلات', 'Interactions', 'Interactions', 'Interacciones'), icon: '⚡' },
+    { to: '/tracker', label: tr(lang, 'متابع الجرعات', 'Dose Tracker', 'Suivi Doses', 'Seguimiento'), icon: '⏱️' },
+    { to: '/safe-disposal', label: tr(lang, 'التخلص الآمن', 'Safe Disposal', 'Élimination', 'Eliminación'), icon: '♻️' },
   ];
 
   return (
@@ -218,19 +239,31 @@ export default function Layout({ children }: { children: ReactNode }) {
               <div className="header-auth-group">
                 <span
                   className="chip guest-indicator"
-                  title={isAr ? 'أنت تتصفح الموقع حالياً كزائر' : 'You are currently browsing as a guest'}
+                  title={tr(
+                    lang,
+                    'أنت تتصفح الموقع حالياً كزائر',
+                    'You are currently browsing as a guest',
+                    'Vous naviguez actuellement en tant qu’invité',
+                    'Actualmente navegas como invitado'
+                  )}
                 >
                   <span aria-hidden="true">👀</span>
-                  <span>{isAr ? 'وضع الزائر' : 'Guest'}</span>
+                  <span>{tr(lang, 'وضع الزائر', 'Guest', 'Invité', 'Invitado')}</span>
                 </span>
                 <button
                   type="button"
                   className="btn small ghost header-signin-btn"
                   onClick={handleExitGuestMode}
-                  title={isAr ? 'الخروج من وضع الزائر والعودة لشاشة الدخول' : 'Exit Guest Mode and return to sign in screen'}
+                  title={tr(
+                    lang,
+                    'الخروج من وضع الزائر والعودة لشاشة الدخول',
+                    'Exit Guest Mode and return to sign in screen',
+                    'Quitter le mode invité et se connecter',
+                    'Salir del modo invitado e iniciar sesión'
+                  )}
                 >
                   <span aria-hidden="true">👤</span>
-                  <span>{isAr ? 'تسجيل الدخول' : 'Sign In'}</span>
+                  <span>{tr(lang, 'تسجيل الدخول', 'Sign In', 'Connexion', 'Acceder')}</span>
                 </button>
               </div>
             ) : (
@@ -251,11 +284,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                 type="button"
                 className="btn small ghost header-logout-btn"
                 onClick={() => setShowLogoutModal(true)}
-                title={isAr ? 'تسجيل الخروج' : 'Log out'}
-                aria-label={isAr ? 'تسجيل الخروج' : 'Log out'}
+                title={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
+                aria-label={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
               >
                 <span aria-hidden="true">🚪</span>
-                <span className="header-logout-text">{isAr ? 'خروج' : 'Logout'}</span>
+                <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir')}</span>
               </button>
             )}
 
@@ -265,21 +298,61 @@ export default function Layout({ children }: { children: ReactNode }) {
               className="dark-toggle"
               onClick={toggle}
               aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={dark ? (isAr ? 'الوضع الفاتح' : 'Light mode') : (isAr ? 'الوضع الداكن' : 'Dark mode')}
+              title={
+                dark
+                  ? tr(lang, 'الوضع الفاتح', 'Light mode', 'Mode clair', 'Modo claro')
+                  : tr(lang, 'الوضع الداكن', 'Dark mode', 'Mode sombre', 'Modo oscuro')
+              }
             >
               {dark ? '☀️' : '🌙'}
             </button>
 
-            {/* Language toggle */}
-            <button
-              type="button"
-              className="lang"
-              onClick={() => setLang(isAr ? 'en' : 'ar')}
-              aria-label="Language"
-              title={isAr ? 'Switch to English' : 'التبديل إلى العربية'}
-            >
-              {isAr ? 'EN' : 'عربي'}
-            </button>
+            {/* 4-Language Switcher Dropdown (keeps .lang class on direct child of .header-actions) */}
+            <div ref={langMenuRef} className="lang lang-switcher-wrap" style={{ position: 'relative', padding: 0 }}>
+              <button
+                type="button"
+                className="lang-trigger-btn"
+                onClick={() => setLangMenuOpen((o) => !o)}
+                aria-expanded={langMenuOpen}
+                aria-haspopup="listbox"
+                aria-label={tr(lang, 'تغيير اللغة', 'Change language', 'Changer de langue', 'Cambiar idioma')}
+                title={tr(lang, 'اختر لغة المنصة (4 لغات)', 'Select platform language (4 languages)', 'Choisir la langue (4 langues)', 'Seleccionar idioma (4 idiomas)')}
+              >
+                <span aria-hidden="true">{currentLangMeta.flag}</span>
+                <span>{currentLangMeta.shortLabel}</span>
+                <span aria-hidden="true" style={{ fontSize: '0.68rem', opacity: 0.85 }}>▾</span>
+              </button>
+
+              {langMenuOpen && (
+                <div
+                  className="lang-dropdown-menu"
+                  role="listbox"
+                  aria-label={tr(lang, 'قائمة اللغات', 'Languages', 'Langues', 'Idiomas')}
+                >
+                  {SUPPORTED_LANGS.map((item) => {
+                    const active = item.code === lang;
+                    return (
+                      <button
+                        key={item.code}
+                        type="button"
+                        role="option"
+                        aria-selected={active}
+                        className={`lang-dropdown-item${active ? ' active' : ''}`}
+                        onClick={() => {
+                          setLang(item.code);
+                          setLangMenuOpen(false);
+                        }}
+                      >
+                        <span className="lang-item-flag" aria-hidden="true">{item.flag}</span>
+                        <span className="lang-item-name">{item.nativeLabel}</span>
+                        <span className="lang-item-code">{item.code.toUpperCase()}</span>
+                        {active && <span className="lang-item-check" aria-hidden="true">✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* 3-Lines Hamburger Menu Button ("All Sections" Trigger) */}
             <button
@@ -289,11 +362,11 @@ export default function Layout({ children }: { children: ReactNode }) {
               onClick={openDrawer}
               aria-expanded={drawerOpen && !drawerClosing}
               aria-controls="site-sections-drawer"
-              aria-label={isAr ? 'فتح القائمة' : 'Open menu'}
-              title={isAr ? 'أقسام الموقع الكاملة' : 'All Site Sections'}
+              aria-label={tr(lang, 'فتح القائمة', 'Open menu', 'Ouvrir le menu', 'Abrir menú')}
+              title={tr(lang, 'أقسام الموقع الكاملة', 'All Site Sections', 'Toutes les rubriques', 'Todas las secciones')}
             >
               <span className="hamburger-icon" aria-hidden="true">☰</span>
-              <span className="hamburger-text">{isAr ? 'كل الأقسام' : 'Menu'}</span>
+              <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú')}</span>
             </button>
           </div>
         </div>
@@ -330,15 +403,15 @@ export default function Layout({ children }: { children: ReactNode }) {
             dir={pageDir}
             className={`drawer-panel${drawerClosing ? ' is-closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
-            aria-label={isAr ? 'القائمة الجانبية لجميع الأقسام' : 'Side menu'}
+            aria-label={tr(lang, 'القائمة الجانبية لجميع الأقسام', 'Side menu', 'Menu latéral', 'Menú lateral')}
           >
             <div className="drawer-header">
               <div className="drawer-brand">
                 <span className="drawer-logo" aria-hidden="true">💊</span>
                 <div className="drawer-brand-text">
-                  <b>{isAr ? 'أقسام المنصة السريرية' : 'Clinical Portal Menu'}</b>
+                  <b>{tr(lang, 'أقسام المنصة السريرية', 'Clinical Portal Menu', 'Menu du Portail Clinique', 'Menú del Portal Clínico')}</b>
                   <small className="drawer-subtitle">
-                    {isAr ? 'جميع الأدوات والأدلة التوعوية' : 'All Clinical Tools & Guides'}
+                    {tr(lang, 'جميع الأدوات والأدلة التوعوية', 'All Clinical Tools & Guides', 'Tous les outils et guides cliniques', 'Todas las herramientas y guías clínicas')}
                   </small>
                 </div>
               </div>
@@ -347,11 +420,26 @@ export default function Layout({ children }: { children: ReactNode }) {
                 ref={drawerCloseBtnRef}
                 className="drawer-close-btn"
                 onClick={() => closeDrawer(true)}
-                aria-label={isAr ? 'إغلاق القائمة' : 'Close menu'}
-                title={isAr ? 'إغلاق (Esc)' : 'Close (Esc)'}
+                aria-label={tr(lang, 'إغلاق القائمة', 'Close menu', 'Fermer le menu', 'Cerrar menú')}
+                title={tr(lang, 'إغلاق (Esc)', 'Close (Esc)', 'Fermer (Esc)', 'Cerrar (Esc)')}
               >
                 ✕
               </button>
+            </div>
+
+            {/* Quick Language Selector inside Drawer */}
+            <div className="drawer-lang-bar" aria-label={tr(lang, 'اختيار اللغة', 'Language selection', 'Choix de la langue', 'Selección de idioma')}>
+              {SUPPORTED_LANGS.map((item) => (
+                <button
+                  key={item.code}
+                  type="button"
+                  className={`drawer-lang-pill${item.code === lang ? ' active' : ''}`}
+                  onClick={() => setLang(item.code)}
+                >
+                  <span aria-hidden="true">{item.flag}</span>
+                  <span>{item.nativeLabel}</span>
+                </button>
+              ))}
             </div>
 
             <div className="drawer-links">
@@ -394,7 +482,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   >
                     <span className="item-icon" aria-hidden="true">👤</span>
                     <span className="item-title">
-                      {isAr ? 'تسجيل الدخول (الخروج من وضع الزائر)' : 'Sign In (Exit Guest Mode)'}
+                      {tr(lang, 'تسجيل الدخول (الخروج من وضع الزائر)', 'Sign In (Exit Guest Mode)', 'Connexion (Quitter le mode invité)', 'Iniciar sesión (Salir de invitado)')}
                     </span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
@@ -413,7 +501,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     }}
                   >
                     <span className="item-icon" aria-hidden="true">🚪</span>
-                    <span className="item-title">{isAr ? 'تسجيل الخروج' : 'Logout'}</span>
+                    <span className="item-title">{tr(lang, 'تسجيل الخروج', 'Logout', 'Déconnexion', 'Cerrar sesión')}</span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
                 </>
@@ -451,49 +539,53 @@ export default function Layout({ children }: { children: ReactNode }) {
               </div>
             </div>
             <p className="small" style={{ color: '#cbd5e1', lineHeight: 1.6 }}>
-              {isAr
-                ? 'المنصة الرقمية الوطنية للتوعية بالاستخدام الرشيد للمضادات الحيوية ومكافحة مقاومة الميكروبات (AMR) وفق أحدث دلائل هيئة الدواء المصرية ومنظمة الصحة العالمية.'
-                : 'National digital health portal for rational antibiotic stewardship and antimicrobial resistance (AMR) education aligned with EDA and WHO guidelines.'}
+              {tr(
+                lang,
+                'المنصة الرقمية الوطنية للتوعية بالاستخدام الرشيد للمضادات الحيوية ومكافحة مقاومة الميكروبات (AMR) وفق أحدث دلائل هيئة الدواء المصرية ومنظمة الصحة العالمية.',
+                'Digital health portal for rational antibiotic stewardship and antimicrobial resistance (AMR) education aligned with EDA and WHO guidelines.',
+                'Portail numérique de santé pour le bon usage des antibiotiques et la lutte contre l’antibiorésistance (AMR), aligné sur les directives de l’OMS et de l’EDA.',
+                'Portal digital de salud para el uso racional de antibióticos y la educación sobre resistencia antimicrobiana (RAM), alineado con las guías de la OMS y la EDA.'
+              )}
             </p>
           </div>
 
           <div>
             <h4 style={{ color: '#fff', margin: '0 0 10px' }}>
-              {isAr ? 'الأدوات السريرية السريعة' : 'Quick Clinical Tools'}
+              {tr(lang, 'الأدوات السريرية السريعة', 'Quick Clinical Tools', 'Outils Cliniques Rapides', 'Herramientas Clínicas Rápidas')}
             </h4>
             <ul className="pro-footer-links">
-              <li><Link to="/medicines">{isAr ? 'السجل الدوائي المصري (206 عبوات)' : 'Egyptian Drug Registry (206)'}</Link></li>
-              <li><Link to="/games">{isAr ? 'مركز الألعاب والمحاكاة الطبية 3D' : 'Game Center & 3D Medical Simulator'}</Link></li>
-              <li><Link to="/scan">{isAr ? 'ماسح الباركود الخطي ورموز QR' : 'Barcode & QR Scanner'}</Link></li>
-              <li><Link to="/allergy-checker">{isAr ? 'فاحص الحساسية الدوائية المتقاطعة' : 'Drug Allergy Safety Checker'}</Link></li>
-              <li><Link to="/pediatric-helper">{isAr ? 'حاسبة جرعات شراب الأطفال' : 'Pediatric Dosage Calculator'}</Link></li>
-              <li><Link to="/safe-disposal">{isAr ? 'دليل التخلص الآمن وحماية البيئة' : 'Safe Antibiotic Disposal'}</Link></li>
+              <li><Link to="/medicines">{tr(lang, 'السجل الدوائي المصري (206 عبوات)', 'Egyptian Drug Registry (206)', 'Registre des Médicaments (206)', 'Registro de Medicamentos (206)')}</Link></li>
+              <li><Link to="/games">{tr(lang, 'مركز الألعاب والمحاكاة الطبية 3D', 'Game Center & 3D Medical Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D')}</Link></li>
+              <li><Link to="/scan">{tr(lang, 'ماسح الباركود الخطي ورموز QR', 'Barcode & QR Scanner', 'Scanner Code-Barres & QR', 'Escáner de Código de Barras y QR')}</Link></li>
+              <li><Link to="/allergy-checker">{tr(lang, 'فاحص الحساسية الدوائية المتقاطعة', 'Drug Allergy Safety Checker', 'Vérificateur d’Allergies Croisées', 'Verificador de Alergias Medicamentosas')}</Link></li>
+              <li><Link to="/pediatric-helper">{tr(lang, 'حاسبة جرعات شراب الأطفال', 'Pediatric Dosage Calculator', 'Calculateur Posologique Pédiatrique', 'Calculadora de Dosis Pediátrica')}</Link></li>
+              <li><Link to="/safe-disposal">{tr(lang, 'دليل التخلص الآمن وحماية البيئة', 'Safe Antibiotic Disposal', 'Guide d’Élimination Sûre', 'Guía de Eliminación Segura')}</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 style={{ color: '#fff', margin: '0 0 10px' }}>
-              {isAr ? 'المصادر الطبية الرسمية والطوارئ' : 'Official Sources & Emergency'}
+              {tr(lang, 'المصادر الطبية الرسمية والطوارئ', 'Official Sources & Emergency', 'Sources Officielles & Urgences', 'Fuentes Oficiales y Emergencias')}
             </h4>
             <ul className="pro-footer-links">
               <li>
                 <a href="https://edaegypt.gov.eg" target="_blank" rel="noopener noreferrer">
-                  {isAr ? 'هيئة الدواء المصرية (EDA)' : 'Egyptian Drug Authority (EDA)'} ↗
+                  {tr(lang, 'هيئة الدواء المصرية (EDA)', 'Egyptian Drug Authority (EDA)', 'Autorité Égyptienne des Médicaments (EDA)', 'Autoridad Egipcia de Medicamentos (EDA)')} ↗
                 </a>
               </li>
               <li>
                 <a href="https://www.who.int/health-topics/antimicrobial-resistance" target="_blank" rel="noopener noreferrer">
-                  {isAr ? 'منظمة الصحة العالمية (WHO AMR)' : 'World Health Organization (WHO)'} ↗
+                  {tr(lang, 'منظمة الصحة العالمية (WHO AMR)', 'World Health Organization (WHO)', 'Organisation Mondiale de la Santé (OMS)', 'Organización Mundial de la Salud (OMS)')} ↗
                 </a>
               </li>
               <li>
                 <a href="https://medlineplus.gov/antibiotics.html" target="_blank" rel="noopener noreferrer">
-                  {isAr ? 'المكتبة الوطنية للطب (MedlinePlus)' : 'NIH MedlinePlus Drug Info'} ↗
+                  {tr(lang, 'المكتبة الوطنية للطب (MedlinePlus)', 'NIH MedlinePlus Drug Info', 'Bibliothèque Nationale de Médecine (MedlinePlus)', 'Biblioteca Nacional de Medicina (MedlinePlus)')} ↗
                 </a>
               </li>
               <li style={{ marginTop: '8px' }}>
                 <span style={{ color: '#fca5a5', fontWeight: 700 }}>
-                  🚑 {isAr ? 'طوارئ الإسعاف المصري: 123' : 'Egypt Emergency Ambulance: 123'}
+                  🚑 {tr(lang, 'طوارئ الإسعاف المصري: 123', 'Egypt Emergency Ambulance: 123', 'Urgences Ambulance (Égypte) : 123 / Europe : 112', 'Ambulancia de Emergencia (Egipto): 123 / 112')}
                 </span>
               </li>
             </ul>

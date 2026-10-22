@@ -7,166 +7,278 @@ export interface Article {
   body: Bi; // paragraphs separated by a blank line
 }
 
-/**
- * General, non-product-specific education. Marked as "pending review" in the UI:
- * a qualified professional should review and adapt it before official publication.
- */
 export const ARTICLES: Article[] = [
   {
     id: 'antibiotic-resistance',
-    title: { ar: 'ما هي مقاومة المضادات الحيوية؟', en: 'What is antibiotic resistance?' },
+    title: {
+      ar: 'ما هي مقاومة المضادات الحيوية؟',
+      en: 'What is antibiotic resistance?',
+      fr: 'Qu’est-ce que l’antibiorésistance ?',
+      es: '¿Qué es la resistencia a los antibióticos?',
+    },
     summary: {
       ar: 'كيف تصبح البكتيريا أقل استجابة للدواء، ولماذا يهمّنا ذلك جميعًا.',
       en: 'How bacteria become less responsive to medicines, and why it matters to everyone.',
+      fr: 'Comment les bactéries deviennent moins sensibles aux médicaments et pourquoi cela nous concerne tous.',
+      es: 'Cómo las bacterias dejan de responder a los medicamentos y por qué nos afecta a todos.',
     },
     body: {
       ar: 'تحدث مقاومة المضادات الحيوية عندما تتغيّر البكتيريا بحيث لا تعود الأدوية التي كانت تقتلها أو توقف نموها فعّالة كما كانت. البكتيريا هي التي تصبح مقاومة، وليس جسم الإنسان.\n\nفي كل مرة تُستخدم فيها المضادات الحيوية قد تتكاثر البكتيريا التي تنجو منها. واستخدام المضادات دون حاجة، أو تناولها بطريقة خاطئة، أو عدم اتباع تعليمات من وصفها يمنح البكتيريا المقاومة فرصًا أكبر للانتشار.\n\nقد تكون العدوى المقاومة أصعب في العلاج، وقد تحتاج إلى علاج أقوى أو أطول، ويمكن أن تنتقل إلى الآخرين. لذلك فإن استخدام المضاد الحيوي فقط عند وصفه من مقدّم الرعاية الصحية وكما هو موصوف تمامًا يساعد على حماية فعاليته للجميع.',
       en: 'Antibiotic resistance happens when bacteria change so that medicines that used to kill them or stop their growth no longer work as well. It is the bacteria that become resistant, not the person’s body.\n\nEvery time antibiotics are used, bacteria that survive can multiply. Using antibiotics when they are not needed, taking them incorrectly, or not following the prescriber’s instructions gives resistant bacteria more chances to spread.\n\nResistant infections can be harder to treat, may need stronger or longer treatment, and can spread to other people. Using antibiotics only when a healthcare professional prescribes them, exactly as instructed, helps protect these medicines for everyone.',
+      fr: 'L’antibiorésistance survient lorsque les bactéries évoluent de telle sorte que les médicaments qui les détruisaient ou bloquaient leur croissance ne fonctionnent plus efficacement. Ce sont les bactéries qui deviennent résistantes, et non le corps humain.\n\nChaque fois que des antibiotiques sont utilisés, les bactéries capables d’y survivre peuvent se multiplier. Utiliser des antibiotiques sans nécessité médicale, mal les prendre ou ne pas respecter l’ordonnance favorise la propagation des souches résistantes.\n\nLes infections résistantes sont plus difficiles à soigner, nécessitent parfois des traitements plus longs ou hospitaliers, et peuvent se transmettre à d’autres personnes. N’utiliser les antibiotiques que sur prescription médicale protège leur efficacité pour tous.',
+      es: 'La resistencia a los antibióticos ocurre cuando las bacterias cambian de modo que los medicamentos que antes las eliminaban o detenían su crecimiento dejan de funcionar igual de bien. Son las bacterias las que se vuelven resistentes, no el cuerpo de la persona.\n\nCada vez que se utilizan antibióticos, las bacterias que sobreviven pueden multiplicarse. Usar antibióticos cuando no son necesarios, tomarlos de forma incorrecta o no seguir las indicaciones médicas da más oportunidades para que se propaguen las bacterias resistentes.\n\nLas infecciones resistentes pueden ser más difíciles de tratar, requerir tratamientos más prolongados y transmitirse a otras personas. Usar antibióticos solo bajo prescripción médica ayuda a proteger estos medicamentos para todos.',
     },
   },
   {
     id: 'bacterial-vs-viral',
-    title: { ar: 'العدوى البكتيرية مقابل الفيروسية', en: 'Bacterial vs viral infections' },
+    title: {
+      ar: 'العدوى البكتيرية مقابل الفيروسية',
+      en: 'Bacterial vs viral infections',
+      fr: 'Infections bactériennes contre infections virales',
+      es: 'Infecciones bacterianas frente a infecciones virales',
+    },
     summary: {
       ar: 'لماذا لا تنفع المضادات الحيوية في نزلات البرد والإنفلونزا.',
       en: 'Why antibiotics do not help with colds and influenza.',
+      fr: 'Pourquoi les antibiotiques sont inutiles contre le rhume et la grippe.',
+      es: 'Por qué los antibióticos no sirven para el resfriado común ni la gripe.',
     },
     body: {
       ar: 'البكتيريا كائنات حية دقيقة مكوّنة من خلية واحدة، أما الفيروسات فهي جراثيم أصغر بكثير تحتاج إلى خلايا حية لتتكاثر. تسبب كلٌّ منهما أنواعًا مختلفة من العدوى وتحتاج إلى أساليب علاج مختلفة.\n\nتعمل المضادات الحيوية ضد البكتيريا فقط. ولا تعالج الفيروسات، ولذلك لا تفيد في أمراض مثل نزلات البرد والإنفلونزا التي تسببها الفيروسات.\n\nلا تكفي الأعراض وحدها دائمًا لمعرفة سبب العدوى. الطبيب أو المختص المؤهل هو من يقرر إن كان المضاد الحيوي مناسبًا. عند ظهور أعراض استشر مختصًا ولا تختر مضادًا حيويًا بنفسك.',
       en: 'Bacteria are single-celled organisms, while viruses are much smaller germs that need living cells to multiply. They cause different kinds of infection and need different approaches.\n\nAntibiotics work against bacteria only. They do not treat viruses, so they do not help with illnesses such as the common cold or influenza, which are caused by viruses.\n\nSymptoms alone cannot always tell which germ is responsible. A doctor or other qualified professional decides whether an antibiotic is appropriate. If you have symptoms, ask a professional rather than choosing an antibiotic yourself.',
+      fr: 'Les bactéries sont des micro-organismes unicellulaires, tandis que les virus sont beaucoup plus petits et ont besoin de cellules vivantes pour se multiplier. Ils provoquent des infections différentes qui demandent des prises en charge distinctes.\n\nLes antibiotiques agissent uniquement contre les bactéries. Ils ne détruisent pas les virus et ne soulagent donc ni le rhume ni la grippe.\n\nLes symptômes seuls ne suffisent pas toujours à identifier le microbe responsable. Seul un médecin ou professionnel qualifié peut déterminer si un antibiotique est nécessaire.',
+      es: 'Las bacterias son microorganismos unicelulares, mientras que los virus son gérmenes mucho más pequeños que necesitan células vivas para multiplicarse. Causan distintos tipos de infección y requieren tratamientos diferentes.\n\nLos antibióticos solo actúan contra las bacterias. No eliminan los virus, por lo que no ayudan en enfermedades como el resfriado común o la gripe.\n\nLos síntomas por sí solos no siempre permiten saber qué germen es el causante. Un médico o profesional cualificado es quien decide si un antibiótico es apropiado.',
     },
   },
   {
     id: 'avoid-self-medication',
-    title: { ar: 'لماذا نتجنب العلاج الذاتي بالمضادات الحيوية؟', en: 'Why avoid self-medicating with antibiotics?' },
+    title: {
+      ar: 'لماذا نتجنب العلاج الذاتي بالمضادات الحيوية؟',
+      en: 'Why avoid self-medicating with antibiotics?',
+      fr: 'Pourquoi éviter l’automédication par antibiotiques ?',
+      es: '¿Por qué evitar la automedicación con antibióticos?',
+    },
     summary: {
       ar: 'مخاطر تناول المضاد دون وصفة أو استخدام بقايا الأدوية.',
       en: 'The risks of taking antibiotics without a prescription or using leftovers.',
+      fr: 'Les risques de prendre des antibiotiques sans ordonnance ou d’utiliser des restes de boîte.',
+      es: 'Los riesgos de tomar antibióticos sin receta o reutilizar medicamentos sobrantes.',
     },
     body: {
       ar: 'قد لا يناسب المضاد الحيوي الذي تختاره بنفسك نوع العدوى، وقد لا تكون العدوى بكتيرية أصلًا. وقد يؤخر ذلك العلاج الصحيح ويعرّضك لآثار جانبية أو تحسس دون فائدة.\n\nتجنّب هذه السلوكيات: تناول مضاد حيوي دون وصفة أو استشارة، استخدام بقايا دواء من مرض سابق، مشاركة الدواء مع الآخرين، أو الضغط على الطبيب لوصف مضاد حيوي.\n\nإذا كنت قلقًا من أعراضك فاسأل الطبيب أو الصيدلي. وإذا لم يصف لك مضادًا حيويًا فقد يكون ذلك لأنه غير مناسب لحالتك.',
       en: 'An antibiotic you choose yourself may not suit the type of infection, and the illness may not be bacterial at all. This can delay the right treatment and expose you to side effects or allergy with no benefit.\n\nAvoid these behaviours: taking an antibiotic without a prescription or advice, using leftovers from a past illness, sharing medicines with others, or pressuring a prescriber for an antibiotic.\n\nIf you are worried about your symptoms, ask a doctor or pharmacist. If you are not given an antibiotic, it may be because it would not help your condition.',
+      fr: 'Un antibiotique choisi sans avis médical peut ne pas cibler la bactérie en cause, ou l’infection peut être d’origine virale. Cela retarde le bon diagnostic et vous expose à des effets indésirables ou allergies sans aucun bénéfice.\n\nÉvitez ces pratiques : prendre un antibiotique sans ordonnance, utiliser les restes d’un ancien traitement, partager vos médicaments avec vos proches ou insister pour obtenir une prescription.\n\nEn cas de symptômes inquiétants, demandez conseil à votre médecin ou pharmacien.',
+      es: 'Un antibiótico elegido por cuenta propia puede no ser adecuado para el tipo de infección, o la enfermedad puede ni siquiera ser bacteriana. Esto retrasa el tratamiento correcto y te expone a efectos secundarios o alergias sin beneficio.\n\nEvita estas conductas: tomar antibióticos sin receta, usar sobrantes de una enfermedad anterior, compartir medicamentos con otras personas o presionar al médico para que recete un antibiótico.\n\nSi te preocupan tus síntomas, consulta al médico o farmacéutico.',
     },
   },
   {
     id: 'safe-use',
-    title: { ar: 'الاستخدام الآمن للمضادات الحيوية', en: 'Using antibiotics safely' },
+    title: {
+      ar: 'الاستخدام الآمن للمضادات الحيوية',
+      en: 'Using antibiotics safely',
+      fr: 'Utiliser les antibiotiques en toute sécurité',
+      es: 'Uso seguro de los antibióticos',
+    },
     summary: {
       ar: 'نقاط عامة تساعدك على الالتزام بتعليمات العلاج.',
       en: 'General points to help you follow your treatment instructions.',
+      fr: 'Recommandations essentielles pour bien suivre votre traitement antibiotique.',
+      es: 'Puntos clave para seguir correctamente las instrucciones de tu tratamiento.',
     },
     body: {
       ar: 'تناول الدواء تمامًا كما وُصف لك من حيث الجرعة والمواعيد والمدة. اسأل الصيدلي ماذا تفعل إذا نسيت جرعة. لا تغيّر الجرعة أو المدة ولا توقف الدواء من تلقاء نفسك؛ وإن أردت التوقف بسبب أعراض مزعجة فتحدث أولًا إلى من وصف لك الدواء.\n\nأخبر الطبيب أو الصيدلي بأي حساسية سابقة، وبكل الأدوية والمكملات التي تتناولها، وإن كنتِ حاملًا أو مرضعًا، وبأي مرض في الكلى أو الكبد.\n\nيساعد غسل اليدين والتطعيمات الموصى بها على الوقاية من العدوى، وبالتالي تقليل الحاجة إلى المضادات الحيوية.',
       en: 'Take the medicine exactly as prescribed: the dose, the timing, and the length of treatment. Ask the pharmacist what to do if you miss a dose. Do not change the dose or duration or stop on your own; if you want to stop because of troublesome symptoms, speak first to whoever prescribed it.\n\nTell the doctor or pharmacist about any past allergies, all medicines and supplements you take, if you are pregnant or breastfeeding, and any kidney or liver disease.\n\nHand washing and recommended vaccinations help prevent infections, which reduces the need for antibiotics.',
+      fr: 'Prenez le médicament exactement comme prescrit : respectez la dose, les heures de prise et la durée du traitement. Demandez au pharmacien que faire en cas d’oubli. Ne modifiez ni la dose ni la durée sans avis médical.\n\nSignalez toujours vos allergies connues, vos autres médicaments ou compléments (fer, calcium, anticoagulants), une grossesse ou un allaitement, ainsi que toute insuffisance rénale ou hépatique.\n\nLe lavage des mains et la vaccination réduisent le risque d’infection et donc le besoin d’antibiotiques.',
+      es: 'Toma el medicamento exactamente como fue recetado: dosis, horario y duración completa. Pregunta al farmacéutico qué hacer si olvidas una dosis. No cambies la dosis ni suspendas el tratamiento por tu cuenta.\n\nInforma siempre al médico o farmacéutico sobre alergias previas, todos los medicamentos y suplementos que tomas, si estás embarazada o en periodo de lactancia, y si padeces enfermedad renal o hepática.\n\nEl lavado de manos y las vacunas recomendadas ayudan a prevenir infecciones.',
     },
   },
   {
     id: 'adverse-reactions',
-    title: { ar: 'الأعراض الجانبية والتفاعلات التحسسية', en: 'Side effects and allergic reactions' },
+    title: {
+      ar: 'الأعراض الجانبية والتفاعلات التحسسية',
+      en: 'Side effects and allergic reactions',
+      fr: 'Effets indésirables et réactions allergiques',
+      es: 'Efectos secundarios y reacciones alérgicas',
+    },
     summary: {
       ar: 'ماذا تراقب ومتى تطلب المساعدة.',
       en: 'What to watch for and when to get help.',
+      fr: 'Quels signes surveiller et quand consulter en urgence.',
+      es: 'Qué síntomas vigilar y cuándo buscar ayuda médica.',
     },
     body: {
       ar: 'قد تسبب المضادات الحيوية أعراضًا مثل الغثيان أو اضطراب المعدة أو الإسهال أو الطفح الجلدي. أخبر الطبيب أو الصيدلي بأي عرض جديد بعد بدء الدواء.\n\nاطلب مساعدة طبية عاجلة عند ظهور تورّم في الوجه أو الشفتين أو الحلق، أو صعوبة في التنفس، أو طفح جلدي شديد أو مؤلم، أو إسهال شديد أو مستمر أو دموي.\n\nيمكن الإبلاغ عن الأعراض الجانبية المشتبه بها إلى الطبيب أو الصيدلي أو إلى مركز اليقظة الدوائية في بلدك.',
       en: 'Antibiotics can cause symptoms such as nausea, stomach upset, diarrhoea, or a skin rash. Tell a doctor or pharmacist about any new symptom after starting a medicine.\n\nGet urgent medical help for swelling of the face, lips, or throat, difficulty breathing, a severe or painful skin rash, or severe, persistent, or bloody diarrhoea.\n\nSuspected side effects can be reported to your doctor, your pharmacist, or your national pharmacovigilance centre.',
+      fr: 'Les antibiotiques peuvent provoquer des effets secondaires tels que nausées, maux d’estomac, diarrhée légère ou éruption cutanée. Signalez tout nouveau symptôme à votre médecin ou pharmacien.\n\nAppelez les urgences médicales en cas de gonflement du visage, des lèvres ou de la gorge, de difficulté à respirer, d’éruption cutanée sévère avec cloques ou de diarrhée abondante ou sanglante.\n\nLes effets indésirables peuvent être déclarés à votre pharmacien ou au centre national de pharmacovigilance.',
+      es: 'Los antibióticos pueden causar síntomas como náuseas, malestar estomacal, diarrea o erupción cutánea. Informa al médico o farmacéutico sobre cualquier síntoma nuevo tras iniciar el medicamento.\n\nBusca atención médica urgente si presentas hinchazón de cara, labios o garganta, dificultad para respirar, erupción cutánea grave o diarrea intensa o con sangre.\n\nLos efectos adversos pueden notificarse al médico, farmacéutico o centro nacional de farmacovigilancia.',
     },
   },
-
   {
     id: 'how-resistance-spreads',
-    title: { ar: 'كيف تنتشر البكتيريا المقاومة؟', en: 'How resistant bacteria spread' },
+    title: {
+      ar: 'كيف تنتشر البكتيريا المقاومة؟',
+      en: 'How resistant bacteria spread',
+      fr: 'Comment se propagent les bactéries résistantes ?',
+      es: '¿Cómo se propagan las bacterias resistentes?',
+    },
     summary: {
       ar: 'في المستشفيات والمجتمع: طرق الانتقال وكيف نحدّ منها.',
       en: 'In hospitals and in the community: how they pass between people and how to limit it.',
+      fr: 'À l’hôpital et dans la communauté : modes de transmission et gestes barrières.',
+      es: 'En hospitales y en la comunidad: vías de transmisión y cómo limitarlas.',
     },
     body: {
       ar: 'تنتشر البكتيريا المقاومة بالطرق نفسها التي تنتشر بها البكتيريا الأخرى: الاتصال المباشر بشخص مصاب، أو عبر الأيدي والأسطح والأدوات الملوثة، وأحيانًا عبر الطعام أو الماء الملوث.\n\nيمكن أن تنتشر في المجتمع وفي أماكن الرعاية الصحية مثل المستشفيات ودور الرعاية، حيث يوجد قرب بين أشخاص كثيرين لديهم مناعة ضعيفة. لذلك تُعدّ نظافة اليدين ونظافة الأدوات واتباع قواعد مكافحة العدوى أمرًا مهمًا جدًا هناك.\n\nيمكنك المساعدة بغسل اليدين جيدًا، وتغطية الجروح بضماد نظيف، والبقاء في المنزل عند الإصابة بعدوى قابلة للانتقال، واتباع نصائح التطعيم.',
       en: 'Resistant bacteria spread in the same ways as other bacteria: through direct contact with an infected person, through contaminated hands, surfaces or equipment, and sometimes through contaminated food or water.\n\nThey can spread in the community and in healthcare settings such as hospitals and care homes, where many people with weakened defences are close together. Clean hands, clean equipment, and following infection-control rules are very important there.\n\nYou can help by washing your hands properly, covering wounds with a clean dressing, staying at home when you have an infection that can pass to others, and following vaccination advice.',
+      fr: 'Les bactéries résistantes se transmettent de la même manière que les autres bactéries : par contact direct avec une personne infectée, par les mains ou les surfaces contaminées, et parfois par l’eau ou les aliments.\n\nElles peuvent circuler dans la communauté comme dans les hôpitaux, où se trouvent des patients fragilisés. L’hygiène des mains, la stérilisation du matériel et les protocoles de prévention des infections y sont essentiels.\n\nVous pouvez agir en vous lavant les mains régulièrement, en couvrant les plaies avec un pansement propre et en respectant les vaccinations.',
+      es: 'Las bacterias resistentes se propagan igual que otras bacterias: por contacto directo con una persona infectada, a través de manos, superficies o equipos contaminados y, en ocasiones, mediante agua o alimentos contaminados.\n\nPueden transmitirse tanto en la comunidad como en hospitales, donde hay personas con defensas debilitadas. La higiene de manos y el control de infecciones son fundamentales.\n\nPuedes ayudar lavándote bien las manos, cubriendo las heridas con apósitos limpios y manteniendo tus vacunas al día.',
     },
   },
   {
     id: 'prevent-infections',
-    title: { ar: 'الوقاية من العدوى: اليدان واللقاحات والنظافة', en: 'Preventing infections: hands, vaccines and hygiene' },
+    title: {
+      ar: 'الوقاية من العدوى: اليدان واللقاحات والنظافة',
+      en: 'Preventing infections: hands, vaccines and hygiene',
+      fr: 'Prévenir les infections : hygiène des mains et vaccins',
+      es: 'Prevención de infecciones: manos, vacunas e higiene',
+    },
     summary: {
       ar: 'أفضل مضاد حيوي هو الذي لا تحتاج إليه أصلًا.',
       en: 'The best antibiotic is the one you never need.',
+      fr: 'Le meilleur antibiotique est celui dont vous n’avez jamais besoin.',
+      es: 'El mejor antibiótico es el que nunca necesitas tomar.',
     },
     body: {
       ar: 'الوقاية من العدوى تقلل الحاجة إلى المضادات الحيوية وتبطئ ظهور المقاومة.\n\nاغسل يديك بالماء والصابون: بعد استخدام المرحاض، وقبل تحضير الطعام أو تناوله، وبعد السعال أو العطاس، وبعد العناية بشخص مريض. وإذا لم يتوفر الماء والصابون فيمكن استخدام معقّم اليدين الكحولي إن لم تكن اليدان متسختين بشكل واضح.\n\nالتزم بالتطعيمات الموصى بها في برنامج الصحة الوطني في بلدك. وحضّر الطعام وخزّنه بطريقة آمنة، واشرب ماءً آمنًا، وحافظ على الجروح نظيفة ومغطاة.',
       en: 'Preventing infection reduces the need for antibiotics and slows resistance.\n\nWash your hands with soap and water: after using the toilet, before preparing or eating food, after coughing or sneezing, and after caring for someone who is ill. When soap and water are not available, an alcohol-based hand rub can be used if your hands are not visibly dirty.\n\nKeep up with the vaccinations recommended by your national health programme. Prepare and store food safely, drink safe water, and keep cuts clean and covered.',
+      fr: 'Prévenir les infections diminue directement le besoin d’antibiotiques et ralentit l’apparition de résistances.\n\nLavez-vous les mains à l’eau et au savon : après être allé aux toilettes, avant de préparer ou de prendre un repas, après avoir toussé ou éternué, et après avoir soigné un malade. Une solution hydroalcoolique peut être utilisée si les mains ne sont pas visiblement souillées.\n\nSuivez le calendrier vaccinal recommandé, préparez les aliments de façon hygiénique et gardez les plaies propres et couvertes.',
+      es: 'Prevenir las infecciones reduce la necesidad de antibióticos y frena el avance de la resistencia.\n\nLávate las manos con agua y jabón: después de ir al baño, antes de preparar o comer alimentos, después de toser o estornudar y tras cuidar a una persona enferma. Si no hay agua y jabón, usa gel hidroalcohólico si las manos no están visiblemente sucias.\n\nMantén al día el calendario de vacunación, manipula los alimentos con higiene y mantén las heridas limpias y cubiertas.',
     },
   },
   {
     id: 'one-health',
-    title: { ar: 'نهج الصحة الواحدة: الإنسان والحيوان والبيئة', en: 'One Health: people, animals and the environment' },
+    title: {
+      ar: 'نهج الصحة الواحدة: الإنسان والحيوان والبيئة',
+      en: 'One Health: people, animals and the environment',
+      fr: 'Une Seule Santé (One Health) : humains, animaux et environnement',
+      es: 'Una Sola Salud (One Health): personas, animales y medio ambiente',
+    },
     summary: {
       ar: 'لماذا تُعدّ المقاومة مشكلة مشتركة تتجاوز المستشفيات.',
       en: 'Why resistance is a shared problem that goes beyond hospitals.',
+      fr: 'Pourquoi l’antibiorésistance est un défi global qui dépasse le cadre hospitalier.',
+      es: 'Por qué la resistencia es un problema compartido que va más allá de los hospitales.',
     },
     body: {
       ar: 'تُستخدم المضادات الحيوية للإنسان وللحيوان وأحيانًا في الزراعة. ويمكن للبكتيريا المقاومة أن تنتقل بين البشر والحيوانات والغذاء والبيئة، ولذلك فالمقاومة مشكلة مشتركة.\n\nنهج «الصحة الواحدة» يربط بين صحة الإنسان وصحة الحيوان والبيئة، ويشجّع على الاستخدام الحذر للمضادات الحيوية في كل هذه المجالات وليس في المستشفيات فقط.\n\nما يمكن للأفراد فعله: استخدام المضادات الحيوية كما وُصفت فقط، وتداول الطعام وطهيه بأمان، وغسل اليدين بعد ملامسة الحيوانات، ودعم الجهود الداعية إلى الاستخدام المسؤول للمضادات الحيوية لدى الحيوانات.',
       en: 'Antibiotics are used for people, for animals, and sometimes in agriculture. Resistant bacteria can move between people, animals, food and the environment, so resistance is a shared problem.\n\nOne Health is an approach that links human health, animal health and the environment. It encourages careful antibiotic use in all of these areas, not only in hospitals.\n\nWhat individuals can do: use antibiotics only as prescribed, handle and cook food safely, wash hands after contact with animals, and support efforts for the responsible use of antibiotics in animals.',
+      fr: 'Les antibiotiques sont utilisés en médecine humaine, en médecine vétérinaire et parfois en agriculture. Les bactéries résistantes pouvant circuler entre les humains, les animaux, les aliments et les cours d’eau, l’antibiorésistance est un enjeu collectif.\n\nL’approche « Une Seule Santé » (One Health) de l’OMS relie la santé humaine, la santé animale et la protection de l’environnement pour promouvoir un usage raisonné des antimicrobiens dans tous les secteurs.\n\nÀ titre individuel : utilisez les antibiotiques uniquement sur ordonnance, cuisez bien les aliments, lavez-vous les mains après un contact avec des animaux et ne jetez jamais de médicaments dans la nature ou les eaux usées.',
+      es: 'Los antibióticos se utilizan en personas, animales y a veces en la agricultura. Las bacterias resistentes pueden pasar entre seres humanos, animales, alimentos y el medio ambiente.\n\nEl enfoque «Una Sola Salud» (One Health) de la OMS conecta la salud humana, la sanidad animal y el medio ambiente para promover el uso prudente de antibióticos en todos estos ámbitos.\n\nQué podemos hacer: usar antibióticos solo con receta médica, cocinar bien los alimentos, lavarse las manos tras el contacto con animales y desechar los medicamentos de forma segura.',
     },
   },
   {
     id: 'questions-to-ask',
-    title: { ar: 'أسئلة تسألها لطبيبك أو صيدلانيك', en: 'Questions to ask your doctor or pharmacist' },
+    title: {
+      ar: 'أسئلة تسألها لطبيبك أو صيدلانيك',
+      en: 'Questions to ask your doctor or pharmacist',
+      fr: 'Questions à poser à votre médecin ou pharmacien',
+      es: 'Preguntas para hacer a tu médico o farmacéutico',
+    },
     summary: {
       ar: 'من حقك أن تسأل. إليك أسئلة تساعدك على فهم علاجك.',
       en: 'It is your right to ask. These questions help you understand your treatment.',
+      fr: 'C’est votre droit de poser des questions pour bien comprendre votre traitement.',
+      es: 'Es tu derecho preguntar. Estas preguntas te ayudarán a comprender tu tratamiento.',
     },
     body: {
       ar: 'من حقك أن تسأل. من الأسئلة المفيدة: هل مرضي ناتج عن بكتيريا أم فيروس؟ هل أحتاج فعلًا إلى مضاد حيوي؟ ما اسم الدواء ولماذا يُوصف؟ كيف ومتى أتناوله، مع الطعام أو بدونه، ولكم من الوقت؟ ماذا أفعل إذا نسيت جرعة؟ ما الأعراض الجانبية التي أراقبها ومتى أطلب المساعدة؟ هل يمكن تناوله مع أدويتي الأخرى والمكملات؟\n\nأحضر معك في كل زيارة قائمة بأدويتك وبأي حساسية لديك.\n\nإذا لم يُوصف لك مضاد حيوي فاسأل عمّا يمكنك فعله لتشعر بتحسّن، ومتى تعود إذا ساءت الأعراض.',
       en: 'It is your right to ask. Useful questions include: Is my illness caused by bacteria or a virus? Do I really need an antibiotic? What is the medicine called and what is it for? How and when should I take it, with or without food, and for how long? What should I do if I miss a dose? What side effects should I watch for, and when should I get help? Can I take it with my other medicines or supplements?\n\nBring a list of your medicines and allergies to every visit.\n\nIf you are not prescribed an antibiotic, ask what you can do to feel better and when to come back if symptoms get worse.',
+      fr: 'Questions utiles à poser : Mon infection est-elle bactérienne ou virale ? Ai-je vraiment besoin d’un antibiotique ? Quel est le nom du médicament et comment dois-je le prendre (pendant ou en dehors des repas, à quels horaires et pendant combien de jours) ? Que faire si j’oublie une prise ? Quelles interactions avec mes autres médicaments ?\n\nApportez toujours la liste de vos traitements en cours et de vos allergies lors de chaque consultation.\n\nSi aucun antibiotique n’est prescrit, demandez quels soins symptomatiques adopter et dans quel délai reconsulter si l’état ne s’améliore pas.',
+      es: 'Preguntas útiles: ¿Mi enfermedad es causada por bacterias o por un virus? ¿Realmente necesito un antibiótico? ¿Cómo se llama el medicamento y cómo debo tomarlo (con o sin comida, cada cuántas horas y durante cuántos días)? ¿Qué hago si olvido una dosis? ¿Qué efectos secundarios debo vigilar? ¿Puedo tomarlo con mis otros medicamentos o suplementos?\n\nLleva siempre a la consulta una lista de tus medicamentos actuales y alergias.\n\nSi no te recetan un antibiótico, pregunta qué medidas alivian los síntomas y cuándo volver si empeoras.',
     },
   },
   {
     id: 'storage-and-disposal',
-    title: { ar: 'تخزين الأدوية والتخلص من بقاياها', en: 'Storing and disposing of leftover medicines' },
+    title: {
+      ar: 'تخزين الأدوية والتخلص من بقاياها',
+      en: 'Storing and disposing of leftover medicines',
+      fr: 'Conservation et élimination sûre des médicaments',
+      es: 'Almacenamiento y eliminación segura de medicamentos',
+    },
     summary: {
       ar: 'لماذا لا نحتفظ ببقايا المضاد الحيوي، وكيف نتخلص منها بأمان.',
       en: 'Why we do not keep leftover antibiotics, and how to dispose of them safely.',
+      fr: 'Pourquoi ne pas garder les restes d’antibiotiques et comment les éliminer sans polluer.',
+      es: 'Por qué no debemos guardar antibióticos sobrantes y cómo desecharlos de forma segura.',
     },
     body: {
       ar: 'يُوصف المضاد الحيوي لمرض واحد ولشخص واحد. قد يبدو الاحتفاظ بالبقايا للمرة القادمة مغريًا لكنه غير آمن: فقد لا يناسب الدواء المرض الجديد، وقد تنتهي صلاحية الدواء القديم.\n\nخزّن الأدوية كما هو مكتوب على العبوة أو النشرة، وغالبًا في مكان بارد وجاف وبعيدًا عن متناول الأطفال ونظرهم. وتحقق من تاريخ انتهاء الصلاحية.\n\nلا ترمِ الأدوية في المغسلة أو المرحاض إلا إذا طُلب منك ذلك. اسأل الصيدلاني عن خدمة استرجاع الأدوية أو عن طريقة التخلص الآمن في منطقتك.',
       en: 'Antibiotics are prescribed for one illness and one person. Keeping leftovers for later is tempting but not safe: the medicine may not suit the next illness, and old medicine may be out of date.\n\nStore medicines as written on the label or leaflet, usually in a cool, dry place and out of reach and sight of children. Check the expiry date.\n\nDo not throw medicines in the sink or toilet unless you are told to. Ask your pharmacist about a take-back service or about safe disposal in your area.',
+      fr: 'Un antibiotique est prescrit pour un épisode infectieux précis et une seule personne. Conserver les restes est dangereux : le médicament peut être inadapté ou périmé (notamment les suspensions buvables reconstituées qui périment en 7 à 14 jours).\n\nConservez les médicaments dans un endroit frais et sec (jamais dans la salle de bain), hors de la vue et de la portée des enfants.\n\nNe jetez jamais d’antibiotiques dans l’évier ou les toilettes afin de ne pas contaminer les cours d’eau. Rapportez-les en pharmacie.',
+      es: 'Los antibióticos se recetan para una enfermedad y una persona concretas. Guardar sobrantes para después no es seguro: el medicamento puede no servir para la siguiente infección o haber caducado (especialmente los jarabes reconstituidos).\n\nGuarda los medicamentos según las indicaciones del envase, en un lugar fresco y seco, fuera del alcance y de la vista de los niños.\n\nNo tires antibióticos por el fregadero ni el inodoro para evitar contaminar el agua. Consulta en tu farmacia sobre el punto de recogida segura.',
     },
   },
   {
     id: 'nurse-role',
-    title: { ar: 'دور التمريض في الوعي بالمضادات الحيوية', en: 'The nurse’s role in antibiotic awareness' },
+    title: {
+      ar: 'دور التمريض في الوعي بالمضادات الحيوية',
+      en: 'The nurse’s role in antibiotic awareness',
+      fr: 'Le rôle infirmier dans le bon usage des antibiotiques',
+      es: 'El papel de enfermería en el uso prudente de antibióticos',
+    },
     summary: {
       ar: 'كيف يساهم الممرضون في الاستخدام الرشيد للمضادات الحيوية.',
       en: 'How nurses help antibiotics to be used wisely.',
+      fr: 'Comment le personnel infirmier contribue quotidiennement à la sécurité et au bon usage des antibiotiques.',
+      es: 'Cómo el personal de enfermería impulsa el uso seguro y racional de los antibióticos.',
     },
     body: {
       ar: 'يقضي الممرضون وقتًا مع المرضى أكثر من معظم المهنيين الآخرين، ما يجعلهم شركاء أساسيين في الاستخدام الرشيد للمضادات الحيوية.\n\nمن مساهماتهم المعتادة: شرح سبب الحاجة أو عدم الحاجة إلى المضاد الحيوي للمرضى وأسرهم، والتحقق من الحساسية والتفاعلات السابقة وتوثيقها، وإعطاء الأدوية في موعدها وكما هو مطلوب، ومراقبة الأعراض الجانبية والتفاعلات التحسسية والإبلاغ عنها، وتعزيز نظافة اليدين وإجراءات مكافحة العدوى، وتعليم المرضى كيف يتناولون دواءهم وماذا يفعلون عند نسيان جرعة.\n\nتختلف المسؤوليات الدقيقة باختلاف البلد ومكان العمل والسياسات المحلية.',
       en: 'Nurses spend more time with patients than most other professionals, which makes them key partners in using antibiotics wisely.\n\nTypical contributions: explaining to patients and families why an antibiotic is or is not needed; checking and recording allergies and previous reactions; giving medicines on time and as ordered; watching for and reporting side effects and allergic reactions; promoting hand hygiene and infection-control measures; and teaching patients how to take their medicine and what to do if they miss a dose.\n\nThe exact responsibilities depend on the country, the workplace and local policy.',
+      fr: 'Les infirmiers et infirmières passent plus de temps auprès des patients que la plupart des autres professionnels, ce qui en fait des acteurs clés de la gestion des antibiotiques (Antimicrobial Stewardship).\n\nLeurs contributions essentielles : vérifier et documenter les allergies avant toute administration, prélever les cultures microbiologiques avant la première dose d’antibiotique, administrer les doses à l’heure exacte, surveiller les signes d’allergie ou d’effets secondaires, appliquer l’hygiène des mains et éduquer le patient et sa famille.',
+      es: 'El personal de enfermería pasa más tiempo con los pacientes que la mayoría de los demás profesionales, lo que los convierte en socios clave en los programas de optimización de antimicrobianos (PROA).\n\nSus contribuciones principales incluyen: verificar y registrar alergias antes de administrar cualquier dosis, tomar cultivos microbiológicos antes de la primera dosis de antibiótico, administrar la medicación a tiempo, vigilar reacciones adversas, reforzar la higiene de manos y educar al paciente y su familia.',
     },
   },
   {
     id: 'antibiotic-allergy',
-    title: { ar: 'الحساسية من المضادات الحيوية', en: 'Allergy to antibiotics' },
+    title: {
+      ar: 'الحساسية من المضادات الحيوية',
+      en: 'Allergy to antibiotics',
+      fr: 'Allergie aux antibiotiques vs effet secondaire',
+      es: 'Alergia a los antibióticos frente a efecto secundario',
+    },
     summary: {
       ar: 'الفرق بين الحساسية والأثر الجانبي، وماذا تقول للمختصين.',
       en: 'The difference between an allergy and a side effect, and what to tell professionals.',
+      fr: 'Faire la différence entre une vraie allergie immunologique et une intolérance digestive bénigne.',
+      es: 'La diferencia entre una verdadera alergia y un efecto secundario leve, y qué informar al médico.',
     },
     body: {
       ar: 'يُصاب بعض الأشخاص بتفاعل تحسسي تجاه مضادات حيوية معينة. وقد تشمل العلامات طفحًا جلديًا، وحكة، وتورّم الوجه أو الشفتين أو الحلق، وأزيزًا، وصعوبة في التنفس. التفاعلات الشديدة تحتاج إلى مساعدة طارئة.\n\nأخبر كل طبيب وصيدلاني وممرض بأي تفاعل حدث لك مع دواء وماذا حدث بالضبط. لا تصنّف نفسك «حساسًا» بسبب اضطراب بسيط في المعدة: فالأثر الجانبي ليس هو الحساسية.\n\nإذا قيل لك إنك حساس لكنك غير متأكد فاسأل طبيبك إن كان إجراء فحص أو مراجعة مناسبًا. ولا تجرّب الدواء بنفسك في المنزل للتأكد.',
       en: 'Some people have allergic reactions to certain antibiotics. Signs can include a skin rash, itching, swelling of the face, lips or throat, wheezing, or difficulty breathing. Severe reactions need emergency help.\n\nTell every doctor, pharmacist and nurse about any reaction you have had to a medicine and what exactly happened. Do not label yourself allergic because of a mild upset stomach: a side effect is not the same as an allergy.\n\nIf you have been told you are allergic but are not sure, ask your doctor whether testing or a review is appropriate. Do not test yourself by taking the medicine at home.',
+      fr: 'Certaines personnes présentent de vraies réactions allergiques aux antibiotiques (notamment aux pénicillines) : urticaire, démangeaisons, gonflement du visage ou de la gorge, sifflements respiratoires. Ces réactions graves nécessitent des soins d’urgence.\n\nDécrivez précisément à votre médecin ou pharmacien les symptômes ressentis par le passé. Un simple mal d’estomac ou une nausée est un effet secondaire digestif et non une allergie.\n\nEn cas de doute sur une allergie ancienne, demandez un avis médical spécialisé ; ne faites jamais de test vous-même à domicile.',
+      es: 'Algunas personas sufren reacciones alérgicas a ciertos antibióticos (como las penicilinas): urticaria, picazón, hinchazón de cara, labios o garganta, o dificultad para respirar. Las reacciones graves requieren atención de emergencia.\n\nInforma siempre a cada médico, farmacéutico y enfermero sobre cualquier reacción previa y describe qué ocurrió exactamente. Un malestar estomacal leve es un efecto secundario, no una alergia.\n\nSi tienes dudas sobre una alergia antigua, consulta al médico para una evaluación segura; nunca pruebes el medicamento en casa por tu cuenta.',
     },
   },
   {
     id: 'antibiotic-diarrhoea',
-    title: { ar: 'الإسهال المرتبط بالمضادات الحيوية', en: 'Diarrhoea linked to antibiotics' },
+    title: {
+      ar: 'الإسهال المرتبط بالمضادات الحيوية',
+      en: 'Diarrhoea linked to antibiotics',
+      fr: 'Diarrhée associée aux antibiotiques',
+      es: 'Diarrea asociada a los antibióticos',
+    },
     summary: {
       ar: 'متى يكون الإسهال بسيطًا ومتى يحتاج إلى استشارة طبية.',
       en: 'When diarrhoea is mild and when it needs medical advice.',
+      fr: 'Quand la diarrhée est bénigne et quand elle nécessite une consultation médicale rapide.',
+      es: 'Cuándo la diarrea es leve y cuándo requiere evaluación médica.',
     },
     body: {
       ar: 'قد تُخلّ المضادات الحيوية بالتوازن الطبيعي للبكتيريا في الأمعاء وتسبب براز لينًا لدى بعض الأشخاص. وغالبًا ما يكون ذلك خفيفًا ويزول بعد انتهاء العلاج.\n\nالإسهال المائي الشديد أو الدموي، أو ألم البطن القوي، أو الحمّى، أو الإسهال الذي يستمر أيامًا أو يبدأ بعد أسابيع من العلاج يحتاج إلى استشارة طبية لأنه قد يدل على عدوى أكثر خطورة. اشرب السوائل لتجنب الجفاف.\n\nلا تتناول أدوية إيقاف الإسهال دون سؤال الصيدلاني أو الطبيب.',
       en: 'Antibiotics can upset the normal balance of bacteria in the gut and cause loose stools in some people. This is often mild and settles after the course ends.\n\nSevere, watery or bloody diarrhoea, strong stomach pain, fever, or diarrhoea that lasts for days or starts weeks after treatment needs medical advice, because it can be a sign of a more serious infection. Drink fluids to avoid dehydration.\n\nDo not take anti-diarrhoea medicines without asking a pharmacist or doctor.',
+      fr: 'Les antibiotiques peuvent perturber la flore intestinale normale et provoquer des selles molles. Cet effet est souvent léger et disparaît à la fin du traitement.\n\nEn revanche, une diarrhée liquide abondante ou sanglante, accompagnée de fortes douleurs abdominales ou de fièvre — pendant le traitement ou jusqu’à plusieurs semaines après — nécessite un avis médical rapide (risque de colite à C. difficile). Buvez suffisamment d’eau pour éviter la déshydratation.\n\nNe prenez jamais d’anti-diarrhéiques ralentisseurs du transit sans l’avis d’un médecin ou d’un pharmacien.',
+      es: 'Los antibióticos pueden alterar el equilibrio normal de la flora intestinal y causar heces blandas. A menudo es leve y desaparece al finalizar el tratamiento.\n\nSin embargo, la diarrea acuosa intensa o con sangre, dolor abdominal fuerte o fiebre —durante el tratamiento o incluso semanas después— requiere consulta médica inmediata, ya que puede indicar una sobreinfección por C. difficile. Bebe abundantes líquidos para evitar la deshidratación.\n\nNo tomes medicamentos antidiarreicos sin consultar antes al médico o farmacéutico.',
     },
   },
 ];

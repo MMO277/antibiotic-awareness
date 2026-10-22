@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { useState } from 'react';
 import { useLang } from './i18n';
 import { SYMPTOMS_LIST, EMERGENCY_WARNINGS, SymptomDetail, SymptomSeverity } from './sideEffectsData';
@@ -36,7 +37,7 @@ export default function SideEffectsGuide() {
           <span className="emerg-icon">🚨</span>
           <div>
             <h2>{lang === 'ar' ? 'علامات الطوارئ الخطيرة (طلب الإسعاف فوراً):' : 'Emergency Warning Signs (Seek Help Immediately):'}</h2>
-            <p className="emerg-text">{EMERGENCY_WARNINGS[lang]}</p>
+            <p className="emerg-text">{pick(EMERGENCY_WARNINGS, lang)}</p>
           </div>
         </div>
         <div className="emerg-action-row">
@@ -124,7 +125,7 @@ export default function SideEffectsGuide() {
           >
             {SYMPTOMS_LIST.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.severity === 'emergency' ? '🔴' : s.severity === 'prompt' ? '🟡' : '🟢'} {s.name[lang]}
+                {s.severity === 'emergency' ? '🔴' : s.severity === 'prompt' ? '🟡' : '🟢'} {pick(s.name, lang)}
               </option>
             ))}
           </select>
@@ -135,28 +136,28 @@ export default function SideEffectsGuide() {
           <div className={`card symptom-detail-card ${selectedSymptom.severity}`}>
             <div className="sym-head">
               {renderBadge(selectedSymptom.severity)}
-              <h3>{selectedSymptom.name[lang]}</h3>
+              <h3>{pick(selectedSymptom.name, lang)}</h3>
             </div>
 
             <div className="sym-content stack">
               <div className="sym-section">
                 <h4>🔬 {lang === 'ar' ? 'التفسير السريري للعرض:' : 'Clinical Explanation:'}</h4>
-                <p>{selectedSymptom.description[lang]}</p>
+                <p>{pick(selectedSymptom.description, lang)}</p>
               </div>
 
               <div className="sym-section action-highlight">
                 <h4>⚡ {lang === 'ar' ? 'ما يجب عليك فعله الآن (الإجراء الفوري):' : 'What You Should Do Now:'}</h4>
-                <p><b>{selectedSymptom.immediateAction[lang]}</b></p>
+                <p><b>{pick(selectedSymptom.immediateAction, lang)}</b></p>
               </div>
 
               <div className="sym-section offending-drugs">
                 <h4>💊 {lang === 'ar' ? 'أشهر الأدوية المرتبطة بهذا العرض:' : 'Common Culprit Medications:'}</h4>
-                <p><i>{selectedSymptom.commonOffenders[lang]}</i></p>
+                <p><i>{pick(selectedSymptom.commonOffenders, lang)}</i></p>
               </div>
 
               <div className="nursing-box">
                 <h4>🩺 {lang === 'ar' ? 'توجيه وتمريض سريري (Nursing Assessment & Care):' : 'Nursing Clinical Guidance:'}</h4>
-                <p>{selectedSymptom.nursingAdvice[lang]}</p>
+                <p>{pick(selectedSymptom.nursingAdvice, lang)}</p>
               </div>
             </div>
           </div>

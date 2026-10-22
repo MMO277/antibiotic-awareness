@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -86,7 +87,7 @@ export default function AwarenessWeek() {
       setSceneIndex(0);
       setProgressPct(0);
       setPlayingReelId(reel.id);
-      speakText(reel.narrationScript[lang], lang, 1.0, () => {
+      speakText(pick(reel.narrationScript, lang), lang, 1.0, () => {
         setPlayingReelId(null);
       });
     }
@@ -278,8 +279,8 @@ export default function AwarenessWeek() {
                     <div className="row" style={{ gap: '10px' }}>
                       <span style={{ fontSize: '2rem' }}>{reel.icon}</span>
                       <div>
-                        <h3 style={{ margin: 0, fontSize: '1.15rem' }}>{reel.title[lang]}</h3>
-                        <small className="muted">{reel.summary[lang]}</small>
+                        <h3 style={{ margin: 0, fontSize: '1.15rem' }}>{pick(reel.title, lang)}</h3>
+                        <small className="muted">{pick(reel.summary, lang)}</small>
                       </div>
                     </div>
                     <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}>
@@ -309,7 +310,7 @@ export default function AwarenessWeek() {
                     >
                       <iframe
                         src={`https://www.youtube.com/embed/${reel.youtubeId}?rel=0`}
-                        title={reel.title[lang]}
+                        title={pick(reel.title, lang)}
                         style={{
                           width: '100%',
                           height: '100%',
@@ -394,7 +395,7 @@ export default function AwarenessWeek() {
                             borderRadius: '10px',
                           }}
                         >
-                          {activeScene.caption[lang]}
+                          {pick(activeScene.caption, lang)}
                         </p>
                       </div>
 
@@ -456,7 +457,7 @@ export default function AwarenessWeek() {
                       🎙️ {isAr ? 'ملخص وسيناريو الفيديو (للنشر كـ Reel أو قراءته):' : 'Video Script & Summary:'}
                     </div>
                     <p className="small" style={{ margin: 0, lineHeight: 1.75 }}>
-                      «{reel.narrationScript[lang]}»
+                      «{pick(reel.narrationScript, lang)}»
                     </p>
                   </div>
 
@@ -473,7 +474,7 @@ export default function AwarenessWeek() {
                     <button
                       type="button"
                       className="btn ghost small"
-                      onClick={() => handleShareWhatsApp(`${reel.title[lang]}\n${reel.youtubeUrl}\n\n${reel.narrationScript[lang]}`)}
+                      onClick={() => handleShareWhatsApp(`${pick(reel.title, lang)}\n${reel.youtubeUrl}\n\n${pick(reel.narrationScript, lang)}`)}
                     >
                       📲 {isAr ? 'مشاركة الفيديو عبر واتساب' : 'Share Video on WhatsApp'}
                     </button>
@@ -481,7 +482,7 @@ export default function AwarenessWeek() {
                     <button
                       type="button"
                       className="btn ghost small"
-                      onClick={() => handleCopyText(reel.id, `${reel.title[lang]}\n${reel.youtubeUrl}\n\n${reel.narrationScript[lang]}`)}
+                      onClick={() => handleCopyText(reel.id, `${pick(reel.title, lang)}\n${reel.youtubeUrl}\n\n${pick(reel.narrationScript, lang)}`)}
                     >
                       {copiedId === reel.id
                         ? isAr
@@ -518,7 +519,7 @@ export default function AwarenessWeek() {
 
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '18px' }}>
             {CAMPAIGN_POSTERS.map((poster) => {
-              const shareText = `${poster.title[lang]}\n\n${poster.myth[lang]}\n\n${poster.fact[lang]}\n\n${poster.actionTip[lang]}`;
+              const shareText = `${pick(poster.title, lang)}\n\n${pick(poster.myth, lang)}\n\n${pick(poster.fact, lang)}\n\n${pick(poster.actionTip, lang)}`;
               return (
                 <article
                   key={poster.id}
@@ -548,12 +549,12 @@ export default function AwarenessWeek() {
                           border: '1px solid rgba(255,255,255,0.35)',
                         }}
                       >
-                        {poster.badge[lang]}
+                        {pick(poster.badge, lang)}
                       </span>
                       <span style={{ fontSize: '2.2rem' }}>{poster.icon}</span>
                     </div>
                     <h3 style={{ color: '#fff', margin: 0, fontSize: '1.15rem', lineHeight: 1.45 }}>
-                      {poster.title[lang]}
+                      {pick(poster.title, lang)}
                     </h3>
                   </div>
 
@@ -568,7 +569,7 @@ export default function AwarenessWeek() {
                         fontWeight: 600,
                       }}
                     >
-                      {poster.myth[lang]}
+                      {pick(poster.myth, lang)}
                     </div>
 
                     <div
@@ -581,7 +582,7 @@ export default function AwarenessWeek() {
                         lineHeight: 1.65,
                       }}
                     >
-                      {poster.fact[lang]}
+                      {pick(poster.fact, lang)}
                     </div>
 
                     <div
@@ -593,7 +594,7 @@ export default function AwarenessWeek() {
                         fontWeight: 600,
                       }}
                     >
-                      {poster.actionTip[lang]}
+                      {pick(poster.actionTip, lang)}
                     </div>
                   </div>
 
@@ -647,14 +648,14 @@ export default function AwarenessWeek() {
 
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
             {SOCIAL_CAMPAIGN_POSTS.map((post) => {
-              const fullPost = `${post.content[lang]}\n${siteUrl}\n\n${post.hashtags}`;
+              const fullPost = `${pick(post.content, lang)}\n${siteUrl}\n\n${post.hashtags}`;
               return (
                 <div key={post.id} className="card stack" style={{ justifyContent: 'space-between' }}>
                   <div>
                     <div className="row" style={{ justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span className="badge approved">{post.icon} {post.platform[lang]}</span>
+                      <span className="badge approved">{post.icon} {pick(post.platform, lang)}</span>
                     </div>
-                    <h3 style={{ margin: '0 0 8px' }}>{post.title[lang]}</h3>
+                    <h3 style={{ margin: '0 0 8px' }}>{pick(post.title, lang)}</h3>
                     <pre
                       className="pre small"
                       style={{
@@ -667,7 +668,7 @@ export default function AwarenessWeek() {
                         margin: 0,
                       }}
                     >
-                      {post.content[lang]}
+                      {pick(post.content, lang)}
                       {'\n\n'}
                       <span style={{ color: '#0284c7', fontWeight: 600 }}>{post.hashtags}</span>
                     </pre>

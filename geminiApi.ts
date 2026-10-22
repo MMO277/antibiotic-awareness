@@ -1,3 +1,4 @@
+import type { Lang } from './types';
 // geminiApi.ts - Multi-Engine Bilingual AI Vision, Deterministic Prescription OCR & Clinical Assistant
 
 import {
@@ -1089,7 +1090,7 @@ function parseVisionText(rawText: string): {
 export async function analyzeMedicineImageWithVision(
   base64Data: string,
   mimeType: string,
-  lang: 'ar' | 'en'
+  lang: Lang
 ): Promise<VisionAnalysisResult> {
   const prepared = await prepareImageForOcrAndVision(base64Data, mimeType);
   const dataUri = prepared.dataUri;
@@ -1495,7 +1496,7 @@ export function parsePrescriptionTextDeterministically(
 export async function analyzePrescriptionImageWithVision(
   base64Data: string,
   mimeType: string,
-  lang: 'ar' | 'en',
+  lang: Lang,
   fileNameHint?: string
 ): Promise<PrescriptionOcrExtractionResult> {
   const prepared = await prepareImageForOcrAndVision(base64Data, mimeType);

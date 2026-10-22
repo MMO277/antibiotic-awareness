@@ -1,3 +1,4 @@
+import { pick } from './types';
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from './i18n';
 import { LISTEN_TOPICS, ListenTopic } from './listenData';
@@ -85,7 +86,7 @@ export default function ListenLearn() {
     const p = selectedTopic.paragraphs[index];
     if (!p) return;
     setCurrentParagraphIdx(index);
-    await playerRef.current?.speakText(p.text[lang], lang, rate, () => {
+    await playerRef.current?.speakText(pick(p.text, lang), lang, rate, () => {
       setCurrentParagraphIdx(-1);
     });
   };
@@ -104,7 +105,7 @@ export default function ListenLearn() {
       setCurrentParagraphIdx(idx);
       const p = selectedTopic.paragraphs[idx];
       idx++;
-      await playerRef.current?.speakText(p.text[lang], lang, rate, () => {
+      await playerRef.current?.speakText(pick(p.text, lang), lang, rate, () => {
         speakNext();
       });
     };
@@ -150,8 +151,8 @@ export default function ListenLearn() {
               onClick={() => setSelectedTopicId(top.id)}
             >
               <span className="chip-icon">{top.icon}</span>
-              <span className="chip-text">{top.title[lang]}</span>
-              <small className="chip-dur">⏱️ {top.durationEst[lang]}</small>
+              <span className="chip-text">{pick(top.title, lang)}</span>
+              <small className="chip-dur">⏱️ {pick(top.durationEst, lang)}</small>
             </button>
           ))}
         </div>
@@ -163,8 +164,8 @@ export default function ListenLearn() {
           <div className="topic-badge-row">
             <span className="topic-icon">{selectedTopic.icon}</span>
             <div>
-              <h2>{selectedTopic.title[lang]}</h2>
-              <p className="small muted">{selectedTopic.summary[lang]}</p>
+              <h2>{pick(selectedTopic.title, lang)}</h2>
+              <p className="small muted">{pick(selectedTopic.summary, lang)}</p>
             </div>
           </div>
           <div className="status-pill-wrap">
@@ -243,7 +244,7 @@ export default function ListenLearn() {
         {selectedTopic.emergencyNote && (
           <div className="alert urgent" style={{ marginTop: '14px' }}>
             <strong>🚨 {lang === 'ar' ? 'تنبيه طوارئ فوري:' : 'Urgent Emergency Notice:'} </strong>
-            {selectedTopic.emergencyNote[lang]}
+            {pick(selectedTopic.emergencyNote, lang)}
           </div>
         )}
 
@@ -268,7 +269,7 @@ export default function ListenLearn() {
                     🔊 {lang === 'ar' ? 'استمع للفقرة' : 'Listen'}
                   </button>
                 </div>
-                <p className="p-text">{p.text[lang]}</p>
+                <p className="p-text">{pick(p.text, lang)}</p>
               </div>
             );
           })}
