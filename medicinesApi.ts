@@ -47,7 +47,8 @@ function seedToMedicine(s: any): Medicine {
         barcode: p.barcode || '',
         // Never mark a missing or pending barcode as verified.
         verified: p.barcodeStatus === 'verified' && Boolean(p.barcode),
-        sourceUrl: p.barcodeStatus === 'verified' && p.barcode ? 'https://edaegypt.gov.eg' : '',
+        // Do not attach a generic regulator homepage as proof for a specific product barcode.
+        sourceUrl: '',
       });
     }
   });
