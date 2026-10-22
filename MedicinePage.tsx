@@ -143,7 +143,7 @@ export default function MedicinePage() {
         <div className="meta">
           <StatusBadge status={m.status} />
           <span>
-            {t('lastReviewed')}: <b>{m.lastReviewed || '2026-10-14'}</b>
+            {t('lastReviewed')}: <b>{m.lastReviewed || (isAr ? 'غير مسجل' : 'Not recorded')}</b>
           </span>
           {m.reviewedBy && (
             <span>
@@ -152,6 +152,21 @@ export default function MedicinePage() {
           )}
         </div>
       </header>
+
+      {/* Visible data-transparency panel: never invent a review date or imply that every product field is verified. */}
+      <section className="card" style={{ borderInlineStart: '4px solid var(--teal)', background: 'var(--tint)' }} aria-label={isAr ? 'شفافية بيانات الدواء' : 'Medicine data transparency'}>
+        <h2>🔎 {isAr ? 'شفافية بيانات الدواء' : 'Medicine Data Transparency'}</h2>
+        <div className="row wrapRow" style={{ gap: '8px', marginBottom: '8px' }}>
+          <span className="badge">{isAr ? `المصادر السريرية: ${m.sources.length}` : `Clinical sources: ${m.sources.length}`}</span>
+          <span className="badge">{m.lastReviewed ? (isAr ? `آخر مراجعة مسجلة: ${m.lastReviewed}` : `Last recorded review: ${m.lastReviewed}`) : (isAr ? 'لا يوجد تاريخ مراجعة موثق' : 'No documented review date')}</span>
+        </div>
+        <p className="small" style={{ margin: 0 }}>
+          {isAr
+            ? 'حالة المراجعة العامة لا تعني أن كل سعر أو باركود أو توافر تجاري تم التحقق منه بشكل مستقل. راجع مصدر كل معلومة وحالة التحقق بجوار العبوة، ولا تعتمد على السعر أو الباركود وحده لاتخاذ قرار علاجي.'
+            : 'The overall review status does not mean every price, barcode, or market-availability claim has been independently verified. Check the source and verification status beside each package; never use price or barcode alone to make treatment decisions.'}
+        </p>
+        {m.sources.length > 0 && <p className="small" style={{ margin: '8px 0 0' }}>{isAr ? 'المصادر التفصيلية موجودة أسفل صفحة الدواء.' : 'Detailed source links are listed below on this page.'}</p>}
+      </section>
 
       {/* Centralized Medication Safety Engine Assessment Card for this Medicine + User Profile */}
       {safetyAssessment && (
