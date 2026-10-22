@@ -9,10 +9,6 @@ export interface AssessmentQuestion {
   explanation: Bi;
 }
 
-/**
- * النموذج القبلي (Pre-Education Assessment - Form A)
- * يقيس المعرفة الأساسية للمريض قبل الدخول في محتوى الدرس التوعوي.
- */
 export const PRE_ASSESSMENT_QUESTIONS: AssessmentQuestion[] = [
   {
     id: 'pre_q1',
@@ -111,10 +107,6 @@ export const PRE_ASSESSMENT_QUESTIONS: AssessmentQuestion[] = [
   }
 ];
 
-/**
- * النموذج البعدي (Post-Education Assessment - Form B)
- * أسئلة موازية تماماً في الأهداف ومستوى الصعوبة بصياغات مكافئة لتفادي انحياز التذكر المباشر.
- */
 export const POST_ASSESSMENT_QUESTIONS: AssessmentQuestion[] = [
   {
     id: 'post_q1',
@@ -212,12 +204,3 @@ export const POST_ASSESSMENT_QUESTIONS: AssessmentQuestion[] = [
     }
   }
 ];
-
-export function shuffleQuestions<T>(arr: T[]): T[] {
-  const copy = [...arr];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-}

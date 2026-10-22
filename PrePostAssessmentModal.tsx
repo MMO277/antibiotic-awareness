@@ -104,7 +104,6 @@ export function PrePostAssessmentModal({ mode, topicTitle, questions, onComplete
           {isAr ? `الموضوع: ${topicTitle}` : `Topic: ${topicTitle}`}
         </p>
 
-        {/* خيارات الإجابة */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', marginBottom: '1.25rem' }}>
           {q.options.map((opt, idx) => {
             let bg = 'var(--bg, #f5f5f5)';
@@ -151,7 +150,6 @@ export function PrePostAssessmentModal({ mode, topicTitle, questions, onComplete
           })}
         </div>
 
-        {/* الشرح التوضيحي السريري الفوري */}
         {showFeedback && (
           <div
             style={{
@@ -173,7 +171,6 @@ export function PrePostAssessmentModal({ mode, topicTitle, questions, onComplete
           </div>
         )}
 
-        {/* أزرار التحكم والتقدم */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {onCancel && (
             <button

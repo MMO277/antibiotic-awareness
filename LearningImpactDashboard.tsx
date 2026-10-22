@@ -15,7 +15,6 @@ export function LearningImpactDashboard() {
   const [records, setRecords] = useState<PairedAssessmentRecord[]>([]);
   const [events, setEvents] = useState<{ eventType: string; topicId: string; createdMs: number }[]>([]);
 
-  // تحميل البيانات الحقيقية من Firestore
   useEffect(() => {
     async function fetchData() {
       if (!configured || !db) {
@@ -32,7 +31,6 @@ export function LearningImpactDashboard() {
             ? now - 30 * 86400000
             : 0;
 
-        // جلب سجلات التقييم القبلي والبعدي
         const assessRef = collection(db, 'assessmentPairs');
         const qAssess = query(
           assessRef,
@@ -47,7 +45,6 @@ export function LearningImpactDashboard() {
         });
         setRecords(loadedRecords);
 
-        // جلب أحداث الدروس والاختبارات
         const eventsRef = collection(db, 'learningAnalytics');
         const qEvents = query(
           eventsRef,
@@ -71,7 +68,6 @@ export function LearningImpactDashboard() {
     fetchData();
   }, [timeFilter]);
 
-  // تطبيق فلتر الموضوع
   const filteredRecords = useMemo(() => {
     if (topicFilter === 'all') return records;
     return records.filter((r) => r.topicId === topicFilter);
@@ -82,14 +78,12 @@ export function LearningImpactDashboard() {
     return events.filter((e) => e.topicId === topicFilter);
   }, [events, topicFilter]);
 
-  // احتساب مؤشرات التعلم والمحتوى
   const analytics = useMemo(() => {
     const startedAttempts = filteredEvents.filter((e) => e.eventType === 'lesson_start').length;
     const completedAttempts = filteredEvents.filter((e) => e.eventType === 'lesson_complete').length;
     const lessonCompletionRate =
       startedAttempts > 0 ? Math.round((completedAttempts / startedAttempts) * 100) : 0;
 
-    // حساب إحصائيات التقييم المقترن (Paired Sample)
     const totalPre = filteredRecords.length;
     const pairedCompleted = filteredRecords.filter(
       (r) => r.status === 'completed' && r.postScore !== undefined
@@ -98,7 +92,6 @@ export function LearningImpactDashboard() {
     const missingPostData = totalPre - nPaired;
     const attritionRate = totalPre > 0 ? Math.round((missingPostData / totalPre) * 100) : 0;
 
-    // حجب البيانات إذا كانت العينة أقل من 5 مشاركين لحماية الخصوصية
     const isSuppressed = nPaired > 0 && nPaired < 5;
 
     let avgPre = 0;
@@ -136,7 +129,6 @@ export function LearningImpactDashboard() {
     };
   }, [filteredEvents, filteredRecords]);
 
-  // تصدير البيانات المجمعة الخالية من الهويات كملف CSV
   const handleExportCSV = () => {
     if (analytics.nPaired < 5 && analytics.startedAttempts < 5) {
       alert(
@@ -188,7 +180,6 @@ export function LearningImpactDashboard() {
 
   return (
     <div className="learning-impact-dashboard" style={{ marginTop: '1.5rem' }}>
-      {/* رأس اللوحة والتعريف السريري المحكم */}
       <div
         className="card"
         style={{
@@ -218,7 +209,6 @@ export function LearningImpactDashboard() {
           </button>
         </div>
 
-        {/* تنبيه الدقة المنهجية المعتمدة */}
         <div
           style={{
             marginTop: '1rem',
@@ -237,7 +227,6 @@ export function LearningImpactDashboard() {
         </div>
       </div>
 
-      {/* شريط الفلاتر والتحكم */}
       <div
         className="card"
         style={{
@@ -279,7 +268,6 @@ export function LearningImpactDashboard() {
         </label>
       </div>
 
-      {/* حالة التحميل أو قاعدة البيانات الفارغة */}
       {loading ? (
         <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
           <p>{isAr ? 'جاري تحميل مؤشرات الأثر الحقيقية من Firestore...' : 'Loading verified impact metrics from Firestore...'}</p>
@@ -306,7 +294,6 @@ export function LearningImpactDashboard() {
         </div>
       ) : (
         <>
-          {/* شبكة البطاقات التلخيصية للمؤشرات الأساسية */}
           <div
             style={{
               display: 'grid',
@@ -315,7 +302,6 @@ export function LearningImpactDashboard() {
               marginBottom: '1.5rem'
             }}
           >
-            {/* معدل إتمام الدروس */}
             <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted, #666)' }}>
                 {isAr ? 'معدل إتمام الدروس' : 'Lesson Completion Rate'}
@@ -328,7 +314,6 @@ export function LearningImpactDashboard() {
               </div>
             </div>
 
-            {/* متوسط التحصيل القبلي والبعدي المقترن */}
             <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted, #666)' }}>
                 {isAr ? 'التحصيل المقترن (قبلي ← بعدي)' : 'Paired Knowledge (Pre → Post)'}
@@ -349,7 +334,6 @@ export function LearningImpactDashboard() {
               </div>
             </div>
 
-            {/* الفارق المعرفي ونسبة التحسن */}
             <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted, #666)' }}>
                 {isAr ? 'الفارق بنقاط النسبة المئوية' : 'Percentage-Point Delta'}
@@ -377,7 +361,6 @@ export function LearningImpactDashboard() {
               </div>
             </div>
 
-            {/* معدل التسرب وفقدان التقييم البعدي */}
             <div className="card" style={{ padding: '1.25rem', textAlign: 'center' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-muted, #666)' }}>
                 {isAr ? 'البيانات البعدية المفقودة (التسرب)' : 'Missing Post-Test Data (Attrition)'}
@@ -391,7 +374,6 @@ export function LearningImpactDashboard() {
             </div>
           </div>
 
-          {/* جدول تفصيلي للمفاهيم والتعاريف الحسابية المعتمدة */}
           <div className="card" style={{ padding: '1.25rem', overflowX: 'auto' }}>
             <h3 style={{ margin: '0 0 1rem', fontSize: '1.1rem' }}>
               {isAr ? '📐 معادلات واشتقاق المؤشرات الإحصائية المعتمدة' : '📐 Metric Definitions & Mathematical Formulations'}

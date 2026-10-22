@@ -86,7 +86,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ---------- قواعد أمان قياس الأثر والتعلم الجديدة (Learning & Assessment Analytics) ----------
     match /assessmentPairs/{id} {
       allow create: if request.resource.data.keys().hasAll(['topicId', 'createdMs', 'preScore', 'preTotal', 'status'])
           && request.resource.data.topicId is string

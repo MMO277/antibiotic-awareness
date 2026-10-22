@@ -7,6 +7,15 @@ import { useLang } from './i18n';
 import { STEPS } from './contentData';
 import { pick } from './types';
 import Disclaimer from './Disclaimer';
+import { PRE_ASSESSMENT_QUESTIONS, POST_ASSESSMENT_QUESTIONS } from './assessmentData';
+import {
+  markTopicStartedLocally,
+  markTopicCompletedLocally,
+  recordPreAssessment,
+  recordPostAssessment,
+  logLearningEvent
+} from './assessmentWorkflow';
+import { PrePostAssessmentModal } from './PrePostAssessmentModal';
 
 const KEY = 'amr-learn-done';
 
@@ -36,9 +45,21 @@ export default function Learn() {
   const hydratedUidRef = useRef<string | null>(null);
   const step = STEPS[idx];
 
+  const [showPreModal, setShowPreModal] = useState(false);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [preScore, setPreScore] = useState<number | null>(null);
+
   useEffect(() => {
     setSel(null);
   }, [idx]);
+
+  useEffect(() => {
+    if (!step) return;
+    if (markTopicStartedLocally(step.id)) {
+      logLearningEvent('lesson_start', step.id);
+      setShowPreModal(true);
+    }
+  }, [step]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -133,6 +154,10 @@ export default function Learn() {
       const nd = [...done, step.id];
       saveProgress(nd);
     }
+    if (markTopicCompletedLocally(step.id)) {
+      logLearningEvent('lesson_complete', step.id);
+    }
+    setShowPostModal(true);
   };
 
   const reset = () => {
@@ -148,24 +173,24 @@ export default function Learn() {
 
   return (
     <main className="wrap narrow stack">
-      <h1>{L('رحلة تعلّم: مقاومة المضادات الحيوية', 'Learning journey: antimicrobial resistance')}</h1>
+      <h1>{L('رحلة التعلم: مقاومة مضادات الميكروبات', 'Learning journey: antimicrobial resistance')}</h1>
       <p className="muted">
         {L(
-          'ست خطوات قصيرة، وبعد كل خطوة سؤال للتأكد من الفهم. المحتوى بصياغة المشروع من مصادر رسمية مذكورة، وينتظر مراجعة مختص مؤهل، والترجمة العربية آلية.',
-          'Six short steps, each with a quick check. The wording is the project’s own, based on the official sources listed, and is awaiting review by a qualified professional; the Arabic is an AI translation.',
+          'ست خطوات قصيرة، مع اختبار سريع بعد كل منها. المادة التعليمية صياغة المنصة استناداً للمصادر الرسمية.',
+          'Six short steps, each with a quick check. The wording is the project’s own, based on the official sources.'
         )}
       </p>
 
       <div>
-        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={L('نسبة الإكمال', 'Completion')}>
+        <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Learn progress">
           <span style={{ width: `${pct}%` }} />
         </div>
-        <p className="small muted">{L('أكملت', 'Completed')} {done.length} / {STEPS.length}</p>
+        <p className="small muted">{L('المكتمل', 'Completed')} {done.length} / {STEPS.length}</p>
       </div>
 
       <div className="chips" role="tablist">
         {STEPS.map((s, k) => (
-          <button key={s.id} className={`chip ${k === idx ? 'on' : ''}`} onClick={() => setIdx(k)} aria-current={k === idx ? 'step' : undefined}>
+          <button key={s.id} className={`chip ${k === idx ? 'on' : ''}`} onClick={() => setIdx(k)} aria-current={k === idx}>
             {done.includes(s.id) ? '✓ ' : ''}{k + 1}
           </button>
         ))}
@@ -175,7 +200,7 @@ export default function Learn() {
         <h2>{idx + 1}. {pick(step.title, lang)}</h2>
         {pick(step.body, lang).split('\n\n').map((p, k) => <p key={k}>{p}</p>)}
 
-        <h3>{L('تأكد من فهمك', 'Check your understanding')}</h3>
+        <h3>{L('اختبر فهمك', 'Check your understanding')}</h3>
         <p>{pick(step.check.q, lang)}</p>
         <div className="options">
           {step.check.options.map((o, k) => {
@@ -194,7 +219,7 @@ export default function Learn() {
           {step.sources.map((s) => (
             <li key={s.url}>
               <a href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>
-              {s.publisher && <span className="muted"> — {s.publisher}{s.date ? `, ${s.date}` : ''}</span>}
+              {s.publisher && <span className="muted"> – {s.publisher}{s.date ? `, ${s.date}` : ''}</span>}
             </li>
           ))}
         </ul>
@@ -207,12 +232,39 @@ export default function Learn() {
 
       {done.length === STEPS.length && (
         <div className="notice">
-          <strong>{L('أحسنت! أكملت الرحلة. ', 'Well done! You completed the journey. ')}</strong>
-          <Link to="/quiz">{L('جرّب اختبار المعلومات', 'Try the knowledge quiz')}</Link>
+          <strong>{L('أحسنت! أكملت رحلة التعلم.', 'Well done! You completed the journey. ')}</strong>
+          <Link to="/quiz">{L('جرب اختبار المعرفة الآن', 'Try the knowledge quiz')}</Link>
         </div>
       )}
-      <button className="btn ghost small" onClick={reset}>{L('مسح التقدم', 'Reset progress')}</button>
+      <button className="btn ghost small" onClick={reset}>{L('إعادة الضبط', 'Reset progress')}</button>
       <Disclaimer />
+
+      {showPreModal && (
+        <PrePostAssessmentModal
+          mode="pre"
+          topicTitle={lang === 'ar' ? step.title.ar : step.title.en}
+          questions={PRE_ASSESSMENT_QUESTIONS}
+          onComplete={(score, total) => {
+            setPreScore(score);
+            recordPreAssessment(step.id, score, total);
+            setShowPreModal(false);
+          }}
+          onCancel={() => setShowPreModal(false)}
+        />
+      )}
+
+      {showPostModal && (
+        <PrePostAssessmentModal
+          mode="post"
+          topicTitle={lang === 'ar' ? step.title.ar : step.title.en}
+          questions={POST_ASSESSMENT_QUESTIONS}
+          onComplete={(score, total) => {
+            recordPostAssessment(step.id, score, total, preScore ?? 0);
+            setShowPostModal(false);
+          }}
+          onCancel={() => setShowPostModal(false)}
+        />
+      )}
     </main>
   );
 }

@@ -3,7 +3,6 @@ import { db, configured } from './firebase';
 
 const SESSION_KEY = 'amr_anonymous_learning_session_id';
 
-/** توليد أو استرجاع معرّف جلسة عشوائي مؤقت في sessionStorage يزول بإغلاق التبويب */
 export function getOrCreateSessionId(): string {
   let sid = sessionStorage.getItem(SESSION_KEY);
   if (!sid) {
@@ -13,17 +12,15 @@ export function getOrCreateSessionId(): string {
   return sid;
 }
 
-/** فحص هل تم تسجيل بدء الدرس مسبقاً في هذه الجلسة لمنع تكرار الاحتساب عند Refresh */
 export function markTopicStartedLocally(topicId: string): boolean {
   const key = `amr_started_${topicId}`;
   if (sessionStorage.getItem(key)) {
-    return false; // مسجل مسبقاً في الجلسة الحالية
+    return false;
   }
   sessionStorage.setItem(key, '1');
   return true;
 }
 
-/** فحص هل تم تسجيل إتمام الدرس مسبقاً في هذه الجلسة */
 export function markTopicCompletedLocally(topicId: string): boolean {
   const key = `amr_completed_${topicId}`;
   if (sessionStorage.getItem(key)) {
@@ -47,7 +44,6 @@ export interface PairedAssessmentRecord {
   status: 'started' | 'completed' | 'abandoned';
 }
 
-/** تسجيل بداية التقييم المقترن وحفظ النتيجة القبلية في Firestore */
 export async function recordPreAssessment(
   topicId: string,
   preScore: number,
@@ -71,7 +67,6 @@ export async function recordPreAssessment(
   }
 }
 
-/** تسجيل النتيجة البعدية واحتساب الفارق الزوجي المقترن */
 export async function recordPostAssessment(
   topicId: string,
   postScore: number,
@@ -102,7 +97,6 @@ export async function recordPostAssessment(
   }
 }
 
-/** تسجيل أحداث التفاعل مع الدروس (بدء وإتمام) بصيغة مجهولة الهوية */
 export async function logLearningEvent(
   eventType: 'lesson_start' | 'lesson_complete' | 'quiz_start' | 'quiz_complete',
   topicId: string

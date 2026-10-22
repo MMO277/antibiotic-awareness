@@ -9,6 +9,7 @@ import { Medicine, pick, Status, STATUSES } from './types';
 import StatusBadge from './StatusBadge';
 import UsersTab from './UsersTab';
 import ResearchTab from './ResearchTab';
+import { LearningImpactDashboard } from './LearningImpactDashboard';
 
 function diagText(status: string, t: (k: string) => string): string {
   if (status === 'missing') return t('diagMissing');
@@ -147,7 +148,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
           </div>
           <div className="row wrapRow">
             <Link className="btn small" to={`/admin/medicine/${m.id}`}>{t('edit')}</Link>
-            <Link className="btn small ghost" to={`/medicine/${m.id}`}>👁</Link>
+            <Link className="btn small ghost" to={`/medicine/${m.id}`}>👁️</Link>
             {m.status === 'draft' && <button className="btn small ghost" onClick={() => act(m, 'pending_review')}>{t('submitReview')}</button>}
             {reviewer && m.status === 'pending_review' && <button className="btn small" onClick={() => act(m, 'approved')}>{t('approve')}</button>}
             {reviewer && m.status !== 'archived' && <button className="btn small ghost" onClick={() => act(m, 'archived')}>{t('archive')}</button>}
@@ -161,9 +162,9 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
 }
 
 export default function Dashboard() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { user, role, roleStatus, loading, logout } = useAuth();
-  const [tab, setTab] = useState<'meds' | 'research' | 'users'>('meds');
+  const [tab, setTab] = useState<'meds' | 'research' | 'users' | 'impact'>('meds');
 
   if (loading) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (!user) return <Login />;
@@ -175,7 +176,7 @@ export default function Dashboard() {
           <p className="small">{t('yourUid')}</p>
           <p dir="ltr" className="uidbox">{user.uid}</p>
           <p className="small muted" dir="ltr">{user.email}</p>
-          <p className="small"><b>{t('diagTitle')}</b> <span dir="ltr">({roleStatus})</span></p>
+          <p className="small"><b>{t('diagTitle')}</b> <span dir="ltr">{roleStatus}</span></p>
           <p className="small">{diagText(roleStatus, t)}</p>
         </div>
         <button className="btn ghost" onClick={logout}>{t('signOut')}</button>
@@ -195,10 +196,16 @@ export default function Dashboard() {
         <button className={tab === 'meds' ? 'on' : ''} onClick={() => setTab('meds')}>{t('tabMeds')}</button>
         {role === 'admin' && <button className={tab === 'research' ? 'on' : ''} onClick={() => setTab('research')}>{t('tabResearch')}</button>}
         {role === 'admin' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('tabUsers')}</button>}
+        {role === 'admin' && (
+          <button className={tab === 'impact' ? 'on' : ''} onClick={() => setTab('impact')}>
+            {lang === 'ar' ? '📊 قياس الأثر والتعلم' : '📊 Learning Impact'}
+          </button>
+        )}
       </div>
       {tab === 'meds' && <MedsTab role={role} uid={user.uid} />}
       {tab === 'research' && role === 'admin' && <ResearchTab />}
       {tab === 'users' && role === 'admin' && <UsersTab myUid={user.uid} />}
+      {tab === 'impact' && role === 'admin' && <LearningImpactDashboard />}
     </main>
   );
 }
