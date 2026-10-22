@@ -57,8 +57,9 @@ function seedToMedicine(s: any): Medicine {
     .filter((b) => b.verified && b.barcode?.trim())
     .map((b) => b.barcode.trim());
   m.sources = s.sources || [];
-  m.lastReviewed = '2026-10-14';
-  m.reviewedBy = 'هيئة التمريض السريري / Clinical Review';
+  // Do not invent a review date or reviewer for seed records; populate only after documented review.
+  m.lastReviewed = '';
+  m.reviewedBy = '';
   m.notes = s.notes || '';
   return m;
 }
@@ -80,7 +81,7 @@ function normalize(id: string, d: any): Medicine {
     typeof code === 'string' && verifiedBrandBarcodes.includes(code.trim())
   )));
   m.sources = Array.isArray(d?.sources) ? d.sources : [];
-  m.lastReviewed = d?.lastReviewed ?? '2026-10-14';
+  m.lastReviewed = typeof d?.lastReviewed === 'string' ? d.lastReviewed : '';
   m.reviewedBy = d?.reviewedBy ?? '';
   m.notes = d?.notes ?? '';
   return m;
