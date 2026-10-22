@@ -46,9 +46,9 @@ function seedToMedicine(s: any): Medicine {
         manufacturer: p.manufacturer,
         barcode: p.barcode || '',
         // Never mark a missing or pending barcode as verified.
-        verified: p.barcodeStatus === 'verified' && Boolean(p.barcode),
-        // Do not attach a generic regulator homepage as proof for a specific product barcode.
-        sourceUrl: '',
+        verified: p.barcodeStatus === 'verified' && Boolean(p.barcode) && Boolean(p.barcodeSourceUrl),
+        // A barcode is not treated as verified without product-specific supporting evidence.
+        sourceUrl: p.barcodeSourceUrl || '',
       });
     }
   });
