@@ -71,7 +71,14 @@ function normalize(id: string, d: any): Medicine {
   for (const f of TEXT_FIELDS) m[f] = { ar: d?.[f]?.ar ?? '', en: d?.[f]?.en ?? '' };
   m.status = d?.status ?? 'approved';
   m.brands = Array.isArray(d?.brands) ? d.brands : [];
-  m.barcodes = Array.isArray(d?.barcodes) ? d.barcodes : [];
+  // A barcode is searchable only when its brand record explicitly marks it verified.
+  const verifiedBrandBarcodes = m.brands
+    .filter((b) => b?.verified === true && typeof b.barcode === 'string' && b.barcode.trim())
+    .map((b) => b.barcode.trim());
+  const storedBarcodes = Array.isArray(d?.barcodes) ? d.barcodes : [];
+  m.barcodes = Array.from(new Set(storedBarcodes.filter((code: unknown) =>
+    typeof code === 'string' && verifiedBrandBarcodes.includes(code.trim())
+  )));
   m.sources = Array.isArray(d?.sources) ? d.sources : [];
   m.lastReviewed = d?.lastReviewed ?? '2026-10-14';
   m.reviewedBy = d?.reviewedBy ?? '';
@@ -99,14 +106,12 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
     }
   });
   const mergedBrands = Array.from(brandMap.values());
-
-  const mergedBarcodes = Array.from(
-    new Set([
-      ...(local.barcodes || []),
-      ...(remote.barcodes || []),
-      ...mergedBrands.map((b) => b.barcode?.trim()).filter(Boolean),
-    ])
-  );
+  // Never promote an unverified remote brand/barcode by merging it with local data.
+  const mergedBarcodes = Array.from(new Set(
+    mergedBrands
+      .filter((b) => b.verified === true && typeof b.barcode === 'string' && b.barcode.trim())
+      .map((b) => b.barcode.trim())
+  ));
 
   const merged: Medicine = {
     ...local,
@@ -150,7 +155,7 @@ export function findLocalMedicine(id: string): Medicine | null {
 
   // 3. Barcode match
   const byBarcode = ALL_LOCAL_MEDICINES.find(
-    (m) => m.barcodes.includes(clean) || m.brands.some((b) => b.barcode === clean)
+    (m) => m.barcodes.includes(clean) || m.brands.some((b) => b.verified === true && b.barcode?.trim() === clean)
   );
   if (byBarcode) return byBarcode;
 
