@@ -25,19 +25,6 @@ export function isValidLang(val: string | null | undefined): val is Lang {
   return val === 'ar' || val === 'en' || val === 'fr' || val === 'es';
 }
 
-export const tr = (
-  lang: Lang,
-  ar: string,
-  en: string,
-  fr?: string,
-  es?: string
-): string => {
-  if (lang === 'ar') return ar;
-  if (lang === 'fr') return fr || en;
-  if (lang === 'es') return es || en;
-  return en;
-};
-
 export const TEXT_FIELDS = [
   'genericName',
   'activeIngredients',
@@ -202,6 +189,35 @@ export function emptyMedicine(id = ''): Medicine {
 }
 
 const FR_PHRASE_MAP: [RegExp, string][] = [
+  [/\bCommercial Packages Registry\b/gi, 'Registre des Spécialités Commerciales'],
+  [/\bClinical Active Ingredients\b/gi, 'Principes Actifs Cliniques (DCI)'],
+  [/\bData Audit & CSV\/JSON Importer\b/gi, 'Audit des Données & Import CSV/JSON'],
+  [/\bCompare 2 Drugs\b/gi, 'Comparer 2 Médicaments'],
+  [/\bAll Ingredients\b/gi, 'Tous les principes actifs'],
+  [/\bAll Dosage Forms\b/gi, 'Toutes les formes galéniques'],
+  [/\bAll Routes\b/gi, 'Toutes les voies d’administration'],
+  [/\bRoute of Administration\b/gi, 'Voie d’administration'],
+  [/\bDosage Form\b/gi, 'Forme galénique'],
+  [/\bBarcode Verification\b/gi, 'Vérification du code-barres'],
+  [/\bVerified Barcode Only\b/gi, 'Code-barres vérifié uniquement'],
+  [/\bPending Barcode Check\b/gi, 'En attente de vérification'],
+  [/\bComposition Type\b/gi, 'Type de composition'],
+  [/\bAll \(Single \+ Combo\)\b/gi, 'Tous (Simple + Combiné)'],
+  [/\bSingle Ingredient\b/gi, 'Principe actif unique'],
+  [/\bCombination Product\b/gi, 'Association médicamenteuse'],
+  [/\bActive Ingredient\b/gi, 'Principe actif'],
+  [/\bActive Ingredients\b/gi, 'Principes actifs'],
+  [/\bDrug Allergy & Cross-Reactivity Checker\b/gi, 'Vérificateur d’Allergies & Réactivité Croisée'],
+  [/\bPediatric Dosage & Syringe Simulator\b/gi, 'Calculateur Pédiatrique & Simulateur de Seringue'],
+  [/\bDrug & Food Interaction Checker\b/gi, 'Vérificateur d’Interactions Médicamenteuses & Alimentaires'],
+  [/\bAntibiotic Side Effects: What Should I Do\?\b/gi, 'Effets Indésirables des Antibiotiques : Que Faire ?'],
+  [/\bSafe Antibiotic Disposal & Eco-Stewardship\b/gi, 'Élimination Sûre des Antibiotiques & Éco-Santé'],
+  [/\bSmart Antibiotic Course & Dose Tracker\b/gi, 'Suivi Intelligent du Traitement & Calendrier des Doses'],
+  [/\bCompare Two Antibiotics Side-by-Side\b/gi, 'Comparer Deux Antibiotiques Côte à Côte'],
+  [/\bMy Health & Allergy Profile\b/gi, 'Mon Profil Santé & Allergies'],
+  [/\bGreen Prescription \(Non-Antibiotic Self-Care Plan\)\b/gi, 'Ordonnance Verte (Plan de Soins Sans Antibiotique)'],
+  [/\bWorld AMR Awareness Week \(WAAW\)\b/gi, 'Semaine Mondiale de Sensibilisation à l’AMR (WAAW)'],
+  [/\bFull Prescription Radar & 24-Hour Smart Scheduler\b/gi, 'Radar d’Ordonnance Complète & Planificateur 24h'],
   [/\bFilm-coated tablets\b/gi, 'Comprimés pelliculés'],
   [/\bExtended-release tablets\b/gi, 'Comprimés à libération prolongée'],
   [/\bDouble-strength tablets\b/gi, 'Comprimés fort dosage'],
@@ -241,9 +257,47 @@ const FR_PHRASE_MAP: [RegExp, string][] = [
   [/\bOphthalmic \/ Otic\b/gi, 'Ophtalmique / Auriculaire'],
   [/\bOral Granules \/ Sachets\b/gi, 'Granulés buvables / Sachets'],
   [/\bOral Drops\b/gi, 'Gouttes buvables'],
+  [/\bNext Step:\b/gi, 'Étape suivante :'],
+  [/\bSource:\b/gi, 'Source :'],
+  [/\bAllergy Check:\b/gi, 'Contrôle d’allergie :'],
+  [/\bStorage Instruction:\b/gi, 'Consigne de conservation :'],
+  [/\bPrescription Radar\b/gi, 'Radar d’Ordonnance'],
+  [/\bAllergy Safety Check\b/gi, 'Vérification des Allergies'],
+  [/\bInteractions Check\b/gi, 'Vérification des Interactions'],
+  [/\bMy Profile\b/gi, 'Mon Profil'],
+  [/\bFull Rx Check\b/gi, 'Vérifier une Ordonnance'],
 ];
 
 const ES_PHRASE_MAP: [RegExp, string][] = [
+  [/\bCommercial Packages Registry\b/gi, 'Registro de Presentaciones Comerciales'],
+  [/\bClinical Active Ingredients\b/gi, 'Principios Activos Clínicos (DCI)'],
+  [/\bData Audit & CSV\/JSON Importer\b/gi, 'Auditoría de Datos e Importador CSV/JSON'],
+  [/\bCompare 2 Drugs\b/gi, 'Comparar 2 Fármacos'],
+  [/\bAll Ingredients\b/gi, 'Todos los principios activos'],
+  [/\bAll Dosage Forms\b/gi, 'Todas las formas farmacéuticas'],
+  [/\bAll Routes\b/gi, 'Todas las vías de administración'],
+  [/\bRoute of Administration\b/gi, 'Vía de administración'],
+  [/\bDosage Form\b/gi, 'Forma farmacéutica'],
+  [/\bBarcode Verification\b/gi, 'Verificación de código de barras'],
+  [/\bVerified Barcode Only\b/gi, 'Solo código de barras verificado'],
+  [/\bPending Barcode Check\b/gi, 'Pendiente de verificación'],
+  [/\bComposition Type\b/gi, 'Tipo de composición'],
+  [/\bAll \(Single \+ Combo\)\b/gi, 'Todos (Simple + Combinado)'],
+  [/\bSingle Ingredient\b/gi, 'Principio activo único'],
+  [/\bCombination Product\b/gi, 'Producto combinado'],
+  [/\bActive Ingredient\b/gi, 'Principio activo'],
+  [/\bActive Ingredients\b/gi, 'Principios activos'],
+  [/\bDrug Allergy & Cross-Reactivity Checker\b/gi, 'Verificador de Alergias y Reactividad Cruzada'],
+  [/\bPediatric Dosage & Syringe Simulator\b/gi, 'Calculadora Pediátrica y Simulador de Jeringa'],
+  [/\bDrug & Food Interaction Checker\b/gi, 'Verificador de Interacciones con Fármacos y Alimentos'],
+  [/\bAntibiotic Side Effects: What Should I Do\?\b/gi, 'Efectos Secundarios de los Antibióticos: ¿Qué Hacer?'],
+  [/\bSafe Antibiotic Disposal & Eco-Stewardship\b/gi, 'Eliminación Segura de Antibióticos y Eco-Salud'],
+  [/\bSmart Antibiotic Course & Dose Tracker\b/gi, 'Seguimiento Inteligente del Tratamiento y Dosis'],
+  [/\bCompare Two Antibiotics Side-by-Side\b/gi, 'Comparar Dos Antibióticos Lado a Lado'],
+  [/\bMy Health & Allergy Profile\b/gi, 'Mi Perfil de Salud y Alergias'],
+  [/\bGreen Prescription \(Non-Antibiotic Self-Care Plan\)\b/gi, 'Receta Verde (Plan de Autocuidado Sin Antibióticos)'],
+  [/\bWorld AMR Awareness Week \(WAAW\)\b/gi, 'Semana Mundial de Concienciación sobre la RAM (WAAW)'],
+  [/\bFull Prescription Radar & 24-Hour Smart Scheduler\b/gi, 'Radar de Receta Completa y Horario Inteligente 24h'],
   [/\bFilm-coated tablets\b/gi, 'Comprimidos recubiertos'],
   [/\bExtended-release tablets\b/gi, 'Comprimidos de liberación prolongada'],
   [/\bDouble-strength tablets\b/gi, 'Comprimidos de doble concentración'],
@@ -283,9 +337,18 @@ const ES_PHRASE_MAP: [RegExp, string][] = [
   [/\bOphthalmic \/ Otic\b/gi, 'Oftálmica / Ótica'],
   [/\bOral Granules \/ Sachets\b/gi, 'Gránulos orales / Sobres'],
   [/\bOral Drops\b/gi, 'Gotas orales'],
+  [/\bNext Step:\b/gi, 'Siguiente paso:'],
+  [/\bSource:\b/gi, 'Fuente:'],
+  [/\bAllergy Check:\b/gi, 'Control de alergia:'],
+  [/\bStorage Instruction:\b/gi, 'Instrucción de almacenamiento:'],
+  [/\bPrescription Radar\b/gi, 'Radar de Recetas'],
+  [/\bAllergy Safety Check\b/gi, 'Verificación de Alergias'],
+  [/\bInteractions Check\b/gi, 'Verificación de Interacciones'],
+  [/\bMy Profile\b/gi, 'Mi Perfil'],
+  [/\bFull Rx Check\b/gi, 'Verificar Receta Completa'],
 ];
 
-function localizeFallbackText(text: string, lang: Lang): string {
+export function localizeFallbackText(text: string, lang: Lang): string {
   if (!text || (lang !== 'fr' && lang !== 'es')) return text;
   const rules = lang === 'fr' ? FR_PHRASE_MAP : ES_PHRASE_MAP;
   let out = text;
@@ -294,6 +357,19 @@ function localizeFallbackText(text: string, lang: Lang): string {
   }
   return out;
 }
+
+export const tr = (
+  lang: Lang,
+  ar: string,
+  en: string,
+  fr?: string,
+  es?: string
+): string => {
+  if (lang === 'ar') return ar;
+  if (lang === 'fr') return fr || localizeFallbackText(en, 'fr');
+  if (lang === 'es') return es || localizeFallbackText(en, 'es');
+  return en;
+};
 
 export const pick = (b: Bi | undefined, lang: Lang): string => {
   if (!b) return '';

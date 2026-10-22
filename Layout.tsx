@@ -1,11 +1,74 @@
 import { ReactNode, useRef, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useLang, SUPPORTED_LANGS } from './i18n';
-import { tr } from './types';
+import { Lang, localizeFallbackText, tr } from './types';
 import { useAuth } from './authContext';
 import Disclaimer from './Disclaimer';
 import ChatWidget from './ChatWidget';
 import LogoutModal from './LogoutModal';
+
+// ── Safe, Zero-DOM-Mutation Universal Page TextNode & Attribute Localizer (FR / ES) ──
+const textNodeState = new WeakMap<Text, { baseEn: string; lastOut: string }>();
+const attrState = new WeakMap<Element, Record<string, { baseEn: string; lastOut: string }>>();
+const translationMemoryCache = new Map<string, string>();
+
+function getCachedTranslation(lang: Lang, text: string): string | null {
+  const key = `${lang}::${text}`;
+  if (translationMemoryCache.has(key)) return translationMemoryCache.get(key)!;
+  try {
+    const saved = sessionStorage.getItem(`aa_tr_${key}`);
+    if (saved) {
+      translationMemoryCache.set(key, saved);
+      return saved;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+function setCachedTranslation(lang: Lang, text: string, translated: string): void {
+  const key = `${lang}::${text}`;
+  translationMemoryCache.set(key, translated);
+  try {
+    sessionStorage.setItem(`aa_tr_${key}`, translated);
+  } catch {
+    /* ignore */
+  }
+}
+
+async function fetchNeuralTranslation(text: string, targetLang: 'fr' | 'es'): Promise<string | null> {
+  const cached = getCachedTranslation(targetLang, text);
+  if (cached) return cached;
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (Array.isArray(data) && Array.isArray(data[0])) {
+      const joined = data[0].map((part: unknown) => (Array.isArray(part) ? String(part[0] || '') : '')).join('');
+      if (joined.trim()) {
+        setCachedTranslation(targetLang, text, joined);
+        return joined;
+      }
+    }
+  } catch {
+    /* offline or blocked — fallback stays active */
+  }
+  return null;
+}
+
+function shouldTranslateString(s: string): boolean {
+  const trimmed = s.trim();
+  if (trimmed.length < 2) return false;
+  // Skip if it contains Arabic characters
+  if (/[\u0600-\u06FF]/.test(trimmed)) return false;
+  // Must contain at least one 2+ letter Latin word
+  if (!/[A-Za-z]{2,}/.test(trimmed)) return false;
+  // Skip pure URLs or codes
+  if (/^(https?:\/\/|www\.|[0-9.\-/:+%]+$)/i.test(trimmed)) return false;
+  return true;
+}
 
 function useDarkMode() {
   const [dark, setDark] = useState<boolean>(() => {
@@ -115,6 +178,191 @@ export default function Layout({ children }: { children: ReactNode }) {
     el.classList.add('page-enter');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [pathname]);
+
+  // ── Automatic Full-Page TextNode & Attribute Localizer for ALL sub-pages when lang is FR or ES ──
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    let cancelled = false;
+
+    const processSubtree = () => {
+      const root = document.body;
+      if (!root) return;
+
+      const pendingNodes: { node: Text; baseEn: string; leading: string; trailing: string }[] = [];
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('script, style, code, pre, svg, header.top, nav.drawer-panel, footer.pro-footer, .lang-switcher-wrap, .drawer-lang-bar')) {
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
+        },
+      });
+
+      let current: Node | null = walker.nextNode();
+      while (current) {
+        const textNode = current as Text;
+        const raw = textNode.nodeValue || '';
+        const prev = textNodeState.get(textNode);
+
+        if (lang === 'ar' || lang === 'en') {
+          if (prev && raw === prev.lastOut && prev.baseEn !== raw) {
+            textNode.nodeValue = prev.baseEn;
+          }
+          current = walker.nextNode();
+          continue;
+        }
+
+        // lang is 'fr' or 'es'
+        let baseEn = raw;
+        if (prev) {
+          if (raw === prev.lastOut) {
+            baseEn = prev.baseEn;
+          } else {
+            // React updated this text node with new content
+            baseEn = raw;
+          }
+        }
+
+        if (shouldTranslateString(baseEn)) {
+          const leadingMatch = baseEn.match(/^\s*/);
+          const trailingMatch = baseEn.match(/\s*$/);
+          const leading = leadingMatch ? leadingMatch[0] : '';
+          const trailing = trailingMatch ? trailingMatch[0] : '';
+          const core = baseEn.trim();
+
+          const cached = getCachedTranslation(lang, core);
+          if (cached) {
+            const finalStr = `${leading}${cached}${trailing}`;
+            textNodeState.set(textNode, { baseEn, lastOut: finalStr });
+            if (textNode.nodeValue !== finalStr) {
+              textNode.nodeValue = finalStr;
+            }
+          } else {
+            // Apply instant offline fallback first
+            const offlineOut = localizeFallbackText(baseEn, lang);
+            textNodeState.set(textNode, { baseEn, lastOut: offlineOut });
+            if (textNode.nodeValue !== offlineOut) {
+              textNode.nodeValue = offlineOut;
+            }
+            pendingNodes.push({ node: textNode, baseEn, leading, trailing });
+          }
+        }
+
+        current = walker.nextNode();
+      }
+
+      // Also localize input placeholders and button titles
+      const attrElements = root.querySelectorAll('input[placeholder], textarea[placeholder], [title]');
+      attrElements.forEach((el) => {
+        if (el.closest('header.top, nav.drawer-panel, footer.pro-footer, .lang-switcher-wrap, .drawer-lang-bar')) return;
+        const record = attrState.get(el) || {};
+        (['placeholder', 'title'] as const).forEach((attrName) => {
+          const val = el.getAttribute(attrName);
+          if (!val) return;
+          const prevAttr = record[attrName];
+          if (lang === 'ar' || lang === 'en') {
+            if (prevAttr && val === prevAttr.lastOut && prevAttr.baseEn !== val) {
+              el.setAttribute(attrName, prevAttr.baseEn);
+            }
+            return;
+          }
+          const baseEn = prevAttr && val === prevAttr.lastOut ? prevAttr.baseEn : val;
+          if (!shouldTranslateString(baseEn)) return;
+          const cached = getCachedTranslation(lang, baseEn.trim());
+          if (cached) {
+            record[attrName] = { baseEn, lastOut: cached };
+            attrState.set(el, record);
+            if (val !== cached) el.setAttribute(attrName, cached);
+          } else {
+            const offlineOut = localizeFallbackText(baseEn, lang);
+            record[attrName] = { baseEn, lastOut: offlineOut };
+            attrState.set(el, record);
+            if (val !== offlineOut) el.setAttribute(attrName, offlineOut);
+            void fetchNeuralTranslation(baseEn.trim(), lang).then((trVal) => {
+              if (cancelled || !trVal) return;
+              record[attrName] = { baseEn, lastOut: trVal };
+              attrState.set(el, record);
+              if (el.getAttribute(attrName) === offlineOut) {
+                el.setAttribute(attrName, trVal);
+              }
+            });
+          }
+        });
+      });
+
+      // Batch-translate pending text nodes in chunks so every page translates completely
+      if ((lang === 'fr' || lang === 'es') && pendingNodes.length > 0) {
+        const uniqueCores = Array.from(new Set(pendingNodes.map((p) => p.baseEn.trim())));
+        const CHUNK_SIZE = 18;
+        for (let i = 0; i < uniqueCores.length; i += CHUNK_SIZE) {
+          const slice = uniqueCores.slice(i, i + CHUNK_SIZE);
+          const joinedPayload = slice.join('\n ||| \n');
+          void fetchNeuralTranslation(joinedPayload, lang).then((resText) => {
+            if (cancelled || !resText) return;
+            const parts = resText.split(/\s*\|\|\|\s*/);
+            if (parts.length === slice.length) {
+              slice.forEach((origCore, idx) => {
+                const trCore = parts[idx].trim();
+                if (trCore) setCachedTranslation(lang, origCore, trCore);
+              });
+              pendingNodes.forEach(({ node, baseEn, leading, trailing }) => {
+                const trCore = getCachedTranslation(lang, baseEn.trim());
+                if (trCore && node.isConnected) {
+                  const finalStr = `${leading}${trCore}${trailing}`;
+                  textNodeState.set(node, { baseEn, lastOut: finalStr });
+                  if (node.nodeValue !== finalStr) {
+                    node.nodeValue = finalStr;
+                  }
+                }
+              });
+            } else {
+              // Fallback: translate individual items in this chunk
+              slice.forEach((origCore) => {
+                void fetchNeuralTranslation(origCore, lang).then((singleTr) => {
+                  if (cancelled || !singleTr) return;
+                  pendingNodes
+                    .filter((p) => p.baseEn.trim() === origCore)
+                    .forEach(({ node, baseEn, leading, trailing }) => {
+                      if (node.isConnected) {
+                        const finalStr = `${leading}${singleTr.trim()}${trailing}`;
+                        textNodeState.set(node, { baseEn, lastOut: finalStr });
+                        if (node.nodeValue !== finalStr) {
+                          node.nodeValue = finalStr;
+                        }
+                      }
+                    });
+                });
+              });
+            }
+          });
+        }
+      }
+    };
+
+    processSubtree();
+
+    let debounceTimer: number | null = null;
+    const observer = new MutationObserver(() => {
+      if (lang !== 'fr' && lang !== 'es') return;
+      if (debounceTimer) window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(() => {
+        if (!cancelled) processSubtree();
+      }, 60);
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      cancelled = true;
+      if (debounceTimer) window.clearTimeout(debounceTimer);
+      observer.disconnect();
+    };
+  }, [lang, pathname]);
 
   useEffect(() => {
     if (drawerOpen) {
