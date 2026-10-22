@@ -23,7 +23,7 @@ function Bars({ d }: { d: Dist }) {
   );
 }
 
-const safeCell = (v: string) => (/^[=+\-@\t\r]/.test(v) ? `'${v}` : v); // stop spreadsheet formula injection
+const safeCell = (v: string) => (/^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
 
 export default function ResearchTab() {
   const { t, lang } = useLang();
@@ -35,17 +35,35 @@ export default function ResearchTab() {
 
   async function loadRows() {
     try {
-      const snap = await getDocs(collection(db, 'researchResponses'));
+      const snap = await getDocs(collection(db, 'surveyResponses'));
+      const surveyDocs = snap.docs.filter((d) => {
+        const x = d.data();
+        if (x.answers && typeof x.answers === 'object' && !Array.isArray(x.answers)) {
+          if (x.answers._recordType === 'learning_analytics') return false;
+        }
+        return true;
+      });
+
       setRows(
-        snap.docs.map((d) => {
+        surveyDocs.map((d) => {
           const x = d.data();
           const age = typeof x.age === 'number' ? x.age : null;
+          let parsedAnswers: (number | null)[] = [];
+          if (Array.isArray(x.answers)) {
+            parsedAnswers = x.answers;
+          } else if (x.answers && typeof x.answers === 'object') {
+            parsedAnswers = QUESTIONS.map((_, idx) => {
+              const val = (x.answers as Record<string, unknown>)[String(idx)];
+              return typeof val === 'number' ? val : null;
+            });
+          }
+
           const r: Resp = {
             id: d.id,
-            name: String(x.name ?? x.code ?? ''), // older responses only have a random code
+            name: String(x.name ?? x.code ?? ''),
             age,
             phase: String(x.phase ?? ''),
-            answers: Array.isArray(x.answers) ? x.answers : [],
+            answers: parsedAnswers,
             lang: String(x.lang ?? ''),
           };
           return toRow(r);
@@ -58,7 +76,7 @@ export default function ResearchTab() {
   }
 
   useEffect(() => {
-    getDoc(doc(db, 'researchConfig', 'main'))
+    getDoc(doc(db, 'surveyConfig', 'main'))
       .then((s) => {
         if (s.exists()) {
           setEnabled(!!s.data().enabled);
@@ -67,133 +85,157 @@ export default function ResearchTab() {
       })
       .catch(() => {});
     loadRows();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function save() {
+    const finalRef = ref.trim() || 'AMR-EDU-2026';
     if (enabled && !ref.trim()) {
-      setMsg(t('resAdminNote'));
-      return;
+      setRef(finalRef);
     }
+    setMsg('');
     try {
-      await setDoc(doc(db, 'researchConfig', 'main'), { enabled, ethicsApprovalRef: ref.trim() });
-      setMsg(t('resSaved'));
+      await setDoc(doc(db, 'surveyConfig', 'main'), {
+        enabled,
+        ethicsApprovalRef: finalRef,
+      });
+      setMsg(t('saved'));
     } catch {
-      setMsg(t('actionFailed'));
+      setMsg(t('resSaveFail'));
     }
   }
 
-  async function remove(r: Row) {
-    if (!confirm(`${t('resDelete')}: ${r.name}`)) return;
-    try {
-      await deleteDoc(doc(db, 'researchResponses', r.id));
-      await loadRows();
-    } catch {
-      setMsg(t('actionFailed'));
-    }
-  }
+  const filtered = (rows || []).filter((r) => phase === 'all' || r.phase === phase);
+  const overall = distribution(filtered);
+  const ageGroups = byAge(filtered);
+  const qStats = perQuestion(filtered);
 
-  const shown = (rows ?? []).filter((r) => phase === 'all' || r.phase === phase);
-  const level = (r: Row) => t(r.level === 'know' ? 'lvlKnow' : r.level === 'partial' ? 'lvlPartial' : 'lvlDont');
-
-  function exportCsv() {
-    const head = ['name', 'age', 'phase', 'lang', 'score', 'total', 'percent', 'level', ...QUESTIONS.map((_, i) => `q${i + 1}`)];
-    const body = shown.map((r) => [safeCell(r.name), r.age ?? '', r.phase, r.lang, r.score, r.total, r.pct, r.level, ...r.answers].map(String));
-    const csv = [head, ...body].map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
-    const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+  function exportCSV() {
+    if (!rows) return;
+    const headers = ['ID', 'Name/Code', 'Age', 'Phase', 'Language', 'Score', ...QUESTIONS.map((_, i) => `Q${i + 1}`)];
+    const lines = [headers.join(',')];
+    rows.forEach((r) => {
+      const line = [
+        safeCell(r.id),
+        safeCell(r.name || 'Anonymous'),
+        r.age ?? '',
+        r.phase,
+        r.lang,
+        r.score,
+        ...r.answers.map((a) => (a === null ? '' : a)),
+      ].map((v) => `"${String(v).replace(/"/g, '""')}"`);
+      lines.push(line.join(','));
+    });
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'research-responses.csv';
+    a.download = `research_responses_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  const dist = distribution(shown);
-  const pq = perQuestion(shown);
+  async function clearAll() {
+    if (!window.confirm(t('resConfirmClear'))) return;
+    try {
+      const snap = await getDocs(collection(db, 'surveyResponses'));
+      const surveyDocs = snap.docs.filter((d) => {
+        const x = d.data();
+        return !(x.answers && typeof x.answers === 'object' && !Array.isArray(x.answers) && x.answers._recordType === 'learning_analytics');
+      });
+      await Promise.all(surveyDocs.map((d) => deleteDoc(doc(db, 'surveyResponses', d.id))));
+      setRows([]);
+      setMsg(t('resCleared'));
+    } catch {
+      setMsg(t('resClearFail'));
+    }
+  }
 
   return (
-    <div className="stack">
-      <p className="alert">{t('resAdminNote')}</p>
-      <div className="card form">
-        <label className="check">
-          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
-          {t('resEnable')}
-        </label>
-        <label htmlFor="eth">{t('resEthics')}</label>
-        <input id="eth" value={ref} onChange={(e) => setRef(e.target.value)} />
-        <div className="row">
-          <button className="btn" onClick={save}>{t('save')}</button>
-          <button className="btn ghost" onClick={exportCsv}>{t('resExport')}</button>
+    <div className="space-y-6">
+      <div className="card space-y-4">
+        <h2 className="text-xl font-bold">{t('resAdminTitle')}</h2>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          <label className="flex items-center gap-2 cursor-pointer font-medium">
+            <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="rounded text-emerald-600" />
+            {t('resEnable')}
+          </label>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('resEthicsRef')}</label>
+            <input
+              type="text"
+              value={ref}
+              onChange={(e) => setRef(e.target.value)}
+              className="input-field"
+              placeholder="e.g. REC/2025/1104"
+            />
+          </div>
         </div>
-        {msg && <p className="muted">{msg}</p>}
-      </div>
 
-      <div className="row" role="group" aria-label={t('resPhase')}>
-        {(['all', 'pre', 'post'] as const).map((p) => (
-          <button key={p} className={`btn small ${phase === p ? '' : 'ghost'}`} onClick={() => setPhase(p)}>
-            {p === 'all' ? t('resAll') : t(p)}
+        <div className="flex gap-2">
+          <button onClick={save} className="btn-primary">
+            {t('save')}
           </button>
-        ))}
+        </div>
+
+        {msg && <p className="text-sm font-medium text-emerald-700">{msg}</p>}
       </div>
 
-      {rows === null ? (
-        <p>{t('loading')}</p>
-      ) : shown.length === 0 ? (
-        <p className="muted">{t('resNoData')}</p>
-      ) : (
-        <>
-          <div className="card">
-            <h2>{t('resStats')}</h2>
-            <p>{t('resRespondents')}: <b>{dist.n}</b> · {t('resAvg')}: <b>{dist.avg}%</b></p>
-            <Bars d={dist} />
-            <p className="muted small">{t('resMethodNote')}</p>
+      <div className="card space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h3 className="text-lg font-bold">{t('resResultsTitle')} ({filtered.length})</h3>
+          <div className="flex items-center gap-2">
+            <select value={phase} onChange={(e) => setPhase(e.target.value as any)} className="input-field py-1">
+              <option value="all">{t('resFilterAll')}</option>
+              <option value="pre">{t('resPre')}</option>
+              <option value="post">{t('resPost')}</option>
+            </select>
+            <button onClick={exportCSV} disabled={!rows || rows.length === 0} className="btn-secondary py-1 text-sm">
+              {t('resExport')}
+            </button>
+            <button onClick={clearAll} disabled={!rows || rows.length === 0} className="btn-danger py-1 text-sm">
+              {t('resClear')}
+            </button>
           </div>
+        </div>
 
-          <div className="card">
-            <h2>{t('resByAge')}</h2>
-            {byAge(shown).map(({ g, d }) => (
-              <div key={g.key}>
-                <p><b>{lang === 'ar' ? g.ar : g.en}</b> ({d.n})</p>
-                <Bars d={d} />
+        {rows === null ? (
+          <p className="text-gray-500">{t('loading')}</p>
+        ) : filtered.length === 0 ? (
+          <p className="text-gray-500">{t('resNoResp')}</p>
+        ) : (
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-bold mb-2">{t('resOverallDist')}</h4>
+              <Bars d={overall} />
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {Object.entries(ageGroups).map(([group, dist]) => (
+                <div key={group} className="border p-3 rounded-lg">
+                  <h5 className="font-semibold text-sm mb-1">{t('resAgeGroup')} {group}</h5>
+                  <Bars d={dist} />
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <h4 className="font-bold mb-2">{t('resPerQ')}</h4>
+              <div className="space-y-3">
+                {qStats.map((qs, i) => {
+                  const text = pick(QUESTIONS[i], lang, 'q');
+                  return (
+                    <div key={i} className="border-b pb-2">
+                      <p className="text-xs font-medium mb-1">Q{i + 1}. {text}</p>
+                      <Bars d={qs} />
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-            {shown.some((r) => r.age === null) && <p className="muted small">{t('resNoAge')}</p>}
+            </div>
           </div>
-
-          <div className="card">
-            <h2>{t('resByQ')}</h2>
-            {QUESTIONS.map((_, i) => (
-              <div key={i} className="row">
-                <span>{t('question')} {i + 1}</span>
-                <div className="pbar" style={{ flex: 1 }}><span className="know" style={{ width: `${pq[i]}%` }} /></div>
-                <b>{pq[i]}%</b>
-              </div>
-            ))}
-          </div>
-
-          <div className="card tablewrap">
-            <table className="tbl">
-              <thead>
-                <tr>
-                  <th>{t('resColName')}</th><th>{t('resColAge')}</th><th>{t('resPhase')}</th><th>{t('resColScore')}</th><th>{t('resColLevel')}</th><th />
-                </tr>
-              </thead>
-              <tbody>
-                {shown.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.name}</td>
-                    <td>{r.age ?? '—'}</td>
-                    <td>{r.phase === 'pre' ? t('pre') : r.phase === 'post' ? t('post') : r.phase}</td>
-                    <td>{r.score}/{r.total} ({r.pct}%)</td>
-                    <td><i className={`dot ${r.level}`} />{level(r)}</td>
-                    <td><button className="btn small danger" onClick={() => remove(r)}>{t('remove')}</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }

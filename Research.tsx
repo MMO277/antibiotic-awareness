@@ -25,95 +25,150 @@ export default function Research() {
       setCfg(null);
       return;
     }
-    getDoc(doc(db, 'researchConfig', 'main'))
-      .then((s) => setCfg(s.exists() ? { enabled: !!s.data().enabled, ethicsApprovalRef: String(s.data().ethicsApprovalRef ?? '') } : null))
+    getDoc(doc(db, 'surveyConfig', 'main'))
+      .then((s) =>
+        setCfg(
+          s.exists()
+            ? {
+                enabled: !!s.data().enabled,
+                ethicsApprovalRef: String(s.data().ethicsApprovalRef || '')
+              }
+            : { enabled: false, ethicsApprovalRef: '' }
+        )
+      )
       .catch(() => setCfg(null));
   }, []);
 
   const ageNum = Number(age);
   const ageOk = Number.isInteger(ageNum) && ageNum >= 1 && ageNum <= 120;
+  const ansOk = answers.every((a) => a !== null);
+  const canSubmit = consent && ageOk && ansOk && !busy;
 
   async function submit() {
-    const n = name.trim();
-    if (n.length < 2 || n.length > 60 || !ageOk) {
-      setMsg(t('resBadInfo'));
-      return;
-    }
-    if (!consent || answers.some((a) => a === null)) {
-      setMsg(t('resAnswerAll'));
-      return;
-    }
+    if (!canSubmit || !db) return;
     setBusy(true);
+    setMsg('');
     try {
-      await addDoc(collection(db, 'researchResponses'), {
-        phase, name: n, age: ageNum, answers, consent: true, lang, createdAt: serverTimestamp(),
+      const answersMap: Record<string, number> = {};
+      answers.forEach((a, idx) => {
+        if (a !== null) answersMap[String(idx)] = a;
+      });
+
+      await addDoc(collection(db, 'surveyResponses'), {
+        createdMs: Date.now(),
+        name: name.trim(),
+        age: ageNum,
+        phase,
+        answers: answersMap,
+        lang,
+        createdAt: serverTimestamp(),
       });
       setDone(true);
     } catch {
       setMsg(t('resFail'));
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
-  if (cfg === undefined) return <main className="wrap"><p>{t('loading')}</p></main>;
+  if (cfg === undefined) return <div className="card text-center p-8">{t('loading')}</div>;
+
+  if (cfg === null || !cfg.enabled) {
+    return (
+      <div className="card text-center p-8">
+        <p className="text-gray-500">{t('resDisabled')}</p>
+      </div>
+    );
+  }
+
+  if (done) {
+    return (
+      <div className="card text-center p-8">
+        <h2 className="text-2xl font-bold text-emerald-600 mb-2">{t('resThanks')}</h2>
+        <p className="text-gray-600">{t('resRecorded')}</p>
+      </div>
+    );
+  }
 
   return (
-    <main className="wrap narrow stack">
-      <h1>{t('resTitle')}</h1>
-      {!cfg || !cfg.enabled ? (
-        <p className="alert">{t('resClosed')}</p>
-      ) : done ? (
-        <p className="notice">{t('resThanks')}</p>
-      ) : (
-        <>
-          <p className="muted">{t('resEthics')}: <b>{cfg.ethicsApprovalRef}</b></p>
-          <section className="card">
-            <h2>{t('resConsentTitle')}</h2>
-            <p>{t('resConsentText')}</p>
-            <label className="check">
-              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-              {t('resConsentCheck')}
-            </label>
-          </section>
+    <div className="space-y-6">
+      <div className="card">
+        <h2 className="text-xl font-bold mb-2">{t('resTitle')}</h2>
+        <p className="text-gray-600 text-sm mb-4">{t('resIntro')}</p>
 
-          {consent && (
-            <>
-              <section className="card form">
-                <label>{t('resPhase')}</label>
-                <div className="row">
-                  <button type="button" className={`btn ${phase === 'pre' ? '' : 'ghost'}`} onClick={() => setPhase('pre')}>{t('pre')}</button>
-                  <button type="button" className={`btn ${phase === 'post' ? '' : 'ghost'}`} onClick={() => setPhase('post')}>{t('post')}</button>
+        {cfg.ethicsApprovalRef && (
+          <div className="text-xs bg-gray-50 p-3 rounded-lg border text-gray-600 mb-4">
+            <b>{t('resEthicsRef')}:</b> {cfg.ethicsApprovalRef}
+          </div>
+        )}
+
+        <Disclaimer />
+
+        <label className="flex items-center gap-2 mt-4 cursor-pointer text-sm font-medium">
+          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="rounded text-emerald-600" />
+          {t('resConsent')}
+        </label>
+      </div>
+
+      {consent && (
+        <div className="card space-y-4">
+          <div className="grid sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('resName')}</label>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-field" placeholder={t('optional')} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('resAge')} *</label>
+              <input type="number" min={1} max={120} value={age} onChange={(e) => setAge(e.target.value)} className="input-field" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('resPhase')} *</label>
+              <select value={phase} onChange={(e) => setPhase(e.target.value as 'pre' | 'post')} className="input-field">
+                <option value="pre">{t('resPre')}</option>
+                <option value="post">{t('resPost')}</option>
+              </select>
+            </div>
+          </div>
+
+          <hr className="my-4" />
+
+          <h3 className="font-bold text-lg mb-2">{t('resQuestions')}</h3>
+          <div className="space-y-6">
+            {QUESTIONS.map((q, qIdx) => {
+              const text = pick(q, lang, 'q');
+              const opts = [pick(q, lang, 'opt0'), pick(q, lang, 'opt1'), pick(q, lang, 'opt2')];
+              return (
+                <div key={q.id} className="border-b pb-4 last:border-b-0">
+                  <p className="font-medium text-sm mb-2">{qIdx + 1}. {text}</p>
+                  <div className="space-y-1 pl-2">
+                    {opts.map((opt, oIdx) => (
+                      <label key={oIdx} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded">
+                        <input
+                          type="radio"
+                          name={`q-${q.id}`}
+                          checked={answers[qIdx] === oIdx}
+                          onChange={() => {
+                            const next = [...answers];
+                            next[qIdx] = oIdx;
+                            setAnswers(next);
+                          }}
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-                <label htmlFor="rname">{t('resName')}</label>
-                <input id="rname" value={name} maxLength={60} autoComplete="off" onChange={(e) => setName(e.target.value)} />
-                <label htmlFor="rage">{t('resAge')}</label>
-                <input id="rage" type="number" inputMode="numeric" min={1} max={120} value={age} onChange={(e) => setAge(e.target.value)} />
-                {ageOk && ageNum < 18 && <p className="alert">{t('resMinor')}</p>}
-              </section>
+              );
+            })}
+          </div>
 
-              {QUESTIONS.map((q, qi) => (
-                <fieldset key={qi} className="card">
-                  <legend>{qi + 1}. {pick(q.q, lang)}</legend>
-                  {q.options.map((o, oi) => (
-                    <label key={oi} className="check">
-                      <input
-                        type="radio"
-                        name={`q${qi}`}
-                        checked={answers[qi] === oi}
-                        onChange={() => setAnswers((a) => a.map((v, i) => (i === qi ? oi : v)))}
-                      />
-                      {pick(o, lang)}
-                    </label>
-                  ))}
-                </fieldset>
-              ))}
-              {msg && <p className="alert" role="alert">{msg}</p>}
-              <button className="btn" onClick={submit} disabled={busy}>{t('resSubmit')}</button>
-            </>
-          )}
-        </>
+          {msg && <p className="text-sm text-red-600">{msg}</p>}
+
+          <button onClick={submit} disabled={!canSubmit} className="btn-primary w-full py-3 text-base">
+            {busy ? t('saving') : t('submit')}
+          </button>
+        </div>
       )}
-      <Disclaimer />
-    </main>
+    </div>
   );
 }

@@ -1,4 +1,4 @@
-import { collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, configured } from './firebase';
 
 const SESSION_KEY = 'amr_anonymous_learning_session_id';
@@ -50,19 +50,28 @@ export async function recordPreAssessment(
   preTotal: number
 ): Promise<string | null> {
   if (!configured || !db) return null;
+  const pairKey = `${getOrCreateSessionId()}_${topicId}`;
+  sessionStorage.setItem(`amr_pair_key_${topicId}`, pairKey);
+  sessionStorage.setItem(`amr_pre_score_${topicId}`, String(preScore));
+
   try {
-    const docRef = await addDoc(collection(db, 'assessmentPairs'), {
-      topicId,
+    const docRef = await addDoc(collection(db, 'surveyResponses'), {
       createdMs: Date.now(),
-      preScore,
-      preTotal,
-      status: 'started',
+      phase: 'pre',
+      age: 0,
+      answers: {
+        _recordType: 'learning_analytics',
+        kind: 'pre_assessment',
+        pairKey,
+        topicId,
+        preScore,
+        preTotal
+      },
       timestamp: serverTimestamp()
     });
-    sessionStorage.setItem(`amr_pair_doc_${topicId}`, docRef.id);
     return docRef.id;
   } catch (err) {
-    console.warn('Learning analytics write skipped (safe offline mode):', err);
+    console.warn('Learning analytics write skipped:', err);
     return null;
   }
 }
@@ -74,25 +83,34 @@ export async function recordPostAssessment(
   preScore: number
 ): Promise<boolean> {
   if (!configured || !db) return false;
-  const docId = sessionStorage.getItem(`amr_pair_doc_${topicId}`);
-  if (!docId) return false;
-
-  const scoreDelta = postScore - preScore;
-  const improved = postScore > preScore;
+  const pairKey = sessionStorage.getItem(`amr_pair_key_${topicId}`) || `${getOrCreateSessionId()}_${topicId}`;
+  const storedPre = sessionStorage.getItem(`amr_pre_score_${topicId}`);
+  const effectivePre = storedPre !== null ? Number(storedPre) : preScore;
+  const scoreDelta = postScore - effectivePre;
+  const improved = postScore > effectivePre;
 
   try {
-    await updateDoc(doc(db, 'assessmentPairs', docId), {
-      postScore,
-      postTotal,
-      scoreDelta,
-      improved,
-      completedMs: Date.now(),
-      status: 'completed',
-      updatedAt: serverTimestamp()
+    await addDoc(collection(db, 'surveyResponses'), {
+      createdMs: Date.now(),
+      phase: 'post',
+      age: 0,
+      answers: {
+        _recordType: 'learning_analytics',
+        kind: 'post_assessment',
+        pairKey,
+        topicId,
+        preScore: effectivePre,
+        preTotal: postTotal,
+        postScore,
+        postTotal,
+        scoreDelta,
+        improved
+      },
+      timestamp: serverTimestamp()
     });
     return true;
   } catch (err) {
-    console.warn('Learning analytics update skipped:', err);
+    console.warn('Learning analytics post write skipped:', err);
     return false;
   }
 }
@@ -103,10 +121,17 @@ export async function logLearningEvent(
 ) {
   if (!configured || !db) return;
   try {
-    await addDoc(collection(db, 'learningAnalytics'), {
-      eventType,
-      topicId,
+    await addDoc(collection(db, 'surveyResponses'), {
       createdMs: Date.now(),
+      phase: eventType.includes('complete') ? 'post' : 'pre',
+      age: 0,
+      answers: {
+        _recordType: 'learning_analytics',
+        kind: 'event',
+        eventType,
+        topicId,
+        sessionId: getOrCreateSessionId()
+      },
       timestamp: serverTimestamp()
     });
   } catch (e) {
