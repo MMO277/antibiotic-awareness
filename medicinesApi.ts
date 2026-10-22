@@ -70,7 +70,8 @@ export const ALL_LOCAL_MEDICINES: Medicine[] = SEED.map(seedToMedicine);
 function normalize(id: string, d: any): Medicine {
   const m = emptyMedicine(id);
   for (const f of TEXT_FIELDS) m[f] = { ar: d?.[f]?.ar ?? '', en: d?.[f]?.en ?? '' };
-  m.status = d?.status ?? 'approved';
+  // Missing review status is not evidence of approval; keep legacy records out of the approved state.
+  m.status = d?.status ?? 'pending_review';
   m.brands = Array.isArray(d?.brands) ? d.brands : [];
   // A barcode is searchable only when its brand record explicitly marks it verified.
   const verifiedBrandBarcodes = m.brands
