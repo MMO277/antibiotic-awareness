@@ -45,8 +45,9 @@ function seedToMedicine(s: any): Medicine {
           (p.priceEgp ? ' - ' + p.priceEgp.toFixed(2) + ' ج.م' : ''),
         manufacturer: p.manufacturer,
         barcode: p.barcode || '',
-        verified: true,
-        sourceUrl: 'https://edaegypt.gov.eg',
+        // Never mark a missing or pending barcode as verified.
+        verified: p.barcodeStatus === 'verified' && Boolean(p.barcode),
+        sourceUrl: p.barcodeStatus === 'verified' && p.barcode ? 'https://edaegypt.gov.eg' : '',
       });
     }
   });
