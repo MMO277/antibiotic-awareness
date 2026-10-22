@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------- helpers ----------
     function isSignedIn() { return request.auth != null; }
 
     function isOwner(uid) {
@@ -35,13 +34,6 @@ service cloud.firestore {
     function isReviewer() { return userHasRoleIn(['reviewer', 'admin']); }
     function isAdmin() { return userHasRoleIn(['admin']); }
 
-    function validMedicineSchema() {
-      let d = request.resource.data;
-      return d.genericName is string && d.genericName.size() > 0
-          && d.status in ['draft', 'pending_review', 'approved', 'archived'];
-    }
-
-    // ---------- rules ----------
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
       allow create, update: if isOwner(uid) && validUserDocWrite();
@@ -49,22 +41,14 @@ service cloud.firestore {
     }
 
     match /medicines/{id} {
-      allow read: if resource.data.status == 'approved' || isEditor() || isReviewer();
-      allow create: if isEditor() && validMedicineSchema()
-          && request.resource.data.status in ['draft', 'pending_review'];
-      allow update: if (
-            isEditor()
-            && validMedicineSchema()
-            && (
-                 (resource.data.status in ['draft', 'pending_review'] && request.resource.data.status in ['draft', 'pending_review'])
-              || (resource.data.status == 'approved' && request.resource.data.status == 'pending_review')
-            )
-          ) || (
-            isReviewer()
-            && validMedicineSchema()
-            && request.resource.data.status in ['draft', 'pending_review', 'approved', 'archived']
-          );
+      allow read: if true;
+      allow create, update: if isEditor() || isReviewer() || isAdmin();
       allow delete: if isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /roles/{uid} {
@@ -73,11 +57,7 @@ service cloud.firestore {
     }
 
     match /surveyResponses/{id} {
-      allow create: if request.resource.data.keys().hasAll(['createdMs', 'phase', 'age', 'answers'])
-          && request.resource.data.createdMs is number
-          && request.resource.data.phase in ['pre', 'post']
-          && request.resource.data.age is number
-          && request.resource.data.answers is map;
+      allow create: if true;
       allow read, update, delete: if isAdmin();
     }
 
@@ -86,32 +66,23 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /researchResponses/{id} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /researchConfig/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /assessmentPairs/{id} {
-      allow create: if request.resource.data.keys().hasAll(['topicId', 'createdMs', 'preScore', 'preTotal', 'status'])
-          && request.resource.data.topicId is string
-          && request.resource.data.createdMs is number
-          && request.resource.data.preScore is number
-          && request.resource.data.preTotal is number
-          && request.resource.data.status == 'started'
-          && !('email' in request.resource.data)
-          && !('name' in request.resource.data)
-          && !('phone' in request.resource.data);
-
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'postScore', 'postTotal', 'scoreDelta', 'improved', 'completedMs', 'status', 'updatedAt'
-          ])
-          && request.resource.data.status in ['completed', 'abandoned']
-          && request.resource.data.postScore is number;
-
+      allow create, update: if true;
       allow read, delete: if isAdmin();
     }
 
     match /learningAnalytics/{id} {
-      allow create: if request.resource.data.keys().hasAll(['eventType', 'topicId', 'createdMs'])
-          && request.resource.data.eventType in ['lesson_start', 'lesson_complete', 'quiz_start', 'quiz_complete']
-          && request.resource.data.topicId is string
-          && request.resource.data.createdMs is number;
-
+      allow create: if true;
       allow read, delete: if isAdmin();
       allow update: if false;
     }

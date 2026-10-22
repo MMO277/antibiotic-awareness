@@ -12,8 +12,8 @@ export function LearningImpactDashboard() {
   const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | 'all'>('30d');
   const [topicFilter, setTopicFilter] = useState<string>('all');
   const [loading, setLoading] = useState<boolean>(true);
-  const [allRecords, setAllRecords] = useState<PairedAssessmentRecord[]>([]);
-  const [allEvents, setAllEvents] = useState<{ eventType: string; topicId: string; createdMs: number }[]>([]);
+  const [records, setRecords] = useState<PairedAssessmentRecord[]>([]);
+  const [events, setEvents] = useState<{ eventType: string; topicId: string; createdMs: number }[]>([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -23,82 +23,21 @@ export function LearningImpactDashboard() {
       }
       setLoading(true);
       try {
-        const snap = await getDocs(collection(db, 'surveyResponses'));
-        const preMap = new Map<string, { topicId: string; createdMs: number; preScore: number; preTotal: number }>();
-        const postMap = new Map<string, { topicId: string; completedMs: number; postScore: number; postTotal: number; preScore: number; scoreDelta: number; improved: boolean }>();
+        const assessSnap = await getDocs(collection(db, 'assessmentPairs'));
+        const loadedRecords: PairedAssessmentRecord[] = [];
+        assessSnap.forEach((d) => {
+          loadedRecords.push({ pairId: d.id, ...(d.data() as PairedAssessmentRecord) });
+        });
+        setRecords(loadedRecords);
+
+        const eventsSnap = await getDocs(collection(db, 'learningAnalytics'));
         const loadedEvents: { eventType: string; topicId: string; createdMs: number }[] = [];
-
-        snap.forEach((d) => {
-          const data = d.data();
-          const ans = data.answers;
-          if (!ans || typeof ans !== 'object' || Array.isArray(ans)) return;
-          if (ans._recordType !== 'learning_analytics') return;
-
-          const createdMs = typeof data.createdMs === 'number' ? data.createdMs : Date.now();
-          const topicId = String(ans.topicId || '');
-
-          if (ans.kind === 'event' && ans.eventType) {
-            loadedEvents.push({
-              eventType: String(ans.eventType),
-              topicId,
-              createdMs
-            });
-          } else if (ans.kind === 'pre_assessment' && ans.pairKey) {
-            preMap.set(String(ans.pairKey), {
-              topicId,
-              createdMs,
-              preScore: Number(ans.preScore ?? 0),
-              preTotal: Number(ans.preTotal ?? 5)
-            });
-          } else if (ans.kind === 'post_assessment' && ans.pairKey) {
-            postMap.set(String(ans.pairKey), {
-              topicId,
-              completedMs: createdMs,
-              postScore: Number(ans.postScore ?? 0),
-              postTotal: Number(ans.postTotal ?? 5),
-              preScore: Number(ans.preScore ?? 0),
-              scoreDelta: Number(ans.scoreDelta ?? 0),
-              improved: Boolean(ans.improved)
-            });
-          }
+        eventsSnap.forEach((d) => {
+          loadedEvents.push(d.data() as any);
         });
-
-        const mergedRecords: PairedAssessmentRecord[] = [];
-        const allKeys = new Set<string>([...Array.from(preMap.keys()), ...Array.from(postMap.keys())]);
-
-        allKeys.forEach((key) => {
-          const pre = preMap.get(key);
-          const post = postMap.get(key);
-          if (pre && post) {
-            mergedRecords.push({
-              pairId: key,
-              topicId: pre.topicId,
-              createdMs: pre.createdMs,
-              completedMs: post.completedMs,
-              preScore: pre.preScore,
-              preTotal: pre.preTotal,
-              postScore: post.postScore,
-              postTotal: post.postTotal,
-              scoreDelta: post.postScore - pre.preScore,
-              improved: post.postScore > pre.preScore,
-              status: 'completed'
-            });
-          } else if (pre) {
-            mergedRecords.push({
-              pairId: key,
-              topicId: pre.topicId,
-              createdMs: pre.createdMs,
-              preScore: pre.preScore,
-              preTotal: pre.preTotal,
-              status: 'started'
-            });
-          }
-        });
-
-        setAllRecords(mergedRecords);
-        setAllEvents(loadedEvents);
+        setEvents(loadedEvents);
       } catch (err) {
-        console.error('Error fetching impact analytics:', err);
+        console.warn('Error fetching impact analytics:', err);
       } finally {
         setLoading(false);
       }
@@ -115,16 +54,16 @@ export function LearningImpactDashboard() {
   }, [timeFilter]);
 
   const filteredRecords = useMemo(() => {
-    return allRecords.filter(
-      (r) => r.createdMs >= minMs && (topicFilter === 'all' || r.topicId === topicFilter)
+    return records.filter(
+      (r) => (r.createdMs || 0) >= minMs && (topicFilter === 'all' || r.topicId === topicFilter)
     );
-  }, [allRecords, minMs, topicFilter]);
+  }, [records, minMs, topicFilter]);
 
   const filteredEvents = useMemo(() => {
-    return allEvents.filter(
-      (e) => e.createdMs >= minMs && (topicFilter === 'all' || e.topicId === topicFilter)
+    return events.filter(
+      (e) => (e.createdMs || 0) >= minMs && (topicFilter === 'all' || e.topicId === topicFilter)
     );
-  }, [allEvents, minMs, topicFilter]);
+  }, [events, minMs, topicFilter]);
 
   const analytics = useMemo(() => {
     const startedAttempts = filteredEvents.filter((e) => e.eventType === 'lesson_start').length;

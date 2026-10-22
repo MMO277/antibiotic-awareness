@@ -60,7 +60,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
   const reviewer = role === 'reviewer' || role === 'admin';
   const [showUn, setShowUn] = useState(true);
   useEffect(() => {
-    getDoc(doc(db, 'surveyConfig', 'public_settings'))
+    getDoc(doc(db, 'settings', 'public'))
       .then((s) => {
         if (s.exists()) setShowUn(s.data().showUnreviewed !== false);
       })
@@ -69,7 +69,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
   async function saveShowUn(v: boolean) {
     setShowUn(v);
     try {
-      await setDoc(doc(db, 'surveyConfig', 'public_settings'), { showUnreviewed: v });
+      await setDoc(doc(db, 'settings', 'public'), { showUnreviewed: v });
     } catch {
       setShowUn(!v);
       alert(t('actionFailed'));
