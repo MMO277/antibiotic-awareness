@@ -432,7 +432,7 @@ export function LearningImpactDashboard() {
                     {isAr ? 'نسبة التحسن الفردي' : 'Improvement Proportion'}
                   </td>
                   <td style={{ padding: '0.6rem', fontFamily: 'monospace' }}>
-                    (Count(Post > Pre) / Paired_N) × 100
+                    {'(Count(Post > Pre) / Paired_N) × 100'}
                   </td>
                   <td style={{ padding: '0.6rem' }}>
                     {isAr ? 'نسبة الأفراد الذين أظهروا تحسناً حقيقياً مقارنة بنقطة انطلاقهم المعرفية' : 'Proportion of individual learners who achieved a net positive score change'}
@@ -443,7 +443,7 @@ export function LearningImpactDashboard() {
                     {isAr ? 'عتبة الخصوصية الصارمة' : 'Privacy Suppression Threshold'}
                   </td>
                   <td style={{ padding: '0.6rem', fontFamily: 'monospace' }}>
-                    If N &lt; 5 =&gt; Mask and Suppress Data
+                    {'If N < 5 => Mask and Suppress Data'}
                   </td>
                   <td style={{ padding: '0.6rem' }}>
                     {isAr ? 'حماية بيانات المرضى من محاولات إعادة التعريف في المجموعات الصغيرة جداً' : 'Prevents re-identification attacks from sparse analytical clusters'}
