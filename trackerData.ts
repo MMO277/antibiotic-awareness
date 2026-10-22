@@ -156,6 +156,7 @@ export interface RadarWorkspaceState {
   frequency: RadarFrequency;
   firstDoseTime: string; // "HH:mm"
   selectedCoMeds: string[];
+  additionalMeds: string[];
   updatedAt: string;
 }
 
@@ -182,6 +183,7 @@ export const DEFAULT_RADAR_WORKSPACE: RadarWorkspaceState = {
   frequency: 'q12h',
   firstDoseTime: '08:00',
   selectedCoMeds: ['calcium_dairy', 'iron_zinc', 'probiotics', 'paracetamol'],
+  additionalMeds: [],
   updatedAt: '1970-01-01T00:00:00.000Z',
 };
 
@@ -801,11 +803,14 @@ export function normalizeRadarWorkspace(raw: any): RadarWorkspaceState {
   const selectedCoMeds = Array.isArray(raw.selectedCoMeds)
     ? raw.selectedCoMeds.filter((x: unknown): x is string => typeof x === 'string')
     : [...DEFAULT_RADAR_WORKSPACE.selectedCoMeds];
+  const additionalMeds = Array.isArray(raw.additionalMeds)
+    ? raw.additionalMeds.filter((x: unknown): x is string => typeof x === 'string')
+    : [];
   const updatedAt =
     typeof raw.updatedAt === 'string' && raw.updatedAt
       ? raw.updatedAt
       : DEFAULT_RADAR_WORKSPACE.updatedAt;
-  return { selectedAbx, frequency, firstDoseTime, selectedCoMeds, updatedAt };
+  return { selectedAbx, frequency, firstDoseTime, selectedCoMeds, additionalMeds, updatedAt };
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
