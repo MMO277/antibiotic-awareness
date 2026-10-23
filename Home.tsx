@@ -6,6 +6,7 @@ import { pick, tr } from './types';
 import Disclaimer from './Disclaimer';
 import DidYouKnow from './DidYouKnow';
 import ResistanceCounter from './ResistanceCounter';
+import EgyptResistanceMap from './EgyptResistanceMap';
 import {
   ACTIVE_INGREDIENTS,
   EGYPTIAN_COMMERCIAL_PRODUCTS,
@@ -591,6 +592,9 @@ export default function Home() {
             </button>
           </div>
         </section>
+
+        {/* Interactive Egypt Antibiotic Resistance Map Infographic */}
+        <EgyptResistanceMap />
 
         {/* Quick Access to Most Prescribed Antibiotics in Egypt */}
         <section className="card highlight-card pro-featured-section">
