@@ -7,6 +7,7 @@ import { useLang } from './i18n';
 import { fetchAll, removeMedicine, seedStarter, setStatus, validateForApproval } from './medicinesApi';
 import { Medicine, pick, Status, STATUSES } from './types';
 import StatusBadge from './StatusBadge';
+import QuizResultsTab from './QuizResultsTab';
 import UsersTab from './UsersTab';
 import ResearchTab from './ResearchTab';
 import { LearningImpactDashboard } from './LearningImpactDashboard';
@@ -200,10 +201,14 @@ export default function Dashboard() {
           <button className={tab === 'impact' ? 'on' : ''} onClick={() => setTab('impact')}>
             {lang === 'ar' ? '📊 قياس الأثر والتعلم' : '📊 Learning Impact'}
           </button>
+      <button onClick={() => setActiveTab('quiz')}>
+  📝 نتائج الكويز
+</button>
         )}
       </div>
       {tab === 'meds' && <MedsTab role={role} uid={user.uid} />}
       {tab === 'research' && role === 'admin' && <ResearchTab />}
+      {activeTab === 'quiz' && <QuizResultsTab />}
       {tab === 'users' && role === 'admin' && <UsersTab myUid={user.uid} />}
       {tab === 'impact' && role === 'admin' && <LearningImpactDashboard />}
     </main>
