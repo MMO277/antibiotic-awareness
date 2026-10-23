@@ -26,12 +26,16 @@ function Bars({ d }: { d: Dist }) {
 
 const safeCell = (v: string) => (/^[=+\-@\t\r]/.test(v) ? `'${v}` : v);
 
+interface RowWithSource extends Row {
+  _col: 'surveyResponses' | 'researchResponses';
+}
+
 export default function ResearchTab() {
   const { t, lang } = useLang();
   const [enabled, setEnabled] = useState(false);
   const [ref, setRef] = useState('');
   const [msg, setMsg] = useState('');
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<RowWithSource[] | null>(null);
   const [phase, setPhase] = useState<'all' | 'pre' | 'post'>('all');
 
   async function loadRows() {
@@ -40,38 +44,61 @@ export default function ResearchTab() {
       return;
     }
     try {
-      const snap = await getDocs(collection(db, 'surveyResponses'));
-      const surveyDocs = snap.docs.filter((d) => {
-        const x = d.data();
-        if (x.answers && typeof x.answers === 'object' && !Array.isArray(x.answers)) {
-          if (x.answers._recordType === 'learning_analytics') return false;
-        }
-        return true;
-      });
+      const [snapSurvey, snapResearch] = await Promise.all([
+        getDocs(collection(db, 'surveyResponses')).catch(() => null),
+        getDocs(collection(db, 'researchResponses')).catch(() => null),
+      ]);
+
+      const combined: { id: string; data: Record<string, any>; col: 'surveyResponses' | 'researchResponses' }[] = [];
+      const seenIds = new Set<string>();
+
+      if (snapSurvey) {
+        snapSurvey.docs.forEach((d) => {
+          const x = d.data();
+          if (x.answers && typeof x.answers === 'object' && !Array.isArray(x.answers)) {
+            if (x.answers._recordType === 'learning_analytics') return;
+          }
+          seenIds.add(d.id);
+          combined.push({ id: d.id, data: x, col: 'surveyResponses' });
+        });
+      }
+
+      if (snapResearch) {
+        snapResearch.docs.forEach((d) => {
+          if (seenIds.has(d.id)) return;
+          const x = d.data();
+          if (x.answers && typeof x.answers === 'object' && !Array.isArray(x.answers)) {
+            if (x.answers._recordType === 'learning_analytics') return;
+          }
+          combined.push({ id: d.id, data: x, col: 'researchResponses' });
+        });
+      }
 
       setRows(
-        surveyDocs.map((d) => {
-          const x = d.data();
-          const age = typeof x.age === 'number' ? x.age : null;
+        combined.map(({ id, data: x, col }) => {
+          const rawAge = typeof x.age === 'number' ? x.age : Number(x.age);
+          const age = Number.isFinite(rawAge) && rawAge > 0 ? rawAge : null;
           let parsedAnswers: (number | null)[] = [];
           if (Array.isArray(x.answers)) {
-            parsedAnswers = x.answers;
+            parsedAnswers = x.answers.map((v) => (typeof v === 'number' ? v : Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null));
           } else if (x.answers && typeof x.answers === 'object') {
             parsedAnswers = QUESTIONS.map((_, idx) => {
               const val = (x.answers as Record<string, unknown>)[String(idx)];
-              return typeof val === 'number' ? val : null;
+              if (typeof val === 'number') return val;
+              if (typeof val === 'string' && val.trim() !== '' && Number.isFinite(Number(val))) return Number(val);
+              return null;
             });
           }
 
           const r: Resp = {
-            id: d.id,
-            name: String(x.name ?? x.code ?? ''),
+            id,
+            name: String(x.name ?? x.code ?? x.participantName ?? ''),
             age,
-            phase: String(x.phase ?? ''),
+            phase: String(x.phase ?? 'pre'),
             answers: parsedAnswers,
-            lang: String(x.lang ?? ''),
+            lang: String(x.lang ?? 'ar'),
           };
-          return toRow(r);
+          return { ...toRow(r), _col: col };
         }),
       );
     } catch {
@@ -85,14 +112,18 @@ export default function ResearchTab() {
       setRows([]);
       return;
     }
-    getDoc(doc(db, 'surveyConfig', 'main'))
-      .then((s) => {
-        if (s.exists()) {
-          setEnabled(!!s.data().enabled);
-          setRef(String(s.data().ethicsApprovalRef ?? ''));
-        }
-      })
-      .catch(() => {});
+    Promise.all([
+      getDoc(doc(db, 'surveyConfig', 'main')).catch(() => null),
+      getDoc(doc(db, 'researchConfig', 'main')).catch(() => null),
+    ]).then(([s1, s2]) => {
+      if (s1 && s1.exists()) {
+        setEnabled(!!s1.data().enabled);
+        setRef(String(s1.data().ethicsApprovalRef ?? ''));
+      } else if (s2 && s2.exists()) {
+        setEnabled(!!s2.data().enabled);
+        setRef(String(s2.data().ethicsApprovalRef ?? ''));
+      }
+    });
     loadRows();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -105,10 +136,16 @@ export default function ResearchTab() {
     }
     setMsg('');
     try {
-      await setDoc(doc(db, 'surveyConfig', 'main'), {
-        enabled,
-        ethicsApprovalRef: finalRef,
-      });
+      await Promise.all([
+        setDoc(doc(db, 'surveyConfig', 'main'), {
+          enabled,
+          ethicsApprovalRef: finalRef,
+        }),
+        setDoc(doc(db, 'researchConfig', 'main'), {
+          enabled,
+          ethicsApprovalRef: finalRef,
+        }).catch(() => {}),
+      ]);
       setMsg(t('resSaved') || t('saved'));
     } catch {
       setMsg(t('actionFailed'));
@@ -145,27 +182,22 @@ export default function ResearchTab() {
     URL.revokeObjectURL(url);
   }
 
-  async function removeOne(id: string) {
+  async function removeOne(r: RowWithSource) {
     if (!db) return;
     if (!window.confirm(t('confirmDel'))) return;
     try {
-      await deleteDoc(doc(db, 'surveyResponses', id));
-      setRows((prev) => (prev ? prev.filter((r) => r.id !== id) : prev));
+      await deleteDoc(doc(db, r._col, r.id));
+      setRows((prev) => (prev ? prev.filter((item) => item.id !== r.id) : prev));
     } catch {
       setMsg(t('actionFailed'));
     }
   }
 
   async function clearAll() {
-    if (!db) return;
+    if (!db || !rows) return;
     if (!window.confirm(t('confirmDel'))) return;
     try {
-      const snap = await getDocs(collection(db, 'surveyResponses'));
-      const surveyDocs = snap.docs.filter((d) => {
-        const x = d.data();
-        return !(x.answers && typeof x.answers === 'object' && !Array.isArray(x.answers) && x.answers._recordType === 'learning_analytics');
-      });
-      await Promise.all(surveyDocs.map((d) => deleteDoc(doc(db!, 'surveyResponses', d.id))));
+      await Promise.all(rows.map((r) => deleteDoc(doc(db!, r._col, r.id))));
       setRows([]);
       setMsg(t('resSaved') || t('saved'));
     } catch {
@@ -296,7 +328,7 @@ export default function ResearchTab() {
                 </thead>
                 <tbody>
                   {filtered.map((r) => (
-                    <tr key={r.id}>
+                    <tr key={`${r._col}_${r.id}`}>
                       <td>{r.name || '—'}</td>
                       <td>{r.age ?? '—'}</td>
                       <td>{r.phase === 'pre' ? t('pre') : r.phase === 'post' ? t('post') : r.phase}</td>
@@ -307,7 +339,7 @@ export default function ResearchTab() {
                         </span>
                       </td>
                       <td>
-                        <button type="button" className="btn small danger" onClick={() => removeOne(r.id)}>
+                        <button type="button" className="btn small danger" onClick={() => removeOne(r)}>
                           {t('del')}
                         </button>
                       </td>
