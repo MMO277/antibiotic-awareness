@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { addDoc, collection, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db, configured } from './firebase';
 import { useLang } from './i18n';
@@ -41,11 +41,22 @@ export default function Research() {
 
   const ageNum = Number(age);
   const ageOk = Number.isInteger(ageNum) && ageNum >= 1 && ageNum <= 120;
+  const nameOk = name.trim().length >= 2;
   const ansOk = answers.every((a) => a !== null);
-  const canSubmit = consent && ageOk && ansOk && !busy;
+  const answeredCount = answers.filter((a) => a !== null).length;
+  const canSubmit = consent && nameOk && ageOk && ansOk && !busy;
 
-  async function submit() {
-    if (!canSubmit || !db) return;
+  async function submit(e?: FormEvent) {
+    if (e) e.preventDefault();
+    if (!consent || !ansOk) {
+      setMsg(t('resAnswerAll'));
+      return;
+    }
+    if (!nameOk || !ageOk) {
+      setMsg(t('resBadInfo'));
+      return;
+    }
+    if (!db || busy) return;
     setBusy(true);
     setMsg('');
     try {
@@ -71,103 +82,213 @@ export default function Research() {
     }
   }
 
-  if (cfg === undefined) return <div className="card text-center p-8">{t('loading')}</div>;
+  if (cfg === undefined) {
+    return (
+      <main className="wrap narrow stack">
+        <div className="card center"><p>{t('loading')}</p></div>
+      </main>
+    );
+  }
 
   if (cfg === null || !cfg.enabled) {
     return (
-      <div className="card text-center p-8">
-        <p className="text-gray-500">{t('resClosed')}</p>
-      </div>
+      <main className="wrap narrow stack">
+        <h1>📊 {t('resTitle')}</h1>
+        <div className="card notice">
+          <p style={{ margin: 0 }}>{t('resClosed')}</p>
+        </div>
+      </main>
     );
   }
 
   if (done) {
     return (
-      <div className="card text-center p-8">
-        <h2 className="text-2xl font-bold text-emerald-600 mb-2">{t('resThanks')}</h2>
-      </div>
+      <main className="wrap narrow stack">
+        <div className="card center stack" style={{ padding: '32px 20px', border: '2px solid var(--ok)' }}>
+          <div style={{ fontSize: '3rem' }}>✅</div>
+          <h2 style={{ color: 'var(--ok)', margin: 0 }}>{t('resThanks')}</h2>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="card">
-        <h2 className="text-xl font-bold mb-2">{t('resTitle')}</h2>
-        <p className="text-gray-600 text-sm mb-4">{t('resConsentText')}</p>
+    <main className="wrap narrow stack" style={{ paddingBottom: '120px' }}>
+      <h1>📊 {t('resTitle')}</h1>
+
+      {/* بطاقة الموافقة المستنيرة */}
+      <div className="card stack">
+        <h2 style={{ margin: 0 }}>📋 {t('resConsentTitle')}</h2>
+        <p style={{ margin: 0 }}>{t('resConsentText')}</p>
+        <p className="small muted" style={{ margin: 0 }}>⚠️ {t('resMinor')}</p>
 
         {cfg.ethicsApprovalRef && (
-          <div className="text-xs bg-gray-50 p-3 rounded-lg border text-gray-600 mb-4">
-            <b>{t('resEthics')}:</b> {cfg.ethicsApprovalRef}
+          <div className="notice compact">
+            <b>{t('resEthics')}:</b> <span dir="ltr">{cfg.ethicsApprovalRef}</span>
           </div>
         )}
 
-        <Disclaimer />
+        <Disclaimer compact />
 
-        <label className="flex items-center gap-2 mt-4 cursor-pointer text-sm font-medium">
-          <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="rounded text-emerald-600" />
-          {t('resConsentCheck')}
+        <label
+          className="check"
+          style={{
+            padding: '12px 14px',
+            background: consent ? 'var(--tint)' : 'transparent',
+            border: `2px solid ${consent ? 'var(--teal)' : 'var(--line)'}`,
+            borderRadius: '10px',
+            cursor: 'pointer',
+            fontWeight: 600,
+            alignItems: 'center',
+            marginTop: '4px',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            style={{ width: '20px', height: '20px', margin: 0, flexShrink: 0, accentColor: 'var(--teal)' }}
+          />
+          <span>{t('resConsentCheck')}</span>
         </label>
       </div>
 
       {consent && (
-        <div className="card space-y-4">
-          <div className="grid sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('resName')}</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-field" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('resAge')} *</label>
-              <input type="number" min={1} max={120} value={age} onChange={(e) => setAge(e.target.value)} className="input-field" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">{t('resPhase')} *</label>
-              <select value={phase} onChange={(e) => setPhase(e.target.value as 'pre' | 'post')} className="input-field">
-                <option value="pre">{t('pre')}</option>
-                <option value="post">{t('post')}</option>
-              </select>
+        <form className="stack" onSubmit={submit}>
+          {/* بيانات المشارك */}
+          <div className="card form">
+            <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))' }}>
+              <div className="form">
+                <label htmlFor="res-name">{t('resName')} *</label>
+                <input
+                  id="res-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  minLength={2}
+                />
+              </div>
+              <div className="form">
+                <label htmlFor="res-age">{t('resAge')} *</label>
+                <input
+                  id="res-age"
+                  type="number"
+                  min={1}
+                  max={120}
+                  dir="ltr"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="form">
+                <label htmlFor="res-phase">{t('resPhase')} *</label>
+                <select
+                  id="res-phase"
+                  value={phase}
+                  onChange={(e) => setPhase(e.target.value as 'pre' | 'post')}
+                >
+                  <option value="pre">{t('pre')}</option>
+                  <option value="post">{t('post')}</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <hr className="my-4" />
+          {/* شريط التقدم */}
+          <div className="card" style={{ padding: '12px 16px' }}>
+            <div className="head" style={{ marginBottom: '6px' }}>
+              <b>{t('question')}</b>
+              <span className="badge approved">
+                {answeredCount} / {QUESTIONS.length}
+              </span>
+            </div>
+            <div className="progress">
+              <span style={{ width: `${Math.round((answeredCount / QUESTIONS.length) * 100)}%` }} />
+            </div>
+          </div>
 
-          <h3 className="font-bold text-lg mb-2">{t('question')}</h3>
-          <div className="space-y-6">
-            {QUESTIONS.map((q, qIdx) => {
-              const text = pick(q.q, lang);
-              const opts = q.options.map((opt) => pick(opt, lang));
-              return (
-                <div key={qIdx} className="border-b pb-4 last:border-b-0">
-                  <p className="font-medium text-sm mb-2">{qIdx + 1}. {text}</p>
-                  <div className="space-y-1 pl-2">
-                    {opts.map((opt, oIdx) => (
-                      <label key={oIdx} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded">
+          {/* قائمة الأسئلة */}
+          {QUESTIONS.map((q, qIdx) => {
+            const text = pick(q.q, lang);
+            const opts = q.options.map((opt) => pick(opt, lang));
+            const selected = answers[qIdx];
+            return (
+              <fieldset
+                key={qIdx}
+                className="card stack"
+                style={{
+                  margin: 0,
+                  borderColor: selected !== null ? 'var(--teal)' : 'var(--line)',
+                }}
+              >
+                <div className="head" style={{ gap: '8px' }}>
+                  <span className="badge" style={{ background: selected !== null ? 'var(--teal)' : undefined, color: selected !== null ? '#fff' : undefined }}>
+                    {t('question')} {qIdx + 1} / {QUESTIONS.length}
+                  </span>
+                </div>
+                <p style={{ fontWeight: 700, margin: '4px 0 8px', color: 'var(--navy)', fontSize: '1.02rem' }}>
+                  {qIdx + 1}. {text}
+                </p>
+                <div className="options" style={{ margin: 0 }}>
+                  {opts.map((opt, oIdx) => {
+                    const isChecked = selected === oIdx;
+                    return (
+                      <label
+                        key={oIdx}
+                        className="opt"
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          margin: 0,
+                          borderColor: isChecked ? 'var(--teal)' : 'var(--line)',
+                          background: isChecked ? 'var(--tint)' : 'var(--card-bg)',
+                          fontWeight: isChecked ? 600 : 400,
+                        }}
+                      >
                         <input
                           type="radio"
                           name={`q-${qIdx}`}
-                          checked={answers[qIdx] === oIdx}
+                          checked={isChecked}
                           onChange={() => {
                             const next = [...answers];
                             next[qIdx] = oIdx;
                             setAnswers(next);
                           }}
+                          style={{
+                            width: '20px',
+                            height: '20px',
+                            margin: 0,
+                            flexShrink: 0,
+                            accentColor: 'var(--teal)',
+                          }}
                         />
-                        <span>{opt}</span>
+                        <span style={{ flex: 1 }}>{opt}</span>
                       </label>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+              </fieldset>
+            );
+          })}
 
-          {msg && <p className="text-sm text-red-600">{msg}</p>}
+          {msg && <div className="alert">{msg}</div>}
+          {(!nameOk || !ageOk) && (name.length > 0 || age.length > 0) && (
+            <div className="alert">{t('resBadInfo')}</div>
+          )}
 
-          <button onClick={submit} disabled={!canSubmit} className="btn-primary w-full py-3 text-base">
-            {busy ? t('loading') : t('resSubmit')}
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="btn"
+            style={{ width: '100%', padding: '14px', fontSize: '1.05rem' }}
+          >
+            {busy ? t('loading') : `📨 ${t('resSubmit')} (${answeredCount}/${QUESTIONS.length})`}
           </button>
-        </div>
+        </form>
       )}
-    </div>
+    </main>
   );
 }

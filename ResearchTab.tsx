@@ -109,7 +109,7 @@ export default function ResearchTab() {
         enabled,
         ethicsApprovalRef: finalRef,
       });
-      setMsg(t('saved'));
+      setMsg(t('resSaved') || t('saved'));
     } catch {
       setMsg(t('actionFailed'));
     }
@@ -145,6 +145,17 @@ export default function ResearchTab() {
     URL.revokeObjectURL(url);
   }
 
+  async function removeOne(id: string) {
+    if (!db) return;
+    if (!window.confirm(t('confirmDel'))) return;
+    try {
+      await deleteDoc(doc(db, 'surveyResponses', id));
+      setRows((prev) => (prev ? prev.filter((r) => r.id !== id) : prev));
+    } catch {
+      setMsg(t('actionFailed'));
+    }
+  }
+
   async function clearAll() {
     if (!db) return;
     if (!window.confirm(t('confirmDel'))) return;
@@ -156,101 +167,154 @@ export default function ResearchTab() {
       });
       await Promise.all(surveyDocs.map((d) => deleteDoc(doc(db!, 'surveyResponses', d.id))));
       setRows([]);
-      setMsg(t('saved'));
+      setMsg(t('resSaved') || t('saved'));
     } catch {
       setMsg(t('actionFailed'));
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="card space-y-4">
-        <h2 className="text-xl font-bold">{t('tabResearch')}</h2>
+    <div className="stack">
+      <div className="card form">
+        <h2>{t('tabResearch')}</h2>
+        <p className="small muted">{t('resAdminNote')}</p>
 
-        <div className="grid sm:grid-cols-2 gap-4">
-          <label className="flex items-center gap-2 cursor-pointer font-medium">
-            <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} className="rounded text-emerald-600" />
-            {t('resEnable')}
-          </label>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('resEthics')}</label>
-            <input
-              type="text"
-              value={ref}
-              onChange={(e) => setRef(e.target.value)}
-              className="input-field"
-              placeholder="e.g. REC/2025/1104"
-            />
-          </div>
-        </div>
+        <label className="check" style={{ alignItems: 'center' }}>
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(e) => setEnabled(e.target.checked)}
+            style={{ width: '18px', height: '18px', margin: 0 }}
+          />
+          <span>{t('resEnable')}</span>
+        </label>
 
-        <div className="flex gap-2">
-          <button onClick={save} className="btn-primary">
+        <label htmlFor="ethics-ref">{t('resEthics')}</label>
+        <input
+          id="ethics-ref"
+          type="text"
+          dir="ltr"
+          value={ref}
+          onChange={(e) => setRef(e.target.value)}
+          placeholder="e.g. REC/2025/1104"
+        />
+
+        <div className="row">
+          <button type="button" onClick={save} className="btn">
             {t('save')}
           </button>
         </div>
 
-        {msg && <p className="text-sm font-medium text-emerald-700">{msg}</p>}
+        {msg && <p className="small" style={{ color: 'var(--ok)', fontWeight: 600, margin: 0 }}>{msg}</p>}
       </div>
 
-      <div className="card space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h3 className="text-lg font-bold">{t('resStats')} ({filtered.length})</h3>
-          <div className="flex items-center gap-2">
-            <select value={phase} onChange={(e) => setPhase(e.target.value as 'all' | 'pre' | 'post')} className="input-field py-1">
+      <div className="card stack">
+        <div className="head">
+          <h3 style={{ margin: 0 }}>{t('resStats')} ({filtered.length})</h3>
+          <div className="row wrapRow">
+            <select
+              value={phase}
+              onChange={(e) => setPhase(e.target.value as 'all' | 'pre' | 'post')}
+              style={{ width: 'auto' }}
+            >
               <option value="all">{t('resAll')}</option>
               <option value="pre">{t('pre')}</option>
               <option value="post">{t('post')}</option>
             </select>
-            <button onClick={exportCSV} disabled={!rows || rows.length === 0} className="btn-secondary py-1 text-sm">
-              {t('resExport')}
+            <button type="button" onClick={exportCSV} disabled={!rows || rows.length === 0} className="btn small ghost">
+              📥 {t('resExport')}
             </button>
-            <button onClick={clearAll} disabled={!rows || rows.length === 0} className="btn-danger py-1 text-sm">
-              {t('resDelete')}
+            <button type="button" onClick={clearAll} disabled={!rows || rows.length === 0} className="btn small danger">
+              🗑️ {t('resDelete')}
             </button>
           </div>
         </div>
 
         {rows === null ? (
-          <p className="text-gray-500">{t('loading')}</p>
+          <p className="muted">{t('loading')}</p>
         ) : filtered.length === 0 ? (
-          <p className="text-gray-500">{t('resNoData')}</p>
+          <p className="muted">{t('resNoData')}</p>
         ) : (
-          <div className="space-y-6">
-            <div>
-              <h4 className="font-bold mb-2">{t('resStats')}</h4>
-              <Bars d={overall} />
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              {ageGroups.map(({ g, d: dist }) => (
-                <div key={g.key} className="border p-3 rounded-lg">
-                  <h5 className="font-semibold text-sm mb-1">{t('resByAge')}: {pick(g, lang)}</h5>
-                  <Bars d={dist} />
-                </div>
-              ))}
-            </div>
-
-            <div>
-              <h4 className="font-bold mb-2">{t('resByQ')}</h4>
-              <div className="space-y-3">
-                {qStats.map((pctCorrect, i) => {
-                  const text = pick(QUESTIONS[i]?.q, lang);
-                  const qDist: Dist = {
-                    n: filtered.length,
-                    know: pctCorrect,
-                    partial: 0,
-                    dont: Math.max(0, 100 - pctCorrect),
-                    avg: pctCorrect,
-                  };
-                  return (
-                    <div key={i} className="border-b pb-2">
-                      <p className="text-xs font-medium mb-1">Q{i + 1}. {text} ({pctCorrect}%)</p>
-                      <Bars d={qDist} />
-                    </div>
-                  );
-                })}
+          <div className="stack">
+            <div className="subcard">
+              <div className="head">
+                <span><b>{t('resRespondents')}:</b> {overall.n}</span>
+                <span><b>{t('resAvg')}:</b> {overall.avg}%</span>
               </div>
+              <Bars d={overall} />
+              <p className="small muted" style={{ margin: 0 }}>{t('resMethodNote')}</p>
+            </div>
+
+            {ageGroups.length > 0 && (
+              <div className="stack">
+                <h3 style={{ margin: 0 }}>{t('resByAge')}</h3>
+                <div className="grid">
+                  {ageGroups.map(({ g, d: dist }) => (
+                    <div key={g.key} className="subcard">
+                      <b>{pick(g, lang)} ({dist.n})</b>
+                      <Bars d={dist} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="stack">
+              <h3 style={{ margin: 0 }}>{t('resByQ')}</h3>
+              {qStats.map((pctCorrect, i) => {
+                const text = pick(QUESTIONS[i]?.q, lang);
+                const qDist: Dist = {
+                  n: filtered.length,
+                  know: pctCorrect,
+                  partial: 0,
+                  dont: Math.max(0, 100 - pctCorrect),
+                  avg: pctCorrect,
+                };
+                return (
+                  <div key={i} className="subcard">
+                    <div className="head">
+                      <span className="small"><b>Q{i + 1}.</b> {text}</span>
+                      <span className="badge approved">{pctCorrect}%</span>
+                    </div>
+                    <Bars d={qDist} />
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="tablewrap">
+              <table className="tbl">
+                <thead>
+                  <tr>
+                    <th>{t('resColName')}</th>
+                    <th>{t('resColAge')}</th>
+                    <th>{t('resPhase')}</th>
+                    <th>{t('resColScore')}</th>
+                    <th>{t('resColLevel')}</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((r) => (
+                    <tr key={r.id}>
+                      <td>{r.name || '—'}</td>
+                      <td>{r.age ?? '—'}</td>
+                      <td>{r.phase === 'pre' ? t('pre') : r.phase === 'post' ? t('post') : r.phase}</td>
+                      <td><b>{r.score}/{r.total}</b> ({r.pct}%)</td>
+                      <td>
+                        <span className={`badge ${r.level === 'know' ? 'approved' : r.level === 'partial' ? 'pending_review' : ''}`}>
+                          {r.level === 'know' ? t('lvlKnow') : r.level === 'partial' ? t('lvlPartial') : t('lvlDont')}
+                        </span>
+                      </td>
+                      <td>
+                        <button type="button" className="btn small danger" onClick={() => removeOne(r.id)}>
+                          {t('del')}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
