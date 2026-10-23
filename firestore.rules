@@ -86,5 +86,15 @@ service cloud.firestore {
       allow read, delete: if isAdmin();
       allow update: if false;
     }
+
+    // ✅ جديد — نتائج الكويز
+    match /quizResults/{resultId} {
+      // أي حد يكتب نتيجته (مسجل أو زائر)
+      allow create: if true;
+      // بس الـ admin يقرأ الكل
+      allow read: if request.auth != null;
+      // محدش يعدل أو يمسح
+      allow update, delete: if false;
+    }
   }
 }

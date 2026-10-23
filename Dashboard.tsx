@@ -7,10 +7,10 @@ import { useLang } from './i18n';
 import { fetchAll, removeMedicine, seedStarter, setStatus, validateForApproval } from './medicinesApi';
 import { Medicine, pick, Status, STATUSES } from './types';
 import StatusBadge from './StatusBadge';
-import QuizResultsTab from './QuizResultsTab';
 import UsersTab from './UsersTab';
 import ResearchTab from './ResearchTab';
 import { LearningImpactDashboard } from './LearningImpactDashboard';
+import QuizResultsTab from './QuizResultsTab';
 
 function diagText(status: string, t: (k: string) => string): string {
   if (status === 'missing') return t('diagMissing');
@@ -165,7 +165,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
 export default function Dashboard() {
   const { t, lang } = useLang();
   const { user, role, roleStatus, loading, logout } = useAuth();
-  const [tab, setTab] = useState<'meds' | 'research' | 'users' | 'impact'>('meds');
+  const [tab, setTab] = useState<'meds' | 'research' | 'users' | 'impact' | 'quiz'>('meds');
 
   if (loading) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (!user) return <Login />;
@@ -201,16 +201,18 @@ export default function Dashboard() {
           <button className={tab === 'impact' ? 'on' : ''} onClick={() => setTab('impact')}>
             {lang === 'ar' ? '📊 قياس الأثر والتعلم' : '📊 Learning Impact'}
           </button>
-      <button onClick={() => setActiveTab('quiz')}>
-  📝 نتائج الكويز
-</button>
+        )}
+        {role === 'admin' && (
+          <button className={tab === 'quiz' ? 'on' : ''} onClick={() => setTab('quiz')}>
+            {lang === 'ar' ? '📝 نتائج الكويز' : '📝 Quiz Results'}
+          </button>
         )}
       </div>
       {tab === 'meds' && <MedsTab role={role} uid={user.uid} />}
       {tab === 'research' && role === 'admin' && <ResearchTab />}
-      {activeTab === 'quiz' && <QuizResultsTab />}
       {tab === 'users' && role === 'admin' && <UsersTab myUid={user.uid} />}
       {tab === 'impact' && role === 'admin' && <LearningImpactDashboard />}
+      {tab === 'quiz' && role === 'admin' && <QuizResultsTab />}
     </main>
   );
 }
