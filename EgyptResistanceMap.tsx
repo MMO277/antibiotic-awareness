@@ -4,6 +4,7 @@ import { useLang } from './i18n';
 import { Bi, pick, tr } from './types';
 
 type RegionId = 'delta' | 'cairo' | 'alex' | 'canal' | 'upper';
+type MobileTab = 'radar' | 'bacteria' | 'guide';
 
 interface PathogenMetric {
   id: string;
@@ -43,7 +44,6 @@ interface RegionSpec {
 
 const YEARS = [2018, 2020, 2022, 2024, 2026] as const;
 
-// Year progression multipliers relative to 2026 baseline
 const YEAR_FACTORS: Record<number, number> = {
   2018: 0.76,
   2020: 0.84,
@@ -52,32 +52,66 @@ const YEAR_FACTORS: Record<number, number> = {
   2026: 1.0,
 };
 
+/**
+ * Geographic Coordinate Projection for Egypt (ViewBox 0 0 440 375):
+ * Longitude 24.7°E..36.9°E -> X: 42 + (lon - 24.5) * 28.5
+ * Latitude  31.6°N..21.7°N -> Y: 40 + (31.8 - lat) * 29.0
+ *
+ * Includes:
+ * 1. Full Mediterranean Coast (Salloum, Matrouh, Ras El-Hekma, Alexandria, Abu Qir, Burullus, Damietta, Port Said, Bardawil, Arish, Rafah).
+ * 2. Full Sinai Peninsula with BOTH Gulf of Suez AND Gulf of Aqaba clearly separated, plus Tiran & Sanafir islands at the Strait of Tiran, and Shadwan island.
+ * 3. Full Red Sea Coast down to Ras Hadarba (22°N) with the complete Halayeb, Abu Ramad & Shalateen triangle and Bir Tawil administrative trapezoid.
+ * 4. Full Southern 22°N border with Sudan (including complete Lake Nasser & Khor Halfa) and Full Western 25°E border with Libya (Siwa Oasis curve to Salloum).
+ */
+
+const EGYPT_UNIFIED_TERRITORY_PATH =
+  // Start at Salloum (25.16E, 31.55N) -> Mediterranean Coast Eastward
+  'M 61,47 L 85,49 L 118,54 L 145,59 L 166,64 L 184,58 L 196,49 L 210,45 L 228,48 L 243,49 ' +
+  // Port Said (32.30E, 31.26N) -> North Sinai Coast (Lake Bardawil, Arish, Rafah 34.25E, 31.30N)
+  'L 264,56 L 288,58 L 306,59 L 320,55 ' +
+  // Eastern Border (Rafah -> Taba 34.89E, 29.49N)
+  'L 338,107 ' +
+  // Gulf of Aqaba Western Shore (Taba -> Nuweiba -> Dahab -> Nabq -> Ras Mohammed 34.25E, 27.73N)
+  'L 331,128 L 327,142 L 320,158 ' +
+  // Gulf of Suez Eastern Shore UP to Suez City (Ras Mohammed -> El-Tor -> Ras Sudr -> Suez 32.55E, 29.96N)
+  'L 304,136 L 286,112 L 271,94 ' +
+  // Gulf of Suez Western Shore DOWN (Ain Sokhna -> Zafarana -> Ras Gharib -> Hurghada 33.81E, 27.25N)
+  'L 265,96 L 274,118 L 288,144 L 307,172 ' +
+  // Red Sea Coast Southward (Safaga -> Quseir -> Marsa Alam -> Ras Banas 35.78E, 23.91N)
+  'L 318,192 L 336,225 L 363,269 L 355,274 ' +
+  // SHALATEEN, ABU RAMAD & HALAYEB TRIANGLE down to Ras Hadarba (36.86E, 22.00N)
+  'L 377,298 L 394,324 ' +
+  // Southern 22°N International Border (Ras Hadarba -> Halaib Southern Border -> Bir Tawil / 22°N Line -> Lake Nasser -> Jebel Uweinat 25.00E, 22.00N)
+  'L 334,324 L 324,332 L 311,332 L 304,324 L 235,324 L 228,330 L 221,324 L 56,324 ' +
+  // Western 25°E Border Northward (Jebel Uweinat -> Gilf Kebir -> Great Sand Sea -> Siwa Oasis Curve -> Jaghbub -> Salloum)
+  'L 56,195 L 54,158 L 46,125 L 52,102 L 58,76 Z';
+
 const REGIONS: RegionSpec[] = [
   {
     id: 'delta',
     name: {
-      ar: 'إقليم الدلتا (المنصورة وطنطا والزقازيق)',
-      en: 'Nile Delta (Mansoura, Tanta & Zagazig)',
-      fr: 'Delta du Nil (Mansourah, Tanta & Zagazig)',
-      es: 'Delta del Nilo (Mansura, Tanta y Zagazig)',
+      ar: 'إقليم الدلتا (الدقهلية والغربية والشرقية وكفر الشيخ ودمياط والمنوفية)',
+      en: 'Nile Delta (Mansoura, Tanta, Zagazig, Kafr El-Sheikh & Damietta)',
+      fr: 'Delta du Nil (Mansourah, Tanta, Zagazig & Damiette)',
+      es: 'Delta del Nilo (Mansura, Tanta, Zagazig y Damieta)',
     },
     cities: {
-      ar: 'الدقهلية • الغربية • الشرقية • كفر الشيخ • المنوفية • دمياط',
-      en: 'Dakahlia • Gharbia • Sharqia • Kafr El-Sheikh • Monufia • Damietta',
-      fr: 'Dakahlia • Gharbia • Charqia • Kafr El-Cheikh • Ménoufia • Damiette',
-      es: 'Dacalia • Garbía • الشرقية • Kafr el-Sheij • Menufia • Damieta',
+      ar: 'المنصورة • طنطا • الزقازيق • كفر الشيخ • شبين الكوم • دمياط',
+      en: 'Mansoura • Tanta • Zagazig • Kafr El-Sheikh • Shibin El-Kom • Damietta',
+      fr: 'Mansourah • Tanta • Zagazig • Kafr El-Cheikh • Damiette',
+      es: 'Mansura • Tanta • Zagazig • Kafr el-Sheij • Damieta',
     },
     hospitals: {
-      ar: 'مراكز ومستشفيات جامعة المنصورة وطنطا والزقازيق',
-      en: 'Mansoura, Tanta & Zagazig University Hospitals',
+      ar: 'مراكز ومستشفيات جامعات المنصورة وطنطا والزقازيق والمنوفية',
+      en: 'Mansoura, Tanta, Zagazig & Menoufia University Hospitals',
       fr: 'CHU de Mansourah, Tanta & Zagazig',
       es: 'Hospitales Universitarios de Mansura, Tanta y Zagazig',
     },
-    cx: 242,
-    cy: 76,
-    labelX: 242,
-    labelY: 42,
-    territoryPath: 'M 196,52 L 222,42 L 258,45 L 274,55 L 256,105 L 234,112 L 210,96 Z',
+    cx: 226,
+    cy: 72,
+    labelX: 226,
+    labelY: 32,
+    territoryPath: 'M 196,49 L 210,45 L 228,48 L 243,49 L 260,56 L 248,96 L 226,102 L 204,88 Z',
     color: '#f59e0b',
     alertLabel: {
       ar: 'بؤرة رصد نشطة — بكتيريا معوية منتجة لـ ESBL',
@@ -163,8 +197,8 @@ const REGIONS: RegionSpec[] = [
       es: 'Gran El Cairo (El Cairo, Guiza y Caliubia)',
     },
     cities: {
-      ar: 'القاهرة • الجيزة • شبرا الخيمة • بنها • 6 أكتوبر • العاصمة',
-      en: 'Cairo • Giza • Shubra El-Kheima • Banha • 6th of October',
+      ar: 'القاهرة • الجيزة • شبرا الخيمة • بنها • 6 أكتوبر • العاصمة الإدارية',
+      en: 'Cairo • Giza • Shubra El-Kheima • Banha • 6th of October • New Capital',
       fr: 'Le Caire • Gizeh • Choubra El-Kheima • Banha • 6 Octobre',
       es: 'El Cairo • Guiza • Shubra El-Kheima • Banha • 6 de Octubre',
     },
@@ -174,11 +208,11 @@ const REGIONS: RegionSpec[] = [
       fr: 'Hôpitaux Universitaires Kasr Al-Ainy & Ain Shams',
       es: 'Hospitales Universitarios Kasr Al-Ainy y Ain Shams',
     },
-    cx: 236,
-    cy: 112,
-    labelX: 162,
-    labelY: 115,
-    territoryPath: 'M 214,98 L 256,104 L 260,132 L 216,134 L 204,114 Z',
+    cx: 224,
+    cy: 102,
+    labelX: 138,
+    labelY: 112,
+    territoryPath: 'M 200,90 L 252,94 L 256,122 L 194,124 Z',
     color: '#ef4444',
     alertLabel: {
       ar: 'مؤشر حرج — كثافة حضرية وإحالات الرعايات المركزة',
@@ -258,28 +292,28 @@ const REGIONS: RegionSpec[] = [
   {
     id: 'alex',
     name: {
-      ar: 'إقليم الإسكندرية والساحل الشمالي والبحيرة',
-      en: 'Alexandria, Beheira & North Coast',
-      fr: 'Alexandrie, Beheira & Côte Nord',
-      es: 'Alejandría, Beheira y Costa Norte',
+      ar: 'إقليم الإسكندرية والبحيرةومطروح والساحل الشمالي',
+      en: 'Alexandria, Beheira, Matrouh & North Coast',
+      fr: 'Alexandrie, Beheira, Matrouh & Côte Nord',
+      es: 'Alejandría, Beheira, Matruh y Costa Norte',
     },
     cities: {
-      ar: 'الإسكندرية • دمنهور • كفر الدوار • العلمين • مرسى مطروح',
-      en: 'Alexandria • Damanhour • Kafr El-Dawar • Alamein • Matrouh',
-      fr: 'Alexandrie • Damanhour • Kafr El-Dawar • El-Alamein • Matrouh',
-      es: 'Alejandría • Damanhur • Kafr El-Dawar • El-Alamein • Matruh',
+      ar: 'الإسكندرية • دمنهور • كفر الدوار • العلمين • مرسى مطروح • السلوم • سيوة',
+      en: 'Alexandria • Damanhour • Alamein • Marsa Matrouh • Salloum • Siwa',
+      fr: 'Alexandrie • Damanhour • El-Alamein • Marsa Matrouh • Siwa',
+      es: 'Alejandría • Damanhur • El-Alamein • Marsa Matruh • Siwa',
     },
     hospitals: {
-      ar: 'المستشفى الرئيسي الجامعي بالإسكندرية (الأميري) والشاطبي',
-      en: 'Alexandria Main University Hospital & El-Shatby Hospital',
+      ar: 'المستشفى الرئيسي الجامعي بالإسكندرية (الأميري) والشاطبي ودمنهور',
+      en: 'Alexandria Main University Hospital, El-Shatby & Damanhour',
       fr: 'CHU Principal d’Alexandrie & Hôpital El-Shatby',
       es: 'Hospital Universitario Principal de Alejandría y El-Shatby',
     },
-    cx: 186,
-    cy: 64,
-    labelX: 122,
-    labelY: 46,
-    territoryPath: 'M 64,58 L 128,62 L 166,52 L 196,52 L 210,96 L 164,108 L 62,108 Z',
+    cx: 184,
+    cy: 62,
+    labelX: 114,
+    labelY: 42,
+    territoryPath: 'M 61,47 L 85,49 L 118,54 L 145,59 L 166,64 L 184,58 L 196,49 L 204,88 L 194,124 L 52,124 L 46,125 L 52,102 L 58,76 Z',
     color: '#22d3ee',
     alertLabel: {
       ar: 'رصد ساحلي نشط — عدوى المجتمع والمسالك والجلد',
@@ -359,16 +393,16 @@ const REGIONS: RegionSpec[] = [
   {
     id: 'canal',
     name: {
-      ar: 'إقليم قناة السويس وسيناء والبحر الأحمر',
-      en: 'Suez Canal, Sinai & Red Sea Region',
-      fr: 'Canal de Suez, Sinaï & Mer Rouge',
-      es: 'Canal de Suez, Sinaí y Mar Rojo',
+      ar: 'إقليم قناة السويس وشبه جزيرة سيناء',
+      en: 'Suez Canal & Sinai Peninsula Region',
+      fr: 'Canal de Suez & Péninsule du Sinaï',
+      es: 'Canal de Suez y Península del Sinaí',
     },
     cities: {
-      ar: 'بورسعيد • الإسماعيلية • السويس • العريش • الطور • الغردقة • شلاتين • حلايب',
-      en: 'Port Said • Ismailia • Suez • Arish • Hurghada • Shalateen • Halayeb',
-      fr: 'Port-Saïd • Ismaïlia • Suez • El-Arich • Hurghada • Halayeb',
-      es: 'Puerto Saíd • Ismailía • Suez • El-Arish • Hurgada • Halayeb',
+      ar: 'بورسعيد • الإسماعيلية • السويس • العريش • رفح • طابا • شرم الشيخ • الطور',
+      en: 'Port Said • Ismailia • Suez • Arish • Rafah • Taba • Sharm El-Sheikh',
+      fr: 'Port-Saïd • Ismaïlia • Suez • El-Arich • Taba • Charm el-Cheikh',
+      es: 'Puerto Saíd • Ismailía • Suez • El-Arish • Taba • Sharm el-Sheij',
     },
     hospitals: {
       ar: 'مستشفيات جامعة قناة السويس ومجمعات التأمين الصحي الشامل',
@@ -376,11 +410,11 @@ const REGIONS: RegionSpec[] = [
       fr: 'CHU du Canal de Suez & Centres d’Assurance Maladie Universelle',
       es: 'Hospitales de la Universidad del Canal de Suez',
     },
-    cx: 286,
-    cy: 98,
-    labelX: 332,
-    labelY: 72,
-    territoryPath: 'M 274,55 L 334,62 L 346,105 L 312,165 L 286,122 L 260,96 Z',
+    cx: 298,
+    cy: 95,
+    labelX: 356,
+    labelY: 64,
+    territoryPath: 'M 264,56 L 288,58 L 306,59 L 320,55 L 338,107 L 331,128 L 327,142 L 320,158 L 304,136 L 286,112 L 271,94 L 265,96 L 252,94 L 260,56 Z',
     color: '#10b981',
     alertLabel: {
       ar: 'حوكمة دوائية متقدمة — منظومة التأمين الصحي الشامل',
@@ -460,28 +494,28 @@ const REGIONS: RegionSpec[] = [
   {
     id: 'upper',
     name: {
-      ar: 'إقليم صعيد مصر (المنيا وأسيوط وسوهاج والأقصر وأسوان)',
-      en: 'Upper Egypt (Minya, Assiut, Sohag, Luxor & Aswan)',
-      fr: 'Haute-Égypte (Minya, Assiout, Sohag, Louxor & Assouan)',
-      es: 'Alto Egipto (Minya, Asiut, Sohag, Lúxor y Asuán)',
+      ar: 'إقليم صعيد مصر والبحر الأحمر وحلايب وشلاتين',
+      en: 'Upper Egypt, Red Sea & Halayeb-Shalateen',
+      fr: 'Haute-Égypte, Mer Rouge & Halayeb-Chalateen',
+      es: 'Alto Egipto, Mar Rojo y Halayeb-Shalateen',
     },
     cities: {
-      ar: 'الفيوم • بني سويف • المنيا • أسيوط • سوهاج • قنا • الأقصر • أسوان',
-      en: 'Fayoum • Beni Suef • Minya • Assiut • Sohag • Qena • Luxor • Aswan',
-      fr: 'Fayoum • Beni Suef • Minya • Assiout • Sohag • Qena • Louxor • Assouan',
-      es: 'Fayún • Beni Suef • Minya • Asiut • Sohag • Qena • Lúxor • Asuán',
+      ar: 'الفيوم • المنيا • أسيوط • سوهاج • قنا • الأقصر • أسوان • الغردقة • شلاتين • حلايب',
+      en: 'Fayoum • Minya • Assiut • Sohag • Qena • Luxor • Aswan • Hurghada • Halayeb',
+      fr: 'Fayoum • Minya • Assiout • Sohag • Louxor • Assouan • Hurghada • Halayeb',
+      es: 'Fayún • Minya • Asiut • Sohag • Lúxor • Asuán • Hurgada • Halayeb',
     },
     hospitals: {
       ar: 'مستشفيات جامعات أسيوط والمنيا وسوهاج وجنوب الوادي وأسوان',
-      en: 'Assiut, Minya, Sohag & Aswan University Hospitals',
+      en: 'Assiut, Minya, Sohag, South Valley & Aswan University Hospitals',
       fr: 'CHU d’Assiout, Minya, Sohag & Assouan',
       es: 'Hospitales Universitarios de Asiut, Minya, Sohag y Asuán',
     },
-    cx: 238,
-    cy: 215,
-    labelX: 162,
-    labelY: 215,
-    territoryPath: 'M 178,134 L 262,134 L 302,220 L 356,298 L 368,322 L 74,322 L 66,180 Z',
+    cx: 230,
+    cy: 200,
+    labelX: 136,
+    labelY: 205,
+    territoryPath: 'M 52,124 L 256,122 L 274,118 L 288,144 L 307,172 L 318,192 L 336,225 L 363,269 L 355,274 L 377,298 L 394,324 L 334,324 L 324,332 L 311,332 L 304,324 L 56,324 L 56,195 L 54,158 Z',
     color: '#f97316',
     alertLabel: {
       ar: 'مؤشر مرتفع — خطورة «حقنة البرد» والحقن التجريبية',
@@ -560,8 +594,7 @@ const REGIONS: RegionSpec[] = [
   },
 ];
 
-// Helper to compute 6-axis radar polygon coordinates
-function getRadarPoint(index: number, pct: number, cx = 130, cy = 125, maxR = 78): [number, number] {
+function getRadarPoint(index: number, pct: number, cx = 130, cy = 120, maxR = 74): [number, number] {
   const angleDeg = -90 + index * 60;
   const rad = (angleDeg * Math.PI) / 180;
   const r = (Math.max(5, Math.min(100, pct)) / 100) * maxR;
@@ -573,9 +606,10 @@ export default function EgyptResistanceMap() {
   const isAr = lang === 'ar';
 
   const [selectedId, setSelectedId] = useState<RegionId>('delta');
-  const [yearIdx, setYearIdx] = useState<number>(4); // Default 2026
+  const [yearIdx, setYearIdx] = useState<number>(4);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [stewardshipMode, setStewardshipMode] = useState<boolean>(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>('radar');
 
   const currentYear = YEARS[yearIdx];
   const activeRegion = useMemo(
@@ -583,7 +617,6 @@ export default function EgyptResistanceMap() {
     [selectedId]
   );
 
-  // Auto-play timeline animation
   useEffect(() => {
     if (!isPlaying) return;
     const timer = window.setInterval(() => {
@@ -599,13 +632,11 @@ export default function EgyptResistanceMap() {
   }, [isPlaying]);
 
   const yearFactor = YEAR_FACTORS[currentYear] || 1;
-  // When Green Rx Stewardship simulation is toggled ON, project a 24% reduction in preventable resistance
   const simMultiplier = stewardshipMode ? 0.76 : 1;
 
   const overallPct = Math.round(activeRegion.baseOverall2026 * yearFactor * simMultiplier);
   const activeAccent = stewardshipMode ? '#10b981' : activeRegion.color;
 
-  // Radar polygon points string
   const radarPolygonPoints = useMemo(() => {
     return activeRegion.radar
       .map((axis, idx) => {
@@ -616,7 +647,6 @@ export default function EgyptResistanceMap() {
       .join(' ');
   }, [activeRegion, yearFactor, simMultiplier]);
 
-  // Baseline 2026 ghost polygon for comparison when in stewardship mode or earlier year
   const baselinePolygonPoints = useMemo(() => {
     return activeRegion.radar
       .map((axis, idx) => {
@@ -626,7 +656,6 @@ export default function EgyptResistanceMap() {
       .join(' ');
   }, [activeRegion]);
 
-  // Semi-circular speedometer arc calculation
   const gaugeAngle = -90 + (Math.min(100, Math.max(0, overallPct)) / 100) * 180;
 
   return (
@@ -639,7 +668,7 @@ export default function EgyptResistanceMap() {
           color: #ecfeff;
           border: 1.5px solid rgba(34, 211, 238, 0.32);
           box-shadow: 0 20px 45px rgba(4, 16, 24, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-          padding: 24px 20px;
+          padding: 22px 18px;
           overflow: hidden;
         }
         .eg-amr-command::before {
@@ -690,11 +719,11 @@ export default function EgyptResistanceMap() {
           animation: egMicrobeFloat 3.4s ease-in-out infinite;
         }
         .eg-radar-sweep {
-          transform-origin: 130px 125px;
+          transform-origin: 130px 120px;
           animation: egScanSweep 7s linear infinite;
         }
         .eg-glass-panel {
-          background: rgba(11, 35, 51, 0.72);
+          background: rgba(11, 35, 51, 0.75);
           backdrop-filter: blur(14px) saturate(150%);
           -webkit-backdrop-filter: blur(14px) saturate(150%);
           border: 1px solid rgba(56, 189, 248, 0.24);
@@ -703,6 +732,14 @@ export default function EgyptResistanceMap() {
           position: relative;
           z-index: 1;
         }
+        .eg-region-strip {
+          position: relative;
+          z-index: 1;
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin-bottom: 16px;
+        }
         .eg-region-tab {
           padding: 8px 14px;
           border-radius: 999px;
@@ -710,18 +747,18 @@ export default function EgyptResistanceMap() {
           background: rgba(15, 39, 56, 0.78);
           color: #cbd5e1;
           font: inherit;
-          font-size: 0.85rem;
+          font-size: 0.84rem;
           font-weight: 600;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
           gap: 7px;
+          white-space: nowrap;
           transition: all 0.22s ease;
         }
         .eg-region-tab:hover {
           border-color: rgba(34, 211, 238, 0.65);
           color: #ffffff;
-          transform: translateY(-1px);
         }
         .eg-region-tab.active {
           color: #041018;
@@ -736,7 +773,97 @@ export default function EgyptResistanceMap() {
           filter: brightness(1.25);
         }
         .eg-territory.active-zone {
-          transform: translateY(-3px);
+          transform: translateY(-2.5px);
+        }
+        .eg-main-deck {
+          position: relative;
+          z-index: 1;
+          display: grid;
+          gap: 18px;
+          grid-template-columns: 1.02fr 1.15fr;
+          align-items: stretch;
+        }
+        .eg-radar-gauge-row {
+          display: grid;
+          gap: 12px;
+          grid-template-columns: 1.12fr 0.88fr;
+          align-items: center;
+          background: rgba(4, 16, 24, 0.58);
+          border-radius: 14px;
+          padding: 12px;
+          border: 1px solid rgba(56, 189, 248, 0.16);
+        }
+        /* Mobile-only sub-navigation tabs to eliminate long vertical stacking */
+        .eg-mobile-subtabs {
+          display: none;
+        }
+        @media (max-width: 860px) {
+          .eg-amr-command {
+            padding: 16px 12px;
+            border-radius: 16px;
+          }
+          .eg-region-strip {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            scrollbar-width: none;
+          }
+          .eg-region-strip::-webkit-scrollbar {
+            display: none;
+          }
+          .eg-region-tab {
+            padding: 7px 12px;
+            font-size: 0.79rem;
+            flex-shrink: 0;
+          }
+          .eg-main-deck {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          .eg-glass-panel {
+            padding: 12px;
+          }
+          /* Keep Radar + Speedometer SIDE BY SIDE even on mobile screens! */
+          .eg-radar-gauge-row {
+            grid-template-columns: 1.08fr 0.92fr;
+            gap: 8px;
+            padding: 10px 8px;
+          }
+          .eg-mobile-subtabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            background: rgba(4, 16, 24, 0.85);
+            padding: 5px;
+            border-radius: 12px;
+            border: 1px solid rgba(56, 189, 248, 0.25);
+          }
+          .eg-mobile-subtab-btn {
+            background: transparent;
+            color: #94a3b8;
+            border: none;
+            border-radius: 8px;
+            padding: 7px 6px;
+            font: inherit;
+            font-size: 0.76rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+          }
+          .eg-mobile-subtab-btn.on {
+            background: #0e9aa7;
+            color: #ffffff;
+            box-shadow: 0 2px 10px rgba(14, 154, 167, 0.4);
+          }
+          .eg-hide-on-mobile {
+            display: none !important;
+          }
+        }
+        @media (max-width: 380px) {
+          .eg-radar-gauge-row {
+            grid-template-columns: 1fr;
+          }
         }
         @media (prefers-reduced-motion: reduce) {
           .eg-nile-stream, .eg-fiber-arc, .eg-pulse-circle, .eg-microbe-icon, .eg-radar-sweep {
@@ -746,21 +873,21 @@ export default function EgyptResistanceMap() {
       `}</style>
 
       {/* Top Executive Header */}
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px', flexWrap: 'wrap', marginBottom: '16px' }}>
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(34, 211, 238, 0.14)', border: '1px solid rgba(34, 211, 238, 0.35)', color: '#67e8f9', padding: '4px 12px', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 700, marginBottom: '8px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(34, 211, 238, 0.14)', border: '1px solid rgba(34, 211, 238, 0.35)', color: '#67e8f9', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '6px' }}>
             <span>🛰️</span>
             <span>
               {tr(
                 lang,
-                'المرصد التفاعلي لمقاومة المضادات الحيوية بجمهورية مصر العربية • WHO GLASS & NAP-AMR',
+                'مرصد مقاومة المضادات الحيوية بجمهورية مصر العربية • WHO GLASS & NAP-AMR',
                 'Egypt Interactive AMR Surveillance Observatory • WHO GLASS & NAP-AMR',
-                'Observatoire Interactif de l’Antibiorésistance en Égypte • OMS GLASS',
-                'Observatorio Interactivo de Resistencia en Egipto • OMS GLASS'
+                'Observatoire Interactif de l’Antibiorésistance en Égypte',
+                'Observatorio Interactivo de Resistencia en Egipto'
               )}
             </span>
           </div>
-          <h2 style={{ margin: '0 0 6px', fontSize: 'clamp(1.25rem, 3vw, 1.6rem)', color: '#ffffff' }}>
+          <h2 style={{ margin: '0 0 4px', fontSize: 'clamp(1.15rem, 2.8vw, 1.55rem)', color: '#ffffff' }}>
             🇪🇬{' '}
             {tr(
               lang,
@@ -770,23 +897,23 @@ export default function EgyptResistanceMap() {
               'Atlas Interactivo en Vivo de Resistencia a los Antibióticos en Egipto'
             )}
           </h2>
-          <p style={{ margin: 0, fontSize: '0.88rem', color: '#94a3b8', maxWidth: '75ch', lineHeight: 1.6 }}>
+          <p style={{ margin: 0, fontSize: '0.84rem', color: '#94a3b8', maxWidth: '75ch', lineHeight: 1.55 }}>
             {tr(
               lang,
-              'استكشف الخريطة الكاملة لمصر (شاملة الدلتا، القاهرة الكبرى، الإسكندرية، سيناء والقناة، الصعيد، وحلايب وشلاتين) وتابع تطور مقاومة السلالات البكتيرية عبر السنين ومخطط الرادار السداسي للمضادات:',
-              'Explore the complete map of Egypt (including the Nile Delta, Greater Cairo, Alexandria, Sinai & Canal, Upper Egypt, and Halayeb & Shalateen) with animated timeline projections and 6-axis antibiogram radar:',
-              'Explorez la carte complète de l’Égypte avec l’évolution temporelle de la résistance bactérienne et le radar d’antibiogramme à 6 axes :',
-              'Explore el mapa completo de Egipto con la evolución temporal de la resistencia bacteriana y el radar de antibiograma de 6 ejes:'
+              'اضغط على أي إقليم على الخريطة لاستكشاف نسب المقاومة ومخطط الرادار السداسي للمضادات الحيوية وتطورها الزمني:',
+              'Tap any region on the map to explore resistance rates, the 6-axis antibiogram radar, and timeline progression:',
+              'Touchez une région sur la carte pour explorer les taux de résistance et le radar à 6 axes :',
+              'Toque cualquier región en el mapa para explorar las tasas de resistencia y el radar de 6 ejes:'
             )}
           </p>
         </div>
 
-        {/* Simulation Mode Toggle Button: "What if we apply Stewardship?" */}
+        {/* Simulation Mode Toggle Button */}
         <button
           type="button"
           onClick={() => setStewardshipMode((v) => !v)}
           style={{
-            padding: '10px 16px',
+            padding: '8px 14px',
             borderRadius: '12px',
             border: stewardshipMode ? '2px solid #10b981' : '1.5px solid rgba(245, 158, 11, 0.5)',
             background: stewardshipMode
@@ -794,26 +921,26 @@ export default function EgyptResistanceMap() {
               : 'rgba(15, 39, 56, 0.85)',
             color: stewardshipMode ? '#6ee7b7' : '#fde68a',
             fontWeight: 700,
-            fontSize: '0.84rem',
+            fontSize: '0.8rem',
             cursor: 'pointer',
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             boxShadow: stewardshipMode ? '0 0 20px rgba(16, 185, 129, 0.3)' : 'none',
             transition: 'all 0.25s ease',
           }}
         >
-          <span style={{ fontSize: '1.1rem' }}>{stewardshipMode ? '🌿' : '⚡'}</span>
+          <span>{stewardshipMode ? '🌿' : '⚡'}</span>
           <span>
             {stewardshipMode
-              ? tr(lang, 'محاكاة الترشيد والروشتة الخضرا: مفعّلة (-24% مقاومة)', 'Stewardship Simulation: ACTIVE (-24% AMR)', 'Simulation Bon Usage : ACTIVE (-24%)', 'Simulación Uso Prudente: ACTIVA (-24%)')
-              : tr(lang, 'جرب محاكاة أثر «الروشتة الخضرا» وترشيد المضادات', 'Simulate "Green Rx" Stewardship Impact', 'Simuler l’impact de l’Ordonnance Verte', 'Simular impacto de la Receta Verde')}
+              ? tr(lang, 'محاكاة الروشتة الخضرا: مفعّلة (-24%)', 'Green Rx Sim: ON (-24%)', 'Sim. Verte : ACTIVE (-24%)', 'Sim. Verde: ACTIVA (-24%)')
+              : tr(lang, 'جرب محاكاة أثر «الروشتة الخضرا» 🌿', 'Simulate "Green Rx" Impact 🌿', 'Simuler l’Ordonnance Verte 🌿', 'Simular Receta Verde 🌿')}
           </span>
         </button>
       </div>
 
-      {/* Interactive Region Selector Pills */}
-      <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '18px' }} role="tablist">
+      {/* Horizontal Swipeable Region Selector Strip */}
+      <div className="eg-region-strip" role="tablist">
         {REGIONS.map((r) => {
           const isSelected = r.id === selectedId;
           const pillColor = stewardshipMode ? '#10b981' : r.color;
@@ -836,61 +963,52 @@ export default function EgyptResistanceMap() {
             >
               <span
                 style={{
-                  width: '9px',
-                  height: '9px',
+                  width: '8px',
+                  height: '8px',
                   borderRadius: '50%',
                   background: isSelected ? '#041018' : pillColor,
                   boxShadow: isSelected ? 'none' : `0 0 8px ${pillColor}`,
                 }}
               />
-              {r.id === 'delta' && tr(lang, 'إقليم الدلتا والمنصورة', 'Nile Delta (Mansoura)', 'Delta du Nil', 'Delta del Nilo')}
+              {r.id === 'delta' && tr(lang, 'الدلتا والمنصورة', 'Nile Delta', 'Delta du Nil', 'Delta del Nilo')}
               {r.id === 'cairo' && tr(lang, 'القاهرة الكبرى', 'Greater Cairo', 'Grand Caire', 'Gran El Cairo')}
-              {r.id === 'alex' && tr(lang, 'الإسكندرية والساحل', 'Alexandria & Coast', 'Alexandrie', 'Alejandría')}
-              {r.id === 'canal' && tr(lang, 'قناة السويس وسيناء', 'Suez Canal & Sinai', 'Canal & Sinaï', 'Canal y Sinaí')}
-              {r.id === 'upper' && tr(lang, 'صعيد مصر والبحر الأحمر', 'Upper Egypt & South', 'Haute-Égypte', 'Alto Egipto')}
+              {r.id === 'alex' && tr(lang, 'الإسكندريةومطروح', 'Alexandria & West', 'Alexandrie', 'Alejandría')}
+              {r.id === 'canal' && tr(lang, 'القناة وسيناء', 'Canal & Sinai', 'Canal & Sinaï', 'Canal y Sinaí')}
+              {r.id === 'upper' && tr(lang, 'الصعيد وحلايب', 'Upper Egypt & Halayeb', 'Haute-Égypte', 'Alto Egipto')}
             </button>
           );
         })}
       </div>
 
       {/* Main 2-Column Command Deck */}
-      <div
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          display: 'grid',
-          gap: '18px',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 330px), 1fr))',
-          alignItems: 'stretch',
-        }}
-      >
-        {/* COLUMN 1: Complete Geographic Map of Egypt + Animated Nile + Time Slider */}
-        <div className="eg-glass-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.8rem', color: '#7dd3fc', fontWeight: 600 }}>
-              ✨ {tr(lang, 'خريطة مصر الكاملة — اضغط على أي إقليم أو نقطة رصد', 'Full Map of Egypt — Click any Region or Node', 'Carte Complète d’Égypte — Cliquez sur une Région', 'Mapa Completo de Egipto — Toque cualquier Región')}
+      <div className="eg-main-deck">
+        {/* COLUMN 1: Complete Geographic Map of Egypt + Compact Timeline Slider */}
+        <div className="eg-glass-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.78rem', color: '#7dd3fc', fontWeight: 600 }}>
+              🧭 {tr(lang, 'خريطة جمهورية مصر العربية الكاملة — اضغط على الإقليم', 'Complete Map of Egypt — Tap any Region', 'Carte Complète d’Égypte', 'Mapa Completo de Egipto')}
             </span>
-            <span style={{ fontSize: '0.76rem', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(56, 189, 248, 0.35)', color: '#38bdf8', padding: '2px 10px', borderRadius: '999px', fontWeight: 700 }}>
-              {tr(lang, `بيانات عام ${currentYear}`, `Year ${currentYear}`, `Année ${currentYear}`, `Año ${currentYear}`)}
+            <span style={{ fontSize: '0.74rem', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(56, 189, 248, 0.35)', color: '#38bdf8', padding: '2px 9px', borderRadius: '999px', fontWeight: 700 }}>
+              {currentYear}
             </span>
           </div>
 
-          {/* Complete SVG Map of Egypt including Sinai, Red Sea Coast, Lake Nasser, and Halayeb & Shalateen */}
-          <div style={{ width: '100%', maxWidth: '430px', marginInline: 'auto' }}>
+          {/* Complete High-Precision Geographic SVG Map of Egypt */}
+          <div style={{ width: '100%', maxWidth: '410px', marginInline: 'auto' }}>
             <svg
-              viewBox="0 0 420 355"
-              style={{ width: '100%', height: 'auto', display: 'block', filter: 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.55))' }}
+              viewBox="0 0 440 365"
+              style={{ width: '100%', height: 'auto', display: 'block', filter: 'drop-shadow(0 10px 22px rgba(0, 0, 0, 0.55))' }}
               role="img"
-              aria-label={tr(lang, 'خريطة جمهورية مصر العربية الكاملة لمقاومة المضادات الحيوية', 'Complete map of the Arab Republic of Egypt showing antibiotic resistance surveillance', 'Carte complète de la République arabe d’Égypte', 'Mapa completo de la República Árabe de Egipto')}
+              aria-label={tr(lang, 'خريطة جمهورية مصر العربية الكاملة شاملة سيناء وتيران وصنافير وحلايب وشلاتين', 'Complete map of Egypt including Sinai, Tiran & Sanafir, and Halayeb & Shalateen', 'Carte complète de l’Égypte', 'Mapa completo de Egipto')}
             >
               <defs>
                 <linearGradient id="egBaseLand" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#0f293a" />
-                  <stop offset="60%" stopColor="#091d2b" />
-                  <stop offset="100%" stopColor="#06131d" />
+                  <stop offset="0%" stopColor="#102c3f" />
+                  <stop offset="55%" stopColor="#091d2b" />
+                  <stop offset="100%" stopColor="#05121c" />
                 </linearGradient>
                 <linearGradient id="egDeltaGlow" x1="50%" y1="0%" x2="50%" y2="100%">
-                  <stop offset="0%" stopColor={stewardshipMode ? 'rgba(16, 185, 129, 0.48)' : 'rgba(251, 191, 36, 0.52)'} />
+                  <stop offset="0%" stopColor={stewardshipMode ? 'rgba(16, 185, 129, 0.5)' : 'rgba(251, 191, 36, 0.55)'} />
                   <stop offset="100%" stopColor="rgba(34, 211, 238, 0.08)" />
                 </linearGradient>
                 <linearGradient id="egNileGolden" x1="0%" y1="100%" x2="0%" y2="0%">
@@ -900,7 +1018,7 @@ export default function EgyptResistanceMap() {
                   <stop offset="100%" stopColor="#fde047" />
                 </linearGradient>
                 <filter id="egNeonGlow" x="-25%" y="-25%" width="150%" height="150%">
-                  <feGaussianBlur stdDeviation="3.5" result="blur" />
+                  <feGaussianBlur stdDeviation="3" result="blur" />
                   <feMerge>
                     <feMergeNode in="blur" />
                     <feMergeNode in="SourceGraphic" />
@@ -908,63 +1026,75 @@ export default function EgyptResistanceMap() {
                 </filter>
               </defs>
 
-              {/* Subtle Geographic Lat/Long Grid */}
-              <g stroke="rgba(56, 189, 248, 0.08)" strokeWidth="1" strokeDasharray="3 3">
-                <line x1="20" y1="60" x2="400" y2="60" />
-                <line x1="20" y1="130" x2="400" y2="130" />
-                <line x1="20" y1="200" x2="400" y2="200" />
-                <line x1="20" y1="270" x2="400" y2="270" />
-                <line x1="20" y1="322" x2="400" y2="322" />
-                <line x1="100" y1="20" x2="100" y2="340" />
-                <line x1="200" y1="20" x2="200" y2="340" />
-                <line x1="300" y1="20" x2="300" y2="340" />
+              {/* Lat/Long Coordinate Grid */}
+              <g stroke="rgba(56, 189, 248, 0.07)" strokeWidth="1" strokeDasharray="3 3">
+                <line x1="20" y1="55" x2="420" y2="55" />
+                <line x1="20" y1="125" x2="420" y2="125" />
+                <line x1="20" y1="195" x2="420" y2="195" />
+                <line x1="20" y1="265" x2="420" y2="265" />
+                <line x1="20" y1="324" x2="420" y2="324" />
+                <line x1="90" y1="20" x2="90" y2="350" />
+                <line x1="190" y1="20" x2="190" y2="350" />
+                <line x1="290" y1="20" x2="290" y2="350" />
+                <line x1="390" y1="20" x2="390" y2="350" />
               </g>
 
-              {/* Sea & Geographic Reference Labels */}
-              <text x="165" y="24" fill="#64a6bd" fontSize="10" fontWeight="600" textAnchor="middle" opacity="0.85">
+              {/* Sea & Border Labels */}
+              <text x="175" y="22" fill="#64a6bd" fontSize="9.5" fontWeight="600" textAnchor="middle" opacity="0.85">
                 {isAr ? 'البحر الأبيض المتوسط' : 'Mediterranean Sea'}
               </text>
-              <text x="348" y="218" fill="#64a6bd" fontSize="9.5" fontWeight="600" textAnchor="middle" opacity="0.8" transform="rotate(56 348 218)">
+              <text x="366" y="212" fill="#64a6bd" fontSize="9.5" fontWeight="600" textAnchor="middle" opacity="0.82" transform="rotate(55 366 212)">
                 {isAr ? 'البحر الأحمر' : 'Red Sea'}
               </text>
-              <text x="346" y="336" fill="#94a3b8" fontSize="8.5" fontWeight="600" textAnchor="middle" opacity="0.85">
-                {isAr ? 'حلايب وشلاتين (خط عرض 22°)' : 'Halayeb & Shalateen (22°N)'}
+              <text x="360" y="346" fill="#7dd3fc" fontSize="8.5" fontWeight="700" textAnchor="middle" opacity="0.9">
+                {isAr ? 'مثلث حلايب وشلاتين وأبو رماد (22° شمالاً)' : 'Halayeb, Abu Ramad & Shalateen (22°N)'}
               </text>
 
-              {/* 3D Extruded Shadow Base of Complete Egypt Mainland + Halayeb & Shalateen */}
+              {/* 3D Extruded Depth Shadow of Unified Egypt Territory */}
               <path
-                d="M 64,64 L 105,68 L 145,62 L 182,58 L 198,56 L 222,48 L 258,51 L 274,61 L 284,102 L 266,116 L 298,176 L 328,238 L 356,294 L 372,316 L 364,328 L 74,328 L 68,218 L 56,126 Z"
-                fill="#020b12"
-                stroke="rgba(34, 211, 238, 0.2)"
+                d={EGYPT_UNIFIED_TERRITORY_PATH}
+                transform="translate(0, 6)"
+                fill="#020a10"
+                stroke="rgba(34, 211, 238, 0.22)"
                 strokeWidth="1.5"
-              />
-              {/* 3D Shadow Base of Complete Sinai Peninsula (Gulf of Suez & Gulf of Aqaba) */}
-              <path
-                d="M 278,60 L 314,56 L 336,66 L 348,108 L 314,170 L 298,136 L 284,100 Z"
-                fill="#020b12"
-                stroke="rgba(34, 211, 238, 0.2)"
-                strokeWidth="1.5"
-              />
-
-              {/* COMPLETE EGYPT MAINLAND POLYGON (Salloum to Rafah, South to 22°N including Full Halayeb & Shalateen Triangle on Red Sea) */}
-              <path
-                d="M 64,58 L 105,62 L 145,56 L 182,52 L 198,50 L 222,42 L 258,45 L 274,55 L 284,96 L 266,110 L 298,170 L 328,232 L 356,288 L 372,310 L 364,322 L 74,322 L 68,212 L 56,120 Z"
-                fill="url(#egBaseLand)"
-                stroke="#22d3ee"
-                strokeWidth="1.8"
                 strokeLinejoin="round"
               />
 
-              {/* COMPLETE SINAI PENINSULA POLYGON (Mediterranean Coast, Rafah-Taba Border, Gulf of Aqaba, Ras Mohammed, Gulf of Suez) */}
+              {/* COMPLETE UNIFIED EGYPT TERRITORY (Mainland + Sinai + Gulf of Suez + Gulf of Aqaba + Full Halayeb & Shalateen Triangle + 22°N Southern Border) */}
               <path
-                d="M 278,54 L 314,50 L 336,60 L 348,102 L 314,164 L 298,130 L 284,94 Z"
+                d={EGYPT_UNIFIED_TERRITORY_PATH}
                 fill="url(#egBaseLand)"
                 stroke="#22d3ee"
-                strokeWidth="1.8"
+                strokeWidth="1.9"
                 strokeLinejoin="round"
               />
 
-              {/* Interactive Clickable Regional Territory Overlays (3D Levitation Effect when Active) */}
+              {/* Red Sea Egyptian Islands: Tiran, Sanafir (Strait of Tiran), and Shadwan */}
+              <ellipse cx="323" cy="160" rx="3.2" ry="2" fill="#102c3f" stroke="#22d3ee" strokeWidth="1.1" />
+              <ellipse cx="329" cy="161" rx="2.5" ry="1.6" fill="#102c3f" stroke="#22d3ee" strokeWidth="1.1" />
+              <ellipse cx="305" cy="165" rx="2.6" ry="1.5" fill="#102c3f" stroke="#22d3ee" strokeWidth="1" />
+
+              {/* Suez Canal Connecting Port Said (Med) to Suez (Gulf of Suez) through Bitter Lakes */}
+              <path
+                d="M 264,56 L 265,76 L 268,94"
+                fill="none"
+                stroke="#38bdf8"
+                strokeWidth="2"
+                strokeDasharray="3 1.5"
+              />
+
+              {/* Qattara Depression Subtle Topographic Contour in Western Desert */}
+              <path
+                d="M 105,86 Q 132,78 152,85 Q 146,105 118,112 Q 96,106 105,86 Z"
+                fill="rgba(14, 154, 167, 0.08)"
+                stroke="rgba(56, 189, 248, 0.16)"
+                strokeWidth="1"
+                strokeDasharray="2 2"
+              />
+              {/* Siwa Oasis */}
+              <ellipse cx="68" cy="118" rx="6" ry="3.2" fill="rgba(16, 185, 129, 0.25)" stroke="#10b981" strokeWidth="0.9" />
+
+              {/* Interactive Regional Territory Zones */}
               {REGIONS.map((r) => {
                 const isZoneActive = r.id === selectedId;
                 const zoneColor = stewardshipMode ? '#10b981' : r.color;
@@ -973,17 +1103,17 @@ export default function EgyptResistanceMap() {
                     key={`zone-${r.id}`}
                     d={r.territoryPath}
                     className={`eg-territory ${isZoneActive ? 'active-zone' : ''}`}
-                    fill={isZoneActive ? `${zoneColor}38` : `${zoneColor}10`}
-                    stroke={isZoneActive ? zoneColor : 'rgba(148, 163, 184, 0.22)'}
-                    strokeWidth={isZoneActive ? '2.2' : '1'}
+                    fill={isZoneActive ? `${zoneColor}38` : `${zoneColor}0d`}
+                    stroke={isZoneActive ? zoneColor : 'rgba(148, 163, 184, 0.18)'}
+                    strokeWidth={isZoneActive ? '2.1' : '0.9'}
                     onClick={() => setSelectedId(r.id)}
                   />
                 );
               })}
 
-              {/* Nile Delta Illuminated Golden/Cyan Fan */}
+              {/* Nile Delta Illuminated Fan (Alexandria/Rosetta to Port Said/Damietta) */}
               <path
-                d="M 196,52 L 236,110 L 272,54 Q 236,38 196,52 Z"
+                d="M 196,49 L 224,102 L 260,56 Q 228,42 196,49 Z"
                 fill="url(#egDeltaGlow)"
                 stroke={stewardshipMode ? '#10b981' : '#fbbf24'}
                 strokeWidth="1.3"
@@ -992,22 +1122,24 @@ export default function EgyptResistanceMap() {
                 style={{ cursor: 'pointer' }}
               />
 
-              {/* Lake Nasser & Toshka Lakes in Southern Upper Egypt */}
+              {/* Complete Lake Nasser (High Dam Aswan down to Abu Simbel & Wadi Halfa across 22°N) + Toshka Lakes */}
               <path
-                d="M 226,322 L 234,308 L 246,294 L 240,280 L 248,268"
+                d="M 254,266 C 250,278 244,290 238,302 C 234,312 228,322 224,330"
                 fill="none"
                 stroke="#0284c7"
                 strokeWidth="6.5"
                 strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.85"
+                opacity="0.9"
               />
-              {/* Faiyum Oasis Depression */}
-              <ellipse cx="218" cy="132" rx="8" ry="5" fill="rgba(56, 189, 248, 0.35)" stroke="#38bdf8" strokeWidth="1" />
+              <ellipse cx="198" cy="296" rx="7" ry="3.5" fill="rgba(2, 132, 199, 0.55)" />
+              <ellipse cx="184" cy="299" rx="5" ry="2.5" fill="rgba(2, 132, 199, 0.45)" />
 
-              {/* Nile River Main Artery (Aswan -> Luxor -> Qena Bend -> Assiut -> Minya -> Cairo) */}
+              {/* Faiyum Oasis & Lake Qarun */}
+              <ellipse cx="208" cy="122" rx="7.5" ry="4.5" fill="rgba(56, 189, 248, 0.38)" stroke="#38bdf8" strokeWidth="1" />
+
+              {/* Nile River Main Artery (Aswan -> Luxor -> Qena Bend -> Sohag -> Assiut -> Minya -> Beni Suef -> Cairo) */}
               <path
-                d="M 248,268 C 252,250 264,234 256,220 C 246,206 234,212 228,196 C 222,180 226,162 232,144 C 236,130 236,118 236,110"
+                d="M 254,266 C 256,248 262,232 254,218 C 244,206 232,212 226,196 C 218,178 214,160 218,142 C 222,126 224,112 224,102"
                 fill="none"
                 stroke="url(#egNileGolden)"
                 strokeWidth="3.5"
@@ -1016,49 +1148,48 @@ export default function EgyptResistanceMap() {
               />
               {/* Rosetta (Rashid) & Damietta Branches */}
               <path
-                d="M 236,110 Q 214,82 198,51 M 236,110 Q 250,80 260,47"
+                d="M 224,102 Q 208,76 196,49 M 224,102 Q 236,75 243,49"
                 fill="none"
                 stroke="url(#egNileGolden)"
-                strokeWidth="2.6"
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 filter="url(#egNeonGlow)"
               />
 
               {/* Animated Luminous Energy Stream Flowing Along the Nile */}
               <path
-                d="M 230,320 L 248,268 C 252,250 264,234 256,220 C 246,206 234,212 228,196 C 222,180 226,162 232,144 L 236,110 L 258,48"
+                d="M 226,326 L 254,266 C 256,248 262,232 254,218 C 244,206 232,212 226,196 C 218,178 214,160 218,142 L 224,102 L 243,49"
                 fill="none"
                 stroke="#ffffff"
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 className="eg-nile-stream"
-                opacity="0.85"
+                opacity="0.88"
               />
 
-              {/* Fiber-Optic Surveillance Connection Arcs Between University Hospital Nodes */}
-              <g fill="none" stroke="rgba(103, 232, 249, 0.45)" strokeWidth="1.3">
-                <path d="M 186,64 Q 214,48 242,76" className="eg-fiber-arc" />
-                <path d="M 242,76 Q 248,95 236,112" className="eg-fiber-arc" />
-                <path d="M 242,76 Q 268,78 286,98" className="eg-fiber-arc" />
-                <path d="M 236,112 Q 212,165 238,215" className="eg-fiber-arc" />
-                <path d="M 238,215 Q 295,255 348,298" className="eg-fiber-arc" />
+              {/* Fiber-Optic Surveillance Connection Arcs */}
+              <g fill="none" stroke="rgba(103, 232, 249, 0.45)" strokeWidth="1.2">
+                <path d="M 184,62 Q 205,46 226,72" className="eg-fiber-arc" />
+                <path d="M 226,72 Q 234,88 224,102" className="eg-fiber-arc" />
+                <path d="M 226,72 Q 262,74 298,95" className="eg-fiber-arc" />
+                <path d="M 224,102 Q 204,155 230,200" className="eg-fiber-arc" />
+                <path d="M 230,200 Q 305,255 372,308" className="eg-fiber-arc" />
               </g>
 
-              {/* Secondary Reference City Dots (Aswan, Matrouh, Arish, Halayeb) */}
+              {/* Key Geographic Reference Cities (Matrouh, Siwa, Arish, Sharm, Hurghada, Aswan, Halayeb & Shalateen) */}
               {[
-                { x: 96, y: 66, nameAr: 'مطروح', nameEn: 'Matrouh', target: 'alex' as RegionId },
-                { x: 322, y: 60, nameAr: 'العريش', nameEn: 'Arish', target: 'canal' as RegionId },
-                { x: 312, y: 158, nameAr: 'شرم الشيخ', nameEn: 'Sharm', target: 'canal' as RegionId },
-                { x: 248, y: 268, nameAr: 'أسوان', nameEn: 'Aswan', target: 'upper' as RegionId },
-                { x: 348, y: 298, nameAr: 'حلايب وشلاتين', nameEn: 'Halayeb', target: 'upper' as RegionId },
+                { x: 118, y: 57, nameAr: 'مطروح', nameEn: 'Matrouh', target: 'alex' as RegionId },
+                { x: 68, y: 118, nameAr: 'سيوة', nameEn: 'Siwa', target: 'alex' as RegionId },
+                { x: 306, y: 61, nameAr: 'العريش', nameEn: 'Arish', target: 'canal' as RegionId },
+                { x: 320, y: 156, nameAr: 'شرم الشيخ', nameEn: 'Sharm', target: 'canal' as RegionId },
+                { x: 307, y: 172, nameAr: 'الغردقة', nameEn: 'Hurghada', target: 'upper' as RegionId },
+                { x: 254, y: 266, nameAr: 'أسوان', nameEn: 'Aswan', target: 'upper' as RegionId },
+                { x: 355, y: 274, nameAr: 'شلاتين', nameEn: 'Shalateen', target: 'upper' as RegionId },
+                { x: 377, y: 310, nameAr: 'حلايب', nameEn: 'Halayeb', target: 'upper' as RegionId },
               ].map((c, i) => (
-                <g
-                  key={i}
-                  onClick={() => setSelectedId(c.target)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <circle cx={c.x} cy={c.y} r="3.2" fill="#7dd3fc" opacity="0.85" />
-                  <text x={c.x} y={c.y - 6} fill="#cbd5e1" fontSize="8" textAnchor="middle" opacity="0.85">
+                <g key={i} onClick={() => setSelectedId(c.target)} style={{ cursor: 'pointer' }}>
+                  <circle cx={c.x} cy={c.y} r="3" fill="#7dd3fc" stroke="#041018" strokeWidth="0.8" />
+                  <text x={c.x} y={c.y - 5} fill="#cbd5e1" fontSize="7.8" fontWeight="600" textAnchor="middle">
                     {isAr ? c.nameAr : c.nameEn}
                   </text>
                 </g>
@@ -1078,7 +1209,7 @@ export default function EgyptResistanceMap() {
                     ? isAr ? 'الإسكندرية' : 'Alexandria'
                     : r.id === 'canal'
                     ? isAr ? 'القناة وسيناء' : 'Canal & Sinai'
-                    : isAr ? 'الصعيد' : 'Upper Egypt';
+                    : isAr ? 'الصعيد وحلايب' : 'Upper Egypt';
 
                 return (
                   <g
@@ -1094,64 +1225,54 @@ export default function EgyptResistanceMap() {
                       }
                     }}
                   >
-                    {/* Animated Pulse Rings */}
                     {isActive && (
                       <>
                         <circle
                           cx={r.cx}
                           cy={r.cy}
-                          r="18"
+                          r="17"
                           fill="none"
                           stroke={nodeColor}
                           strokeWidth="2.2"
                           className="eg-pulse-circle"
                         />
-                        <circle
-                          cx={r.cx}
-                          cy={r.cy}
-                          r="13"
-                          fill={nodeColor}
-                          opacity="0.28"
-                        />
+                        <circle cx={r.cx} cy={r.cy} r="12" fill={nodeColor} opacity="0.28" />
                       </>
                     )}
 
-                    {/* Leader Line to Floating Badge */}
                     <line
                       x1={r.cx}
                       y1={r.cy}
                       x2={r.labelX}
                       y2={r.labelY}
                       stroke={isActive ? nodeColor : 'rgba(148, 163, 184, 0.45)'}
-                      strokeWidth={isActive ? '1.6' : '1'}
+                      strokeWidth={isActive ? '1.5' : '1'}
                       strokeDasharray={isActive ? undefined : '2 2'}
                     />
 
-                    {/* Hotspot Core Beacon */}
                     <circle
                       cx={r.cx}
                       cy={r.cy}
-                      r={isActive ? '7.5' : '5.5'}
+                      r={isActive ? '7' : '5.2'}
                       fill={nodeColor}
                       stroke="#ffffff"
-                      strokeWidth={isActive ? '2.4' : '1.5'}
+                      strokeWidth={isActive ? '2.2' : '1.4'}
                     />
 
-                    {/* Floating HUD Callout Pill on Map */}
-                    <g transform={`translate(${r.labelX - 48}, ${r.labelY - 12})`}>
+                    <g transform={`translate(${r.labelX - 48}, ${r.labelY - 11})`}>
                       <rect
                         width="96"
-                        height="22"
-                        rx="11"
+                        height="21"
+                        rx="10.5"
                         fill={isActive ? nodeColor : 'rgba(6, 20, 31, 0.92)'}
                         stroke={isActive ? '#ffffff' : nodeColor}
-                        strokeWidth={isActive ? '1.6' : '1'}
+                        strokeWidth={isActive ? '1.5' : '1'}
                       />
                       <text
                         x="48"
-                        y="14.5"
+                        y="14"
                         fill={isActive ? '#041018' : '#f8fafc'}
-                        fontSize="9.2"
+                        fontSize="8.8"
                         fontWeight="800"
                         textAnchor="middle"
                       >
@@ -1164,16 +1285,16 @@ export default function EgyptResistanceMap() {
             </svg>
           </div>
 
-          {/* Interactive Timeline Slider Bar (2018 -> 2026) with Auto-Play */}
+          {/* Compact Timeline Slider Bar (2018 -> 2026) */}
           <div
             style={{
-              background: 'rgba(4, 16, 24, 0.78)',
-              border: '1px solid rgba(56, 189, 248, 0.28)',
-              borderRadius: '14px',
-              padding: '12px 14px',
+              background: 'rgba(4, 16, 24, 0.8)',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+              borderRadius: '12px',
+              padding: '10px 12px',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button
                   type="button"
@@ -1183,27 +1304,27 @@ export default function EgyptResistanceMap() {
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '999px',
-                    padding: '4px 12px',
-                    fontSize: '0.78rem',
+                    padding: '4px 11px',
+                    fontSize: '0.75rem',
                     fontWeight: 700,
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '5px',
+                    gap: '4px',
                   }}
                 >
                   <span>{isPlaying ? '⏸' : '▶'}</span>
                   <span>
                     {isPlaying
-                      ? tr(lang, 'إيقاف العرض', 'Pause', 'Pause', 'Pausa')
+                      ? tr(lang, 'إيقاف', 'Pause', 'Pause', 'Pausa')
                       : tr(lang, 'تشغيل التطور الزمني', 'Play Timeline', 'Animer', 'Animar')}
                   </span>
                 </button>
-                <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-                  {tr(lang, 'حرك المؤشر لمقارنة تطور المقاومة (2018–2026):', 'Slide to compare AMR progression (2018–2026):', 'Évolution 2018–2026 :', 'Evolución 2018–2026:')}
+                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                  {tr(lang, 'تطور المقاومة (2018–2026):', 'AMR Timeline (2018–2026):', 'Évolution :', 'Evolución:')}
                 </span>
               </div>
-              <strong style={{ color: activeAccent, fontSize: '0.95rem' }}>{currentYear}</strong>
+              <strong style={{ color: activeAccent, fontSize: '0.9rem' }}>{currentYear}</strong>
             </div>
 
             <input
@@ -1226,7 +1347,7 @@ export default function EgyptResistanceMap() {
               }}
             />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.75rem', color: '#94a3b8' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px', fontSize: '0.72rem', color: '#94a3b8' }}>
               {YEARS.map((yr, idx) => (
                 <button
                   key={yr}
@@ -1241,8 +1362,8 @@ export default function EgyptResistanceMap() {
                     color: idx === yearIdx ? activeAccent : '#94a3b8',
                     fontWeight: idx === yearIdx ? 800 : 500,
                     cursor: 'pointer',
-                    padding: '2px 4px',
-                    fontSize: '0.76rem',
+                    padding: '1px 4px',
+                    fontSize: '0.74rem',
                   }}
                 >
                   {yr}
@@ -1252,18 +1373,18 @@ export default function EgyptResistanceMap() {
           </div>
         </div>
 
-        {/* COLUMN 2: Morphing 6-Axis Spider Radar + Arc Gauge + Animated Microscopic Pathogens */}
-        <div className="eg-glass-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '14px' }}>
-          {/* Active Region Title & Hospital Network Badge */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap', borderBottom: '1px solid rgba(56, 189, 248, 0.18)', paddingBottom: '10px' }}>
+        {/* COLUMN 2: Analytics Deck (Tabbed on Mobile so it NEVER stacks into a long page, Full on Desktop) */}
+        <div className="eg-glass-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+          {/* Region Title & Hospital Network Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap', borderBottom: '1px solid rgba(56, 189, 248, 0.18)', paddingBottom: '8px' }}>
             <div>
-              <h3 style={{ margin: '0 0 3px', fontSize: '1.15rem', color: '#ffffff' }}>
+              <h3 style={{ margin: '0 0 2px', fontSize: '1.08rem', color: '#ffffff' }}>
                 📍 {pick(activeRegion.name, lang)}
               </h3>
-              <div style={{ fontSize: '0.78rem', color: '#7dd3fc', fontWeight: 600 }}>
+              <div style={{ fontSize: '0.76rem', color: '#7dd3fc', fontWeight: 600 }}>
                 🏥 {pick(activeRegion.hospitals, lang)}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>
+              <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
                 {pick(activeRegion.cities, lang)}
               </div>
             </div>
@@ -1274,37 +1395,50 @@ export default function EgyptResistanceMap() {
                 color: activeAccent,
                 border: `1px solid ${activeAccent}66`,
                 borderRadius: '999px',
-                padding: '4px 12px',
-                fontSize: '0.76rem',
+                padding: '3px 10px',
+                fontSize: '0.73rem',
                 fontWeight: 700,
               }}
             >
               {stewardshipMode
-                ? tr(lang, '🌿 بعد تطبيق الروشتة الخضرا والترشيد', '🌿 With Green Rx Stewardship', '🌿 Avec Ordonnance Verte', '🌿 Con Receta Verde')
+                ? tr(lang, '🌿 مع الروشتة الخضرا', '🌿 With Green Rx', '🌿 Avec Ordonnance Verte', '🌿 Con Receta Verde')
                 : pick(activeRegion.alertLabel, lang)}
             </span>
           </div>
 
-          {/* Sub-Grid: 6-Axis Morphing Spider Radar + Semi-Circular Risk Speedometer */}
-          <div
-            style={{
-              display: 'grid',
-              gap: '12px',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))',
-              alignItems: 'center',
-              background: 'rgba(4, 16, 24, 0.55)',
-              borderRadius: '14px',
-              padding: '12px',
-              border: '1px solid rgba(56, 189, 248, 0.16)',
-            }}
-          >
+          {/* Mobile Interactive Sub-Tabs (Hidden on Desktop, Shown on Mobile to prevent vertical clutter) */}
+          <div className="eg-mobile-subtabs" role="tablist">
+            <button
+              type="button"
+              className={`eg-mobile-subtab-btn ${mobileTab === 'radar' ? 'on' : ''}`}
+              onClick={() => setMobileTab('radar')}
+            >
+              🕸️ {tr(lang, 'الرادار والمؤشر', 'Radar & Index', 'Radar & Indice', 'Radar e Índice')}
+            </button>
+            <button
+              type="button"
+              className={`eg-mobile-subtab-btn ${mobileTab === 'bacteria' ? 'on' : ''}`}
+              onClick={() => setMobileTab('bacteria')}
+            >
+              🦠 {tr(lang, 'السلالات (3)', 'Pathogens (3)', 'Bactéries (3)', 'Bacterias (3)')}
+            </button>
+            <button
+              type="button"
+              className={`eg-mobile-subtab-btn ${mobileTab === 'guide' ? 'on' : ''}`}
+              onClick={() => setMobileTab('guide')}
+            >
+              🛡️ {tr(lang, 'السبب والحل', 'Cause & Action', 'Cause & Solution', 'Causa y Acción')}
+            </button>
+          </div>
+
+          {/* PANEL A: 6-Axis Spider Radar + Semi-Circular Speedometer (Side-by-Side on BOTH Desktop & Mobile!) */}
+          <div className={`eg-radar-gauge-row ${mobileTab !== 'radar' ? 'eg-hide-on-mobile' : ''}`}>
             {/* 6-Axis Antibiogram Spider Radar Chart */}
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '0.76rem', color: '#94a3b8', fontWeight: 700, marginBottom: '4px' }}>
-                🕸️ {tr(lang, 'رادار المقاومة لـ 6 عائلات مضادات', '6-Class Antibiogram Spider Radar', 'Radar d’Antibiogramme (6 Classes)', 'Radar de Antibiograma (6 Clases)')}
+            <div style={{ textAlign: 'center', minWidth: 0 }}>
+              <div style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 700, marginBottom: '2px' }}>
+                🕸️ {tr(lang, 'رادار 6 عائلات مضادات', '6-Class Antibiogram Radar', 'Radar 6 Classes', 'Radar 6 Clases')}
               </div>
-              <svg viewBox="0 0 260 240" style={{ width: '100%', maxWidth: '235px', height: 'auto', marginInline: 'auto', display: 'block' }}>
-                {/* Concentric Hexagonal Radar Webs (25%, 50%, 75%, 100%) */}
+              <svg viewBox="0 0 260 232" style={{ width: '100%', maxWidth: '220px', height: 'auto', marginInline: 'auto', display: 'block' }}>
                 {[25, 50, 75, 100].map((lvl) => {
                   const pts = [0, 1, 2, 3, 4, 5]
                     .map((i) => getRadarPoint(i, lvl).join(','))
@@ -1320,14 +1454,13 @@ export default function EgyptResistanceMap() {
                   );
                 })}
 
-                {/* 6 Axis Spokes */}
                 {[0, 1, 2, 3, 4, 5].map((i) => {
                   const [x, y] = getRadarPoint(i, 100);
                   return (
                     <line
                       key={i}
                       x1="130"
-                      y1="125"
+                      y1="120"
                       x2={x}
                       y2={y}
                       stroke="rgba(148, 163, 184, 0.25)"
@@ -1336,19 +1469,17 @@ export default function EgyptResistanceMap() {
                   );
                 })}
 
-                {/* Rotating Subtle Radar Sweep Line */}
                 <line
                   x1="130"
-                  y1="125"
+                  y1="120"
                   x2="130"
-                  y2="47"
+                  y2="46"
                   stroke={activeAccent}
                   strokeWidth="1.5"
                   opacity="0.45"
                   className="eg-radar-sweep"
                 />
 
-                {/* 2026 Baseline Ghost Polygon for Reference */}
                 <polygon
                   points={baselinePolygonPoints}
                   fill="none"
@@ -1357,7 +1488,6 @@ export default function EgyptResistanceMap() {
                   strokeDasharray="3 3"
                 />
 
-                {/* Active Morphing Data Polygon */}
                 <polygon
                   points={radarPolygonPoints}
                   fill={`${activeAccent}38`}
@@ -1366,7 +1496,6 @@ export default function EgyptResistanceMap() {
                   style={{ transition: 'all 0.45s cubic-bezier(0.16, 1, 0.3, 1)' }}
                 />
 
-                {/* Vertex Nodes & Axis Labels */}
                 {activeRegion.radar.map((axis, idx) => {
                   const val = Math.round(axis.base2026 * yearFactor * simMultiplier);
                   const [vx, vy] = getRadarPoint(idx, val);
@@ -1376,7 +1505,7 @@ export default function EgyptResistanceMap() {
                       <circle
                         cx={vx}
                         cy={vy}
-                        r="4"
+                        r="3.8"
                         fill="#ffffff"
                         stroke={activeAccent}
                         strokeWidth="2"
@@ -1386,11 +1515,11 @@ export default function EgyptResistanceMap() {
                         x={lx}
                         y={ly + 3}
                         fill="#e2e8f0"
-                        fontSize="8.8"
+                        fontSize="8.6"
                         fontWeight="700"
                         textAnchor="middle"
                       >
-                        {pick(axis.shortLabel, lang)} ({val}%)
+                        {pick(axis.shortLabel, lang)} {val}%
                       </text>
                     </g>
                   );
@@ -1399,12 +1528,12 @@ export default function EgyptResistanceMap() {
             </div>
 
             {/* Semi-Circular Risk Speedometer Gauge + Summary */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '6px' }}>
-              <div style={{ fontSize: '0.76rem', color: '#94a3b8', fontWeight: 700 }}>
-                🎯 {tr(lang, 'متوسط مؤشر المقاومة بالإقليم', 'Regional Composite AMR Index', 'Indice Régional Moyen', 'Índice Regional Promedio')}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '4px', minWidth: 0 }}>
+              <div style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 700 }}>
+                🎯 {tr(lang, 'متوسط مؤشر المقاومة', 'Composite AMR Index', 'Indice Moyen', 'Índice Promedio')}
               </div>
 
-              <svg viewBox="0 0 180 110" style={{ width: '165px', height: 'auto' }}>
+              <svg viewBox="0 0 180 105" style={{ width: '100%', maxWidth: '155px', height: 'auto' }}>
                 <defs>
                   <linearGradient id="egGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                     <stop offset="0%" stopColor="#10b981" />
@@ -1412,17 +1541,15 @@ export default function EgyptResistanceMap() {
                     <stop offset="100%" stopColor="#ef4444" />
                   </linearGradient>
                 </defs>
-                {/* Background Track Arc */}
                 <path
-                  d="M 20,90 A 70,70 0 0,1 160,90"
+                  d="M 20,88 A 70,70 0 0,1 160,88"
                   fill="none"
                   stroke="rgba(148, 163, 184, 0.2)"
                   strokeWidth="12"
                   strokeLinecap="round"
                 />
-                {/* Colored Gradient Arc */}
                 <path
-                  d="M 20,90 A 70,70 0 0,1 160,90"
+                  d="M 20,88 A 70,70 0 0,1 160,88"
                   fill="none"
                   stroke="url(#egGaugeGrad)"
                   strokeWidth="12"
@@ -1431,28 +1558,27 @@ export default function EgyptResistanceMap() {
                   strokeDashoffset={220 - (220 * Math.min(100, overallPct)) / 100}
                   style={{ transition: 'stroke-dashoffset 0.5s ease' }}
                 />
-                {/* Animated Speedometer Needle */}
                 <g
-                  transform={`translate(90, 90) rotate(${gaugeAngle})`}
+                  transform={`translate(90, 88) rotate(${gaugeAngle})`}
                   style={{ transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
                 >
-                  <polygon points="-3,0 0,-62 3,0" fill="#ffffff" />
-                  <circle cx="0" cy="0" r="6" fill={activeAccent} stroke="#ffffff" strokeWidth="2" />
+                  <polygon points="-3,0 0,-60 3,0" fill="#ffffff" />
+                  <circle cx="0" cy="0" r="5.5" fill={activeAccent} stroke="#ffffff" strokeWidth="2" />
                 </g>
-                <text x="90" y="76" fill="#ffffff" fontSize="20" fontWeight="800" textAnchor="middle">
+                <text x="90" y="74" fill="#ffffff" fontSize="19" fontWeight="800" textAnchor="middle">
                   {overallPct}%
                 </text>
               </svg>
 
-              <p style={{ margin: 0, fontSize: '0.79rem', color: '#cbd5e1', lineHeight: 1.55 }}>
+              <p style={{ margin: 0, fontSize: '0.75rem', color: '#cbd5e1', lineHeight: 1.5 }}>
                 {pick(activeRegion.summary, lang)}
               </p>
             </div>
           </div>
 
-          {/* Microscopic Pathogen Cards with Segmented Glowing Bars */}
-          <div style={{ display: 'grid', gap: '8px' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#7dd3fc' }}>
+          {/* PANEL B: Microscopic Pathogen Cards with Segmented Glowing Bars */}
+          <div className={mobileTab !== 'bacteria' ? 'eg-hide-on-mobile' : ''} style={{ display: 'grid', gap: '8px' }}>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#7dd3fc' }}>
               🦠 {tr(lang, 'أهم السلالات البكتيرية المرصودة ونسب مقاومتها:', 'Key Monitored Bacterial Pathogens & Resistance:', 'Principales Souches Bactériennes Surveillées :', 'Principales Cepas Bacterianas Monitoreadas:')}
             </div>
 
@@ -1475,15 +1601,14 @@ export default function EgyptResistanceMap() {
                     background: 'rgba(6, 22, 33, 0.78)',
                     border: '1px solid rgba(56, 189, 248, 0.18)',
                     borderRadius: '12px',
-                    padding: '10px 12px',
+                    padding: '9px 11px',
                     display: 'grid',
-                    gap: '6px',
+                    gap: '5px',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {/* Animated Microscopic Bacteria SVG Icon */}
-                      <svg width="28" height="28" viewBox="0 0 32 32" className="eg-microbe-icon" style={{ flexShrink: 0 }}>
+                      <svg width="26" height="26" viewBox="0 0 32 32" className="eg-microbe-icon" style={{ flexShrink: 0 }}>
                         <circle cx="16" cy="16" r="14" fill={`${barColor}22`} stroke={barColor} strokeWidth="1.2" />
                         {p.shape === 'rod' && (
                           <>
@@ -1507,10 +1632,10 @@ export default function EgyptResistanceMap() {
                         )}
                       </svg>
                       <div>
-                        <b dir="ltr" style={{ fontSize: '0.86rem', color: '#ffffff', display: 'block' }}>
+                        <b dir="ltr" style={{ fontSize: '0.83rem', color: '#ffffff', display: 'block' }}>
                           {p.name}
                         </b>
-                        <span style={{ fontSize: '0.76rem', color: '#94a3b8' }}>
+                        <span style={{ fontSize: '0.73rem', color: '#94a3b8' }}>
                           {pick(p.antibiotic, lang)}
                         </span>
                       </div>
@@ -1519,8 +1644,8 @@ export default function EgyptResistanceMap() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span
                         style={{
-                          fontSize: '0.7rem',
-                          padding: '1px 7px',
+                          fontSize: '0.68rem',
+                          padding: '1px 6px',
                           borderRadius: '999px',
                           background: p.whoClass === 'Reserve' ? 'rgba(239,68,68,0.2)' : p.whoClass === 'Watch' ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)',
                           color: p.whoClass === 'Reserve' ? '#fca5a5' : p.whoClass === 'Watch' ? '#fcd34d' : '#6ee7b7',
@@ -1530,14 +1655,13 @@ export default function EgyptResistanceMap() {
                       >
                         WHO {p.whoClass}
                       </span>
-                      <strong style={{ fontSize: '0.95rem', color: barColor, minWidth: '38px', textAlign: 'end' }}>
+                      <strong style={{ fontSize: '0.92rem', color: barColor, minWidth: '36px', textAlign: 'end' }}>
                         {pct}%
                       </strong>
                     </div>
                   </div>
 
-                  {/* 16-Segment Sci-Fi Illuminated Meter Bar */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: '3px', height: '7px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(16, 1fr)', gap: '3px', height: '6px' }}>
                     {Array.from({ length: 16 }).map((_, segIdx) => {
                       const activeSeg = segIdx < filledSegments;
                       return (
@@ -1558,33 +1682,36 @@ export default function EgyptResistanceMap() {
             })}
           </div>
 
-          {/* Behavioral Driver & Stewardship Action Cards */}
-          <div style={{ display: 'grid', gap: '10px', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))' }}>
-            <div style={{ padding: '10px 12px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.35)' }}>
-              <b style={{ display: 'block', fontSize: '0.78rem', color: '#fcd34d', marginBottom: '3px' }}>
+          {/* PANEL C: Behavioral Driver & Stewardship Action Cards */}
+          <div
+            className={mobileTab !== 'guide' ? 'eg-hide-on-mobile' : ''}
+            style={{ display: 'grid', gap: '8px', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))' }}
+          >
+            <div style={{ padding: '9px 11px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.35)' }}>
+              <b style={{ display: 'block', fontSize: '0.76rem', color: '#fcd34d', marginBottom: '2px' }}>
                 ⚠️ {tr(lang, 'أهم مسبب سلوكي مرصود:', 'Primary Behavioral Driver:', 'Facteur Comportemental :', 'Factor Conductual:')}
               </b>
-              <p style={{ margin: 0, fontSize: '0.78rem', color: '#fef3c7', lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: '0.76rem', color: '#fef3c7', lineHeight: 1.5 }}>
                 {pick(activeRegion.driver, lang)}
               </p>
             </div>
 
-            <div style={{ padding: '10px 12px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
-              <b style={{ display: 'block', fontSize: '0.78rem', color: '#6ee7b7', marginBottom: '3px' }}>
+            <div style={{ padding: '9px 11px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
+              <b style={{ display: 'block', fontSize: '0.76rem', color: '#6ee7b7', marginBottom: '2px' }}>
                 🛡️ {tr(lang, 'الحل الإكلينيكي والتمريضي:', 'Clinical Stewardship Solution:', 'Solution Clinique :', 'Solución Clínica:')}
               </b>
-              <p style={{ margin: 0, fontSize: '0.78rem', color: '#d1fae5', lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: '0.76rem', color: '#d1fae5', lineHeight: 1.5 }}>
                 {pick(activeRegion.stewardshipAction, lang)}
               </p>
             </div>
           </div>
 
           {/* Footer Attribution & Quick Links */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap', borderTop: '1px solid rgba(56, 189, 248, 0.16)', paddingTop: '8px', fontSize: '0.73rem', color: '#94a3b8' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', borderTop: '1px solid rgba(56, 189, 248, 0.16)', paddingTop: '8px', fontSize: '0.71rem', color: '#94a3b8' }}>
             <span>
               📚 {tr(lang, 'المرجع: تقارير WHO GLASS • الخطة الوطنية المصرية NAP-AMR • دراسات الجامعات المصرية.', 'Refs: WHO GLASS • Egypt NAP-AMR • Egyptian University Hospital Studies.', 'Réf : OMS GLASS • Plan National Égyptien NAP-AMR.', 'Ref: OMS GLASS • Plan Nacional de Egipto NAP-AMR.')}
             </span>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <Link to="/green-prescription" className="btn small" style={{ background: '#10b981', borderColor: '#10b981', color: '#041018', fontWeight: 800 }}>
                 🌿 {tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde')}
               </Link>
