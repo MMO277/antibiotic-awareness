@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import { Bi } from './types';
 
 export interface ClinicalProProfile {
-  id: string;
+  pkpd: {
+    halfLife: string;
+    bioavailability: string;
+    proteinBinding: string;
+    pkpdDriver: Bi;
+    excretion: Bi;
+  };
   spectrum: {
     gramPositive: Bi;
     gramNegative: Bi;
@@ -10,18 +16,11 @@ export interface ClinicalProProfile {
     atypicals: Bi;
     clinicalPearl: Bi;
   };
-  pkpd: {
-    halfLife: string;
-    bioavailability: string;
-    proteinBinding: string;
-    excretion: Bi;
-    pkpdDriver: Bi;
-  };
   renalCrCl: {
-    normal: Bi;       // CrCl > 50 mL/min
-    moderate: Bi;     // CrCl 30–50 mL/min
-    severe: Bi;       // CrCl 10–29 mL/min
-    esrdHd: Bi;       // CrCl < 10 mL/min or Hemodialysis
+    normal: Bi;
+    moderate: Bi;
+    severe: Bi;
+    esrdHd: Bi;
   };
   ivAndReconstitution: Bi;
   patientSimpleSummary: {
@@ -31,498 +30,389 @@ export interface ClinicalProProfile {
   };
 }
 
-const PRO_STORAGE_KEY = 'aa_clinical_pro_mode';
-const PRO_EVENT_NAME = 'aa-clinical-pro-mode-change';
+const PRO_MODE_KEY = 'aa_clinical_pro_mode';
 
-export function useClinicalProMode(): {
-  isProMode: boolean;
-  setProMode: (val: boolean) => void;
-  toggleProMode: () => void;
-} {
+export function useClinicalProMode() {
   const [isProMode, setIsProModeState] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(PRO_STORAGE_KEY) === 'true';
+      return localStorage.getItem(PRO_MODE_KEY) === 'true';
     } catch {
       return false;
     }
   });
 
   useEffect(() => {
-    const onCustomChange = (e: Event) => {
-      const detail = (e as CustomEvent<boolean>).detail;
-      if (typeof detail === 'boolean') {
-        setIsProModeState(detail);
+    const onSync = () => {
+      try {
+        setIsProModeState(localStorage.getItem(PRO_MODE_KEY) === 'true');
+      } catch {
+        /* ignore */
       }
     };
-    window.addEventListener(PRO_EVENT_NAME, onCustomChange);
-    return () => window.removeEventListener(PRO_EVENT_NAME, onCustomChange);
+    window.addEventListener('aa-pro-mode-changed', onSync);
+    return () => window.removeEventListener('aa-pro-mode-changed', onSync);
   }, []);
 
   const setProMode = (val: boolean) => {
     setIsProModeState(val);
     try {
-      localStorage.setItem(PRO_STORAGE_KEY, val ? 'true' : 'false');
+      localStorage.setItem(PRO_MODE_KEY, val ? 'true' : 'false');
+      window.dispatchEvent(new CustomEvent('aa-pro-mode-changed'));
     } catch {
       /* ignore */
     }
-    window.dispatchEvent(new CustomEvent<boolean>(PRO_EVENT_NAME, { detail: val }));
   };
 
-  return {
-    isProMode,
-    setProMode,
-    toggleProMode: () => setProMode(!isProMode),
-  };
+  return { isProMode, setProMode };
 }
 
-export const CLINICAL_PRO_PROFILES: Record<string, ClinicalProProfile> = {
-  'amoxicillin-clavulanic-acid': {
-    id: 'amoxicillin-clavulanic-acid',
-    spectrum: {
-      gramPositive: {
-        ar: 'ممتاز ضد العقديات (Streptococci)، المكورات الرئوية، والمكورات العنقودية المنتجة للبيتا-لاكتاماز الحساسة للميثيسيلين (MSSA)؛ لا يغطي MRSA.',
-        en: 'Strong against Streptococci, S. pneumoniae, and beta-lactamase-producing MSSA; no activity against MRSA.',
-      },
-      gramNegative: {
-        ar: 'يغطي H. influenzae، M. catarrhalis، E. coli، Klebsiella، و Proteus المنتجة لبيتا-لاكتاماز؛ لا يغطي Pseudomonas.',
-        en: 'Covers beta-lactamase-producing H. influenzae, M. catarrhalis, E. coli, Klebsiella, Proteus; does NOT cover Pseudomonas.',
-      },
-      anaerobes: {
-        ar: 'تغطية ممتازة للاهوائيات الفموية والبطنية شاملة Bacteroides fragilis.',
-        en: 'Excellent coverage of oral and intra-abdominal anaerobes including Bacteroides fragilis.',
-      },
-      atypicals: {
-        ar: 'غير فعال ضد البكتيريا غير النمطية (Mycoplasma, Chlamydia, Legionella).',
-        en: 'No activity against atypical pathogens (Mycoplasma, Chlamydia, Legionella).',
-      },
-      clinicalPearl: {
-        ar: 'لؤلؤة إكلينيكية: لا تستبدل قرص 1 جم بقرصين من 500/125 مجم لأن ذلك يضاعف جرعة الكلافولانات (250 مجم) ويسبب إسهالاً شديداً.',
-        en: 'Clinical Pearl: Never substitute two 500/125mg tablets for one 875/125mg (1g) tablet, as doubling clavulanate causes severe GI diarrhea.',
-      },
-    },
-    pkpd: {
-      halfLife: 't½ ≈ 1.0 – 1.3 hr',
-      bioavailability: 'F ≈ 70% – 85%',
-      proteinBinding: '18% – 25%',
-      excretion: {
-        ar: 'كلوي (60%–70% دون تغيير في البول خلال 6 ساعات)',
-        en: 'Renal (60%–70% excreted unchanged in urine within 6h)',
-      },
-      pkpdDriver: {
-        ar: 'معتمد على الوقت (Time-dependent: %T > MIC ≥ 40–50%)',
-        en: 'Time-dependent bactericidal (%T > MIC ≥ 40–50%)',
-      },
-    },
-    renalCrCl: {
-      normal: {
-        ar: 'CrCl > 30 mL/min: الجرعة المعتادة دون تعديل (مثلاً 1 جم كل 12 ساعة أو 625 مجم كل 8 ساعات).',
-        en: 'CrCl > 30 mL/min: Standard dosing without adjustment (e.g., 1g q12h or 625mg q8h).',
-      },
-      moderate: {
-        ar: 'CrCl 10–30 mL/min: 625 مجم كل 12 ساعة؛ ويُمنع استخدام تركيز 1 جم (875/125 مجم) الممتد.',
-        en: 'CrCl 10–30 mL/min: 500/125mg (625mg) every 12 hours; avoid 875/125mg (1g) tablets.',
-      },
-      severe: {
-        ar: 'CrCl < 10 mL/min: 625 مجم كل 24 ساعة فقط.',
-        en: 'CrCl < 10 mL/min: 500/125mg (625mg) every 24 hours.',
-      },
-      esrdHd: {
-        ar: 'الغسيل الكلوي (HD): 625 مجم كل 24 ساعة مع جرعة تكميلية أثناء وبعد جلسة الغسيل.',
-        en: 'Hemodialysis (HD): 625mg q24h, plus an extra dose both during and at the end of dialysis.',
-      },
-    },
-    ivAndReconstitution: {
-      ar: 'الفيال الوريدي (1.2 جم): يُحل في 20 مل ماء معقم للحقن ويُعطى وريدياً ببطء على مدى 3–4 دقائق أو بالتسريب في 100 مل محلول ملح 0.9% خلال 30 دقيقة (غير مستقر في محاليل الجلوكوز أو البيكربونات). شراب الأطفال بعد الحل: يُحفظ في الثلاجة (2–8°م) لمدة 7 إلى 10 أيام فقط.',
-      en: 'IV 1.2g vial: Reconstitute in 20mL SWFI, inject slowly over 3–4 min or infuse in 100mL NS over 30 min (unstable in Dextrose or Bicarbonate). Reconstituted oral suspension: Refrigerate (2–8°C) and discard after 7–10 days.',
-    },
-    patientSimpleSummary: {
-      foodRule: {
-        ar: 'يُفضل تناوله في بداية الوجبة مباشرة لتقليل اضطرابات المعدة والإسهال وزيادة امتصاص الكلافولانات.',
-        en: 'Take right at the start of a meal to minimize stomach upset and optimize absorption.',
-      },
-      missedDoseRule: {
-        ar: 'تناول الجرعة فور تذكرها، إلا إذا اقترب موعد الجرعة التالية؛ لا تضاعف الجرعة أبداً.',
-        en: 'Take as soon as remembered unless close to the next dose; never double the dose.',
-      },
-      keyWarning: {
-        ar: 'أوقف الدواء وراجع الطبيب فوراً إذا ظهر طفح جلدي أو اصفرار بالعين أو إسهال مائي شديد.',
-        en: 'Stop and seek care immediately if skin rash, yellowing of eyes, or severe watery diarrhea occurs.',
-      },
-    },
-  },
-  azithromycin: {
-    id: 'azithromycin',
-    spectrum: {
-      gramPositive: {
-        ar: 'نشاط متوسط ضد المكورات العقدية والرئوية (معدلات المقاومة في ازدياد)؛ ضعيف ضد المكورات العنقودية.',
-        en: 'Moderate activity against Streptococci and S. pneumoniae (rising resistance); limited against Staphylococci.',
-      },
-      gramNegative: {
-        ar: 'فعال ضد H. influenzae، M. catarrhalis، N. gonorrhoeae، و Salmonella/Shigella المعوية.',
-        en: 'Active against H. influenzae, M. catarrhalis, N. gonorrhoeae, and enteric Salmonella/Shigella.',
-      },
-      anaerobes: {
-        ar: 'نشاط محدود ضد البكتيريا اللاهوائية.',
-        en: 'Limited anaerobic activity.',
-      },
-      atypicals: {
-        ar: 'ممتاز (خيار أول) ضد البكتيريا غير النمطية: Mycoplasma، Chlamydia، و Legionella.',
-        en: 'Excellent first-line coverage against atypicals: Mycoplasma, Chlamydia, and Legionella.',
-      },
-      clinicalPearl: {
-        ar: 'لؤلؤة إكلينيكية: يتميز بتركيز نسيجي وخلوي مرتفع جداً وفترة نصف عمر طويلة تسمح بكورس قصير (3–5 أيام)، لكن تركيزه بالدم منخفض فلا يُستخدم في تجرثم الدم (Bacteremia).',
-        en: 'Clinical Pearl: High intracellular tissue penetration allows 3–5 day short courses, but low serum levels make it unsuitable for bacteremia.',
-      },
-    },
-    pkpd: {
-      halfLife: 't½ ≈ 68 hours (tissue)',
-      bioavailability: 'F ≈ 37% – 38%',
-      proteinBinding: '7% – 51% (concentration-dependent)',
-      excretion: {
-        ar: 'كبدي/صفراوي بالأساس (> 50% بدون تغيير في القنوات الصفراوية)، و6% فقط في البول.',
-        en: 'Primarily biliary/hepatic (>50% unchanged in bile); only ~6% renal excretion.',
-      },
-      pkpdDriver: {
-        ar: 'معتمد على المساحة تحت المنحنى (AUC24/MIC) مع تأثير طويل ما بعد المضاد (PAE).',
-        en: 'AUC24/MIC driven with prolonged post-antibiotic effect (PAE).',
-      },
-    },
-    renalCrCl: {
-      normal: {
-        ar: 'CrCl > 50 mL/min: لا يحتاج لتعديل الجرعة (500 مجم يومياً لمدة 3 أيام).',
-        en: 'CrCl > 50 mL/min: No adjustment needed (500mg once daily for 3 days).',
-      },
-      moderate: {
-        ar: 'CrCl 10–50 mL/min: لا يحتاج لتعديل جرعة.',
-        en: 'CrCl 10–50 mL/min: No dosage adjustment required.',
-      },
-      severe: {
-        ar: 'CrCl < 10 mL/min: يُستخدم بحذر (تزداد المساحة تحت المنحنى AUC بنسبة 35%) دون تغيير إلزامي بالجرعة.',
-        en: 'CrCl < 10 mL/min: Use with caution (AUC increases ~35%), though no strict dose reduction is mandated.',
-      },
-      esrdHd: {
-        ar: 'الغسيل الكلوي: لا يُزال بالغسيل الكلوي ولا يحتاج لجرعة تكميلية.',
-        en: 'Hemodialysis: Not significantly cleared by dialysis; no supplemental dose needed.',
-      },
-    },
-    ivAndReconstitution: {
-      ar: 'كبسولات الأزيثرومايسين (بعكس الأقراص) يتأثر امتصاصها بالطعام؛ يُفضل تناول الكبسولات قبل الأكل بساعة أو بعده بساعتين. شراب الأطفال المعلق يُحفظ في درجة حرارة الغرفة (< 30°م) لمدة 5 إلى 10 أيام بعد الحل حسب حجم العبوة.',
-      en: 'Capsules should be taken 1h before or 2h after meals; tablets may be taken with or without food. Reconstituted suspension is stable at room temperature for 5–10 days.',
-    },
-    patientSimpleSummary: {
-      foodRule: {
-        ar: 'الكبسولات تؤخذ على معدة فارغة (قبل الأكل بساعة أو بعده بساعتين)، بينما الأقراص والشراب يمكن تناولها مع الطعام أو بدونه.',
-        en: 'Take capsules on an empty stomach (1h before or 2h after food); tablets/suspension can be taken with or without food.',
-      },
-      missedDoseRule: {
-        ar: 'جرعة واحدة يومياً في نفس الموعد؛ لا تتناول جرعتين في نفس اليوم.',
-        en: 'Once-daily dosing at the same time each day; never take two doses in one day.',
-      },
-      keyWarning: {
-        ar: 'احذر إذا كنت تعاني من اضطراب ضربات القلب أو استطالة فترة QT، وافصل بينه وبين مضادات الحموضة بساعتين.',
-        en: 'Use caution if you have heart rhythm disorders (QT prolongation), and separate from antacids by 2 hours.',
-      },
-    },
-  },
-  ciprofloxacin: {
-    id: 'ciprofloxacin',
-    spectrum: {
-      gramPositive: {
-        ar: 'ضعيف ضد المكورات الرئوية (Strep pneumoniae)؛ لا يُعتمد عليه في عدوى الجهاز التنفسي.',
-        en: 'Poor activity against S. pneumoniae; NOT recommended for empirical community respiratory infections.',
-      },
-      gramNegative: {
-        ar: 'تغطية فائقة للعصيات سالبة الجرام المعوية (Enterobacterales) شاملة E. coli، Salmonella، Shigella، وأقوى مضاد فموي ضد الزائفة الزنجارية (Pseudomonas aeruginosa).',
-        en: 'Potent against Gram-negative bacilli (E. coli, Salmonella, Shigella, Proteus) and the most active oral agent against Pseudomonas aeruginosa.',
-      },
-      anaerobes: {
-        ar: 'لا يغطي البكتيريا اللاهوائية (يُدمج مع ميترونيدازول في عدوى البطن).',
-        en: 'No clinically reliable anaerobic coverage (combine with metronidazole for intra-abdominal infections).',
-      },
-      atypicals: {
-        ar: 'فعال ضد Legionella و Mycoplasma و Chlamydia.',
-        en: 'Active against Legionella, Mycoplasma, and Chlamydia.',
-      },
-      clinicalPearl: {
-        ar: 'لؤلؤة إكلينيكية: الكاتيونات ثنائية وثلاثية التكافؤ (الحديد، الكالسيوم، المغنيسيوم، الزنك، الألبان) تُكوّن معقدات غير قابلة للامتصاص وتخفض تركيزه بالدم بنسبة تصل إلى 90%!',
-        en: 'Clinical Pearl: Divalent/trivalent cations (Ca, Mg, Fe, Zn, dairy) chelate ciprofloxacin in the gut, slashing oral absorption by up to 90%!',
-      },
-    },
-    pkpd: {
-      halfLife: 't½ ≈ 4.0 – 5.0 hr',
-      bioavailability: 'F ≈ 70% – 80%',
-      proteinBinding: '20% – 40%',
-      excretion: {
-        ar: 'كلوي بالأساس (40%–50% بدون تغيير في البول) + إفراز صفراوي وعبر الأمعاء.',
-        en: 'Primarily renal (40%–50% unchanged in urine) plus transintestinal/biliary clearance.',
-      },
-      pkpdDriver: {
-        ar: 'معتمد على التركيز (Concentration-dependent: Cmax/MIC > 10 & AUC24/MIC > 125).',
-        en: 'Concentration-dependent bactericidal (Cmax/MIC > 10 and AUC24/MIC > 125).',
-      },
-    },
-    renalCrCl: {
-      normal: {
-        ar: 'CrCl > 50 mL/min: الجرعة المعتادة (500–750 مجم كل 12 ساعة فموياً، أو 400 مجم وريدياً كل 8–12 ساعة).',
-        en: 'CrCl > 50 mL/min: Standard dose (500–750mg PO q12h or 400mg IV q8–12h).',
-      },
-      moderate: {
-        ar: 'CrCl 30–50 mL/min: 250–500 مجم فموياً كل 12 ساعة (تجنب الجرعات القصوى).',
-        en: 'CrCl 30–50 mL/min: 250–500mg PO every 12 hours.',
-      },
-      severe: {
-        ar: 'CrCl 10–29 mL/min: 250–500 مجم كل 18–24 ساعة فموياً، أو 200–400 مجم وريدياً كل 24 ساعة.',
-        en: 'CrCl 10–29 mL/min: 250–500mg PO q18–24h, or 200–400mg IV q24h.',
-      },
-      esrdHd: {
-        ar: 'CrCl < 10 mL/min أو الغسيل الكلوي: 250–500 مجم كل 24 ساعة تُعطى بعد جلسة الغسيل مباشرة.',
-        en: 'CrCl < 10 mL/min or HD: 250–500mg PO q24h, administered after hemodialysis session.',
-      },
-    },
-    ivAndReconstitution: {
-      ar: 'محلول التسريب الوريدي (200 مجم/100 مل): يُسرب وريدياً ببطء على مدار 60 دقيقة في وريد كبير لتقليل التهاب الوريد الموضعي؛ يُحفظ بعيداً عن الضوء.',
-      en: 'IV infusion (200mg/100mL): Infuse slowly over 60 minutes into a large vein to prevent venous irritation; protect from light.',
-    },
-    patientSimpleSummary: {
-      foodRule: {
-        ar: 'اشرب كوب ماء كبير مع القرص، وافصل بينه وبين الحليب والجبن ومضادات الحموضة والحديد والكالسيوم بساعتين قبل أو 6 ساعات بعد الدواء.',
-        en: 'Drink plenty of water, and separate from milk, dairy, antacids, iron, or calcium by 2 hours before or 6 hours after.',
-      },
-      missedDoseRule: {
-        ar: 'تناوله فور التذكر ما لم يبقَ أقل من 6 ساعات على الجرعة التالية.',
-        en: 'Take as soon as remembered unless less than 6 hours remain until your next scheduled dose.',
-      },
-      keyWarning: {
-        ar: 'تحذير هام: أوقف الدواء فوراً واستشر الطبيب إذا شعرت بألم أو تورم في الأوتار (خاصة وتر العرقوب خلف الكاحل) أو تنميل بالأطراف.',
-        en: 'Boxed Warning: Stop immediately and contact a doctor if you feel tendon pain/swelling (especially Achilles tendon) or nerve tingling.',
-      },
-    },
-  },
-  ceftriaxone: {
-    id: 'ceftriaxone',
-    spectrum: {
-      gramPositive: {
-        ar: 'قوي جداً ضد المكورات الرئوية (S. pneumoniae) شاملة السلالات متوسطة المقاومة للبنسلين، والعقديات؛ لا يغطي MRSA ولا Enterococci.',
-        en: 'Potent against S. pneumoniae and Streptococci; no activity against MRSA or Enterococci.',
-      },
-      gramNegative: {
-        ar: 'تغطية ممتازة لـ N. meningitidis، N. gonorrhoeae، H. influenzae، ومعظم Enterobacterales غير المنتجة لـ ESBL؛ لا يغطي Pseudomonas.',
-        en: 'Excellent against N. meningitidis, N. gonorrhoeae, H. influenzae, and non-ESBL Enterobacterales; does NOT cover Pseudomonas.',
-      },
-      anaerobes: {
-        ar: 'تغطية محدودة لللاهوائيات الفموية؛ لا يغطي B. fragilis.',
-        en: 'Limited oral anaerobic coverage; does NOT cover B. fragilis.',
-      },
-      atypicals: {
-        ar: 'غير فعال ضد الميكروبات غير النمطية.',
-        en: 'No activity against atypical pathogens.',
-      },
-      clinicalPearl: {
-        ar: 'لؤلؤة إكلينيكية حاسمة: يُمنع منعاً باتاً خلطه أو إعطاؤه بالتزامن مع محاليل تحتوي على الكالسيوم (مثل Ringer Lactate) لخطر ترسب بلورات كالسيوم-سيفترياكسون القاتلة في الرئة والكلى، ويُفضل السيفوتاكسيم بدلاً منه في حديثي الولادة.',
-        en: 'Critical Pearl: Strictly CONTRAINDICATED with calcium-containing IV solutions (e.g., Ringer’s Lactate) due to fatal ceftriaxone-calcium precipitation in lungs/kidneys; prefer cefotaxime in neonates.',
-      },
-    },
-    pkpd: {
-      halfLife: 't½ ≈ 6.0 – 9.0 hr (longest among cephalosporins)',
-      bioavailability: '100% (IM / IV only)',
-      proteinBinding: '85% – 95%',
-      excretion: {
-        ar: 'إخراج مزدوج متوازن: 50%–60% كلوي في البول، و40%–50% صفراوي في البراز.',
-        en: 'Dual elimination: 50%–60% renal unchanged in urine and 40%–50% biliary excretion.',
-      },
-      pkpdDriver: {
-        ar: 'معتمد على الوقت (%T > MIC)؛ نصف عمره الطويل يسمح بجرعة واحدة كل 24 ساعة في معظم العدوى.',
-        en: 'Time-dependent (%T > MIC); long half-life supports once-daily (q24h) dosing in most infections.',
-      },
-    },
-    renalCrCl: {
-      normal: {
-        ar: 'CrCl > 50 mL/min: 1–2 جم كل 24 ساعة (أو 2 جم كل 12 ساعة في الالتهاب السحائي البكتيري).',
-        en: 'CrCl > 50 mL/min: 1–2g q24h (or 2g q12h for bacterial meningitis).',
-      },
-      moderate: {
-        ar: 'CrCl 30–50 mL/min: لا يحتاج لتعديل الجرعة بفضل الإخراج المزدوج الكبدي-الكلوي.',
-        en: 'CrCl 30–50 mL/min: No dosage adjustment required due to dual hepatic-renal clearance.',
-      },
-      severe: {
-        ar: 'CrCl 10–29 mL/min: لا يحتاج لتعديل ما لم يصاحبه قصور كبدي متزامن (الحد الأقصى 2 جم يومياً).',
-        en: 'CrCl 10–29 mL/min: No adjustment unless concomitant hepatic impairment (max 2g/day).',
-      },
-      esrdHd: {
-        ar: 'CrCl < 10 mL/min أو الغسيل الكلوي: لا يُزال بالغسيل؛ الحد الأقصى 2 جم كل 24 ساعة.',
-        en: 'CrCl < 10 mL/min or HD: Not dialyzed; maximum 2g/day.',
-      },
-    },
-    ivAndReconstitution: {
-      ar: 'ملاحظة هامة للتفريق بين الفيال العضلي والوريدي: أمبول المذيب المرفق للحقن العضلي يحتوي على ليدوكايين (Lidocaine 1%) ويُمنع منعاً باتاً حقنه في الوريد! للحقن الوريدي يُحل فقط في ماء معقم للحقن أو محلول ملح 0.9% أو جلوكوز 5%.',
-      en: 'CRITICAL ROUTE WARNING: IM solvent ampoules contain 1% Lidocaine and MUST NEVER be injected IV! For IV administration, reconstitute only with sterile water, NS 0.9%, or D5W.',
-    },
-    patientSimpleSummary: {
-      foodRule: {
-        ar: 'يُعطى عن طريق الحقن فقط ولا يتأثر بمواعيد الطعام.',
-        en: 'Administered by injection only; not affected by food.',
-      },
-      missedDoseRule: {
-        ar: 'التزم بموعد الحقنة اليومي كل 24 ساعة (أو 12 ساعة حسب وصف الطبيب) لضمان القضاء على البكتيريا.',
-        en: 'Keep your scheduled injection every 24h (or 12h as prescribed) to prevent bacterial relapse.',
-      },
-      keyWarning: {
-        ar: 'يُمنع أخذ حقنة السيفترياكسون بدون إشراف طبي أو لعلاج نزلات البرد («حقنة البرد»)، ويجب التأكد من عدم وجود حساسية مفرطة.',
-        en: 'Never use Ceftriaxone for viral colds ("cold shots") or outside medical supervision due to anaphylaxis risk.',
-      },
-    },
-  },
-};
+const b = (ar: string, en: string, fr: string, es: string, de: string): Bi => ({
+  ar,
+  en,
+  fr,
+  es,
+  de,
+});
 
 export function getClinicalProProfile(
   medId: string,
-  whoGroup: 'Access' | 'Watch' | 'Reserve' = 'Access',
-  drugClassAr = '',
-  drugClassEn = ''
+  _whoAccessGroup: string,
+  _drugClassAr: string,
+  drugClassEn: string
 ): ClinicalProProfile {
-  if (CLINICAL_PRO_PROFILES[medId]) {
-    return CLINICAL_PRO_PROFILES[medId];
+  const id = (medId || '').toLowerCase();
+  const cls = (drugClassEn || '').toLowerCase();
+
+  // 1. Fluoroquinolones (Ciprofloxacin, Levofloxacin, Moxifloxacin)
+  if (id.includes('floxacin') || cls.includes('fluoroquinolone') || cls.includes('quinolone')) {
+    const isMoxi = id.includes('moxi');
+    return {
+      pkpd: {
+        halfLife: isMoxi ? 't½ ≈ 12 h' : id.includes('levo') ? 't½ ≈ 6–8 h' : 't½ ≈ 4–5 h',
+        bioavailability: isMoxi ? 'F ≈ 90% (PO≈IV)' : id.includes('levo') ? 'F ≈ 99% (PO=IV)' : 'F ≈ 70–80%',
+        proteinBinding: '20–40%',
+        pkpdDriver: b(
+          'يعتمد على التركيز والمساحة تحت المنحنى (AUC₂₄/MIC ≥ 125 & Cmax/MIC)',
+          'Concentration-dependent (fAUC₂₄/MIC & Cmax/MIC)',
+          'Concentration-dépendant (fAUC₂₄/CMI & Cmax/CMI)',
+          'Dependiente de la concentración (fAUC₂₄/CMI y Cmax/CMI)',
+          'Konzentrationsabhängig (fAUC₂₄/MHK & Cmax/MHK)'
+        ),
+        excretion: isMoxi
+          ? b(
+              'إخراج كبدي وصفراوي رئيسي (لا يحتاج تعديل كلوي)',
+              'Primarily hepatic/biliary (~20% unchanged in urine; no renal adjustment)',
+              'Élimination hépatique/biliaire principale (pas d’ajustement rénal)',
+              'Eliminación hepática/biliar principal (sin ajuste renal)',
+              'Überwiegend hepatisch/biliär (keine Dosisanpassung bei Niereninsuffizienz)'
+            )
+          : b(
+              'إخراج كلوي رئيسي عبر الترشيح الكبيبي والإفراز الأنبوبي (60–85%)',
+              'Primarily renal glomerular filtration & tubular secretion (60–85% unchanged)',
+              'Élimination rénale prédominante (60–85 % sous forme inchangée)',
+              'Eliminación renal predominante (60–85 % inalterado en orina)',
+              'Überwiegend renale Ausscheidung (60–85 % unverändert im Urin)'
+            ),
+      },
+      spectrum: {
+        gramPositive: b(
+          isMoxi || id.includes('levo') ? 'تغطية قوية للمكورات الرئوية (S. pneumoniae)؛ لا يغطي MRSA.' : 'تغطية ضعيفة للمكورات العقدية الرئوية (لا يستخدم للالتهاب الرئوي المجتمعي).',
+          isMoxi || id.includes('levo') ? 'Strong S. pneumoniae coverage (respiratory quinolone); no reliable MRSA activity.' : 'Weak S. pneumoniae activity (do not use empirically for community pneumonia).',
+          isMoxi || id.includes('levo') ? 'Bonne activité sur S. pneumoniae (quinolone respiratoire) ; inactif sur SARM.' : 'Faible activité sur S. pneumoniae.',
+          isMoxi || id.includes('levo') ? 'Buena cobertura frente a S. pneumoniae; sin actividad fiable frente a SARM.' : 'Actividad débil frente a S. pneumoniae.',
+          isMoxi || id.includes('levo') ? 'Gute Wirksamkeit gegen S. pneumoniae (Atemwegs-Chinolon); keine zuverlässige MRSA-Aktivität.' : 'Schwache Aktivität gegen S. pneumoniae (nicht empirisch bei ambulant erworbener Pneumonie).'
+        ),
+        gramNegative: b(
+          'تغطية ممتازة للبكتيريا المعوية (Enterobacterales) شاملة الزائفة الزنجارية (Pseudomonas في سيبروفلوكساسين وليفوفلوكساسين).',
+          'Potent activity against Enterobacterales and Pseudomonas aeruginosa (Ciprofloxacin/Levofloxacin).',
+          'Forte activité sur les Entérobactéries et Pseudomonas aeruginosa (Ciprofloxacine/Lévofloxacine).',
+          'Potente actividad frente a Enterobacterales y Pseudomonas aeruginosa (Ciprofloxacino/Levofloxacino).',
+          'Starke Wirksamkeit gegen Enterobacterales und Pseudomonas aeruginosa (Ciprofloxacin/Levofloxacin).'
+        ),
+        anaerobes: b(
+          isMoxi ? 'تغطية جيدة للبكتيريا اللاهوائية.' : 'لا توجد تغطية سريرية للبكتيريا اللاهوائية.',
+          isMoxi ? 'Moderate-to-good anaerobic activity.' : 'No clinically reliable anaerobic coverage.',
+          isMoxi ? 'Activité anaérobie notable.' : 'Pas de couverture anaérobie cliniquement fiable.',
+          isMoxi ? 'Actividad anaerobia moderada-buena.' : 'Sin cobertura anaerobia clínicamente fiable.',
+          isMoxi ? 'Gute Wirksamkeit gegen Anaerobier.' : 'Keine klinisch relevante Anaerobier-Abdeckung.'
+        ),
+        atypicals: b(
+          'تغطية ممتازة للبكتيريا غير النمطية (Mycoplasma, Chlamydia, Legionella).',
+          'Excellent coverage of atypical pathogens (Legionella, Mycoplasma, Chlamydophila).',
+          'Excellente couverture des germes atypiques (Legionella, Mycoplasma, Chlamydia).',
+          'Excelente cobertura de patógenos atípicos (Legionella, Mycoplasma, Chlamydia).',
+          'Ausgezeichnete Abdeckung atypischer Erreger (Legionellen, Mykoplasmen, Chlamydien).'
+        ),
+        clinicalPearl: b(
+          'افصل الدواء ساعتين قبل أو 6 ساعات بعد الحليب، مضادات الحموضة، الحديد، الزنك، والكالسيوم لمنع الخلب الدوائي (Chelation) وفشل العلاج.',
+          'Separate by ≥2h before or 6h after dairy, antacids, iron, calcium, or zinc to prevent divalent cation chelation and >70% loss of absorption.',
+          'Espacer de 2h avant ou 6h après les produits laitiers, antiacides, fer, calcium ou zinc (risque de chélation).',
+          'Separar ≥2h antes o 6h después de lácteos, antiácidos, hierro, calcio o zinc para evitar quelación.',
+          'Mindestens 2 Std. vor oder 6 Std. nach Milchprodukten, Antazida, Eisen, Kalzium oder Zink einnehmen, um Chelatbildung und Wirkverlust zu verhindern.'
+        ),
+      },
+      renalCrCl: {
+        normal: b('الجرعة المعتادة كاملة (100% بدون تعديل).', 'Standard full dose (100% without adjustment).', 'Dose standard complète (100 %).', 'Dosis estándar completa (100 %).', 'Volle Standarddosis (100 % ohne Anpassung).'),
+        moderate: b(isMoxi ? 'لا يتطلب تعديل كلوي.' : 'خفض الجرعة بنسبة 25–50% أو إطالة الفترة إلى كل 12–24 ساعة.', isMoxi ? 'No renal dose adjustment required.' : 'Reduce dose by 25–50% or extend interval to q12–24h.', isMoxi ? 'Aucun ajustement rénal requis.' : 'Réduire la dose de 25–50 % ou espacer toutes les 12–24h.', isMoxi ? 'No requiere ajuste renal.' : 'Reducir dosis 25–50 % o espaciar cada 12–24h.', isMoxi ? 'Keine renale Dosisanpassung erforderlich.' : 'Dosis um 25–50 % reduzieren oder Intervall auf alle 12–24 Std. verlängern.'),
+        severe: b(isMoxi ? 'لا يتطلب تعديل كلوي.' : '50% من الجرعة المعتادة كل 24–48 ساعة مع مراقبة استطالة QT والأوتار.', isMoxi ? 'No renal dose adjustment required.' : '50% of standard dose every 24–48h; monitor QTc and tendon safety.', isMoxi ? 'Aucun ajustement rénal requis.' : '50 % de la dose toutes les 24–48h ; surveiller QT et tendons.', isMoxi ? 'No requiere ajuste renal.' : '50 % de la dosis cada 24–48h; vigilar QT y tendones.', isMoxi ? 'Keine renale Dosisanpassung erforderlich.' : '50 % der Standarddosis alle 24–48 Std.; QTc-Zeit und Sehnen überwachen.'),
+        esrdHd: b(isMoxi ? 'الجرعة المعتادة بدون جرعة تكميلية بعد الغسيل.' : 'جرعة مخفضة كل 24–48 ساعة وتُعطى بعد جلسة الغسيل الكلوي.', isMoxi ? 'Standard dose; no supplemental post-HD dose needed.' : 'Reduced dose q24–48h; administer after hemodialysis session.', isMoxi ? 'Dose standard.' : 'Dose réduite toutes les 24–48h, à administrer après l’hémodialyse.', isMoxi ? 'Dosis estándar.' : 'Dosis reducida cada 24–48h, administrar después de hemodiálisis.', isMoxi ? 'Standarddosis; keine Zusatzdosis nach Hämodialyse.' : 'Reduzierte Dosis alle 24–48 Std.; Gabe nach der Hämodialyse.'),
+      },
+      ivAndReconstitution: b(
+        'يُعطى بالتسريب الوريدي البطيء على مدار 60 دقيقة لتجنب التهاب الوريد وهبوط الضغط؛ لا يُخلط في نفس الخط مع الهيبارين أو المحاليل القلوية.',
+        'Infuse IV slowly over 60 minutes in NS or D5W to avoid venous irritation and hypotension; do not co-infuse with heparin or divalent cations.',
+        'Perfusion IV lente sur 60 minutes dans NaCl 0,9 % ou G5 % ; ne pas mélanger avec l’héparine ou des cations divalents.',
+        'Infundir por vía IV lentamente durante 60 minutos en SF o SG5 %; no mezclar con heparina ni cationes divalentes.',
+        'Langsame i.v.-Infusion über 60 Minuten in NaCl 0,9 % oder G5 % zur Vermeidung von Venenreizungen; nicht mit Heparin oder zweiwertigen Kationen mischen.'
+      ),
+      patientSimpleSummary: {
+        foodRule: b(
+          'يمكن تناوله مع الطعام، لكن ابتعد تماماً عن الحليب والجبن والزبادي ومضادات الحموضة والحديد قبل وبعد الدواء بـ 2 إلى 6 ساعات.',
+          'May take with meals, but strictly avoid milk, yogurt, antacids, iron, or calcium within 2 hours before or 6 hours after taking the tablet.',
+          'Peut être pris pendant les repas, mais évitez le lait, les produits laitiers, le fer et le calcium 2h avant et 6h après.',
+          'Puede tomarse con comida, pero evite leche, lácteos, antiácidos, hierro o calcio 2h antes y 6h después.',
+          'Einnahme zu den Mahlzeiten möglich, aber Milchprodukte, Antazida, Eisen und Kalzium 2 Std. davor bis 6 Std. danach strikt meiden.'
+        ),
+        missedDoseRule: b(
+          'تناول الجرعة فور تذكرها إلا إذا تبقى أقل من 6 ساعات على الجرعة التالية؛ لا تضاعف الجرعة أبداً.',
+          'Take as soon as remembered unless within 6 hours of the next scheduled dose; never double a dose.',
+          'Prenez la dose dès que possible sauf s’il reste moins de 6h avant la suivante ; ne doublez jamais la dose.',
+          'Tome la dosis en cuanto lo recuerde salvo que falten menos de 6h para la siguiente; nunca duplique la dosis.',
+          'Vergessene Dosis sofort nachholen, außer die nächste ist in weniger als 6 Stunden fällig; niemals die doppelte Dosis einnehmen.'
+        ),
+        keyWarning: b(
+          'توقف فوراً وراجع الطبيب إذا شعرت بألم أو تورم في الأوتار (عرقوب القدم) أو تنميل بالأطراف.',
+          'Stop immediately and contact your doctor if you experience tendon pain/swelling (Achilles) or nerve tingling.',
+          'Arrêtez immédiatement et consultez un médecin en cas de douleur tendineuse (tendon d’Achille) ou de fourmillements.',
+          'Suspenda de inmediato y consulte al médico si presenta dolor o inflamación en los tendones o entumecimiento.',
+          'Sofort absetzen und ärztlichen Rat einholen bei Sehnenschmerzen/-schwellungen (Achillessehne) oder Kribbeln/Taubheitsgefühl.'
+        ),
+      },
+    };
   }
 
-  // Intelligent class-based clinical profile generator for the remaining active ingredients
-  const isBetaLactam =
-    medId.includes('amox') ||
-    medId.includes('ampicillin') ||
-    medId.includes('penicillin') ||
-    medId.includes('fluclox') ||
-    medId.includes('cef') ||
-    medId.includes('ceph') ||
-    medId.includes('mero') ||
-    medId.includes('imipenem') ||
-    medId.includes('piperacillin');
+  // 2. Macrolides (Azithromycin, Clarithromycin, Erythromycin)
+  if (id.includes('mycin') && (cls.includes('macrolide') || id.includes('azithro') || id.includes('clarithro') || id.includes('erythro'))) {
+    const isAzithro = id.includes('azithro');
+    return {
+      pkpd: {
+        halfLife: isAzithro ? 't½ ≈ 68 h (tissue)' : 't½ ≈ 3–7 h',
+        bioavailability: isAzithro ? 'F ≈ 38%' : 'F ≈ 50–55%',
+        proteinBinding: isAzithro ? '7–51% (dose-dependent)' : '40–70%',
+        pkpdDriver: b(
+          'يعتمد على المساحة تحت المنحنى فوق التركيز المثبط (fAUC₂₄/MIC) مع تأثير ممتد داخل الخلايا',
+          'Time- & Exposure-dependent (fAUC₂₄/MIC) with prolonged intracellular post-antibiotic effect',
+          'Exposition-dépendant (fAUC₂₄/CMI) avec fort effet post-antibiotique intracellulaire',
+          'Dependiente de la exposición (fAUC₂₄/CMI) con efecto postantibiótico intracelular prolongado',
+          'Expositionsabhängig (fAUC₂₄/MHK) mit ausgeprägtem intrazellulärem postantibiotischem Effekt'
+        ),
+        excretion: b(
+          'إخراج صفراوي وكبدي رئيسي (أقل من 15% يخرج عبر الكلى)',
+          'Primarily biliary and hepatic clearance (<10–15% excreted unchanged in urine)',
+          'Élimination biliaire et hépatique prédominante (<15 % rénale)',
+          'Eliminación biliar y hepática predominante (<15 % renal)',
+          'Überwiegend biliäre und hepatische Elimination (<15 % unverändert renal)'
+        ),
+      },
+      spectrum: {
+        gramPositive: b(
+          'تغطية للمكورات العقدية والعنقودية الحساسة (مع ملاحظة تزايد مقاومة S. pneumoniae).',
+          'Active against susceptible Streptococci and MSSA (note rising S. pneumoniae resistance rates).',
+          'Actif sur les Streptocoques et SAMS sensibles (taux de résistance de S. pneumoniae en hausse).',
+          'Activo frente a Estreptococos y SASM sensibles (con tasas crecientes de resistencia en S. pneumoniae).',
+          'Wirksam gegen empfindliche Streptokokken und MSSA (steigende Resistenzraten bei S. pneumoniae beachten).'
+        ),
+        gramNegative: b(
+          'يغطي المستدمية النزلية (H. influenzae)، الموراكسيلا، السالمونيلا التيفية (أزيثرومايسين)، والنيسرية.',
+          'Covers H. influenzae, Moraxella catarrhalis, Bordetella pertussis, and enteric Salmonella/Shigella (Azithromycin).',
+          'Couvre H. influenzae, Moraxella catarrhalis, Bordetella pertussis et Salmonella/Shigella (Azithromycine).',
+          'Cubre H. influenzae, Moraxella catarrhalis, Bordetella pertussis y Salmonella/Shigella (Azitromicina).',
+          'Erfasst H. influenzae, Moraxella catarrhalis, Bordetella pertussis sowie Salmonellen/Shigellen (Azithromycin).'
+        ),
+        anaerobes: b(
+          'تغطية محدودة للاهوائيات الفموية فقط (لا يغطي B. fragilis).',
+          'Limited upper-airway anaerobic activity only (no Bacteroides fragilis coverage).',
+          'Activité limitée aux anaérobies buccaux uniquement (inactif sur B. fragilis).',
+          'Actividad limitada a anaerobios orales (sin cobertura frente a B. fragilis).',
+          'Nur begrenzte Aktivität gegen orale Anaerobier (keine Wirksamkeit gegen Bacteroides fragilis).'
+        ),
+        atypicals: b(
+          'خط علاجي متميز للبكتيريا غير النمطية داخل الخلايا (Mycoplasma, Chlamydia, Legionella).',
+          'First-line intracellular activity against Mycoplasma, Chlamydophila, and Legionella.',
+          'Activité intracellulaire de référence sur Mycoplasma, Chlamydia et Legionella.',
+          'Actividad intracelular de elección frente a Mycoplasma, Chlamydia y Legionella.',
+          'Exzellente intrazelluläre Wirksamkeit gegen Mykoplasmen, Chlamydien und Legionellen.'
+        ),
+        clinicalPearl: b(
+          'احذر من استطالة فترة QT القلبية والتداخل الدوائي القوي عبر إنزيم CYP3A4 (خصوصاً كلاريثرومايسين وإريثرومايسين مع أدوية الكوليسترول والسيولة).',
+          'Monitor QTc interval and screen for potent CYP3A4 inhibition (especially Clarithromycin/Erythromycin with statins, warfarin, and antiarrhythmics).',
+          'Surveiller l’intervalle QTc et l’inhibition puissante du CYP3A4 (Clarithromycine/Érythromycine avec statines et warfarine).',
+          'Vigilar el intervalo QTc y la potente inhibición de CYP3A4 (Claritromicina/Eritromicina con estatinas y warfarina).',
+          'QTc-Verlängerung und starke CYP3A4-Hemmung beachten (insb. Clarithromycin/Erythromycin mit Statinen, Warfarin und Antiarrhythmika).'
+        ),
+      },
+      renalCrCl: {
+        normal: b('الجرعة القياسية كاملة (100%).', 'Standard full dose (100%).', 'Dose standard complète (100 %).', 'Dosis estándar completa (100 %).', 'Volle Standarddosis (100 %).'),
+        moderate: b(isAzithro ? 'لا يحتاج تعديل جرعة.' : 'خفض جرعة كلاريثرومايسين بنسبة 50% إذا كانت CrCl أقل من 30 مل/دقيقة.', isAzithro ? 'No dose adjustment needed.' : 'No change until CrCl < 30 mL/min.', isAzithro ? 'Aucun ajustement requis.' : 'Pas de modification si CrCl ≥ 30 mL/min.', isAzithro ? 'No requiere ajuste.' : 'Sin cambios si CrCl ≥ 30 mL/min.', isAzithro ? 'Keine Dosisanpassung erforderlich.' : 'Keine Anpassung bei CrCl ≥ 30 ml/min.'),
+        severe: b(isAzithro ? 'استخدم بحذر في القصور الكلوي الشديد جداً (CrCl < 10).' : 'خفض جرعة كلاريثرومايسين بنسبة 50% (مثلاً 250 مجم مرة أو مرتين يومياً).', isAzithro ? 'Use with caution if CrCl < 10 mL/min; no routine reduction.' : 'Reduce Clarithromycin dose by 50% when CrCl < 30 mL/min.', isAzithro ? 'Prudence si CrCl < 10 mL/min.' : 'Réduire la dose de Clarithromycine de 50 % si CrCl < 30 mL/min.', isAzithro ? 'Precaución si CrCl < 10 mL/min.' : 'Reducir la dosis de Claritromicina un 50 % si CrCl < 30 mL/min.', isAzithro ? 'Vorsicht bei CrCl < 10 ml/min; keine routinemäßige Reduktion.' : 'Clarithromycin-Dosis bei CrCl < 30 ml/min um 50 % reduzieren.'),
+        esrdHd: b(isAzithro ? 'لا يُزال بالغسيل الكلوي؛ الجرعة المعتادة.' : '50% من الجرعة وتُعطى بعد جلسة الغسيل الكلوي.', isAzithro ? 'Not dialyzed; standard dosing.' : '50% dose administered after hemodialysis.', isAzithro ? 'Non dialysé ; dose habituelle.' : '50 % de la dose après la séance d’hémodialyse.', isAzithro ? 'No se dializa; dosis habitual.' : '50 % de la dosis después de hemodiálisis.', isAzithro ? 'Nicht dialysierbar; Standarddosierung.' : '50 % der Dosis, Gabe nach der Hämodialyse.'),
+      },
+      ivAndReconstitution: b(
+        'الأشكال الوريدية تُعطى بالتسريب الوريدي البطيء فقط على مدار 60 دقيقة بتركيز مخفف (1–2 مجم/مل)؛ ممنوع الحقن الوريدي المباشر السريع (IV Push) أو العضلي.',
+        'Administer IV formulations by slow infusion over ≥60 minutes at 1–2 mg/mL; NEVER give as IV push or IM injection.',
+        'Administrer les formes IV en perfusion lente sur ≥60 minutes (1–2 mg/mL) ; jamais en IV directe ni en IM.',
+        'Administrar las formas IV en perfusión lenta durante ≥60 minutos (1–2 mg/mL); nunca en bolo IV ni IM.',
+        'i.v.-Formulierungen nur als langsame Infusion über ≥60 Minuten (1–2 mg/ml) verabreichen; NIEMALS als i.v.-Bolus oder i.m.-Injektion.'
+      ),
+      patientSimpleSummary: {
+        foodRule: b(
+          'الأقراص المغلفة يمكن تناولها مع الطعام أو بدونه (تناولها مع وجبة خفيفة يقلل تقلصات المعدة). الكبسولات القديمة تُؤخذ قبل الأكل بساعة أو بعده بساعتين.',
+          'Film-coated tablets and suspensions can be taken with or without food (taking with food reduces stomach upset). Capsules should be taken 1h before or 2h after meals.',
+          'Les comprimés pelliculés peuvent être pris avec ou sans nourriture. Les gélules se prennent 1h avant ou 2h après les repas.',
+          'Los comprimidos recubiertos pueden tomarse con o sin alimentos. Las cápsulas se toman 1h antes o 2h después de comer.',
+          'Filmtabletten und Suspensionen können unabhängig von den Mahlzeiten eingenommen werden (mit Nahrung besser magenverträglich). Kapseln 1 Std. vor oder 2 Std. nach dem Essen.'
+        ),
+        missedDoseRule: b(
+          'تناول الجرعة فور تذكرها، ولا تجمع جرعتين معاً في نفس اليوم.',
+          'Take the missed dose as soon as you remember; do not take two doses on the same day.',
+          'Prenez la dose oubliée dès que possible ; ne prenez jamais deux doses le même jour.',
+          'Tome la dosis olvidada en cuanto lo recuerde; no tome dos dosis el mismo día.',
+          'Vergessene Dosis sobald wie möglich nachholen; niemals zwei Dosen am selben Tag einnehmen.'
+        ),
+        keyWarning: b(
+          'أخبر الطبيب إذا كنت تتناول أدوية الكوليسترول (ستاتين) أو أدوية تنظيم ضربات القلب أو السيولة.',
+          'Inform your doctor or pharmacist if you take cholesterol statins, blood thinners, or heart rhythm medications.',
+          'Informez votre médecin ou pharmacien si vous prenez des statines, des anticoagulants ou des antiarythmiques.',
+          'Informe a su médico o farmacéutico si toma estatinas para el colesterol, anticoagulantes o antiarrítmicos.',
+          'Informieren Sie Arzt oder Apotheker, wenn Sie Cholesterinsenker (Statine), Blutverdünner oder Herzrhythmusmedikamente einnehmen.'
+        ),
+      },
+    };
+  }
 
-  const isFluoroquinolone = medId.includes('floxacin');
-  const isMacrolide = medId.includes('mycin') && !medId.includes('vanco') && !medId.includes('clinda') && !medId.includes('genta');
-  const isAminoglycoside = medId.includes('genta') || medId.includes('amika');
-  const isReserveOrGlyco = whoGroup === 'Reserve' || medId === 'vancomycin' || medId === 'linezolid';
+  // 3. Default Beta-Lactams (Penicillins, Cephalosporins, Carbapenems) & General Antibiotics
+  const isParentalCeph = id.includes('ceftriaxone') || id.includes('cefotaxime') || id.includes('cefoperazone') || id.includes('cefepime') || id.includes('meropenem');
+  const isCeftriaxone = id.includes('ceftriaxone');
 
   return {
-    id: medId,
-    spectrum: {
-      gramPositive: {
-        ar: isAminoglycoside
-          ? 'نشاط تآزري فقط مع البيتا-لاكتام ضد المكورات إيجابية الجرام؛ لا يُستخدم منفرداً للمكورات العقدية.'
-          : isReserveOrGlyco
-            ? 'تغطية مستهدفة وقوية للبكتيريا إيجابية الجرام المقاومة شاملة MRSA و/أو المكورات المعوية VRE.'
-            : 'تغطية فعالة للسلالات إيجابية الجرام الحساسة ضمن نطاق العائلة الدوائية (' + (drugClassAr || 'مضاد بكتيري') + ').',
-        en: isAminoglycoside
-          ? 'Synergistic activity only with beta-lactams against Gram-positive cocci; do not use as monotherapy for Streptococci.'
-          : isReserveOrGlyco
-            ? 'Targeted potent coverage against resistant Gram-positive pathogens including MRSA and/or VRE.'
-            : `Active against susceptible Gram-positive organisms within ${drugClassEn || 'its pharmacological class'}.`,
-      },
-      gramNegative: {
-        ar: isAminoglycoside || isFluoroquinolone
-          ? 'تغطية قوية وواسعة للعصيات سالبة الجرام الهوائية شاملة Enterobacterales و Pseudomonas aeruginosa.'
-          : isReserveOrGlyco
-            ? 'لا يغطي البكتيريا سالبة الجرام (مخصص لموجبات الجرام المقاومة، باستثناء الكوليستين/التيجيسيكلين).'
-            : 'تغطية معتدلة إلى واسعة للبكتيريا سالبة الجرام حسب الجيل الدوائي وحساسية المزرعة.',
-        en: isAminoglycoside || isFluoroquinolone
-          ? 'Potent coverage against aerobic Gram-negative bacilli including Enterobacterales and Pseudomonas.'
-          : isReserveOrGlyco
-            ? 'Focused on resistant target pathogens based on culture & sensitivity.'
-            : 'Moderate-to-broad Gram-negative activity according to generation and local antibiogram.',
-      },
-      anaerobes: {
-        ar:
-          medId === 'metronidazole' || medId === 'clindamycin' || medId === 'meropenem'
-            ? 'تغطية ممتازة ومباشرة للبكتيريا اللاهوائية (Anaerobes).'
-            : 'نشاط محدود ضد اللاهوائيات ما لم يُدمج مع مضاد لاهوائيات متخصص.',
-        en:
-          medId === 'metronidazole' || medId === 'clindamycin' || medId === 'meropenem'
-            ? 'Excellent direct coverage against obligate anaerobes.'
-            : 'Limited anaerobic activity unless combined with a dedicated anti-anaerobic agent.',
-      },
-      atypicals: {
-        ar:
-          isMacrolide || isFluoroquinolone || medId === 'doxycycline'
-            ? 'فعال ضد البكتيريا غير النمطية داخل الخلوية (Mycoplasma, Chlamydia, Legionella).'
-            : 'غير فعال ضد البكتيريا غير النمطية لعدم وجود هدف جداري لها.',
-        en:
-          isMacrolide || isFluoroquinolone || medId === 'doxycycline'
-            ? 'Active against intracellular atypical pathogens (Mycoplasma, Chlamydia, Legionella).'
-            : 'Inactive against atypical bacteria lacking a standard peptidoglycan cell wall.',
-      },
-      clinicalPearl: {
-        ar:
-          whoGroup === 'Reserve'
-            ? 'لؤلؤة إكلينيكية: من أدوية الملاذ الأخير (WHO Reserve) — يُصرف حصرياً بناءً على مزرعة بكتيرية موثقة واستشارة فريق مكافحة العدوى.'
-            : isBetaLactam
-              ? 'لؤلؤة إكلينيكية: تحقق دائماً من تاريخ الحساسية للبنسلينات والسيفالوسبورينات، والتزم بالفاصل الزمني الدقيق لأن الفعالية تعتمد على بقاء التركيز فوق MIC.'
-              : 'لؤلؤة إكلينيكية: راجع وظائف الكلى والكبد والأدوية المتزامنة قبل بدء الكورس العلاجي.',
-        en:
-          whoGroup === 'Reserve'
-            ? 'Clinical Pearl: WHO Reserve agent — restrict strictly to culture-proven multi-drug resistant infections under stewardship review.'
-            : isBetaLactam
-              ? 'Clinical Pearl: Always screen for beta-lactam allergy history and maintain strict dosing intervals to maximize %T > MIC.'
-              : 'Clinical Pearl: Verify baseline renal/hepatic function and concomitant medications prior to initiation.',
-      },
-    },
     pkpd: {
-      halfLife: isBetaLactam ? 't½ ≈ 1.0 – 2.5 hr' : isFluoroquinolone ? 't½ ≈ 6.0 – 12.0 hr' : 't½ ≈ 3.0 – 8.0 hr',
-      bioavailability: isAminoglycoside ? 'Parenteral (IV/IM) / Topical' : 'F ≈ 60% – 90%',
-      proteinBinding: '20% – 60%',
-      excretion: {
-        ar: isBetaLactam || isAminoglycoside || isFluoroquinolone
-          ? 'إخراج كلوي بالأساس عن طريق الترشيح الكبيبي والإفراز الأنبوبي.'
-          : 'أيض كبدي وإخراج مشترك (كلوي / صفراوي).',
-        en: isBetaLactam || isAminoglycoside || isFluoroquinolone
-          ? 'Predominantly renal elimination via glomerular filtration and tubular secretion.'
-          : 'Hepatic metabolism with mixed renal/biliary excretion.',
-      },
-      pkpdDriver: {
-        ar: isBetaLactam
-          ? 'معتمد على الوقت (%T > MIC)'
-          : isAminoglycoside || isFluoroquinolone
-            ? 'معتمد على التركيز الأقصى (Cmax/MIC & AUC/MIC)'
-            : 'معتمد على إجمالي التعرض الدوائي (AUC24/MIC)',
-        en: isBetaLactam
-          ? 'Time-dependent (%T > MIC)'
-          : isAminoglycoside || isFluoroquinolone
-            ? 'Concentration-dependent (Cmax/MIC & AUC/MIC)'
-            : 'Exposure-dependent (AUC24/MIC)',
-      },
+      halfLife: isCeftriaxone ? 't½ ≈ 6–9 h (q24h dosing)' : 't½ ≈ 1.0–1.5 h',
+      bioavailability: isParentalCeph ? 'Parenteral (100% IV / 90–100% IM)' : 'F ≈ 60–90% (Oral)',
+      proteinBinding: isCeftriaxone ? '85–95% (saturable)' : '18–35%',
+      pkpdDriver: b(
+        'يعتمد على الوقت الذي يبقى فيه التركيز الحر فوق التركيز المثبط الأدنى (fT > MIC ≥ 40–70%)',
+        'Time-dependent bactericidal activity (%fT > MIC ≥ 40–70% of dosing interval)',
+        'Bactéricidie temps-dépendante (%fT > CMI ≥ 40–70 % de l’intervalle)',
+        'Actividad bactericida dependiente del tiempo (%fT > CMI ≥ 40–70 % del intervalo)',
+        'Zeitabhängige Bakterizidie (%fT > MHK ≥ 40–70 % des Dosierungsintervalls)'
+      ),
+      excretion: isCeftriaxone
+        ? b(
+            'إخراج مزدوج كلوي (55%) وصفراوي (45%) — لا يحتاج تعديل كلوي منفرد',
+            'Dual renal (55%) and biliary (45%) clearance — no adjustment in isolated renal impairment',
+            'Double élimination rénale (55 %) et biliaire (45 %) — pas d’ajustement rénal isolé',
+            'Doble eliminación renal (55 %) y biliar (45 %) — no requiere ajuste renal aislado',
+            'Duale renale (55 %) und biliäre (45 %) Elimination — keine Anpassung bei isolierter Niereninsuffizienz'
+          )
+        : b(
+            'إخراج كلوي رئيسي عبر الكلى (70–90% بدون تغيير في البول)',
+            'Primarily renal excretion (70–90% excreted unchanged in urine)',
+            'Élimination principalement rénale (70–90 % sous forme inchangée dans les urines)',
+            'Excreción principalmente renal (70–90 % inalterado en la orina)',
+            'Überwiegend renale Ausscheidung (70–90 % unverändert im Urin)'
+          ),
+    },
+    spectrum: {
+      gramPositive: b(
+        'تغطية قوية للمكورات العقدية (Streptococci) والمكورات العنقودية الحساسة للميثيسيلين (MSSA) حسب الفئة.',
+        'Active against Streptococci and methicillin-susceptible Staphylococcus aureus (MSSA) depending on agent.',
+        'Actif sur les Streptocoques et Staphylococcus aureus sensible à la méthicilline (SAMS).',
+        'Activo frente a Estreptococos y Staphylococcus aureus sensible a meticilina (SASM).',
+        'Wirksam gegen Streptokokken und Methicillin-sensible Staphylococcus aureus (MSSA) je nach Wirkstoff.'
+      ),
+      gramNegative: b(
+        'تغطية متدرجة للبكتيريا سالبة الجرام (E. coli, Klebsiella, Proteus, H. influenzae) وتزداد في الجيل الثالث والرابع.',
+        'Covers key Gram-negative bacilli (E. coli, Klebsiella, Proteus, H. influenzae), expanding in 3rd/4th generation agents.',
+        'Couvre les principaux bacilles à Gram négatif (E. coli, Klebsiella, Proteus, H. influenzae).',
+        'Cubre bacilos Gram negativos clave (E. coli, Klebsiella, Proteus, H. influenzae).',
+        'Erfasst wichtige gramnegative Stäbchen (E. coli, Klebsiella, Proteus, H. influenzae), erweitert bei Dritt-/Viertgenerations-Präparaten.'
+      ),
+      anaerobes: b(
+        id.includes('clavulan') || id.includes('sulbactam') || id.includes('metronidazole') || id.includes('clindamycin') || id.includes('meropenem')
+          ? 'تغطية ممتازة للبكتيريا اللاهوائية (شاملة الفموية والمعوية).'
+          : 'تغطية محدودة للبكتيريا اللاهوائية الفموية فقط (لا يغطي B. fragilis).',
+        id.includes('clavulan') || id.includes('sulbactam') || id.includes('metronidazole') || id.includes('clindamycin') || id.includes('meropenem')
+          ? 'Strong anaerobic coverage including β-lactamase-producing anaerobes.'
+          : 'Limited upper-respiratory anaerobic coverage only (does not cover Bacteroides fragilis).',
+        id.includes('clavulan') || id.includes('sulbactam') || id.includes('metronidazole') || id.includes('clindamycin') || id.includes('meropenem')
+          ? 'Forte couverture des bactéries anaérobies.'
+          : 'Couverture limitée aux anaérobies buccaux uniquement.',
+        id.includes('clavulan') || id.includes('sulbactam') || id.includes('metronidazole') || id.includes('clindamycin') || id.includes('meropenem')
+          ? 'Fuerte cobertura anaerobia.'
+          : 'Cobertura limitada solo a anaerobios orales.',
+        id.includes('clavulan') || id.includes('sulbactam') || id.includes('metronidazole') || id.includes('clindamycin') || id.includes('meropenem')
+          ? 'Starke Anaerobier-Abdeckung einschließlich β-Laktamase-bildender Anaerobier.'
+          : 'Nur begrenzte Abdeckung oraler Anaerobier (keine Wirksamkeit gegen Bacteroides fragilis).'
+      ),
+      atypicals: b(
+        'لا يغطي البكتيريا غير النمطية عديمة الجدار الخلوي (Mycoplasma / Chlamydia).',
+        'No activity against cell-wall-deficient atypical pathogens (Mycoplasma, Chlamydophila).',
+        'Aucune activité sur les germes atypiques dépourvus de paroi cellulaire (Mycoplasma, Chlamydia).',
+        'Sin actividad frente a patógenos atípicos sin pared celular (Mycoplasma, Chlamydia).',
+        'Keine Wirksamkeit gegen zellwandlose atypische Erreger (Mykoplasmen, Chlamydien).'
+      ),
+      clinicalPearl: b(
+        isCeftriaxone
+          ? 'ممنوع خلط السيفترياكسون مع محاليل الكالسيوم (مثل رينجر لاكتات) أو مع الكورتيزون والمسكنات في سرنجة واحدة (حقنة البرد) لخطر الترسيب البلوري القاتل وصدمة الحساسية.'
+          : 'الالتزام الدقيق بفاصل الساعات (كل 8 أو 12 ساعة) ضروري جداً للحفاظ على تركيز الدواء فوق MIC ومنع نشاط البكتيريا.',
+        isCeftriaxone
+          ? 'NEVER co-administer Ceftriaxone with calcium-containing IV solutions (Ringer’s) or mix with corticosteroids/NSAIDs in one syringe ("cold shot") due to fatal precipitation and anaphylaxis risk.'
+          : 'Strict adherence to scheduled dosing intervals (q8h or q12h) is essential to maintain %fT > MIC and prevent bacterial regrowth.',
+        isCeftriaxone
+          ? 'Ne jamais mélanger la Ceftriaxone avec des solutions contenant du calcium (Ringer) ni avec des corticoïdes/AINS dans une même seringue.'
+          : 'Le respect strict des intervalles horaires (toutes les 8h ou 12h) est indispensable pour maintenir %fT > CMI.',
+        isCeftriaxone
+          ? 'Nunca mezclar Ceftriaxona con soluciones con calcio (Ringer) ni con corticoides/AINE en la misma jeringa.'
+          : 'El cumplimiento estricto de los intervalos horarios (cada 8h o 12h) es clave para mantener %fT > CMI.',
+        isCeftriaxone
+          ? 'Ceftriaxon NIEMALS mit kalziumhaltigen Infusionslösungen (Ringer-Laktat) oder in einer Spritze mit Kortikosteroiden/NSAR mischen (Lebensgefahr durch Ausfällung und Anaphylaxie).'
+          : 'Die genaue Einhaltung der Dosierungsintervalle (alle 8 oder 12 Std.) ist entscheidend, um %fT > MHK aufrechtzuerhalten und Resistenzen zu vermeiden.'
+      ),
     },
     renalCrCl: {
-      normal: {
-        ar: 'CrCl > 50 mL/min: الجرعة القياسية الكاملة حسب شدة العدوى والوزن.',
-        en: 'CrCl > 50 mL/min: Full standard dosing regimen based on infection severity.',
-      },
-      moderate: {
-        ar: 'CrCl 30–50 mL/min: يُمدد الفاصل الزمني بين الجرعات أو تُخفض الجرعة بنسبة 25%–50% للأدوية ذات الإخراج الكلوي.',
-        en: 'CrCl 30–50 mL/min: Extend dosing interval or reduce dose by 25%–50% for renally cleared agents.',
-      },
-      severe: {
-        ar: 'CrCl 10–29 mL/min: خفض الجرعة إلى 50% أو مضاعفة الفاصل الزمني مع مراقبة وظائف الكلى (Serum Creatinine).',
-        en: 'CrCl 10–29 mL/min: Reduce dose by 50% or double the interval; monitor serum creatinine closely.',
-      },
-      esrdHd: {
-        ar: 'CrCl < 10 mL/min أو الغسيل الكلوي: تُعطى الجرعة المعدلة بعد جلسة الغسيل الكلوي مع متابعة المستويات العلاجية إن لزم.',
-        en: 'CrCl < 10 mL/min or HD: Administer adjusted maintenance dose post-hemodialysis.',
-      },
+      normal: b('الجرعة المعتادة كاملة كل 8–12 ساعة حسب شدة العدوى.', 'Standard full dose every 8–12 hours based on indication.', 'Dose standard complète toutes les 8 à 12 heures.', 'Dosis estándar completa cada 8–12 horas.', 'Volle Standarddosis alle 8–12 Stunden je nach Indikation.'),
+      moderate: b(isCeftriaxone ? 'لا يحتاج تعديل جرعة (إخراج مزدوج).' : 'إطالة الفترة الزمنية إلى كل 12 ساعة أو خفض الجرعة بنسبة 25–50%.', isCeftriaxone ? 'No adjustment required (dual hepatorenal clearance).' : 'Extend dosing interval to q12h or reduce dose by 25–50%.', isCeftriaxone ? 'Aucun ajustement requis.' : 'Espacer les prises toutes les 12h ou réduire la dose de 25–50 %.', isCeftriaxone ? 'No requiere ajuste.' : 'Espaciar cada 12h o reducir la dosis un 25–50 %.', isCeftriaxone ? 'Keine Anpassung erforderlich (duale Elimination).' : 'Dosierungsintervall auf alle 12 Std. verlängern oder Dosis um 25–50 % reduzieren.'),
+      severe: b(isCeftriaxone ? 'لا تتجاوز 2 جم يومياً في حال وجود قصور كلوي وكبدي مشترك.' : 'إطالة الفترة إلى كل 24 ساعة (وتجنب أقراص التركيز المزدوج XR/1000).', isCeftriaxone ? 'Max 2 g/day if concurrent severe hepatic and renal dysfunction.' : 'Extend interval to q24h (avoid extended-release or high-ratio formulations).', isCeftriaxone ? 'Max 2 g/jour si insuffisance hépato-rénale combinée.' : 'Espacer toutes les 24h (éviter les formes LP).', isCeftriaxone ? 'Máx. 2 g/día si coexiste insuficiencia hepática y renal.' : 'Espaciar cada 24h (evitar formas de liberación prolongada).', isCeftriaxone ? 'Max. 2 g/Tag bei gleichzeitiger schwerer Leber- und Niereninsuffizienz.' : 'Intervall auf alle 24 Std. verlängern (Retardtabletten vermeiden).'),
+      esrdHd: b(isCeftriaxone ? 'لا يُزال بالغسيل الكلوي؛ الجرعة المعتادة.' : 'جرعة كل 24 ساعة مع إعطاء جرعة بعد جلسة الغسيل الكلوي مباشرة.', isCeftriaxone ? 'Not dialyzed; no post-HD supplemental dose needed.' : 'Dose q24h; administer scheduled dose after hemodialysis session.', isCeftriaxone ? 'Non dialysé ; pas de dose supplémentaire après dialyse.' : 'Dose toutes les 24h ; administrer après la séance d’hémodialyse.', isCeftriaxone ? 'No se dializa; sin dosis suplementaria.' : 'Dosis cada 24h; administrar después de la sesión de hemodiálisis.', isCeftriaxone ? 'Nicht dialysierbar; keine Zusatzdosis nach Dialyse nötig.' : 'Dosis alle 24 Std.; Gabe nach der Hämodialyse-Sitzung.'),
     },
-    ivAndReconstitution: {
-      ar: 'للمستحضرات الوريدية: يُحل المسحوق في ماء معقم للحقن أو محلول ملح 0.9% ويُسرب ببطء على مدار 30–60 دقيقة. لشراب الأطفال المعلق: يُرج جيداً قبل كل جرعة ويُتخلص من المتبقي بعد انتهاء مدة الصلاحية المحددة على العبوة (7–14 يوماً).',
-      en: 'For IV formulations: Reconstitute with SWFI or NS 0.9% and infuse over 30–60 minutes. For oral suspensions: Shake well before each dose and discard unused portion after 7–14 days.',
-    },
+    ivAndReconstitution: b(
+      'يُحل المسحوق بماء الحقن المعقم أو محلول الملح 0.9% ويُعطى ببطء على مدار 3–5 دقائق أو بالتسريب الوريدي خلال 30 دقيقة؛ تأكد من عدم وجود حساسية للبنسلين أو السيفالوسبورين قبل الإعطاء.',
+      'Reconstitute vials with Sterile Water for Injection or 0.9% NaCl and infuse over 30 minutes (or slow IV over 3–5 min); verify beta-lactam allergy history prior to administration.',
+      'Reconstituer avec de l’eau PPI ou NaCl 0,9 % et perfuser sur 30 minutes ; vérifier systématiquement l’absence d’allergie aux bêta-lactamines.',
+      'Reconstituir con agua estéril para inyección o NaCl 0,9 % e infundir en 30 minutos; verificar siempre antecedentes de alergia a betalactámicos.',
+      'Pulver mit sterilem Wasser für Injektionszwecke oder NaCl 0,9 % auflösen und über 30 Minuten infundieren; vorab zwingend Beta-Laktam-Allergie abklären.'
+    ),
     patientSimpleSummary: {
-      foodRule: {
-        ar: 'اتبع إرشادات الطبيب أو الصيدلي حول تناوله مع الطعام أو على معدة فارغة، واشرب كمية كافية من الماء.',
-        en: 'Follow your pharmacist’s instructions regarding meals, and drink a full glass of water with oral doses.',
-      },
-      missedDoseRule: {
-        ar: 'خذ الجرعة الفائتة فور تذكرها، ولا تضاعف الجرعة أبداً لتعويض الجرعة المنسية.',
-        en: 'Take a missed dose as soon as you remember, and never double up on the next dose.',
-      },
-      keyWarning: {
-        ar: 'أكمل كورس المضاد الحيوي للنهاية حتى لو اختفت الأعراض، وتوقف فوراً إذا ظهرت أعراض حساسية.',
-        en: 'Complete the full prescribed course even if you feel better, and stop immediately if an allergic rash develops.',
-      },
+      foodRule: b(
+        'يفضل تناوله في بداية الوجبة لتقليل اضطراب المعدة وتحسين الامتصاص (خصوصاً أوجمنتين وسيفوروكسيم).',
+        'Best taken at the start of a meal to minimize stomach upset and optimize absorption.',
+        'À prendre de préférence au début du repas pour améliorer la tolérance digestive.',
+        'Mejor tomarlo al inicio de una comida para reducir molestias estomacales.',
+        'Am besten zu Beginn einer Mahlzeit einnehmen, um Magenbeschwerden zu minimieren und die Aufnahme zu verbessern.'
+      ),
+      missedDoseRule: b(
+        'تناول الجرعة فور تذكرها، ولكن إذا اقترب موعد الجرعة التالية فتجاوز الفائتة ولا تضاعف الجرعة أبداً.',
+        'Take as soon as you remember; if close to the next dose, skip the missed one and never double up.',
+        'Prenez la dose dès que vous y pensez ; si la suivante est proche, ne doublez jamais la prise.',
+        'Tómela en cuanto lo recuerde; si está cerca la siguiente dosis, no duplique la toma.',
+        'Sobald wie möglich nachholen; falls die nächste Dosis kurz bevorsteht, ausgelassene Dosis überspringen und niemals verdoppeln.'
+      ),
+      keyWarning: b(
+        'توقف فوراً واطلب الطوارئ إذا ظهر طفح جلدي أو تورم بالوجه أو الشفتين أو ضيق في التنفس، وأكمل الكورس حتى النهاية.',
+        'Stop immediately and seek emergency care if rash, facial swelling, or breathing difficulty occurs, and always finish your full course.',
+        'Arrêtez immédiatement et appelez les urgences en cas d’éruption cutanée, de gonflement du visage ou de gêne respiratoire.',
+        'Suspenda de inmediato y acuda a urgencias si aparece erupción cutánea, hinchazón facial o dificultad para respirar.',
+        'Bei Hautausschlag, Gesichtsschwellung oder Atemnot sofort absetzen und den Notruf wählen; verordneten Kurs immer vollständig beenden.'
+      ),
     },
   };
 }

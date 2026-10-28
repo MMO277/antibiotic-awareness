@@ -18,6 +18,7 @@ export const EMERGENCY_WARNINGS: Bi = {
   en: 'If any of these warning signs occur: difficulty breathing or wheezing, swelling of face, lips, tongue, or throat, severe blistering rash, or fainting/collapse — stop immediately and seek emergency medical assistance (call ambulance or go to nearest ER)!',
   fr: 'Si l’un de ces signes d’alerte apparaît : difficulté à respirer ou respiration sifflante, gonflement du visage, des lèvres, de la langue ou de la gorge, éruption cutanée grave avec cloques ou malaise — arrêtez immédiatement et appelez les urgences médicales (123 en Égypte / 112) !',
   es: 'Si aparece cualquiera de estos signos de alarma: dificultad para respirar o sibilancias, hinchazón de cara, labios, lengua o garganta, erupción cutánea grave con ampollas o desmayo — ¡suspenda de inmediato y acuda a urgencias médicas (123 en Egipto / 112)!',
+  de: 'Wenn eines dieser Warnzeichen auftritt: Atemnot oder pfeifende Atmung, Schwellung von Gesicht, Lippen, Zunge oder Rachen, schwerer blasenbildender Hautausschlag oder Ohnmacht/Kreislaufkollaps — setzen Sie das Medikament sofort ab und rufen Sie den Rettungsdienst (123 in Ägypten / 112) oder suchen Sie die nächste Notaufnahme auf!',
 };
 
 export const SYMPTOMS_LIST: SymptomDetail[] = [

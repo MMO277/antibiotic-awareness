@@ -38,7 +38,7 @@ export default function Learn() {
   const { user, loading: authLoading } = useAuth();
   const uid = user?.uid ?? null;
 
-  const L = (ar: string, en: string, fr?: string, es?: string) => tr(lang, ar, en, fr, es);
+  const L = (ar: string, en: string, fr?: string, es?: string, de?: string) => tr(lang, ar, en, fr, es, de);
   const [idx, setIdx] = useState(0);
   const [sel, setSel] = useState<number | null>(null);
   const [done, setDone] = useState<string[]>(() => loadDone(uid));
@@ -178,7 +178,8 @@ export default function Learn() {
           'رحلة التعلم: مقاومة مضادات الميكروبات',
           'Learning journey: antimicrobial resistance',
           'Parcours d’apprentissage : la résistance aux antimicrobiens',
-          'Ruta de aprendizaje: resistencia a los antimicrobianos'
+          'Ruta de aprendizaje: resistencia a los antimicrobianos',
+          'Lernreise: Antimikrobielle Resistenz verstehen'
         )}
       </h1>
       <p className="muted">
@@ -186,7 +187,8 @@ export default function Learn() {
           'ست خطوات قصيرة، مع اختبار سريع بعد كل منها. المادة التعليمية صياغة المنصة استناداً للمصادر الرسمية.',
           'Six short steps, each with a quick check. The wording is the project’s own, based on the official sources.',
           'Six étapes courtes, chacune suivie d’une vérification rapide basée sur les sources officielles.',
-          'Seis pasos breves, cada uno con una comprobación rápida basada en fuentes oficiales.'
+          'Seis pasos breves, cada uno con una comprobación rápida basada en fuentes oficiales.',
+          'Sechs kurze Lernschritte mit jeweils einem Verständnischeck auf Basis offizieller medizinischer Quellen.'
         )}
       </p>
 
@@ -194,7 +196,7 @@ export default function Learn() {
         <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Learn progress">
           <span style={{ width: `${pct}%` }} />
         </div>
-        <p className="small muted">{L('المكتمل', 'Completed', 'Terminé', 'Completado')} {done.length} / {STEPS.length}</p>
+        <p className="small muted">{L('المكتمل', 'Completed', 'Terminé', 'Completado', 'Abgeschlossen')} {done.length} / {STEPS.length}</p>
       </div>
 
       <div className="chips" role="tablist">
@@ -209,7 +211,7 @@ export default function Learn() {
         <h2>{idx + 1}. {pick(step.title, lang)}</h2>
         {pick(step.body, lang).split('\n\n').map((p, k) => <p key={k}>{p}</p>)}
 
-        <h3>{L('اختبر فهمك', 'Check your understanding', 'Vérifiez votre compréhension', 'Comprueba tu comprensión')}</h3>
+        <h3>{L('اختبر فهمك', 'Check your understanding', 'Vérifiez votre compréhension', 'Comprueba tu comprensión', 'Überprüfen Sie Ihr Verständnis')}</h3>
         <p>{pick(step.check.q, lang)}</p>
         <div className="options">
           {step.check.options.map((o, k) => {
@@ -223,7 +225,7 @@ export default function Learn() {
         </div>
         {sel !== null && <p className="why">{pick(step.check.why, lang)}</p>}
 
-        <p className="small muted">{L('المصادر:', 'Sources:', 'Sources :', 'Fuentes:')}</p>
+        <p className="small muted">{L('المصادر:', 'Sources:', 'Sources :', 'Fuentes:', 'Quellen:')}</p>
         <ul className="srclist small">
           {step.sources.map((s) => (
             <li key={s.url}>
@@ -234,8 +236,8 @@ export default function Learn() {
         </ul>
 
         <div className="row wrapRow">
-          {idx > 0 && <button className="btn ghost" onClick={() => setIdx(idx - 1)}>{L('السابق', 'Previous', 'Précédent', 'Anterior')}</button>}
-          {idx < STEPS.length - 1 && <button className="btn" onClick={() => setIdx(idx + 1)}>{L('التالي', 'Next', 'Suivant', 'Siguiente')}</button>}
+          {idx > 0 && <button className="btn ghost" onClick={() => setIdx(idx - 1)}>{L('السابق', 'Previous', 'Précédent', 'Anterior', 'Zurück')}</button>}
+          {idx < STEPS.length - 1 && <button className="btn" onClick={() => setIdx(idx + 1)}>{L('التالي', 'Next', 'Suivant', 'Siguiente', 'Weiter')}</button>}
         </div>
       </article>
 
@@ -246,16 +248,17 @@ export default function Learn() {
               'أحسنت! أكملت رحلة التعلم.',
               'Well done! You completed the journey. ',
               'Bravo ! Vous avez terminé le parcours. ',
-              '¡Bien hecho! Has completado el recorrido. '
+              '¡Bien hecho! Has completado el recorrido. ',
+              'Sehr gut! Sie haben die Lernreise abgeschlossen. '
             )}
           </strong>
           <Link to="/quiz">
-            {L('جرب اختبار المعرفة الآن', 'Try the knowledge quiz', 'Essayez le quiz de connaissances', 'Prueba el cuestionario de conocimientos')}
+            {L('جرب اختبار المعرفة الآن', 'Try the knowledge quiz', 'Essayez le quiz de connaissances', 'Prueba el cuestionario de conocimientos', 'Jetzt das Wissensquiz starten')}
           </Link>
         </div>
       )}
       <button className="btn ghost small" onClick={reset}>
-        {L('إعادة الضبط', 'Reset progress', 'Réinitialiser la progression', 'Reiniciar progreso')}
+        {L('إعادة الضبط', 'Reset progress', 'Réinitialiser la progression', 'Reiniciar progreso', 'Fortschritt zurücksetzen')}
       </button>
       <Disclaimer />
 

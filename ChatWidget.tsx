@@ -50,11 +50,11 @@ const WIDGET_CHIPS: Record<string, string[]> = {
     '¿La leche afecta al antibiótico?',
   ],
   de: [
-    "Helfen Antibiotika bei Erkältung?",
-    "Gefahren der 3-in-1-Erkältungsspritze?",
-    "Welches Antibiotikum bei Zahnschmerzen?",
-    "Was tun bei vergessener Dosis?",
-    "Blockiert Milch das Antibiotikum?",
+    'Helfen Antibiotika bei Erkältungen?',
+    'Gefahren der 3-in-1-Erkältungsspritze?',
+    'Welches Antibiotikum bei Zahnschmerzen?',
+    'Was tun bei vergessener Dosis?',
+    'Beeinflusst Milch die Antibiotikawirkung?',
   ],
 };
 

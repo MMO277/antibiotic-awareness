@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useLang } from './i18n';
+import { Lang, tr } from './types';
 import { useGamingMode } from './useGamingMode';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -90,6 +91,15 @@ const EDU_MESSAGES_EN = [
   'Antibiotic resistance is a global threat. Use antibiotics responsibly.',
 ];
 
+const EDU_MESSAGES_DE = [
+  'Antibiotika bekämpfen nur Bakterien, keine Viren wie Grippe oder Erkältungen.',
+  'Resistenzen entstehen in Bakterien, nicht im Körper. Richtige Anwendung bremst sie.',
+  'Nehmen Sie niemals Antibiotika ohne Rezept — unkontrollierte Einnahme senkt die Wirksamkeit.',
+  'Teilen Sie Ihr Rezept nicht mit anderen, selbst bei ähnlichen Symptomen.',
+  'Beenden Sie immer die volle Antibiotika-Therapie, auch wenn Sie sich früher besser fühlen.',
+  'Antibiotikaresistenz ist eine globale Bedrohung. Nutzen Sie Antibiotika verantwortungsvoll.',
+];
+
 const ACHIEVEMENTS_INIT: Achievement[] = [
   { id: 'first_kill', labelAr: '🦠 الصياد الأول', labelEn: '🦠 First Hunter', earned: false },
   { id: 'wave1', labelAr: '🌊 ناجي الموجة', labelEn: '🌊 Wave Survivor', earned: false },
@@ -159,7 +169,7 @@ function makeEnemy(type: Enemy['type'], W: number, H: number, wave: number, diff
 
 type CanvasMetrics = { w: number; h: number; dpr: number };
 
-function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: boolean, sizeRef: React.MutableRefObject<CanvasMetrics>) {
+function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: boolean, lang: Lang, sizeRef: React.MutableRefObject<CanvasMetrics>) {
   const stateRef = useRef({
     gameState: 'menu' as GameState,
     difficulty: 'easy' as Difficulty,
@@ -253,12 +263,12 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
     }
     // Show edu message sometimes
     if (wave > 0 && wave % 2 === 0) {
-      const msgs = isAr ? EDU_MESSAGES_AR : EDU_MESSAGES_EN;
+      const msgs = isAr ? EDU_MESSAGES_AR : lang === 'de' ? EDU_MESSAGES_DE : EDU_MESSAGES_EN;
       S.eduMsg = msgs[Math.floor(Math.random() * msgs.length)];
       S.showEdu = true;
       S.eduTimer = 240;
     }
-  }, [S, canvasRef, sizeRef, isAr, tick]);
+  }, [S, canvasRef, sizeRef, isAr, lang, tick]);
 
   // ─── Achievements helper ───────────────────────────────────────────────────
   const earn = useCallback((id: string, label: string) => {
@@ -411,10 +421,10 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
               S.totalKills++;
               S.waveEnemiesLeft--;
               burst(e.x, e.y, e.color, 14);
-              if (S.totalKills === 1) earn('first_kill', isAr ? '🦠 الصياد الأول' : '🦠 First Hunter');
+              if (S.totalKills === 1) earn('first_kill', tr(lang, '🦠 الصياد الأول', '🦠 First Hunter', '🦠 Premier Chasseur', '🦠 Primer Cazador', '🦠 Erster Jäger'));
               if (e.type === 'boss') {
-                earn('boss', isAr ? '👑 قاهر البوس' : '👑 Boss Slayer');
-                earn('resistance', isAr ? '💡 الوعي بالمقاومة' : '💡 Resistance Awareness');
+                earn('boss', tr(lang, '👑 قاهر البوس', '👑 Boss Slayer', '👑 Tueur de Boss', '👑 Cazador de Jefes', '👑 Boss-Bezwinger'));
+                earn('resistance', tr(lang, '💡 الوعي بالمقاومة', '💡 Resistance Awareness', '💡 Conscience AMR', '💡 Conciencia RAM', '💡 Resistenz-Bewusstsein'));
               }
               // Maybe drop power-up
               if (Math.random() < 0.2) {
@@ -497,13 +507,13 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
           S.bossActive = false;
           if (S.wave >= 12) {
             S.gameState = 'victory';
-            if (!S.damageTaken) earn('no_damage', isAr ? '🛡️ لا أذى' : '🛡️ Untouched');
+            if (!S.damageTaken) earn('no_damage', tr(lang, '🛡️ لا أذى', '🛡️ Untouched', '🛡️ Intouchable', '🛡️ Intacto', '🛡️ Unversehrt'));
             tick();
             return;
           }
         }
         S.wavesCompleted++;
-        earn('wave1', isAr ? '🌊 ناجي الموجة' : '🌊 Wave Survivor');
+        earn('wave1', tr(lang, '🌊 ناجي الموجة', '🌊 Wave Survivor', '🌊 Survivant de Vague', '🌊 Superviviente de Ola', '🌊 Wellen-Überlebender'));
         S.wave++;
         S.waveTimer = 150;
         S.waveEnemiesLeft = -1;
@@ -706,16 +716,16 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
 
       // Score
       ctx.fillStyle = '#00D2FF'; ctx.font = 'bold 15px sans-serif'; ctx.textAlign = 'right';
-      ctx.fillText(`${isAr ? 'النقاط' : 'Score'}: ${S.score}`, W - 10, 22);
+      ctx.fillText(`${tr(lang, 'النقاط', 'Score', 'Score', 'Puntos', 'Punkte')}: ${S.score}`, W - 10, 22);
       ctx.fillStyle = '#7f8c8d'; ctx.font = '11px sans-serif';
-      ctx.fillText(`${isAr ? 'أعلى' : 'Best'}: ${S.highScore}`, W - 10, 38);
+      ctx.fillText(`${tr(lang, 'أعلى', 'Best', 'Record', 'Récord', 'Rekord')}: ${S.highScore}`, W - 10, 38);
 
       // Wave
       ctx.fillStyle = '#BDC3C7'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
-      ctx.fillText(`${isAr ? 'الموجة' : 'Wave'} ${S.wave}`, W / 2, 18);
+      ctx.fillText(`${tr(lang, 'الموجة', 'Wave', 'Vague', 'Ola', 'Welle')} ${S.wave}`, W / 2, 18);
       if (S.bossActive) {
         ctx.fillStyle = '#E74C3C'; ctx.font = 'bold 13px sans-serif';
-        ctx.fillText(isAr ? '⚠️ موجة البوس!' : '⚠️ BOSS WAVE!', W / 2, 34);
+        ctx.fillText(tr(lang, '⚠️ موجة البوس!', '⚠️ BOSS WAVE!', '⚠️ VAGUE BOSS !', '⚠️ ¡OLA DE JEFE!', '⚠️ BOSS-WELLE!'), W / 2, 34);
       }
 
       // Active power-up indicators
@@ -740,7 +750,7 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
         ctx.strokeStyle = 'rgba(0,200,255,0.4)'; ctx.lineWidth = 1;
         ctx.stroke();
         ctx.fillStyle = '#00D2FF'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(isAr ? '💡 هل تعلم؟' : '💡 Did you know?', W / 2, msgY + 16);
+        ctx.fillText(tr(lang, '💡 هل تعلم؟', '💡 Did you know?', '💡 Le saviez-vous ?', '💡 ¿Sabías que?', '💡 Wussten Sie schon?'), W / 2, msgY + 16);
         ctx.fillStyle = '#ECF0F1'; ctx.font = '11px sans-serif';
         // Word wrap
         const words = S.eduMsg.split(' ');
@@ -764,7 +774,7 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
         ctx.beginPath(); ctx.roundRect(W / 2 - 120, 50, 240, 38, 8); ctx.fill();
         ctx.strokeStyle = '#2ECC71'; ctx.lineWidth = 1.5; ctx.stroke();
         ctx.fillStyle = '#2ECC71'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(isAr ? `🏆 إنجاز: ${S.lastAchievement}` : `🏆 Achievement: ${S.lastAchievement}`, W / 2, 74);
+        ctx.fillText(isAr ? `🏆 إنجاز: ${S.lastAchievement}` : lang === 'de' ? `🏆 Erfolg: ${S.lastAchievement}` : `🏆 Achievement: ${S.lastAchievement}`, W / 2, 74);
         ctx.restore();
       }
 
@@ -775,9 +785,9 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
         ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#E74C3C'; ctx.font = `bold ${Math.min(W * 0.08, 36)}px sans-serif`; ctx.textAlign = 'center';
-        ctx.fillText(isAr ? '⚠️ تحذير: المقاومة تقترب!' : '⚠️ WARNING: RESISTANCE INCOMING!', W / 2, H / 2 - 20);
+        ctx.fillText(tr(lang, '⚠️ تحذير: المقاومة تقترب!', '⚠️ WARNING: RESISTANCE INCOMING!', '⚠️ ALERTE : RÉSISTANCE EN APPROCHE !', '⚠️ ¡ALERTA: RESISTENCIA EN CAMINO!', '⚠️ WARNUNG: RESISTENZ IM ANMARSCH!'), W / 2, H / 2 - 20);
         ctx.fillStyle = '#BDC3C7'; ctx.font = `${Math.min(W * 0.035, 15)}px sans-serif`;
-        ctx.fillText(isAr ? 'بكتيريا مقاومة للمضادات الحيوية — الأصعب!' : 'Antibiotic-Resistant Bacteria — Toughest foe!', W / 2, H / 2 + 20);
+        ctx.fillText(tr(lang, 'بكتيريا مقاومة للمضادات الحيوية — الأصعب!', 'Antibiotic-Resistant Bacteria — Toughest foe!', 'Bactérie multirésistante — L’ennemi le plus coriace !', '¡Bacteria resistente — El enemigo más difícil!', 'Multiresistente Bakterien — Der härteste Gegner!'), W / 2, H / 2 + 20);
         ctx.restore();
       }
 
@@ -788,15 +798,15 @@ function useGameEngine(canvasRef: React.RefObject<HTMLCanvasElement>, isAr: bool
         ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#ECF0F1'; ctx.font = `bold ${Math.min(W * 0.08, 34)}px sans-serif`; ctx.textAlign = 'center';
-        ctx.fillText(isAr ? '⏸ إيقاف مؤقت' : '⏸ PAUSED', W / 2, H / 2 - 10);
+        ctx.fillText(tr(lang, '⏸ إيقاف مؤقت', '⏸ PAUSED', '⏸ PAUSE', '⏸ PAUSA', '⏸ PAUSIERT'), W / 2, H / 2 - 10);
         ctx.fillStyle = '#BDC3C7'; ctx.font = `${Math.min(W * 0.035, 14)}px sans-serif`;
-        ctx.fillText(isAr ? 'اضغط Esc أو زر الإيقاف للمتابعة' : 'Press Esc or tap Pause to continue', W / 2, H / 2 + 22);
+        ctx.fillText(tr(lang, 'اضغط Esc أو زر الإيقاف للمتابعة', 'Press Esc or tap Pause to continue', 'Appuyez sur Échap ou Pause pour continuer', 'Pulsa Esc o Pausa para continuar', 'Esc drücken oder Pause tippen zum Fortsetzen'), W / 2, H / 2 + 22);
         ctx.restore();
       }
     }
 
     rafRef.current = requestAnimationFrame(loop);
-  }, [S, spawnWave, burst, earn, isAr, tick]);
+  }, [S, spawnWave, burst, earn, isAr, lang, tick]);
 
   // ─── Start/stop loop ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -924,7 +934,7 @@ export default function BacteriaHunter() {
   // Logical game size (CSS px) is kept separate from the canvas backing-store size (CSS px × dpr).
   const sizeRef = useRef<CanvasMetrics>({ w: 360, h: 560, dpr: 1 });
   const [canvasSize, setCanvasSize] = useState<CanvasMetrics>({ w: 360, h: 560, dpr: 1 });
-  const { S, joyRef, shootBtnRef, initGame, uiTick, tick } = useGameEngine(canvasRef, isAr, sizeRef);
+  const { S, joyRef, shootBtnRef, initGame, uiTick, tick } = useGameEngine(canvasRef, isAr, lang, sizeRef);
 
   // ─── Gaming Mode (fullscreen / immersive layout) ───────────────────────────
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -1067,7 +1077,7 @@ export default function BacteriaHunter() {
               ))}
             </div>
             <div className="bh-edu-end">
-              <p>💡 {isAr ? EDU_MESSAGES_AR[Math.floor(Math.random() * EDU_MESSAGES_AR.length)] : EDU_MESSAGES_EN[Math.floor(Math.random() * EDU_MESSAGES_EN.length)]}</p>
+              <p>💡 {isAr ? EDU_MESSAGES_AR[Math.floor(Math.random() * EDU_MESSAGES_AR.length)] : lang === 'de' ? EDU_MESSAGES_DE[Math.floor(Math.random() * EDU_MESSAGES_DE.length)] : EDU_MESSAGES_EN[Math.floor(Math.random() * EDU_MESSAGES_EN.length)]}</p>
             </div>
             <button className="bh-btn bh-btn-primary" onClick={() => startGame(S.difficulty)}>{isAr ? '🔄 العب مجددًا' : '🔄 Play Again'}</button>
             <button className="bh-btn bh-btn-ghost" onClick={doExit}>{isAr ? '🏠 القائمة' : '🏠 Menu'}</button>

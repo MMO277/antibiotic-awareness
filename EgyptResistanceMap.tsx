@@ -94,18 +94,21 @@ const REGIONS: RegionSpec[] = [
       en: 'Nile Delta (Mansoura, Tanta, Zagazig, Kafr El-Sheikh & Damietta)',
       fr: 'Delta du Nil (Mansourah, Tanta, Zagazig & Damiette)',
       es: 'Delta del Nilo (Mansura, Tanta, Zagazig y Damieta)',
+      de: 'Nildelta (Mansoura, Tanta, Zagazig, Kafr El-Sheikh & Damiette)',
     },
     cities: {
       ar: 'المنصورة • طنطا • الزقازيق • كفر الشيخ • شبين الكوم • دمياط',
       en: 'Mansoura • Tanta • Zagazig • Kafr El-Sheikh • Shibin El-Kom • Damietta',
       fr: 'Mansourah • Tanta • Zagazig • Kafr El-Cheikh • Damiette',
       es: 'Mansura • Tanta • Zagazig • Kafr el-Sheij • Damieta',
+      de: 'Mansoura • Tanta • Zagazig • Kafr El-Sheikh • Schibin El-Kom • Damiette',
     },
     hospitals: {
       ar: 'مراكز ومستشفيات جامعات المنصورة وطنطا والزقازيق والمنوفية',
       en: 'Mansoura, Tanta, Zagazig & Menoufia University Hospitals',
       fr: 'CHU de Mansourah, Tanta & Zagazig',
       es: 'Hospitales Universitarios de Mansura, Tanta y Zagazig',
+      de: 'Universitätskliniken Mansoura, Tanta, Zagazig & Menoufia',
     },
     cx: 226,
     cy: 72,
@@ -118,24 +121,28 @@ const REGIONS: RegionSpec[] = [
       en: 'High Priority — ESBL Enterobacterales Hotspot',
       fr: 'Priorité Élevée — Foyer Entérobactéries BLSE',
       es: 'Alta Prioridad — Foco de Enterobacterias BLEE',
+      de: 'Hohe Priorität — Schwerpunkt ESBL-bildender Enterobakterien',
     },
     summary: {
       ar: 'ترصد دراسات الميكروبيولوجيا في مستشفيات جامعات الدلتا (المنصورة وطنطا والزقازيق) ارتفاع مقاومة الإشريكية القولونية (E. coli) والكلبسيلة الرئوية للجيل الثالث من السيفالوسبورينات والفلوروكينولونات نتيجة الاستخدام التجريبي المتكرر بدون مزرعة.',
       en: 'Surveillance across Nile Delta university hospitals (Mansoura, Tanta, Zagazig) highlights elevated E. coli and Klebsiella resistance to 3rd-generation cephalosporins driven by empiric broad-spectrum use.',
       fr: 'La surveillance dans les CHU du Delta (Mansourah, Tanta, Zagazig) révèle une forte résistance d’E. coli et Klebsiella aux céphalosporines de 3e génération.',
       es: 'La vigilancia en hospitales universitarios del Delta muestra alta resistencia de E. coli y Klebsiella a cefalosporinas de 3.ª generación.',
+      de: 'Die Überwachung an den Universitätskliniken des Nildeltas (Mansoura, Tanta, Zagazig) zeigt erhöhte Resistenzraten von E. coli und Klebsiella gegenüber Drittgenerations-Cephalosporinen durch empirischen Breitspektrumeinsatz.',
     },
     driver: {
       ar: 'صرف حقن السيفترياكسون والسيفوتاكسيم والمضادات واسعة الطيف بدون مزرعة بكتيرية في عدوى المسالك والتهاب الحلق.',
       en: 'Empiric injectable Ceftriaxone/Cefotaxime and broad-spectrum beta-lactams without culture in UTIs and pharyngitis.',
       fr: 'Usage empirique de Ceftriaxone injectable et bêta-lactamines sans antibiogramme préalable.',
       es: 'Uso empírico de Ceftriaxona inyectable y betalactámicos sin cultivo previo.',
+      de: 'Empirischer Einsatz von Ceftriaxon-Injektionen und Breitspektrum-Beta-Laktamen ohne vorherige Kultur.',
     },
     stewardshipAction: {
       ar: 'الالتزام بمضادات فئة Access كخط أول، وإجراء مزرعة وحساسية (Antibiogram) قبل وصف السيفالوسبورينات أو الكينولونات.',
       en: 'Use WHO Access antibiotics first-line and obtain culture & sensitivity before starting cephalosporins or fluoroquinolones.',
       fr: 'Privilégier les antibiotiques Access en 1re intention et réaliser un antibiogramme ciblé.',
       es: 'Priorizar antibióticos Access en primera línea y realizar cultivo con antibiograma.',
+      de: 'WHO-Access-Antibiotika als erste Wahl bevorzugen und vor Cephalosporinen/Chinolonen ein Antibiogramm erstellen.',
     },
     baseOverall2026: 66,
     pathogens: [
@@ -148,6 +155,7 @@ const REGIONS: RegionSpec[] = [
           en: '3rd-Gen Cephalosporin Resistance (Ceftriaxone / Cefotaxime)',
           fr: 'Résistance aux Céphalosporines 3G (Ceftriaxone)',
           es: 'Resistencia a Cefalosporinas 3G (Ceftriaxona)',
+          de: 'Resistenz gegen Drittgenerations-Cephalosporine (Ceftriaxon / Cefotaxim)',
         },
         base2026: 68,
         whoClass: 'Watch',
@@ -161,6 +169,7 @@ const REGIONS: RegionSpec[] = [
           en: 'Fluoroquinolone Resistance (Ciprofloxacin / Levofloxacin)',
           fr: 'Résistance aux Fluoroquinolones (Ciprofloxacine)',
           es: 'Resistencia a Fluoroquinolonas (Ciprofloxacino)',
+          de: 'Fluorchinolon-Resistenz (Ciprofloxacin / Levofloxacin)',
         },
         base2026: 61,
         whoClass: 'Watch',
@@ -174,18 +183,19 @@ const REGIONS: RegionSpec[] = [
           en: 'Methicillin & Beta-Lactam Resistance (MRSA)',
           fr: 'Résistance à la Méthicilline (SARM)',
           es: 'Resistencia a Meticilina y Betalactámicos (SARM)',
+          de: 'Methicillin- & Beta-Laktam-Resistenz (MRSA)',
         },
         base2026: 55,
         whoClass: 'Watch',
       },
     ],
     radar: [
-      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G' }, base2026: 68 },
-      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, base2026: 74 },
-      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas' }, base2026: 59 },
-      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, base2026: 57 },
-      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.' }, base2026: 42 },
-      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem' }, base2026: 29 },
+      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, base2026: 68 },
+      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, base2026: 74 },
+      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, base2026: 59 },
+      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, base2026: 57 },
+      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos', de: 'Aminoglykoside' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.', de: 'Aminoglyk.' }, base2026: 42 },
+      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos', de: 'Carbapeneme' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem', de: 'Carbapenem' }, base2026: 29 },
     ],
   },
   {
@@ -195,18 +205,21 @@ const REGIONS: RegionSpec[] = [
       en: 'Greater Cairo (Cairo, Giza & Qalyubia)',
       fr: 'Grand Caire (Le Caire, Gizeh & Qalyubia)',
       es: 'Gran El Cairo (El Cairo, Guiza y Caliubia)',
+      de: 'Großraum Kairo (Kairo, Gizeh & Qalyubia)',
     },
     cities: {
       ar: 'القاهرة • الجيزة • شبرا الخيمة • بنها • 6 أكتوبر • العاصمة الإدارية',
       en: 'Cairo • Giza • Shubra El-Kheima • Banha • 6th of October • New Capital',
       fr: 'Le Caire • Gizeh • Choubra El-Kheima • Banha • 6 Octobre',
       es: 'El Cairo • Guiza • Shubra El-Kheima • Banha • 6 de Octubre',
+      de: 'Kairo • Gizeh • Schubra El-Cheima • Banha • 6. Oktober • Neue Hauptstadt',
     },
     hospitals: {
       ar: 'مستشفيات القصر العيني وعين شمس التخصصي والأزهر',
       en: 'Kasr Al-Ainy, Ain Shams & Al-Azhar Tertiary Hospitals',
       fr: 'Hôpitaux Universitaires Kasr Al-Ainy & Ain Shams',
       es: 'Hospitales Universitarios Kasr Al-Ainy y Ain Shams',
+      de: 'Universitätskliniken Kasr Al-Ainy, Ain Schams & Al-Azhar',
     },
     cx: 224,
     cy: 102,
@@ -219,24 +232,28 @@ const REGIONS: RegionSpec[] = [
       en: 'Critical Hub — High Urban & Tertiary ICU Load',
       fr: 'Niveau Critique — Forte Densité & Réanimations',
       es: 'Nivel Crítico — Alta Carga Urbana y UCI',
+      de: 'Kritischer Knotenpunkt — Hohe urbane Dichte & Intensivstationen (ITS)',
     },
     summary: {
       ar: 'بسبب الكثافة السكانية العالية وإحالة الحالات المعقدة لمستشفيات القصر العيني وعين شمس، تسجل العزلات السريرية معدلات مرتفعة من الكلبسيلة متعددة المقاومة (MDR) ومقاومة الماكروليدات (الأزيثرومايسين) في عدوى الجهاز التنفسي.',
       en: 'High urban density and tertiary referrals to Kasr Al-Ainy and Ain Shams ICUs drive elevated MDR Klebsiella and respiratory macrolide resistance.',
       fr: 'La forte densité urbaine et les références tertiaires entraînent une résistance élevée de Klebsiella MDR et aux macrolides.',
       es: 'La alta densidad urbana y las derivaciones terciarias impulsan una elevada resistencia en Klebsiella MDR y macrólidos.',
+      de: 'Hohe Bevölkerungsdichte und Überweisungen komplexer Fälle an die Universitätskliniken Kasr Al-Ainy und Ain Schams führen zu erhöhten Raten multiresistenter Klebsiella (MDR) und Makrolidresistenzen.',
     },
     driver: {
       ar: 'التداوي الذاتي بالأزيثرومايسين وأوجمنتين في نزلات البرد الفيروسية، وضغط المضادات واسعة المجال داخل الرعايات المركزة.',
       en: 'Community self-medication with Azithromycin/Augmentin for viral colds alongside intensive broad-spectrum ICU pressure.',
       fr: 'Automédication par Azithromycine/Augmentin lors de rhumes viraux et pression antibiotique en réanimation.',
       es: 'Automedicación con Azitromicina/Augmentin en resfriados virales y alta presión antibiótica en UCI.',
+      de: 'Selbstmedikation mit Azithromycin/Augmentin bei viralen Erkältungen sowie hoher Antibiotikadruck auf Intensivstationen.',
     },
     stewardshipAction: {
       ar: 'تطبيق بروتوكولات ترشيد المضادات بالمستشفيات، وحماية الكاربابينيمات واللينيزوليد، ومنع صرف المضادات لنزلات البرد.',
       en: 'Enforce hospital antimicrobial stewardship, protect Carbapenems/Linezolid, and use Green Rx for viral respiratory illnesses.',
       fr: 'Appliquer les protocoles hospitaliers de bon usage et protéger les Carbapénèmes et le Linézolide.',
       es: 'Aplicar programas hospitalarios de optimización de antibióticos y proteger Carbapenémicos y Linezolid.',
+      de: 'Klinische Antibiotic-Stewardship-Protokolle durchsetzen, Carbapeneme/Linezolid schützen und das Grüne Rezept bei Virusinfekten nutzen.',
     },
     baseOverall2026: 71,
     pathogens: [
@@ -249,6 +266,7 @@ const REGIONS: RegionSpec[] = [
           en: 'Extended-Spectrum Beta-Lactam Resistance',
           fr: 'Résistance aux Bêta-lactamines à large spectre',
           es: 'Resistencia a Betalactámicos de espectro extendido',
+          de: 'Resistenz gegen Breitspektrum-Beta-Laktame',
         },
         base2026: 73,
         whoClass: 'Watch',
@@ -262,6 +280,7 @@ const REGIONS: RegionSpec[] = [
           en: 'Macrolide Resistance (Azithromycin / Clarithromycin)',
           fr: 'Résistance aux Macrolides (Azithromycine)',
           es: 'Resistencia a Macrólidos (Azitromicina)',
+          de: 'Makrolid-Resistenz (Azithromycin / Clarithromycin)',
         },
         base2026: 64,
         whoClass: 'Watch',
@@ -275,18 +294,19 @@ const REGIONS: RegionSpec[] = [
           en: 'Hospital ICU Multidrug Resistance (Reserve Tier)',
           fr: 'Multirésistance en USI (Catégorie Réserve)',
           es: 'Multirresistencia en UCI (Categoría Reserva)',
+          de: 'Multiresistenz auf Intensivstationen (WHO-Reserve-Kategorie)',
         },
         base2026: 58,
         whoClass: 'Reserve',
       },
     ],
     radar: [
-      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G' }, base2026: 73 },
-      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, base2026: 78 },
-      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas' }, base2026: 65 },
-      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, base2026: 66 },
-      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.' }, base2026: 48 },
-      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem' }, base2026: 38 },
+      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, base2026: 73 },
+      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, base2026: 78 },
+      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, base2026: 65 },
+      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, base2026: 66 },
+      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos', de: 'Aminoglykoside' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.', de: 'Aminoglyk.' }, base2026: 48 },
+      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos', de: 'Carbapeneme' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem', de: 'Carbapenem' }, base2026: 38 },
     ],
   },
   {
@@ -296,18 +316,21 @@ const REGIONS: RegionSpec[] = [
       en: 'Alexandria, Beheira, Matrouh & North Coast',
       fr: 'Alexandrie, Beheira, Matrouh & Côte Nord',
       es: 'Alejandría, Beheira, Matruh y Costa Norte',
+      de: 'Alexandria, Beheira, Matruh & Nordküste',
     },
     cities: {
       ar: 'الإسكندرية • دمنهور • كفر الدوار • العلمين • مرسى مطروح • السلوم • سيوة',
       en: 'Alexandria • Damanhour • Alamein • Marsa Matrouh • Salloum • Siwa',
       fr: 'Alexandrie • Damanhour • El-Alamein • Marsa Matrouh • Siwa',
       es: 'Alejandría • Damanhur • El-Alamein • Marsa Matruh • Siwa',
+      de: 'Alexandria • Damanhur • El-Alamein • Marsa Matruh • Sallum • Siwa',
     },
     hospitals: {
       ar: 'المستشفى الرئيسي الجامعي بالإسكندرية (الأميري) والشاطبي ودمنهور',
       en: 'Alexandria Main University Hospital, El-Shatby & Damanhour',
       fr: 'CHU Principal d’Alexandrie & Hôpital El-Shatby',
       es: 'Hospital Universitario Principal de Alejandría y El-Shatby',
+      de: 'Hauptuniversitätsklinikum Alexandria, El-Schatby & Damanhur',
     },
     cx: 184,
     cy: 62,
@@ -320,24 +343,28 @@ const REGIONS: RegionSpec[] = [
       en: 'Active Coastal Watch — Community UTI & MRSA',
       fr: 'Surveillance Côtière — ITU Communautaires & SARM',
       es: 'Vigilancia Costera — ITU Comunitarias y SARM',
+      de: 'Küstenüberwachung — Ambulante Harnwegsinfekte & MRSA',
     },
     summary: {
       ar: 'تُظهر بيانات الترصد في مستشفيات جامعة الإسكندرية والبحيرة معدلات ملحوظة من المكورات العنقودية المقاومة للميثيسيلين (MRSA) في التهابات الجلد والجروح، مع تزايد مقاومة بكتيريا المسالك البولية للكينولونات.',
       en: 'Surveillance from Alexandria University Hospitals shows notable community and wound MRSA rates alongside rising fluoroquinolone resistance in urinary isolates.',
       fr: 'Les données du CHU d’Alexandrie montrent des taux notables de SARM cutané et une résistance croissante aux fluoroquinolones.',
       es: 'Los datos del Hospital Universitario de Alejandría muestran tasas notables de SARM y resistencia creciente a fluoroquinolonas.',
+      de: 'Überwachungsdaten der Universitätskliniken Alexandria zeigen relevante MRSA-Raten bei Haut- und Wundinfektionen sowie steigende Fluorchinolon-Resistenzen bei Harnwegsisolaten.',
     },
     driver: {
       ar: 'إيقاف المضاد الحيوي فور اختفاء الأعراض بعد 48 ساعة، وتكرار استخدام بواقي الشراب والأقراص المخزنة بالمنزل.',
       en: 'Stopping antibiotic courses early after 48 hours of symptom relief and reusing leftover household antibiotics.',
       fr: 'Arrêt prématuré du traitement après 48 heures d’amélioration et réutilisation des restes d’antibiotiques.',
       es: 'Suspensión prematura del tratamiento tras 48 horas de mejoría y reutilización de antibióticos sobrantes.',
+      de: 'Vorzeitiges Absetzen der Antibiotika nach 48 Stunden Besserung und Wiederverwendung von Medikamentenresten.',
     },
     stewardshipAction: {
       ar: 'إتمام الكورس العلاجي كاملاً باستخدام «متابع الجرعات» والتخلص الآمن من بواقي المضادات السائلة.',
       en: 'Complete the full prescribed regimen using the Dose Tracker and safely dispose of leftover reconstituted syrups.',
       fr: 'Terminer l’intégralité du traitement prescrit et éliminer les sirops entamés en toute sécurité.',
       es: 'Completar todo el régimen prescrito y desechar de forma segura los jarabes reconstituidos sobrantes.',
+      de: 'Die verordnete Therapie mithilfe des Einnahme-Trackers vollständig beenden und Saftreste sicher entsorgen.',
     },
     baseOverall2026: 59,
     pathogens: [
@@ -350,6 +377,7 @@ const REGIONS: RegionSpec[] = [
           en: 'Amoxicillin-Clavulanate & Cephalosporin Resistance',
           fr: 'Résistance à l’Amoxicilline-Clavulanate et Céphalosporines',
           es: 'Resistencia a Amoxicilina-Clavulanato y Cefalosporinas',
+          de: 'Resistenz gegen Amoxicillin-Clavulansäure & Cephalosporine',
         },
         base2026: 62,
         whoClass: 'Access',
@@ -363,6 +391,7 @@ const REGIONS: RegionSpec[] = [
           en: 'Oxacillin / Beta-Lactam Resistance in Skin Infections',
           fr: 'Résistance à l’Oxacilline dans les infections cutanées',
           es: 'Resistencia a Oxacilina en infecciones cutáneas',
+          de: 'Oxacillin- / Beta-Laktam-Resistenz bei Hautinfektionen',
         },
         base2026: 53,
         whoClass: 'Watch',
@@ -376,18 +405,19 @@ const REGIONS: RegionSpec[] = [
           en: 'Reduced Susceptibility to Ciprofloxacin & Antipseudomonals',
           fr: 'Sensibilité réduite à la Ciprofloxacine',
           es: 'Sensibilidad reducida a Ciprofloxacino',
+          de: 'Verminderte Empfindlichkeit gegenüber Ciprofloxacin',
         },
         base2026: 46,
         whoClass: 'Watch',
       },
     ],
     radar: [
-      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G' }, base2026: 61 },
-      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, base2026: 69 },
-      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas' }, base2026: 54 },
-      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, base2026: 56 },
-      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.' }, base2026: 39 },
-      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem' }, base2026: 25 },
+      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, base2026: 61 },
+      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, base2026: 69 },
+      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, base2026: 54 },
+      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, base2026: 56 },
+      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos', de: 'Aminoglykoside' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.', de: 'Aminoglyk.' }, base2026: 39 },
+      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos', de: 'Carbapeneme' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem', de: 'Carbapenem' }, base2026: 25 },
     ],
   },
   {
@@ -397,18 +427,21 @@ const REGIONS: RegionSpec[] = [
       en: 'Suez Canal & Sinai Peninsula Region',
       fr: 'Canal de Suez & Péninsule du Sinaï',
       es: 'Canal de Suez y Península del Sinaí',
+      de: 'Suezkanal & Sinai-Halbinsel',
     },
     cities: {
       ar: 'بورسعيد • الإسماعيلية • السويس • العريش • رفح • طابا • شرم الشيخ • الطور',
       en: 'Port Said • Ismailia • Suez • Arish • Rafah • Taba • Sharm El-Sheikh',
       fr: 'Port-Saïd • Ismaïlia • Suez • El-Arich • Taba • Charm el-Cheikh',
       es: 'Puerto Saíd • Ismailía • Suez • El-Arish • Taba • Sharm el-Sheij',
+      de: 'Port Said • Ismailia • Suez • El-Arisch • Taba • Scharm El-Scheich',
     },
     hospitals: {
       ar: 'مستشفيات جامعة قناة السويس ومجمعات التأمين الصحي الشامل',
       en: 'Suez Canal University Hospitals & Universal Health Insurance Hubs',
       fr: 'CHU du Canal de Suez & Centres d’Assurance Maladie Universelle',
       es: 'Hospitales de la Universidad del Canal de Suez',
+      de: 'Universitätskliniken Suezkanal & Zentren der allgemeinen Krankenversicherung',
     },
     cx: 298,
     cy: 95,
@@ -421,24 +454,28 @@ const REGIONS: RegionSpec[] = [
       en: 'Structured Stewardship — Universal Health Insurance Network',
       fr: 'Gouvernance Structurée — Réseau d’Assurance Universelle',
       es: 'Gobernanza Estructurada — Red de Seguro Universal',
+      de: 'Strukturierte Steuerung — Netzwerk der allgemeinen Krankenversicherung',
     },
     summary: {
       ar: 'تتميز محافظات القناة وسيناء بتطبيق برامج حوكمة الوصفات الطبية إلكترونياً داخل منشآت التأمين الصحي الشامل ومستشفيات جامعة قناة السويس، مما يساهم في ضبط صرف المضادات مقارنةً بالمعدلات المفتوحة.',
       en: 'Suez Canal and Sinai governorates benefit from electronic prescribing governance within Universal Health Insurance facilities and Suez Canal University Hospitals.',
       fr: 'Les gouvernorats du Canal et du Sinaï bénéficient d’une gouvernance électronique des prescriptions dans le réseau d’assurance universelle.',
       es: 'Las gobernaciones del Canal y Sinaí se benefician de la prescripción electrónica estructurada en la red de seguro universal.',
+      de: 'Die Regionen Suezkanal und Sinai profitieren von elektronischer Verordnungssteuerung in den Einrichtungen der allgemeinen Krankenversicherung und den Universitätskliniken.',
     },
     driver: {
       ar: 'استخدام الفلوروكينولونات (سيبروفار) والميترونيدازول عشوائياً في النزلات المعوية الصيفية البسيطة خارج المستشفيات.',
       en: 'Outpatient empiric use of Ciprofloxacin and Metronidazole for uncomplicated summer viral gastroenteritis.',
       fr: 'Usage ambulatoire empirique de Ciprofloxacine et Métronidazole lors de gastro-entérites virales.',
       es: 'Uso ambulatorio empírico de Ciprofloxacino y Metronidazol en gastroenteritis virales de verano.',
+      de: 'Ambulanter empirischer Einsatz von Ciprofloxacin und Metronidazol bei unkomplizierten viralen Sommer-Magen-Darm-Infekten.',
     },
     stewardshipAction: {
       ar: 'الاعتماد على محاليل الإرواء الفموي (ORS) في الإسهال المائي البسيط وعدم الجمع بين مضادين بدون استشارة.',
       en: 'Use Oral Rehydration Salts (ORS) first-line for uncomplicated watery diarrhea and avoid unprescribed antibiotic combinations.',
       fr: 'Privilégier les sels de réhydratation orale (SRO) pour les diarrhées aqueuses simples.',
       es: 'Priorizar las sales de rehidratación oral (SRO) en diarreas acuosas simples.',
+      de: 'Orale Rehydratationslösungen (ORS) bei einfachem wässrigem Durchfall bevorzugen und unverschriebene Antibiotika-Kombinationen vermeiden.',
     },
     baseOverall2026: 52,
     pathogens: [
@@ -451,6 +488,7 @@ const REGIONS: RegionSpec[] = [
           en: 'Outpatient Cephalosporin Resistance',
           fr: 'Résistance ambulatoire aux Céphalosporines',
           es: 'Resistencia ambulatoria a Cefalosporinas',
+          de: 'Ambulante Cephalosporin-Resistenz',
         },
         base2026: 55,
         whoClass: 'Watch',
@@ -464,6 +502,7 @@ const REGIONS: RegionSpec[] = [
           en: 'Ciprofloxacin & Co-trimoxazole Resistance',
           fr: 'Résistance à la Ciprofloxacine et au Cotrimoxazole',
           es: 'Resistencia a Ciprofloxacino y Cotrimoxazol',
+          de: 'Resistenz gegen Ciprofloxacin & Cotrimoxazol',
         },
         base2026: 48,
         whoClass: 'Watch',
@@ -477,18 +516,19 @@ const REGIONS: RegionSpec[] = [
           en: 'Ampicillin & Respiratory Macrolide Resistance',
           fr: 'Résistance à l’Ampicilline et aux Macrolides',
           es: 'Resistencia a Ampicilina y Macrólidos',
+          de: 'Resistenz gegen Ampicillin & Atemwegs-Makrolide',
         },
         base2026: 45,
         whoClass: 'Access',
       },
     ],
     radar: [
-      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G' }, base2026: 55 },
-      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, base2026: 62 },
-      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas' }, base2026: 48 },
-      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, base2026: 47 },
-      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.' }, base2026: 34 },
-      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem' }, base2026: 21 },
+      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, base2026: 55 },
+      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, base2026: 62 },
+      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, base2026: 48 },
+      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, base2026: 47 },
+      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos', de: 'Aminoglykoside' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.', de: 'Aminoglyk.' }, base2026: 34 },
+      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos', de: 'Carbapeneme' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem', de: 'Carbapenem' }, base2026: 21 },
     ],
   },
   {
@@ -498,18 +538,21 @@ const REGIONS: RegionSpec[] = [
       en: 'Upper Egypt, Red Sea & Halayeb-Shalateen',
       fr: 'Haute-Égypte, Mer Rouge & Halayeb-Chalateen',
       es: 'Alto Egipto, Mar Rojo y Halayeb-Shalateen',
+      de: 'Oberägypten, Rotes Meer & Halayeb-Schalatin',
     },
     cities: {
       ar: 'الفيوم • المنيا • أسيوط • سوهاج • قنا • الأقصر • أسوان • الغردقة • شلاتين • حلايب',
       en: 'Fayoum • Minya • Assiut • Sohag • Qena • Luxor • Aswan • Hurghada • Halayeb',
       fr: 'Fayoum • Minya • Assiout • Sohag • Louxor • Assouan • Hurghada • Halayeb',
       es: 'Fayún • Minya • Asiut • Sohag • Lúxor • Asuán • Hurgada • Halayeb',
+      de: 'Fayyum • Minya • Assiut • Sohag • Qena • Luxor • Assuan • Hurghada • Halayeb',
     },
     hospitals: {
       ar: 'مستشفيات جامعات أسيوط والمنيا وسوهاج وجنوب الوادي وأسوان',
       en: 'Assiut, Minya, Sohag, South Valley & Aswan University Hospitals',
       fr: 'CHU d’Assiout, Minya, Sohag & Assouan',
       es: 'Hospitales Universitarios de Asiut, Minya, Sohag y Asuán',
+      de: 'Universitätskliniken Assiut, Minya, Sohag, Südtal & Assuan',
     },
     cx: 230,
     cy: 200,
@@ -522,24 +565,28 @@ const REGIONS: RegionSpec[] = [
       en: 'High Alert — Empiric Injectables & "Cold Mix" Hazard',
       fr: 'Alerte Élevée — Injectables Empiriques & « Mélange Rhume »',
       es: 'Alerta Alta — Inyectables Empíricos y «Mezcla para Resfriado»',
+      de: 'Hohe Warnstufe — Empirische Injektionen & Risiko der „Erkältungsspritze“',
     },
     summary: {
       ar: 'تبرز أبحاث مستشفيات جامعات الصعيد (أسيوط والمنيا وسوهاج وأسوان) خطورة الانتشار الشعبي لما يُعرف بـ «حقنة البرد الثلاثية» (مضاد حيوي سيفترياكسون/سيفوتاكسيم + كورتيزون + مسكن) وصرف الحقن دون اختبار حساسية.',
       en: 'Research across Upper Egypt university hospitals (Assiut, Minya, Sohag, Aswan) warns against the unprescribed "triple cold injection" (3rd-gen cephalosporin + corticosteroid + NSAID).',
       fr: 'Les recherches des CHU de Haute-Égypte (Assiout, Minya, Sohag) alertent sur le danger de « l’injection triple contre le rhume ».',
       es: 'Los estudios en hospitales universitarios del Alto Egipto advierten contra la peligrosa «inyección triple para el resfriado».',
+      de: 'Studien der Universitätskliniken in Oberägypten (Assiut, Minya, Sohag, Assuan) warnen eindringlich vor der gefährlichen „3-in-1-Erkältungsspritze“ (Cephalosporin + Kortison + NSAR).',
     },
     driver: {
       ar: 'الطلب المباشر على «حقنة البرد» وحقن السيفالوسبورينات السريعة لعلاج الحمى والتهاب الحلق الفيروسي.',
       en: 'Direct demand for the hazardous "cold injection mix" and rapid injectable cephalosporins for acute viral fever.',
       fr: 'Demande directe d’injections combinées contre le rhume et de céphalosporines injectables pour des fièvres virales.',
       es: 'Demanda directa de la «inyección para el resfriado» y cefalosporinas inyectables para fiebres virales.',
+      de: 'Direkte Nachfrage nach der gefährlichen „Erkältungsspritze“ und schnellen Cephalosporin-Injektionen bei viralem Fieber.',
     },
     stewardshipAction: {
       ar: 'الامتناع التام عن «حقنة البرد» لخطورتها القاتلة (الحساسية المفرطة والفشل الكلوي)، وفحص الحساسية وحساب جرعة الأطفال بالوزن.',
       en: 'Strictly avoid the "cold injection mix" to prevent fatal anaphylaxis, and always verify allergy history and weight-based pediatric dosing.',
       fr: 'Proscrire totalement « l’injection contre le rhume » et vérifier systématiquement les allergies et doses pédiatriques.',
       es: 'Evitar por completo la «inyección para el resfriado» y verificar siempre alergias y dosis pediátricas por peso.',
+      de: 'Strikt auf die „Erkältungsspritze“ verzichten, um tödliche Anaphylaxien zu verhindern, und stets Allergien sowie gewichtsbasierte Kinderdosen prüfen.',
     },
     baseOverall2026: 64,
     pathogens: [
@@ -552,6 +599,7 @@ const REGIONS: RegionSpec[] = [
           en: 'Injectable Ceftriaxone & Cefotaxime Resistance (3G)',
           fr: 'Résistance à la Ceftriaxone et au Céfotaxime injectables',
           es: 'Resistencia a Ceftriaxona y Cefotaxima inyectables',
+          de: 'Resistenz gegen injizierbares Ceftriaxon & Cefotaxim (3G)',
         },
         base2026: 66,
         whoClass: 'Watch',
@@ -565,6 +613,7 @@ const REGIONS: RegionSpec[] = [
           en: 'Beta-Lactam Resistance in Surgical & Wound Isolates',
           fr: 'Résistance aux Bêta-lactamines dans les plaies chirurgicales',
           es: 'Resistencia a Betalactámicos en heridas quirúrgicas',
+          de: 'Beta-Laktam-Resistenz bei chirurgischen & Wundinfektionen',
         },
         base2026: 56,
         whoClass: 'Watch',
@@ -578,18 +627,19 @@ const REGIONS: RegionSpec[] = [
           en: 'Reduced Susceptibility to Ampicillin & Ciprofloxacin',
           fr: 'Sensibilité réduite à l’Ampicilline et Ciprofloxacine',
           es: 'Sensibilidad reducida a Ampicilina y Ciprofloxacino',
+          de: 'Verminderte Empfindlichkeit gegenüber Ampicillin & Ciprofloxacin',
         },
         base2026: 51,
         whoClass: 'Watch',
       },
     ],
     radar: [
-      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G' }, base2026: 67 },
-      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas' }, base2026: 72 },
-      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas' }, base2026: 55 },
-      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos' }, base2026: 58 },
-      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.' }, base2026: 41 },
-      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem' }, base2026: 27 },
+      { key: 'ceph3', label: { ar: 'سيفالوسبورينات ج3', en: '3rd-Gen Ceph', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, shortLabel: { ar: 'سيفالوسبورين', en: 'Ceph 3G', fr: 'Céph 3G', es: 'Cef 3G', de: 'Ceph 3G' }, base2026: 67 },
+      { key: 'pen', label: { ar: 'بنسلينات وأموكسيسيلين', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, shortLabel: { ar: 'بنسلينات', en: 'Penicillins', fr: 'Pénicillines', es: 'Penicilinas', de: 'Penicilline' }, base2026: 72 },
+      { key: 'fq', label: { ar: 'فلوروكينولونات', en: 'Fluoroquinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, shortLabel: { ar: 'كينولونات', en: 'Quinolones', fr: 'Quinolones', es: 'Quinolonas', de: 'Chinolone' }, base2026: 55 },
+      { key: 'mac', label: { ar: 'ماكروليدات (أزيثرومايسين)', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, shortLabel: { ar: 'ماكروليدات', en: 'Macrolides', fr: 'Macrolides', es: 'Macrólidos', de: 'Makrolide' }, base2026: 58 },
+      { key: 'amino', label: { ar: 'أمينوجليكوزيدات', en: 'Aminoglycosides', fr: 'Aminosides', es: 'Aminoglucósidos', de: 'Aminoglykoside' }, shortLabel: { ar: 'أمينوجليكوزيد', en: 'Aminoglyc.', fr: 'Aminosides', es: 'Aminogluc.', de: 'Aminoglyk.' }, base2026: 41 },
+      { key: 'carb', label: { ar: 'كاربابينيمات (ملاذ أخير)', en: 'Carbapenems', fr: 'Carbapénèmes', es: 'Carbapenémicos', de: 'Carbapeneme' }, shortLabel: { ar: 'كاربابينيم', en: 'Carbapenem', fr: 'Carbapénème', es: 'Carbapenem', de: 'Carbapenem' }, base2026: 27 },
     ],
   },
 ];
@@ -1041,13 +1091,13 @@ export default function EgyptResistanceMap() {
 
               {/* Sea & Border Labels */}
               <text x="175" y="22" fill="#64a6bd" fontSize="9.5" fontWeight="600" textAnchor="middle" opacity="0.85">
-                {isAr ? 'البحر الأبيض المتوسط' : 'Mediterranean Sea'}
+                {tr(lang, 'البحر الأبيض المتوسط', 'Mediterranean Sea', 'Mer Méditerranée', 'Mar Mediterráneo', 'Mittelmeer')}
               </text>
               <text x="366" y="212" fill="#64a6bd" fontSize="9.5" fontWeight="600" textAnchor="middle" opacity="0.82" transform="rotate(55 366 212)">
-                {isAr ? 'البحر الأحمر' : 'Red Sea'}
+                {tr(lang, 'البحر الأحمر', 'Red Sea', 'Mer Rouge', 'Mar Rojo', 'Rotes Meer')}
               </text>
               <text x="360" y="346" fill="#7dd3fc" fontSize="8.5" fontWeight="700" textAnchor="middle" opacity="0.9">
-                {isAr ? 'مثلث حلايب وشلاتين وأبو رماد (22° شمالاً)' : 'Halayeb, Abu Ramad & Shalateen (22°N)'}
+                {tr(lang, 'مثلث حلايب وشلاتين وأبو رماد (22° شمالاً)', 'Halayeb, Abu Ramad & Shalateen (22°N)', 'Halayeb, Abou Ramad & Chalateen (22°N)', 'Halayeb, Abu Ramad y Shalateen (22°N)', 'Halayeb, Abu Ramad & Schalatin (22°N)')}
               </text>
 
               {/* 3D Extruded Depth Shadow of Unified Egypt Territory */}
@@ -1202,14 +1252,14 @@ export default function EgyptResistanceMap() {
                 const regionPct = Math.round(r.baseOverall2026 * yearFactor * simMultiplier);
                 const shortName =
                   r.id === 'delta'
-                    ? isAr ? 'الدلتا والمنصورة' : 'Delta'
+                    ? tr(lang, 'الدلتا والمنصورة', 'Delta', 'Delta', 'Delta', 'Nildelta')
                     : r.id === 'cairo'
-                    ? isAr ? 'القاهرة الكبرى' : 'Cairo'
+                    ? tr(lang, 'القاهرة الكبرى', 'Cairo', 'Le Caire', 'El Cairo', 'Kairo')
                     : r.id === 'alex'
-                    ? isAr ? 'الإسكندرية' : 'Alexandria'
+                    ? tr(lang, 'الإسكندرية', 'Alexandria', 'Alexandrie', 'Alejandría', 'Alexandria')
                     : r.id === 'canal'
-                    ? isAr ? 'القناة وسيناء' : 'Canal & Sinai'
-                    : isAr ? 'الصعيد وحلايب' : 'Upper Egypt';
+                    ? tr(lang, 'القناة وسيناء', 'Canal & Sinai', 'Canal & Sinaï', 'Canal y Sinaí', 'Kanal & Sinai')
+                    : tr(lang, 'الصعيد وحلايب', 'Upper Egypt', 'Haute-Égypte', 'Alto Egipto', 'Oberägypten');
 
                 return (
                   <g

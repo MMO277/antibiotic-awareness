@@ -146,8 +146,10 @@ export class SpeechPlayer {
   private utterance: SpeechSynthesisUtterance | null = null;
   private voices: SpeechSynthesisVoice[] = [];
   public onStateChange?: (state: { playing: boolean; paused: boolean }) => void;
-  public onBoundary?: (charIndex: number) => void;
-  public onEnd?: () => void;
+  public onParagraphStart?: (index: number) => void;
+  public onFinished?: () => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  public onError?: (err: any) => void;
 
   constructor() {
     if (isSpeechSupported()) {
@@ -157,11 +159,30 @@ export class SpeechPlayer {
     }
   }
 
-  public async speak(
+  public stop(): void {
+    if (!isSpeechSupported()) return;
+    window.speechSynthesis.cancel();
+    this.utterance = null;
+    this.onStateChange?.({ playing: false, paused: false });
+  }
+
+  public pause(): void {
+    if (!isSpeechSupported()) return;
+    window.speechSynthesis.pause();
+    this.onStateChange?.({ playing: false, paused: true });
+  }
+
+  public resume(): void {
+    if (!isSpeechSupported()) return;
+    window.speechSynthesis.resume();
+    this.onStateChange?.({ playing: true, paused: false });
+  }
+
+  public async speakText(
     text: string,
     lang: Lang,
-    rate = 1,
-    onDone?: () => void
+    rate = 1.0,
+    onEnd?: () => void
   ): Promise<boolean> {
     if (!isSpeechSupported() || !text.trim()) return false;
     this.stop();
@@ -170,85 +191,48 @@ export class SpeechPlayer {
       this.voices = await getVoices();
     }
 
-    const u = new SpeechSynthesisUtterance(text);
     const voice = findVoiceForLang(this.voices, lang);
+    const u = new SpeechSynthesisUtterance(text);
+    this.utterance = u;
+    u.lang = BCP47_MAP[lang] || 'en-US';
+    u.rate = rate;
     if (voice) {
       u.voice = voice;
     }
-    u.lang = BCP47_MAP[lang] || 'en-US';
-    u.rate = rate;
 
     u.onstart = () => {
       this.onStateChange?.({ playing: true, paused: false });
     };
-    u.onpause = () => {
-      this.onStateChange?.({ playing: true, paused: true });
-    };
-    u.onresume = () => {
-      this.onStateChange?.({ playing: true, paused: false });
-    };
-    u.onboundary = (e) => {
-      this.onBoundary?.(e.charIndex);
-    };
+
     u.onend = () => {
-      this.utterance = null;
       this.onStateChange?.({ playing: false, paused: false });
-      this.onEnd?.();
-      onDone?.();
+      onEnd?.();
     };
-    u.onerror = () => {
-      this.utterance = null;
+
+    u.onerror = (e) => {
+      if (e.error !== 'canceled' && e.error !== 'interrupted') {
+        console.warn('SpeechSynthesis error:', e);
+        this.onError?.(e);
+      }
       this.onStateChange?.({ playing: false, paused: false });
     };
 
-    this.utterance = u;
     window.speechSynthesis.speak(u);
     return true;
   }
-
-  public async speakText(
-    text: string,
-    lang: Lang,
-    rate = 1,
-    onDone?: () => void
-  ): Promise<boolean> {
-    return this.speak(text, lang, rate, onDone);
-  }
-
-  public pause() {
-    if (isSpeechSupported() && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-      window.speechSynthesis.pause();
-      this.onStateChange?.({ playing: true, paused: true });
-    }
-  }
-
-  public resume() {
-    if (isSpeechSupported() && window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      this.onStateChange?.({ playing: true, paused: false });
-    }
-  }
-
-  public stop() {
-    if (isSpeechSupported()) {
-      window.speechSynthesis.cancel();
-      this.utterance = null;
-      this.onStateChange?.({ playing: false, paused: false });
-    }
-  }
 }
 
-const singletonPlayer = new SpeechPlayer();
+const sharedPlayer = new SpeechPlayer();
 
 export function speakText(
   text: string,
   lang: Lang,
-  rate = 1,
-  onDone?: () => void
+  rate = 1.0,
+  onEnd?: () => void
 ): Promise<boolean> {
-  return singletonPlayer.speak(text, lang, rate, onDone);
+  return sharedPlayer.speakText(text, lang, rate, onEnd);
 }
 
-export function stopSpeech() {
-  singletonPlayer.stop();
+export function stopSpeech(): void {
+  sharedPlayer.stop();
 }

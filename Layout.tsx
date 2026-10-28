@@ -1,7 +1,7 @@
 import { ReactNode, useRef, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useLang, SUPPORTED_LANGS } from './i18n';
-import { Lang, localizeFallbackText, tr } from './types';
+import { Lang, isAlreadyGermanText, localizeFallbackText, registerLocalizedOutput, tr } from './types';
 import { useAuth } from './authContext';
 import Disclaimer from './Disclaimer';
 import ChatWidget from './ChatWidget';
@@ -42,7 +42,7 @@ async function fetchNeuralTranslation(text: string, targetLang: 'fr' | 'es' | 'd
   const cached = getCachedTranslation(targetLang, text);
   if (cached) return cached;
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
@@ -165,230 +165,225 @@ export default function Layout({ children }: { children: ReactNode }) {
     {
       id: 'drug-directory',
       icon: '💊',
-      title: tr(lang, 'الدليل والبحث الدوائي', 'Drug Directory & Scanner', 'Répertoire & Scanner', 'Directorio y Escáner', 'Arzneimittelverzeichnis & Scanner'),
-      shortTitle: tr(lang, 'الدليل والأدوية', 'Drug Directory', 'Médicaments', 'Medicamentos', 'Medikamente'),
+      title: tr(lang, 'الدليل والبحث الدوائي', 'Drug Directory & Scanner', 'Répertoire & Scanner', 'Directorio y Escáner'),
+      shortTitle: tr(lang, 'الدليل والأدوية', 'Drug Directory', 'Médicaments', 'Medicamentos'),
       subtitle: tr(
         lang,
         'السجل الدوائي (206)، فحص الباركود، ومقارنة الأدوية',
         '206 medicines registry, barcode scanner & comparison',
         'Registre (206), scanner code-barres & comparaison',
-        'Registro (206), escáner de código y comparación',
-        'Register (206 Präparate), Barcode-Scanner & Preisvergleich'
+        'Registro (206), escáner de código y comparación'
       ),
       items: [
         {
           to: '/medicines',
           key: 'navMedicines',
           icon: '💊',
-          shortLabel: tr(lang, 'السجل الدوائي (206)', 'Registry (206)', 'Registre (206)', 'Registro (206)', 'Medikamentenregister (206)'),
+          shortLabel: tr(lang, 'السجل الدوائي (206)', 'Registry (206)', 'Registre (206)', 'Registro (206)'),
         },
         {
           to: '/scan',
           key: 'navScan',
           icon: '📷',
-          shortLabel: tr(lang, 'مسح الباركود و QR', 'Scan Barcode', 'Scanner Code', 'Escanear Código', 'Barcode & QR scannen'),
+          shortLabel: tr(lang, 'مسح الباركود و QR', 'Scan Barcode', 'Scanner Code', 'Escanear Código'),
         },
         {
           to: '/cost-saver',
           key: '',
           icon: '💰',
-          shortLabel: tr(lang, 'حاسبة البديل الأرخص بنفس الكفاءة', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos', 'Generika-Preisrechner (Günstigste Alternative)'),
+          shortLabel: tr(lang, 'حاسبة البديل الأرخص بنفس الكفاءة', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos'),
         },
         {
           to: '/compare',
           key: 'navCompare',
           icon: '⚖️',
-          shortLabel: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar', '2 Medikamente vergleichen'),
+          shortLabel: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar'),
         },
       ],
     },
     {
       id: 'clinical-safety',
       icon: '🏥',
-      title: tr(lang, 'أدوات الأمان والفحص السريري', 'Clinical Safety & Checkers', 'Sécurité Clinique & Contrôles', 'Seguridad Clínica y Chequeo', 'Klinische Sicherheit & Prüf-Tools'),
-      shortTitle: tr(lang, 'الفحص والأمان السريري', 'Clinical Safety', 'Sécurité Clinique', 'Seguridad Clínica', 'Klinische Sicherheit'),
+      title: tr(lang, 'أدوات الأمان والفحص السريري', 'Clinical Safety & Checkers', 'Sécurité Clinique & Contrôles', 'Seguridad Clínica y Chequeo'),
+      shortTitle: tr(lang, 'الفحص والأمان السريري', 'Clinical Safety', 'Sécurité Clinique', 'Seguridad Clínica'),
       subtitle: tr(
         lang,
         'فاحص الحساسية، التداخلات، رادار الروشتة، وحاسبة الأطفال',
         'Allergy check, interactions, Rx radar & pediatric dosing',
         'Allergies, interactions, radar Rx & posologie pédiatrique',
-        'Alergias, interacciones, radar Rx y dosis pediátrica',
-        'Allergie-Check, Wechselwirkungen, Rezept-Radar & Kinderdosierung'
+        'Alergias, interacciones, radar Rx y dosis pediátrica'
       ),
       items: [
         {
           to: '/allergy-checker',
           key: 'navAllergyChecker',
           icon: '🛡️',
-          shortLabel: tr(lang, 'فاحص الحساسية', 'Allergy Check', 'Allergies', 'Alergias', 'Allergie-Check'),
+          shortLabel: tr(lang, 'فاحص الحساسية', 'Allergy Check', 'Allergies', 'Alergias'),
         },
         {
           to: '/interactions',
           key: 'navInteractions',
           icon: '⚡',
-          shortLabel: tr(lang, 'فاحص التداخلات', 'Interactions', 'Interactions', 'Interacciones', 'Wechselwirkungen'),
+          shortLabel: tr(lang, 'فاحص التداخلات', 'Interactions', 'Interactions', 'Interacciones'),
         },
         {
           to: '/prescription-radar',
           key: 'navRadar',
           icon: '📡',
-          shortLabel: tr(lang, 'رادار الروشتة 24س', 'Rx Radar 24h', 'Radar Rx 24h', 'Radar Rx 24h', 'Rezept-Radar 24h'),
+          shortLabel: tr(lang, 'رادار الروشتة 24س', 'Rx Radar 24h', 'Radar Rx 24h', 'Radar Rx 24h'),
         },
         {
           to: '/pediatric-helper',
           key: 'navPediatric',
           icon: '👶',
-          shortLabel: tr(lang, 'حاسبة الأطفال', 'Pediatrics', 'Pédiatrie', 'Pediatría', 'Kinderdosierung'),
+          shortLabel: tr(lang, 'حاسبة الأطفال', 'Pediatrics', 'Pédiatrie', 'Pediatría'),
         },
         {
           to: '/cold-shot-warning',
           key: '',
           icon: '💉',
-          shortLabel: tr(lang, 'تحذير «حقنة البرد / الخلطة 3×1»', '3-in-1 Cold Shot Warning', 'Alerte Injection Rhume 3-en-1', 'Alerta Inyección 3 en 1', 'Warnung vor der „3-in-1-Erkältungsspritze“'),
+          shortLabel: tr(lang, 'تحذير «حقنة البرد / الخلطة 3×1»', '3-in-1 Cold Shot Warning', 'Alerte Injection Rhume 3-en-1', 'Alerta Inyección 3 en 1'),
         },
         {
           to: '/side-effects',
           key: 'navSideEffects',
           icon: '🚨',
-          shortLabel: tr(lang, 'الأعراض الجانبية والطوارئ', 'Side Effects', 'Effets Secondaires', 'Efectos Secundarios', 'Nebenwirkungen & Notfall'),
+          shortLabel: tr(lang, 'الأعراض الجانبية والطوارئ', 'Side Effects', 'Effets Secondaires', 'Efectos Secundarios'),
         },
       ],
     },
     {
       id: 'treatment-care',
       icon: '🌿',
-      title: tr(lang, 'متابعة العلاج والروشتة الخضراء', 'Treatment & Green Care', 'Suivi & Ordonnance Verte', 'Seguimiento y Receta Verde', 'Therapiebegleitung & Grünes Rezept'),
-      shortTitle: tr(lang, 'متابعة العلاج والبيئة', 'Treatment & Care', 'Suivi & Soins', 'Cuidado y Dosis', 'Therapie & Pflege'),
+      title: tr(lang, 'متابعة العلاج والروشتة الخضراء', 'Treatment & Green Care', 'Suivi & Ordonnance Verte', 'Seguimiento y Receta Verde'),
+      shortTitle: tr(lang, 'متابعة العلاج والبيئة', 'Treatment & Care', 'Suivi & Soins', 'Cuidado y Dosis'),
       subtitle: tr(
         lang,
         'الروشتة الخضراء، منظم الجرعات، ملف صحتي، والتخلص الآمن',
         'Green Rx, dose tracker, health profile & safe disposal',
         'Ordonnance verte, suivi des doses, profil santé & élimination',
-        'Receta verde, seguimiento de dosis, perfil y eliminación',
-        'Grünes Rezept, Einnahmeplan, Gesundheitsprofil & Entsorgung'
+        'Receta verde, seguimiento de dosis, perfil y eliminación'
       ),
       items: [
         {
           to: '/green-prescription',
           key: 'navGreenRx',
           icon: '🌿',
-          shortLabel: tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde', 'Grünes Rezept'),
+          shortLabel: tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde'),
         },
         {
           to: '/daily-schedule',
           key: '',
           icon: '📅',
-          shortLabel: tr(lang, 'مولّد جدول الجرعات للطباعة وواتساب', 'Printable & WhatsApp Schedule', 'Planning Imprimable & WhatsApp', 'Horario para Imprimir y WhatsApp', 'Tages-Einnahmeplan (Druck & WhatsApp)'),
+          shortLabel: tr(lang, 'مولّد جدول الجرعات للطباعة وواتساب', 'Printable & WhatsApp Schedule', 'Planning Imprimable & WhatsApp', 'Horario para Imprimir y WhatsApp'),
         },
         {
           to: '/tracker',
           key: 'navTracker',
           icon: '⏱️',
-          shortLabel: tr(lang, 'متابع الجرعات', 'Dose Tracker', 'Suivi Doses', 'Seguimiento', 'Einnahme-Tracker'),
+          shortLabel: tr(lang, 'متابع الجرعات', 'Dose Tracker', 'Suivi Doses', 'Seguimiento'),
         },
         {
           to: '/health-profile',
           key: 'navHealthProfile',
           icon: '👤',
-          shortLabel: tr(lang, 'ملف صحتي وحساسيتي', 'Health Profile', 'Profil Santé', 'Perfil de Salud', 'Gesundheitsprofil'),
+          shortLabel: tr(lang, 'ملف صحتي وحساسيتي', 'Health Profile', 'Profil Santé', 'Perfil de Salud'),
         },
         {
           to: '/safe-disposal',
           key: 'navSafeDisposal',
           icon: '♻️',
-          shortLabel: tr(lang, 'التخلص الآمن', 'Safe Disposal', 'Élimination', 'Eliminación', 'Sichere Entsorgung'),
+          shortLabel: tr(lang, 'التخلص الآمن', 'Safe Disposal', 'Élimination', 'Eliminación'),
         },
       ],
     },
     {
       id: 'interactive-sim',
       icon: '🎮',
-      title: tr(lang, 'الألعاب والمحاكاة والذكاء الاصطناعي', '3D Sim, Games & AI', 'Jeux 3D, Sim & IA', 'Juegos 3D, Sim e IA', '3D-Simulation, Spiele & KI'),
-      shortTitle: tr(lang, 'الألعاب والتفاعل الذكي', 'Games & AI', 'Jeux & IA', 'Juegos e IA', 'Spiele & KI'),
+      title: tr(lang, 'الألعاب والمحاكاة والذكاء الاصطناعي', '3D Sim, Games & AI', 'Jeux 3D, Sim & IA', 'Juegos 3D, Sim e IA'),
+      shortTitle: tr(lang, 'الألعاب والتفاعل الذكي', 'Games & AI', 'Jeux & IA', 'Juegos e IA'),
       subtitle: tr(
         lang,
         'محاكي المستشفى 3D، المساعد الذكي، الاختبارات، والصوتيات',
         '3D hospital simulator, AI assistant, quizzes & audio',
         'Simulateur 3D, assistant IA, quiz & audio',
-        'Simulador 3D, asistente IA, cuestionarios y audio',
-        '3D-Krankenhaus-Simulator, KI-Assistent, Quiz & Audio'
+        'Simulador 3D, asistente IA, cuestionarios y audio'
       ),
       items: [
         {
           to: '/games',
           key: 'navGames',
           icon: '🎮',
-          shortLabel: tr(lang, 'الألعاب والمحاكاة 3D', 'Games & 3D Sim', 'Jeux & Sim 3D', 'Juegos y Sim 3D', 'Spiele & 3D-Sim'),
+          shortLabel: tr(lang, 'الألعاب والمحاكاة 3D', 'Games & 3D Sim', 'Jeux & Sim 3D', 'Juegos y Sim 3D'),
         },
         {
           to: '/assistant',
           key: 'navAssistant',
           icon: '🤖',
-          shortLabel: tr(lang, 'المساعد الذكي', 'AI Assistant', 'Assistant IA', 'Asistente IA', 'KI-Assistent'),
+          shortLabel: tr(lang, 'المساعد الذكي', 'AI Assistant', 'Assistant IA', 'Asistente IA'),
         },
         {
           to: '/quiz',
           key: 'navQuiz',
           icon: '📝',
-          shortLabel: tr(lang, 'اختبر معلوماتك', 'Quizzes', 'Quiz', 'Cuestionarios', 'Wissens-Quiz'),
+          shortLabel: tr(lang, 'اختبر معلوماتك', 'Quizzes', 'Quiz', 'Cuestionarios'),
         },
         {
           to: '/listen',
           key: 'navListen',
           icon: '🎧',
-          shortLabel: tr(lang, 'استمع وتعلّم', 'Listen & Learn', 'Écouter', 'Escuchar', 'Hören & Lernen'),
+          shortLabel: tr(lang, 'استمع وتعلّم', 'Listen & Learn', 'Écouter', 'Escuchar'),
         },
       ],
     },
     {
       id: 'awareness-research',
       icon: '📚',
-      title: tr(lang, 'التوعية والأبحاث والمصادر', 'Awareness & Research', 'Sensibilisation & Recherche', 'Concientización e Investigación', 'Aufklärung & Forschung'),
-      shortTitle: tr(lang, 'التوعية والأبحاث', 'Awareness & Research', 'Sensibilisation', 'Concientización', 'Aufklärung & Forschung'),
+      title: tr(lang, 'التوعية والأبحاث والمصادر', 'Awareness & Research', 'Sensibilisation & Recherche', 'Concientización e Investigación'),
+      shortTitle: tr(lang, 'التوعية والأبحاث', 'Awareness & Research', 'Sensibilisation', 'Concientización'),
       subtitle: tr(
         lang,
         'حملة نوفمبر العالمية، الدليل التوعوي، المقالات، والأبحاث',
         'WAAW campaign, educational guides, articles & research',
         'Campagne WAAW, guides éducatifs, articles & recherche',
-        'Campaña WAAW, guías educativas, artículos e investigación',
-        'Welt-AMR-Woche, Leitfäden, Fachartikel & Forschungsumfrage'
+        'Campaña WAAW, guías educativas, artículos e investigación'
       ),
       items: [
         {
           to: '/awareness-week',
           key: 'navWAAW',
           icon: '🌍',
-          shortLabel: tr(lang, 'حملة نوفمبر العالمية', 'WAAW Campaign', 'Campagne WAAW', 'Campaña WAAW', 'WAAW-Kampagne (Nov)'),
+          shortLabel: tr(lang, 'حملة نوفمبر العالمية', 'WAAW Campaign', 'Campagne WAAW', 'Campaña WAAW'),
         },
         {
           to: '/learn',
           key: 'navLearn',
           icon: '📚',
-          shortLabel: tr(lang, 'تعلّم (الدليل التوعوي)', 'Learn Guide', 'Apprendre', 'Aprender', 'Lernleitfaden'),
+          shortLabel: tr(lang, 'تعلّم (الدليل التوعوي)', 'Learn Guide', 'Apprendre', 'Aprender'),
         },
         {
           to: '/myth',
           key: 'navMyth',
           icon: '💡',
-          shortLabel: tr(lang, 'خرافة أم حقيقة', 'Myth or Fact', 'Mythe ou Réalité', 'Mito o Realidad', 'Mythos oder Fakt'),
+          shortLabel: tr(lang, 'خرافة أم حقيقة', 'Myth or Fact', 'Mythe ou Réalité', 'Mito o Realidad'),
         },
         {
           to: '/articles',
           key: 'navArticles',
           icon: '📰',
-          shortLabel: tr(lang, 'المقالات العلمية', 'Articles', 'Articles', 'Artículos', 'Fachartikel'),
+          shortLabel: tr(lang, 'المقالات العلمية', 'Articles', 'Articles', 'Artículos'),
         },
         {
           to: '/research',
           key: 'navResearch',
           icon: '📊',
-          shortLabel: tr(lang, 'استبيان البحث', 'Research Survey', 'Recherche', 'Investigación', 'Forschungsumfrage'),
+          shortLabel: tr(lang, 'استبيان البحث', 'Research Survey', 'Recherche', 'Investigación'),
         },
         {
           to: '/methodology',
           key: 'navMethod',
           icon: '🔬',
-          shortLabel: tr(lang, 'المنهجية والمصادر', 'Methodology', 'Méthodologie', 'Metodología', 'Methodik & Quellen'),
+          shortLabel: tr(lang, 'المنهجية والمصادر', 'Methodology', 'Méthodologie', 'Metodología'),
         },
       ],
     },
@@ -486,11 +481,10 @@ export default function Layout({ children }: { children: ReactNode }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [pathname]);
 
-  // ── Automatic Full-Page TextNode & Attribute Localizer for ALL sub-pages when lang is FR, ES, or DE ──
+  // ── Automatic Full-Page TextNode & Attribute Localizer for ALL sub-pages when lang is FR or ES ──
   useEffect(() => {
     if (typeof document === 'undefined') return;
     let cancelled = false;
-    const isForeignLang = lang === 'fr' || lang === 'es' || lang === 'de';
 
     const processSubtree = () => {
       const root = document.body;
@@ -514,7 +508,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         const raw = textNode.nodeValue || '';
         const prev = textNodeState.get(textNode);
 
-        if (!isForeignLang) {
+        if (lang === 'ar' || lang === 'en') {
           if (prev && raw === prev.lastOut && prev.baseEn !== raw) {
             textNode.nodeValue = prev.baseEn;
           }
@@ -528,6 +522,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           if (raw === prev.lastOut) {
             baseEn = prev.baseEn;
           } else {
+            // React updated this text node with new content
             baseEn = raw;
           }
         }
@@ -539,36 +534,47 @@ export default function Layout({ children }: { children: ReactNode }) {
           const trailing = trailingMatch ? trailingMatch[0] : '';
           const core = baseEn.trim();
 
+          if (lang === 'de' && isAlreadyGermanText(core)) {
+            textNodeState.set(textNode, { baseEn, lastOut: baseEn });
+            current = walker.nextNode();
+            continue;
+          }
+
           const cached = getCachedTranslation(lang, core);
           if (cached) {
             const finalStr = `${leading}${cached}${trailing}`;
+            registerLocalizedOutput(finalStr);
             textNodeState.set(textNode, { baseEn, lastOut: finalStr });
             if (textNode.nodeValue !== finalStr) {
               textNode.nodeValue = finalStr;
             }
           } else {
+            // Apply instant offline fallback first
             const offlineOut = localizeFallbackText(baseEn, lang);
+            registerLocalizedOutput(offlineOut);
             textNodeState.set(textNode, { baseEn, lastOut: offlineOut });
             if (textNode.nodeValue !== offlineOut) {
               textNode.nodeValue = offlineOut;
             }
-            pendingNodes.push({ node: textNode, baseEn, leading, trailing });
+            if (lang !== 'de' || offlineOut.trim() === core) {
+              pendingNodes.push({ node: textNode, baseEn, leading, trailing });
+            }
           }
         }
 
         current = walker.nextNode();
       }
 
-      // Also localize input placeholders and button titles
-      const attrElements = root.querySelectorAll('input[placeholder], textarea[placeholder], [title]');
+      // Also localize input placeholders, button titles, and aria-labels
+      const attrElements = root.querySelectorAll('input[placeholder], textarea[placeholder], [title], [aria-label]');
       attrElements.forEach((el) => {
         if (el.closest('header.top, nav.drawer-panel, footer.pro-footer, .lang-switcher-wrap, .drawer-lang-bar')) return;
         const record = attrState.get(el) || {};
-        (['placeholder', 'title'] as const).forEach((attrName) => {
+        (['placeholder', 'title', 'aria-label'] as const).forEach((attrName) => {
           const val = el.getAttribute(attrName);
           if (!val) return;
           const prevAttr = record[attrName];
-          if (!isForeignLang) {
+          if (lang === 'ar' || lang === 'en') {
             if (prevAttr && val === prevAttr.lastOut && prevAttr.baseEn !== val) {
               el.setAttribute(attrName, prevAttr.baseEn);
             }
@@ -576,30 +582,36 @@ export default function Layout({ children }: { children: ReactNode }) {
           }
           const baseEn = prevAttr && val === prevAttr.lastOut ? prevAttr.baseEn : val;
           if (!shouldTranslateString(baseEn)) return;
+          if (lang === 'de' && isAlreadyGermanText(baseEn.trim())) return;
           const cached = getCachedTranslation(lang, baseEn.trim());
           if (cached) {
+            registerLocalizedOutput(cached);
             record[attrName] = { baseEn, lastOut: cached };
             attrState.set(el, record);
             if (val !== cached) el.setAttribute(attrName, cached);
           } else {
             const offlineOut = localizeFallbackText(baseEn, lang);
+            registerLocalizedOutput(offlineOut);
             record[attrName] = { baseEn, lastOut: offlineOut };
             attrState.set(el, record);
             if (val !== offlineOut) el.setAttribute(attrName, offlineOut);
-            void fetchNeuralTranslation(baseEn.trim(), lang).then((trVal) => {
-              if (cancelled || !trVal) return;
-              record[attrName] = { baseEn, lastOut: trVal };
-              attrState.set(el, record);
-              if (el.getAttribute(attrName) === offlineOut) {
-                el.setAttribute(attrName, trVal);
-              }
-            });
+            if (lang !== 'de' || offlineOut.trim() === baseEn.trim()) {
+              void fetchNeuralTranslation(baseEn.trim(), lang).then((trVal) => {
+                if (cancelled || !trVal) return;
+                registerLocalizedOutput(trVal);
+                record[attrName] = { baseEn, lastOut: trVal };
+                attrState.set(el, record);
+                if (el.getAttribute(attrName) === offlineOut) {
+                  el.setAttribute(attrName, trVal);
+                }
+              });
+            }
           }
         });
       });
 
       // Batch-translate pending text nodes in chunks so every page translates completely
-      if (isForeignLang && pendingNodes.length > 0) {
+      if ((lang === 'fr' || lang === 'es' || lang === 'de') && pendingNodes.length > 0) {
         const uniqueCores = Array.from(new Set(pendingNodes.map((p) => p.baseEn.trim())));
         const CHUNK_SIZE = 18;
         for (let i = 0; i < uniqueCores.length; i += CHUNK_SIZE) {
@@ -624,6 +636,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 }
               });
             } else {
+              // Fallback: translate individual items in this chunk
               slice.forEach((origCore) => {
                 void fetchNeuralTranslation(origCore, lang).then((singleTr) => {
                   if (cancelled || !singleTr) return;
@@ -650,7 +663,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
     let debounceTimer: number | null = null;
     const observer = new MutationObserver(() => {
-      if (!isForeignLang) return;
+      if (lang !== 'fr' && lang !== 'es' && lang !== 'de') return;
       if (debounceTimer) window.clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => {
         if (!cancelled) processSubtree();
@@ -771,12 +784,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                     'أنت تتصفح الموقع حالياً كزائر',
                     'You are currently browsing as a guest',
                     'Vous naviguez actuellement en tant qu’invité',
-                    'Actualmente navegas como invitado',
-                    'Sie surfen derzeit als Gast'
+                    'Actualmente navegas como invitado'
                   )}
                 >
                   <span aria-hidden="true">👀</span>
-                  <span>{tr(lang, 'وضع الزائر', 'Guest', 'Invité', 'Invitado', 'Gast')}</span>
+                  <span>{tr(lang, 'وضع الزائر', 'Guest', 'Invité', 'Invitado')}</span>
                 </span>
                 <button
                   type="button"
@@ -787,12 +799,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                     'الخروج من وضع الزائر والعودة لشاشة الدخول',
                     'Exit Guest Mode and return to sign in screen',
                     'Quitter le mode invité et se connecter',
-                    'Salir del modo invitado e iniciar sesión',
-                    'Gastmodus verlassen und anmelden'
+                    'Salir del modo invitado e iniciar sesión'
                   )}
                 >
                   <span aria-hidden="true">👤</span>
-                  <span>{tr(lang, 'تسجيل الدخول', 'Sign In', 'Connexion', 'Acceder', 'Anmelden')}</span>
+                  <span>{tr(lang, 'تسجيل الدخول', 'Sign In', 'Connexion', 'Acceder')}</span>
                 </button>
               </div>
             ) : (
@@ -813,11 +824,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                 type="button"
                 className="btn small ghost header-logout-btn"
                 onClick={() => setShowLogoutModal(true)}
-                title={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión', 'Abmelden')}
-                aria-label={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión', 'Abmelden')}
+                title={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
+                aria-label={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
               >
                 <span aria-hidden="true">🚪</span>
-                <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir', 'Abmelden')}</span>
+                <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir')}</span>
               </button>
             )}
 
@@ -829,14 +840,14 @@ export default function Layout({ children }: { children: ReactNode }) {
               aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
               title={
                 dark
-                  ? tr(lang, 'الوضع الفاتح', 'Light mode', 'Mode clair', 'Modo claro', 'Heller Modus')
-                  : tr(lang, 'الوضع الداكن', 'Dark mode', 'Mode sombre', 'Modo oscuro', 'Dunkler Modus')
+                  ? tr(lang, 'الوضع الفاتح', 'Light mode', 'Mode clair', 'Modo claro')
+                  : tr(lang, 'الوضع الداكن', 'Dark mode', 'Mode sombre', 'Modo oscuro')
               }
             >
               {dark ? '☀️' : '🌙'}
             </button>
 
-            {/* 5-Language Switcher Dropdown */}
+            {/* 4-Language Switcher Dropdown (keeps .lang class on direct child of .header-actions) */}
             <div ref={langMenuRef} className="lang lang-switcher-wrap" style={{ position: 'relative', padding: 0 }}>
               <button
                 type="button"
@@ -844,7 +855,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onClick={() => setLangMenuOpen((o) => !o)}
                 aria-expanded={langMenuOpen}
                 aria-haspopup="listbox"
-                aria-label={tr(lang, 'تغيير اللغة', 'Change language', 'Changer de langue', 'Cambiar idioma', 'Sprache ändern')}
+                aria-label={tr(lang, 'تغيير اللغة', 'Change language', 'Changer de langue', 'Cambiar idioma')}
                 title={tr(lang, 'اختر لغة المنصة (5 لغات)', 'Select platform language (5 languages)', 'Choisir la langue (5 langues)', 'Seleccionar idioma (5 idiomas)', 'Plattformsprache wählen (5 Sprachen)')}
               >
                 <span aria-hidden="true">{currentLangMeta.flag}</span>
@@ -856,7 +867,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <div
                   className="lang-dropdown-menu"
                   role="listbox"
-                  aria-label={tr(lang, 'قائمة اللغات', 'Languages', 'Langues', 'Idiomas', 'Sprachen')}
+                  aria-label={tr(lang, 'قائمة اللغات', 'Languages', 'Langues', 'Idiomas')}
                 >
                   {SUPPORTED_LANGS.map((item) => {
                     const active = item.code === lang;
@@ -891,11 +902,11 @@ export default function Layout({ children }: { children: ReactNode }) {
               onClick={openDrawer}
               aria-expanded={drawerOpen && !drawerClosing}
               aria-controls="site-sections-drawer"
-              aria-label={tr(lang, 'فتح القائمة', 'Open menu', 'Ouvrir le menu', 'Abrir menú', 'Menü öffnen')}
-              title={tr(lang, 'أقسام الموقع الكاملة', 'All Site Sections', 'Toutes les rubriques', 'Todas las secciones', 'Alle Bereiche der Plattform')}
+              aria-label={tr(lang, 'فتح القائمة', 'Open menu', 'Ouvrir le menu', 'Abrir menú')}
+              title={tr(lang, 'أقسام الموقع الكاملة', 'All Site Sections', 'Toutes les rubriques', 'Todas las secciones')}
             >
               <span className="hamburger-icon" aria-hidden="true">☰</span>
-              <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú', 'Menü')}</span>
+              <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú')}</span>
             </button>
           </div>
         </div>
@@ -910,7 +921,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
             >
               <span aria-hidden="true">🏠</span>
-              <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio', 'Startseite')}</span>
+              <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio')}</span>
             </NavLink>
 
             {navCategories.map((cat) => {
@@ -949,7 +960,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     type="button"
                     className="ribbon-dropdown-close"
                     onClick={() => setOpenRibbonCatId(null)}
-                    aria-label={tr(lang, 'إغلاق القسم', 'Close category', 'Fermer', 'Cerrar', 'Schließen')}
+                    aria-label={tr(lang, 'إغلاق القسم', 'Close category', 'Fermer', 'Cerrar')}
                   >
                     ✕
                   </button>
@@ -992,15 +1003,15 @@ export default function Layout({ children }: { children: ReactNode }) {
             dir={pageDir}
             className={`drawer-panel${drawerClosing ? ' is-closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
-            aria-label={tr(lang, 'القائمة الجانبية لجميع الأقسام', 'Side menu', 'Menu latéral', 'Menú lateral', 'Seitenmenü')}
+            aria-label={tr(lang, 'القائمة الجانبية لجميع الأقسام', 'Side menu', 'Menu latéral', 'Menú lateral')}
           >
             <div className="drawer-header">
               <div className="drawer-brand">
                 <span className="drawer-logo" aria-hidden="true">💊</span>
                 <div className="drawer-brand-text">
-                  <b>{tr(lang, 'أقسام المنصة السريرية', 'Clinical Portal Menu', 'Menu du Portail Clinique', 'Menú del Portal Clínico', 'Klinisches Portal-Menü')}</b>
+                  <b>{tr(lang, 'أقسام المنصة السريرية', 'Clinical Portal Menu', 'Menu du Portail Clinique', 'Menú del Portal Clínico')}</b>
                   <small className="drawer-subtitle">
-                    {tr(lang, 'مجمعة حسب التخصص لسهولة الوصول', 'Grouped by category for quick access', 'Regroupés par catégorie', 'Agrupados por categoría', 'Nach Fachbereichen übersichtlich gruppiert')}
+                    {tr(lang, 'مجمعة حسب التخصص لسهولة الوصول', 'Grouped by category for quick access', 'Regroupés par catégorie', 'Agrupados por categoría')}
                   </small>
                 </div>
               </div>
@@ -1009,15 +1020,15 @@ export default function Layout({ children }: { children: ReactNode }) {
                 ref={drawerCloseBtnRef}
                 className="drawer-close-btn"
                 onClick={() => closeDrawer(true)}
-                aria-label={tr(lang, 'إغلاق القائمة', 'Close menu', 'Fermer le menu', 'Cerrar menú', 'Menü schließen')}
-                title={tr(lang, 'إغلاق (Esc)', 'Close (Esc)', 'Fermer (Esc)', 'Cerrar (Esc)', 'Schließen (Esc)')}
+                aria-label={tr(lang, 'إغلاق القائمة', 'Close menu', 'Fermer le menu', 'Cerrar menú')}
+                title={tr(lang, 'إغلاق (Esc)', 'Close (Esc)', 'Fermer (Esc)', 'Cerrar (Esc)')}
               >
                 ✕
               </button>
             </div>
 
             {/* Quick Language Selector inside Drawer */}
-            <div className="drawer-lang-bar" aria-label={tr(lang, 'اختيار اللغة', 'Language selection', 'Choix de la langue', 'Selección de idioma', 'Sprachauswahl')}>
+            <div className="drawer-lang-bar" aria-label={tr(lang, 'اختيار اللغة', 'Language selection', 'Choix de la langue', 'Selección de idioma')}>
               {SUPPORTED_LANGS.map((item) => (
                 <button
                   key={item.code}
@@ -1047,7 +1058,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               {/* Helper bar to Expand/Collapse all groups */}
               <div className="drawer-groups-toolbar">
                 <span className="drawer-groups-hint">
-                  {tr(lang, 'اضغط على أي قسم لعرض أدواته:', 'Tap a category to expand tools:', 'Appuyez pour développer :', 'Toca para expandir:', 'Kategorie antippen, um Werkzeuge anzuzeigen:')}
+                  {tr(lang, 'اضغط على أي قسم لعرض أدواته:', 'Tap a category to expand tools:', 'Appuyez pour développer :', 'Toca para expandir:')}
                 </span>
                 <button
                   type="button"
@@ -1055,8 +1066,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                   onClick={toggleAllDrawerGroups}
                 >
                   {areAllDrawerGroupsOpen
-                    ? tr(lang, 'طي الكل ▴', 'Collapse All ▴', 'Tout réduire ▴', 'Contraer todo ▴', 'Alle einklappen ▴')
-                    : tr(lang, 'فتح الكل ▾', 'Expand All ▾', 'Tout ouvrir ▾', 'Expandir todo ▾', 'Alle ausklappen ▾')}
+                    ? tr(lang, 'طي الكل ▴', 'Collapse All ▴', 'Tout réduire ▴', 'Contraer todo ▴')
+                    : tr(lang, 'فتح الكل ▾', 'Expand All ▾', 'Tout ouvrir ▾', 'Expandir todo ▾')}
                 </button>
               </div>
 
@@ -1131,7 +1142,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   >
                     <span className="item-icon" aria-hidden="true">👤</span>
                     <span className="item-title">
-                      {tr(lang, 'تسجيل الدخول (الخروج من وضع الزائر)', 'Sign In (Exit Guest Mode)', 'Connexion (Quitter le mode invité)', 'Iniciar sesión (Salir de invitado)', 'Anmelden (Gastmodus verlassen)')}
+                      {tr(lang, 'تسجيل الدخول (الخروج من وضع الزائر)', 'Sign In (Exit Guest Mode)', 'Connexion (Quitter le mode invité)', 'Iniciar sesión (Salir de invitado)')}
                     </span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
@@ -1150,7 +1161,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     }}
                   >
                     <span className="item-icon" aria-hidden="true">🚪</span>
-                    <span className="item-title">{tr(lang, 'تسجيل الخروج', 'Logout', 'Déconnexion', 'Cerrar sesión', 'Abmelden')}</span>
+                    <span className="item-title">{tr(lang, 'تسجيل الخروج', 'Logout', 'Déconnexion', 'Cerrar sesión')}</span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
                 </>
@@ -1193,44 +1204,43 @@ export default function Layout({ children }: { children: ReactNode }) {
                 'المنصة الرقمية الوطنية للتوعية بالاستخدام الرشيد للمضادات الحيوية ومكافحة مقاومة الميكروبات (AMR) وفق أحدث دلائل هيئة الدواء المصرية ومنظمة الصحة العالمية.',
                 'Digital health portal for rational antibiotic stewardship and antimicrobial resistance (AMR) education aligned with EDA and WHO guidelines.',
                 'Portail numérique de santé pour le bon usage des antibiotiques et la lutte contre l’antibiorésistance (AMR), aligné sur les directives de l’OMS et de l’EDA.',
-                'Portal digital de salud para el uso racional de antibióticos y la educación sobre resistencia antimicrobiana (RAM), alineado con las guías de la OMS y la EDA.',
-                'Digitales Gesundheitsportal für sachgerechten Antibiotikaeinsatz (Antibiotic Stewardship) und Aufklärung über antimikrobielle Resistenzen (AMR) gemäß WHO- und EDA-Leitlinien.'
+                'Portal digital de salud para el uso racional de antibióticos y la educación sobre resistencia antimicrobiana (RAM), aligné con las guías de la OMS y la EDA.'
               )}
             </p>
           </div>
 
           <div>
             <h4 style={{ color: '#fff', margin: '0 0 10px' }}>
-              {tr(lang, 'الأدوات السريرية السريعة', 'Quick Clinical Tools', 'Outils Cliniques Rapides', 'Herramientas Clínicas Rápidas', 'Klinische Schnellwerkzeuge')}
+              {tr(lang, 'الأدوات السريرية السريعة', 'Quick Clinical Tools', 'Outils Cliniques Rapides', 'Herramientas Clínicas Rápidas')}
             </h4>
             <ul className="pro-footer-links">
-              <li><Link to="/medicines">{tr(lang, 'السجل الدوائي المصري (206 عبوات)', 'Egyptian Drug Registry (206)', 'Registre des Médicaments (206)', 'Registro de Medicamentos (206)', 'Ägyptisches Arzneimittelregister (206)')}</Link></li>
-              <li><Link to="/games">{tr(lang, 'مركز الألعاب والمحاكاة الطبية 3D', 'Game Center & 3D Medical Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D', 'Spielzentrum & 3D-Krankenhaus-Simulator')}</Link></li>
-              <li><Link to="/scan">{tr(lang, 'ماسح الباركود الخطي ورموز QR', 'Barcode & QR Scanner', 'Scanner Code-Barres & QR', 'Escáner de Código de Barras y QR', 'Barcode- & QR-Code-Scanner')}</Link></li>
-              <li><Link to="/allergy-checker">{tr(lang, 'فاحص الحساسية الدوائية المتقاطعة', 'Drug Allergy Safety Checker', 'Vérificateur d’Allergies Croisées', 'Verificador de Alergias Medicamentosas', 'Arzneimittelallergie- & Kreuzreaktivitäts-Check')}</Link></li>
-              <li><Link to="/pediatric-helper">{tr(lang, 'حاسبة جرعات شراب الأطفال', 'Pediatric Dosage Calculator', 'Calculateur Posologique Pédiatrique', 'Calculadora de Dosis Pediátrica', 'Pädiatrischer Dosierungsrechner')}</Link></li>
-              <li><Link to="/safe-disposal">{tr(lang, 'دليل التخلص الآمن وحماية البيئة', 'Safe Antibiotic Disposal', 'Guide d’Élimination Sûre', 'Guía de Eliminación Segura', 'Sichere Antibiotika-Entsorgung')}</Link></li>
+              <li><Link to="/medicines">{tr(lang, 'السجل الدوائي المصري (206 عبوات)', 'Egyptian Drug Registry (206)', 'Registre des Médicaments (206)', 'Registro de Medicamentos (206)')}</Link></li>
+              <li><Link to="/games">{tr(lang, 'مركز الألعاب والمحاكاة الطبية 3D', 'Game Center & 3D Medical Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D')}</Link></li>
+              <li><Link to="/scan">{tr(lang, 'ماسح الباركود الخطي ورموز QR', 'Barcode & QR Scanner', 'Scanner Code-Barres & QR', 'Escáner de Código de Barras y QR')}</Link></li>
+              <li><Link to="/allergy-checker">{tr(lang, 'فاحص الحساسية الدوائية المتقاطعة', 'Drug Allergy Safety Checker', 'Vérificateur d’Allergies Croisées', 'Verificador de Alergias Medicamentosas')}</Link></li>
+              <li><Link to="/pediatric-helper">{tr(lang, 'حاسبة جرعات شراب الأطفال', 'Pediatric Dosage Calculator', 'Calculateur Posologique Pédiatrique', 'Calculadora de Dosis Pediátrica')}</Link></li>
+              <li><Link to="/safe-disposal">{tr(lang, 'دليل التخلص الآمن وحماية البيئة', 'Safe Antibiotic Disposal', 'Guide d’Élimination Sûre', 'Guía de Eliminación Segura')}</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 style={{ color: '#fff', margin: '0 0 10px' }}>
-              {tr(lang, 'المصادر الطبية الرسمية والطوارئ', 'Official Sources & Emergency', 'Sources Officielles & Urgences', 'Fuentes Oficiales y Emergencias', 'Offizielle Quellen & Notruf')}
+              {tr(lang, 'المصادر الطبية الرسمية والطوارئ', 'Official Sources & Emergency', 'Sources Officielles & Urgences', 'Fuentes Oficiales y Emergencias')}
             </h4>
             <ul className="pro-footer-links">
               <li>
                 <a href="https://edaegypt.gov.eg" target="_blank" rel="noopener noreferrer">
-                  {tr(lang, 'هيئة الدواء المصرية (EDA)', 'Egyptian Drug Authority (EDA)', 'Autorité Égyptienne des Médicaments (EDA)', 'Autoridad Egipcia de Medicamentos (EDA)', 'Ägyptische Arzneimittelbehörde (EDA)')} ↗
+                  {tr(lang, 'هيئة الدواء المصرية (EDA)', 'Egyptian Drug Authority (EDA)', 'Autorité Égyptienne des Médicaments (EDA)', 'Autoridad Egipcia de Medicamentos (EDA)')} ↗
                 </a>
               </li>
               <li>
                 <a href="https://www.who.int/health-topics/antimicrobial-resistance" target="_blank" rel="noopener noreferrer">
-                  {tr(lang, 'منظمة الصحة العالمية (WHO AMR)', 'World Health Organization (WHO)', 'Organisation Mondiale de la Santé (OMS)', 'Organización Mundial de la Salud (OMS)', 'Weltgesundheitsorganisation (WHO AMR)')} ↗
+                  {tr(lang, 'منظمة الصحة العالمية (WHO AMR)', 'World Health Organization (WHO)', 'Organisation Mondiale de la Santé (OMS)', 'Organización Mundial de la Salud (OMS)')} ↗
                 </a>
               </li>
               <li>
                 <a href="https://medlineplus.gov/antibiotics.html" target="_blank" rel="noopener noreferrer">
-                  {tr(lang, 'المكتبة الوطنية للطب (MedlinePlus)', 'NIH MedlinePlus Drug Info', 'Bibliothèque Nationale de Médecine (MedlinePlus)', 'Biblioteca Nacional de Medicina (MedlinePlus)', 'Nationale Medizinische Bibliothek (MedlinePlus)')} ↗
+                  {tr(lang, 'المكتبة الوطنية للطب (MedlinePlus)', 'NIH MedlinePlus Drug Info', 'Bibliothèque Nationale de Médecine (MedlinePlus)', 'Biblioteca Nacional de Medicina (MedlinePlus)')} ↗
                 </a>
               </li>
               <li style={{ marginTop: '8px' }}>
@@ -1244,8 +1254,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     `طوارئ الإسعاف (${emergency.flag} ${countryName}): ${emergency.number}`,
                     `Emergency Services (${emergency.flag} ${countryName}): ${emergency.number}`,
                     `Urgences Médicales (${emergency.flag} ${countryName}) : ${emergency.number}`,
-                    `Emergencias Médicas (${emergency.flag} ${countryName}): ${emergency.number}`,
-                    `Rettungsdienst / Notruf (${emergency.flag} ${countryName}): ${emergency.number}`
+                    `Emergencias Médicas (${emergency.flag} ${countryName}): ${emergency.number}`
                   )}
                 </a>
               </li>

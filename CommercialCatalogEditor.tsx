@@ -1,10 +1,10 @@
 import { FormEvent, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
-import { pick, tr } from './types';
 import { useAuth } from './authContext';
+import { pick, tr } from './types';
 import {
+  ACTIVE_INGREDIENTS,
   AdministrationRoute,
   DOSAGE_FORM_LABELS,
   DosageFormType,
@@ -13,376 +13,175 @@ import {
 } from './egyptianDrugDatabase';
 import {
   deleteCommercialProductLive,
-  generateNextProductId,
-  resetCommercialProductToDefault,
-  saveCommercialProductLive,
+  resetCommercialCatalogToDefault,
+  upsertCommercialProductLive,
   useLiveDrugCatalog,
 } from './liveCatalogSync';
 import { norm } from './search';
 
-export function createEmptyCommercialProduct(defaultIngId = 'amoxicillin-clavulanic-acid'): EgyptianCommercialProduct {
-  const newId = generateNextProductId();
-  return {
-    productId: newId,
-    tradeNameAr: '',
-    tradeNameEn: '',
-    activeIngredientId: defaultIngId,
-    scientificComposition: '',
-    strength: '500 mg',
-    dosageForm: 'tablet',
-    dosageFormLabel: DOSAGE_FORM_LABELS.tablet,
-    route: 'oral',
-    routeLabel: ROUTE_LABELS.oral,
-    packDetails: { ar: '10 أقراص مغلفة', en: '10 Film-coated tablets' },
-    manufacturer: '',
-    countryOfOrigin: 'Egypt',
-    registrationStatus: 'registered_eda',
-    availabilityStatus: 'available',
-    priceEgp: 0,
-    unitPriceNote: { ar: '', en: '' },
-    priceStatus: 'verified_eda',
-    priceUpdatedDate: new Date().toISOString().slice(0, 10),
-    priceSource: 'تحديث مباشر بواسطة محرر المنصة (Live Editor)',
-    barcode: '',
-    barcodeType: 'EAN-13',
-    barcodeStatus: 'verified',
-    barcodeVerifiedBy: 'تم التوثيق بواسطة المحرر',
-    equivalenceGroupKey: `${defaultIngId}|500mg|tablet|oral`,
-  };
-}
-
-export interface QuickProductEditorModalProps {
-  product?: EgyptianCommercialProduct | null;
-  isNew?: boolean;
-  uid?: string;
-  defaultIngredientId?: string;
-  onClose: () => void;
-  onSaved?: (saved: EgyptianCommercialProduct) => void;
-}
-
 export function QuickProductEditorModal({
   product,
-  isNew: isNewProp,
-  uid: uidProp,
-  defaultIngredientId = 'amoxicillin-clavulanic-acid',
+  defaultIngredientId,
   onClose,
-  onSaved,
-}: QuickProductEditorModalProps) {
+  uid,
+}: {
+  product: EgyptianCommercialProduct | null;
+  defaultIngredientId?: string;
+  onClose: () => void;
+  uid?: string;
+}) {
   const { lang } = useLang();
-  const isAr = lang === 'ar';
   const { user } = useAuth();
-  const uid = uidProp || user?.uid || 'editor';
-  const isNew = isNewProp ?? !product;
-  const { ingredients, isBaseProduct, isProductModified } = useLiveDrugCatalog();
+  const isNew = !product;
 
-  const initialTarget = useMemo<EgyptianCommercialProduct>(
-    () => product ?? createEmptyCommercialProduct(defaultIngredientId),
-    [product, defaultIngredientId]
+  const [tradeNameAr, setTradeNameAr] = useState(product?.tradeNameAr || '');
+  const [tradeNameEn, setTradeNameEn] = useState(product?.tradeNameEn || '');
+  const [activeIngredientId, setActiveIngredientId] = useState(
+    product?.activeIngredientId || defaultIngredientId || ACTIVE_INGREDIENTS[0].id
   );
-
-  const [draft, setDraft] = useState<EgyptianCommercialProduct>(() => ({
-    ...initialTarget,
-    packDetails: { ...initialTarget.packDetails },
-    unitPriceNote: { ...initialTarget.unitPriceNote },
-  }));
-  const [priceStr, setPriceStr] = useState<string>(
-    initialTarget.priceEgp !== null && initialTarget.priceEgp !== undefined ? String(initialTarget.priceEgp) : ''
-  );
-  const [barcodeStr, setBarcodeStr] = useState<string>(initialTarget.barcode || '');
+  const [strength, setStrength] = useState(product?.strength || '500 mg');
+  const [dosageForm, setDosageForm] = useState<DosageFormType>(product?.dosageForm || 'tablet');
+  const [route, setRoute] = useState<AdministrationRoute>(product?.route || 'oral');
+  const [packSize, setPackSize] = useState(product?.packSize || '20 Tablets');
+  const [manufacturer, setManufacturer] = useState(product?.manufacturer || '');
+  const [priceEgp, setPriceEgp] = useState(product?.priceEgp != null ? String(product.priceEgp) : '');
+  const [barcode, setBarcode] = useState(product?.barcode || '');
   const [saving, setSaving] = useState(false);
-  const [errMsg, setErrMsg] = useState('');
 
-  const handleIngChange = (newIngId: string) => {
-    const ing = ingredients.find((a) => a.id === newIngId);
-    setDraft((prev) => ({
-      ...prev,
-      activeIngredientId: newIngId,
-      scientificComposition: prev.scientificComposition || (ing ? `${ing.nameEn} ${prev.strength}` : ''),
-    }));
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
-    setErrMsg('');
-    if (!draft.tradeNameAr.trim() && !draft.tradeNameEn.trim()) {
-      setErrMsg(tr(lang, 'يرجى إدخال الاسم التجاري للدواء (بالعربية أو الإنجليزية).', 'Please enter the trade name (Arabic or English).'));
-      return;
-    }
-
-    const parsedPrice = priceStr.trim() !== '' ? Number(priceStr) : null;
-    if (parsedPrice !== null && (Number.isNaN(parsedPrice) || parsedPrice < 0)) {
-      setErrMsg(tr(lang, 'يرجى إدخال سعر صحيح بالأرقام.', 'Please enter a valid numeric price.'));
-      return;
-    }
-
+    if (!tradeNameEn.trim() && !tradeNameAr.trim()) return;
     setSaving(true);
     try {
-      const normStrength = (draft.strength || '').toLowerCase().replace(/\s+/g, '');
-      const eqKey = `${draft.activeIngredientId}|${normStrength}|${draft.dosageForm}|${draft.route}`;
-      const cleanBarcode = barcodeStr.trim() || null;
-
-      const toSave: EgyptianCommercialProduct = {
-        ...draft,
-        tradeNameAr: draft.tradeNameAr.trim() || draft.tradeNameEn.trim(),
-        tradeNameEn: draft.tradeNameEn.trim() || draft.tradeNameAr.trim(),
-        scientificComposition:
-          draft.scientificComposition.trim() ||
-          `${ingredients.find((a) => a.id === draft.activeIngredientId)?.nameEn || draft.activeIngredientId} ${draft.strength}`,
-        dosageFormLabel: DOSAGE_FORM_LABELS[draft.dosageForm] || DOSAGE_FORM_LABELS.tablet,
-        routeLabel: ROUTE_LABELS[draft.route] || ROUTE_LABELS.oral,
-        priceEgp: parsedPrice,
+      const ing = ACTIVE_INGREDIENTS.find((a) => a.id === activeIngredientId) || ACTIVE_INGREDIENTS[0];
+      const numPrice = parseFloat(priceEgp);
+      const cleanBarcode = barcode.trim() || null;
+      const newProd: EgyptianCommercialProduct = {
+        productId: product?.productId || `EG-ABX-CUSTOM-${Date.now()}`,
+        tradeNameAr: tradeNameAr.trim() || tradeNameEn.trim(),
+        tradeNameEn: tradeNameEn.trim() || tradeNameAr.trim(),
+        activeIngredientId: ing.id,
+        scientificComposition: ing.nameEn,
+        dosageForm,
+        dosageFormLabel: DOSAGE_FORM_LABELS[dosageForm] || DOSAGE_FORM_LABELS.tablet,
+        route,
+        strength: strength.trim() || '500 mg',
+        packSize: packSize.trim() || '1 Pack',
+        manufacturer: manufacturer.trim() || 'EDA Licensed Pharma',
+        countryOfOrigin: product?.countryOfOrigin || 'Egypt',
+        registrationStatus: product?.registrationStatus || 'registered_eda',
+        availabilityStatus: product?.availabilityStatus || 'available',
+        priceEgp: Number.isFinite(numPrice) && numPrice > 0 ? numPrice : null,
+        unitPriceNote: product?.unitPriceNote || {
+          ar: 'سعر العبوة الكاملة وفق تسعيرة هيئة الدواء المصرية',
+          en: 'Full pack official EDA retail price',
+        },
+        priceStatus: 'verified_eda',
+        priceUpdatedDate: new Date().toISOString().slice(0, 10),
+        priceSource: 'Egyptian Drug Authority (EDA)',
         barcode: cleanBarcode,
         barcodeType: cleanBarcode ? 'EAN-13' : 'UNAVAILABLE',
         barcodeStatus: cleanBarcode ? 'verified' : 'unverified_pending',
-        equivalenceGroupKey: eqKey,
+        barcodeVerifiedBy: user?.email || 'Clinical Editor',
+        equivalenceGroupKey: `${ing.id}_${strength.trim().toLowerCase().replace(/\s+/g, '')}_${dosageForm}`,
       };
-
-      const saved = await saveCommercialProductLive(toSave, uid);
-      if (onSaved) onSaved(saved);
+      await upsertCommercialProductLive(newProd, uid || user?.uid || 'editor');
       onClose();
-    } catch {
-      setErrMsg(
-        tr(
-          lang,
-          'تعذر الحفظ في السحابة. تأكد من تسجيل دخولك بحساب يمتلك صلاحية (editor أو reviewer أو admin).',
-          'Failed to save to cloud. Ensure you are signed in with an editor, reviewer, or admin role.'
-        )
-      );
-      setSaving(false);
-    }
-  };
-
-  const handleResetDefault = async () => {
-    if (!confirm(tr(lang, 'هل تريد استعادة البيانات الافتراضية الأصلية لهذا الدواء؟', 'Reset this product to its original factory defaults?'))) return;
-    setSaving(true);
-    try {
-      await resetCommercialProductToDefault(draft.productId, uid);
-      onClose();
-    } catch {
-      setErrMsg(tr(lang, 'حدث خطأ أثناء الاستعادة.', 'Failed to reset.'));
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!confirm(tr(lang, `هل أنت متأكد من حذف المستحضر (${draft.tradeNameAr || draft.tradeNameEn}) من القائمة؟`, `Delete (${draft.tradeNameEn || draft.tradeNameAr})?`))) return;
-    setSaving(true);
-    try {
-      await deleteCommercialProductLive(draft.productId, uid);
-      onClose();
-    } catch {
-      setErrMsg(tr(lang, 'حدث خطأ أثناء الحذف.', 'Failed to delete.'));
+    } finally {
       setSaving(false);
     }
   };
 
   return createPortal(
     <div
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(15, 23, 42, 0.72)',
+        zIndex: 9999,
+        background: 'rgba(15, 23, 42, 0.75)',
+        backdropFilter: 'blur(6px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '16px',
-        zIndex: 10050,
       }}
-      onClick={onClose}
     >
       <form
-        className="card stack"
-        dir={isAr ? 'rtl' : 'ltr'}
-        style={{
-          maxWidth: '720px',
-          width: '100%',
-          maxHeight: '92vh',
-          overflowY: 'auto',
-          padding: '22px',
-          background: 'var(--card-bg, #ffffff)',
-          borderTop: '4px solid #0e9aa7',
-        }}
+        className="card form"
         onClick={(e) => e.stopPropagation()}
-        onSubmit={handleSubmit}
+        onSubmit={handleSave}
+        style={{
+          maxWidth: '620px',
+          width: '100%',
+          maxHeight: '92dvh',
+          overflowY: 'auto',
+          border: '2px solid #0284c7',
+        }}
       >
-        <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700, marginBottom: '4px' }}>
-              {isNew ? `➕ ${tr(lang, 'إضافة دواء جديد', 'New Commercial Product')}` : `✏️ ${draft.productId}`}
-            </span>
-            <h2 style={{ margin: '4px 0 0' }}>
-              {isNew
-                ? tr(lang, 'إضافة مستحضر دوائي تجاري جديد للسوق المصري', 'Add New Commercial Medication Package')
-                : tr(lang, `تعديل بيانات وسعر وباركود: ${draft.tradeNameAr || draft.tradeNameEn}`, `Edit Price, Barcode & Details: ${draft.tradeNameEn}`)}
-            </h2>
-          </div>
-          <button type="button" className="btn ghost small" onClick={onClose}>✕</button>
+        <div className="head">
+          <h3 style={{ margin: 0 }}>
+            💊{' '}
+            {isNew
+              ? tr(lang, 'إضافة مستحضر تجاري جديد للسجل', 'Add New Commercial Drug Package')
+              : tr(lang, `تعديل بيانات المستحضر: ${product.tradeNameEn}`, `Edit Commercial Package: ${product.tradeNameEn}`)}
+          </h3>
+          <button type="button" className="btn ghost small" onClick={onClose}>
+            ✕
+          </button>
         </div>
 
-        <p className="small muted" style={{ margin: 0 }}>
-          ⚡{' '}
-          {tr(
-            lang,
-            'بمجرد الضغط على «حفظ ونشر فوري»، يتم تحديث السعر والباركود والبيانات في قاعدة بيانات Firebase السحابية وتظهر التعديلات فوراً لجميع المستخدمين في كل صفحات الموقع.',
-            'Clicking "Save & Publish Live" updates Firebase Firestore immediately and syncs changes in real time to all users across the platform.'
-          )}
-        </p>
-
-        {/* Row 1: Active Ingredient & Product ID */}
-        <div className="grid" style={{ gap: '12px' }}>
+        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
           <div>
-            <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              🧪 {tr(lang, 'المادة الفعالة التابع لها الدواء:', 'Active Ingredient:')}
-            </label>
-            <select
-              className="input"
-              value={draft.activeIngredientId}
-              onChange={(e) => handleIngChange(e.target.value)}
-            >
-              {ingredients.map((ing) => (
+            <label>{tr(lang, 'الاسم التجاري (بالعربية) *', 'Trade Name (Arabic) *')}</label>
+            <input
+              dir="rtl"
+              required
+              value={tradeNameAr}
+              onChange={(e) => setTradeNameAr(e.target.value)}
+              placeholder="مثال: أوجمنتين 1 جم"
+            />
+          </div>
+          <div>
+            <label>{tr(lang, 'الاسم التجاري (بالإنجليزية) *', 'Trade Name (English) *')}</label>
+            <input
+              dir="ltr"
+              required
+              value={tradeNameEn}
+              onChange={(e) => setTradeNameEn(e.target.value)}
+              placeholder="e.g. Augmentin 1g"
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+          <div>
+            <label>{tr(lang, 'المادة الفعالة العلمية', 'Active Ingredient')}</label>
+            <select value={activeIngredientId} onChange={(e) => setActiveIngredientId(e.target.value)}>
+              {ACTIVE_INGREDIENTS.map((ing) => (
                 <option key={ing.id} value={ing.id}>
-                  {isAr ? `${ing.nameAr} (${ing.nameEn})` : `${ing.nameEn} (${ing.nameAr})`}
+                  {ing.nameEn} ({ing.nameAr})
                 </option>
               ))}
             </select>
           </div>
-
           <div>
-            <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              🆔 {tr(lang, 'كود العبوة المرجعي (Product ID):', 'Product ID:')}
-            </label>
+            <label>{tr(lang, 'التركيز الدوائي', 'Strength')}</label>
             <input
-              type="text"
               dir="ltr"
-              className="input"
-              value={draft.productId}
-              readOnly={!isNew}
-              onChange={(e) => setDraft({ ...draft, productId: e.target.value.trim() })}
+              value={strength}
+              onChange={(e) => setStrength(e.target.value)}
+              placeholder="e.g. 1000 mg or 457 mg / 5 mL"
             />
           </div>
         </div>
 
-        {/* Row 2: Trade Name AR & EN */}
-        <div className="grid" style={{ gap: '12px' }}>
+        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
           <div>
-            <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              🇪🇬 {tr(lang, 'الاسم التجاري بالعربية:', 'Trade Name (Arabic):')}
-            </label>
-            <input
-              type="text"
-              dir="rtl"
-              className="input"
-              required
-              placeholder="مثال: أوجمنتين 1 جم أقراص"
-              value={draft.tradeNameAr}
-              onChange={(e) => setDraft({ ...draft, tradeNameAr: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              🇬🇧 {tr(lang, 'الاسم التجاري بالإنجليزية:', 'Trade Name (English):')}
-            </label>
-            <input
-              type="text"
-              dir="ltr"
-              className="input"
-              required
-              placeholder="e.g. Augmentin 1g Tablets"
-              value={draft.tradeNameEn}
-              onChange={(e) => setDraft({ ...draft, tradeNameEn: e.target.value })}
-            />
-          </div>
-        </div>
-
-        {/* Row 3: Price (EGP) & Barcode (EAN-13) — Highlighted */}
-        <div
-          className="grid"
-          style={{
-            gap: '12px',
-            padding: '14px',
-            borderRadius: '12px',
-            background: 'var(--tint)',
-            border: '1.5px solid #0e9aa7',
-          }}
-        >
-          <div>
-            <label className="small" style={{ fontWeight: 800, color: '#15803d', display: 'block', marginBottom: '4px' }}>
-              💰 {tr(lang, 'السعر الرسمي للعبوة بالجنيه المصري (EGP):', 'Official Pack Price (EGP):')}
-            </label>
-            <input
-              type="number"
-              step="0.25"
-              min="0"
-              dir="ltr"
-              className="input"
-              placeholder="131.50"
-              value={priceStr}
-              onChange={(e) => setPriceStr(e.target.value)}
-            />
-            <input
-              type="text"
-              className="input"
-              style={{ marginTop: '6px', fontSize: '0.82rem' }}
-              placeholder={tr(lang, 'تفصيل سعر الشريط (مثال: الشريط: 65.75 ج.م)', 'Unit/Strip note (e.g., Strip: 65.75 EGP)')}
-              value={isAr ? draft.unitPriceNote.ar : draft.unitPriceNote.en}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  unitPriceNote: {
-                    ar: isAr ? e.target.value : draft.unitPriceNote.ar || e.target.value,
-                    en: !isAr ? e.target.value : draft.unitPriceNote.en || e.target.value,
-                  },
-                })
-              }
-            />
-          </div>
-
-          <div>
-            <label className="small" style={{ fontWeight: 800, color: '#0369a1', display: 'block', marginBottom: '4px' }}>
-              📷 {tr(lang, 'الباركود الخطي للعلبة (EAN-13 / 622...):', 'Linear Carton Barcode (EAN-13):')}
-            </label>
-            <input
-              type="text"
-              dir="ltr"
-              className="input"
-              placeholder="6221127005436"
-              value={barcodeStr}
-              onChange={(e) => setBarcodeStr(e.target.value)}
-            />
-            <span className="small muted" style={{ display: 'block', marginTop: '6px' }}>
-              {barcodeStr.trim()
-                ? `✓ ${tr(lang, 'سيتم اعتماده كباركود موثق وقابل للمسح بالكاميرا فوراً', 'Will be marked as Verified & scannable via camera')}`
-                : tr(lang, 'اتركه فارغاً إذا كان الباركود قيد التحقق الميداني', 'Leave blank if barcode is pending physical check')}
-            </span>
-          </div>
-        </div>
-
-        {/* Row 4: Strength, Dosage Form, Route */}
-        <div className="grid" style={{ gap: '12px' }}>
-          <div>
-            <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              ⚖️ {tr(lang, 'التركيز (Strength):', 'Strength:')}
-            </label>
-            <input
-              type="text"
-              dir="ltr"
-              className="input"
-              placeholder="1000 mg / 500 mg / 457 mg/5mL"
-              value={draft.strength}
-              onChange={(e) => setDraft({ ...draft, strength: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              💊 {tr(lang, 'الشكل الصيدلاني:', 'Dosage Form:')}
-            </label>
-            <select
-              className="input"
-              value={draft.dosageForm}
-              onChange={(e) => setDraft({ ...draft, dosageForm: e.target.value as DosageFormType })}
-            >
+            <label>{tr(lang, 'الشكل الصيدلاني', 'Dosage Form')}</label>
+            <select value={dosageForm} onChange={(e) => setDosageForm(e.target.value as DosageFormType)}>
               {(Object.keys(DOSAGE_FORM_LABELS) as DosageFormType[]).map((df) => (
                 <option key={df} value={df}>
                   {pick(DOSAGE_FORM_LABELS[df], lang)}
@@ -390,16 +189,9 @@ export function QuickProductEditorModal({
               ))}
             </select>
           </div>
-
           <div>
-            <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              💉 {tr(lang, 'طريق الإعطاء:', 'Administration Route:')}
-            </label>
-            <select
-              className="input"
-              value={draft.route}
-              onChange={(e) => setDraft({ ...draft, route: e.target.value as AdministrationRoute })}
-            >
+            <label>{tr(lang, 'طريق الإعطاء', 'Route')}</label>
+            <select value={route} onChange={(e) => setRoute(e.target.value as AdministrationRoute)}>
               {(Object.keys(ROUTE_LABELS) as AdministrationRoute[]).map((rt) => (
                 <option key={rt} value={rt}>
                   {pick(ROUTE_LABELS[rt], lang)}
@@ -407,82 +199,53 @@ export function QuickProductEditorModal({
               ))}
             </select>
           </div>
-        </div>
-
-        {/* Row 5: Pack Details, Manufacturer, Country */}
-        <div className="grid" style={{ gap: '12px' }}>
           <div>
-            <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              📦 {tr(lang, 'وصف العبوة (عدد الأقراص / الحجم):', 'Package Details:')}
-            </label>
-            <input
-              type="text"
-              className="input"
-              placeholder={isAr ? '14 قرص مغلف (شريطان)' : '14 Film-coated tablets'}
-              value={isAr ? draft.packDetails.ar : draft.packDetails.en}
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  packDetails: {
-                    ar: isAr ? e.target.value : draft.packDetails.ar || e.target.value,
-                    en: !isAr ? e.target.value : draft.packDetails.en || e.target.value,
-                  },
-                })
-              }
-            />
-          </div>
-
-          <div>
-            <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              🏭 {tr(lang, 'الشركة المصنعة:', 'Manufacturer:')}
-            </label>
-            <input
-              type="text"
-              className="input"
-              placeholder="GSK / EIPICO / Amoun / Pharco..."
-              value={draft.manufacturer}
-              onChange={(e) => setDraft({ ...draft, manufacturer: e.target.value })}
-            />
+            <label>{tr(lang, 'حجم العبوة', 'Pack Size')}</label>
+            <input dir="ltr" value={packSize} onChange={(e) => setPackSize(e.target.value)} placeholder="e.g. 14 Film-coated tablets" />
           </div>
         </div>
 
-        {errMsg && <p className="alert">{errMsg}</p>}
-
-        {/* Footer Actions */}
-        <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginTop: '6px' }}>
-          <div className="row wrapRow" style={{ gap: '8px' }}>
-            {!isNew && isBaseProduct(draft.productId) && isProductModified(draft.productId) && (
-              <button
-                type="button"
-                className="btn ghost small"
-                onClick={handleResetDefault}
-                disabled={saving}
-              >
-                ↺ {tr(lang, 'استعادة القيم الأصلية', 'Reset to Default')}
-              </button>
-            )}
-            {!isNew && (
-              <button
-                type="button"
-                className="btn danger small"
-                onClick={handleDelete}
-                disabled={saving}
-              >
-                🗑️ {tr(lang, 'حذف العبوة', 'Delete')}
-              </button>
-            )}
+        <div style={{ display: 'grid', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+          <div>
+            <label>{tr(lang, 'السعر الرسمي (ج.م / EGP)', 'Official Price (EGP)')}</label>
+            <input
+              type="number"
+              step="0.25"
+              dir="ltr"
+              value={priceEgp}
+              onChange={(e) => setPriceEgp(e.target.value)}
+              placeholder="e.g. 190.00"
+            />
           </div>
-
-          <div className="row wrapRow" style={{ gap: '8px' }}>
-            <button type="button" className="btn ghost" onClick={onClose} disabled={saving}>
-              {tr(lang, 'إلغاء', 'Cancel')}
-            </button>
-            <button type="submit" className="btn" style={{ background: '#15803d' }} disabled={saving}>
-              {saving
-                ? tr(lang, 'جارٍ النشر الفوري...', 'Publishing Live...')
-                : `💾 ${tr(lang, 'حفظ ونشر فوري لجميع المستخدمين', 'Save & Publish Live')}`}
-            </button>
+          <div>
+            <label>{tr(lang, 'الباركود الخطي (EAN-13)', 'Linear Barcode (EAN-13)')}</label>
+            <input
+              dir="ltr"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+              placeholder="e.g. 6221127005436"
+            />
           </div>
+          <div>
+            <label>{tr(lang, 'الشركة المصنعة', 'Manufacturer')}</label>
+            <input
+              dir="ltr"
+              value={manufacturer}
+              onChange={(e) => setManufacturer(e.target.value)}
+              placeholder="e.g. GSK / EIPICO / Pharco"
+            />
+          </div>
+        </div>
+
+        <div className="row wrapRow" style={{ justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+          <button type="button" className="btn ghost" onClick={onClose}>
+            {tr(lang, 'إلغاء', 'Cancel')}
+          </button>
+          <button type="submit" className="btn" disabled={saving}>
+            {saving
+              ? tr(lang, 'جارٍ الحفظ...', 'Saving...')
+              : tr(lang, '💾 حفظ ونشر التعديل فوراً', '💾 Save & Publish Live')}
+          </button>
         </div>
       </form>
     </div>,
@@ -492,332 +255,132 @@ export function QuickProductEditorModal({
 
 export default function CommercialCatalogTab({ uid }: { uid: string }) {
   const { lang } = useLang();
-  const isAr = lang === 'ar';
-  const { products, ingredients, catalogPayload, isProductModified } = useLiveDrugCatalog();
-
-  const [q, setQ] = useState('');
+  const { products } = useLiveDrugCatalog();
+  const [search, setSearch] = useState('');
   const [ingFilter, setIngFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'modified' | 'missing_barcode' | 'verified_barcode'>('all');
-  const [editingProd, setEditingProd] = useState<EgyptianCommercialProduct | null>(null);
-  const [isCreatingNew, setIsCreatingNew] = useState(false);
-
-  // Inline quick price/barcode draft state for 1-click row saving
-  const [inlineDrafts, setInlineDrafts] = useState<Record<string, { price: string; barcode: string }>>({});
-  const [savingRowId, setSavingRowId] = useState<string | null>(null);
-  const [toastMsg, setToastMsg] = useState<string>('');
-
-  const modifiedCount = Object.keys(catalogPayload.overrides || {}).length;
-  const customAddedCount = (catalogPayload.customProducts || []).length;
-  const missingBarcodeCount = products.filter((p) => !p.barcode).length;
+  const [editing, setEditing] = useState<EgyptianCommercialProduct | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const filtered = useMemo(() => {
-    const clean = norm(q);
+    const q = norm(search);
     return products.filter((p) => {
       if (ingFilter !== 'all' && p.activeIngredientId !== ingFilter) return false;
-      if (statusFilter === 'modified' && !isProductModified(p.productId) && !catalogPayload.customProducts.some((c) => c.productId === p.productId)) {
-        return false;
-      }
-      if (statusFilter === 'missing_barcode' && p.barcode) return false;
-      if (statusFilter === 'verified_barcode' && !p.barcode) return false;
-
-      if (!clean) return true;
-      const hay = norm(
-        `${p.productId} ${p.tradeNameAr} ${p.tradeNameEn} ${p.scientificComposition} ${p.manufacturer} ${p.barcode || ''} ${p.strength}`
-      );
-      return hay.includes(clean);
+      if (!q) return true;
+      const hay = norm(`${p.tradeNameAr} ${p.tradeNameEn} ${p.scientificComposition} ${p.manufacturer} ${p.barcode || ''}`);
+      return hay.includes(q);
     });
-  }, [products, q, ingFilter, statusFilter, isProductModified, catalogPayload.customProducts]);
+  }, [products, search, ingFilter]);
 
-  const getInlineDraft = (p: EgyptianCommercialProduct) => {
-    return (
-      inlineDrafts[p.productId] || {
-        price: p.priceEgp !== null && p.priceEgp !== undefined ? String(p.priceEgp) : '',
-        barcode: p.barcode || '',
-      }
-    );
+  const handleDelete = async (p: EgyptianCommercialProduct) => {
+    if (!window.confirm(tr(lang, `حذف المستحضر ${p.tradeNameEn}؟`, `Delete ${p.tradeNameEn}?`))) return;
+    await deleteCommercialProductLive(p.productId, uid);
   };
 
-  const handleQuickRowSave = async (p: EgyptianCommercialProduct) => {
-    const d = getInlineDraft(p);
-    const parsedPrice = d.price.trim() !== '' ? Number(d.price) : null;
-    if (parsedPrice !== null && (Number.isNaN(parsedPrice) || parsedPrice < 0)) {
-      alert(tr(lang, 'يرجى إدخال سعر رقمي صحيح.', 'Please enter a valid numeric price.'));
-      return;
-    }
-    setSavingRowId(p.productId);
-    try {
-      await saveCommercialProductLive(
-        {
-          ...p,
-          priceEgp: parsedPrice,
-          barcode: d.barcode.trim() || null,
-        },
-        uid
-      );
-      setToastMsg(
-        tr(
-          lang,
-          `✅ تم تحديث (${isAr ? p.tradeNameAr : p.tradeNameEn}) ونشره فوراً لجميع المستخدمين!`,
-          `✅ Updated (${p.tradeNameEn}) and published live to all users!`
-        )
-      );
-      window.setTimeout(() => setToastMsg(''), 3500);
-    } catch {
-      alert(tr(lang, 'تعذر حفظ التعديل. تأكد من صلاحية حسابك.', 'Failed to save change.'));
-    }
-    setSavingRowId(null);
+  const handleReset = async () => {
+    if (!window.confirm(tr(lang, 'استعادة القائمة الافتراضية المعتمدة (206 عبوات)؟', 'Restore default verified catalog (206 packages)?'))) return;
+    await resetCommercialCatalogToDefault(uid);
   };
 
   return (
     <div className="stack">
-      {/* Live Cloud Sync Banner & KPIs */}
-      <section className="card highlight-card">
-        <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+      <div className="card">
+        <div className="head" style={{ flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <span className="badge" style={{ background: '#dcfce7', color: '#166534', fontWeight: 800, marginBottom: '6px' }}>
-              ☁️ {tr(lang, 'متصل مباشرة بقاعدة بيانات Firebase للمستخدمين (Real-Time Sync)', 'Live Firestore Sync Active')}
-            </span>
-            <h2 style={{ margin: '4px 0' }}>
-              {tr(
-                lang,
-                'إدارة الأدوية التجارية والأسعار والباركود بدون تعديل الكود',
-                'Live Commercial Drug, Price & Barcode Manager (No-Code CMS)'
-              )}
+            <h2 style={{ margin: 0 }}>
+              💊 {tr(lang, `إدارة السجل التجاري والأسعار والباركود (${products.length} عبوة)`, `Commercial Drug Catalog, Prices & Barcodes (${products.length})`)}
             </h2>
-            <p className="small muted" style={{ margin: 0 }}>
+            <p className="small muted" style={{ margin: '4px 0 0' }}>
               {tr(
                 lang,
-                'عدّل سعر أي دواء أو أضف باركود العلبة أو أضف مستحضراً جديداً، وسينعكس التحديث في نفس اللحظة عند جميع الزوار في السجل الدوائي وحاسبة التوفير وماسح الباركود.',
-                'Edit any drug price, verify/add a barcode, or add a new commercial package—all updates broadcast immediately to all visitors.'
+                'عدّل الأسعار الرسمية والباركود أو أضف مستحضرات جديدة لتظهر فوراً في البحث وحاسبة البديل الأرخص.',
+                'Edit official EGP prices, barcodes, or add new commercial packages live.'
               )}
             </p>
           </div>
-          <button
-            type="button"
-            className="btn"
-            style={{ background: '#15803d' }}
-            onClick={() => {
-              setEditingProd(createEmptyCommercialProduct(ingFilter !== 'all' ? ingFilter : 'amoxicillin-clavulanic-acid'));
-              setIsCreatingNew(true);
-            }}
-          >
-            ➕ {tr(lang, 'إضافة دواء / عبوة تجارية جديدة', 'Add New Commercial Drug')}
-          </button>
-        </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))',
-            gap: '10px',
-            marginTop: '14px',
-          }}
-        >
-          <div className="card" style={{ padding: '10px', textAlign: 'center' }}>
-            <strong style={{ fontSize: '1.35rem', color: '#0284c7' }}>{products.length}</strong>
-            <div className="small muted">{tr(lang, 'إجمالي الأدوية النشطة', 'Total Active Packages')}</div>
-          </div>
-          <div className="card" style={{ padding: '10px', textAlign: 'center' }}>
-            <strong style={{ fontSize: '1.35rem', color: '#16a34a' }}>{modifiedCount + customAddedCount}</strong>
-            <div className="small muted">{tr(lang, 'تعديلات وإضافات سحابية حية', 'Live Cloud Edits & Additions')}</div>
-          </div>
-          <div className="card" style={{ padding: '10px', textAlign: 'center' }}>
-            <strong style={{ fontSize: '1.35rem', color: '#d97706' }}>{missingBarcodeCount}</strong>
-            <div className="small muted">{tr(lang, 'عبوات بانتظار إضافة باركود', 'Pending Barcode Entry')}</div>
-          </div>
-        </div>
-      </section>
-
-      {toastMsg && (
-        <div className="notice" style={{ background: '#dcfce7', borderColor: '#16a34a', color: '#166534', fontWeight: 700 }}>
-          {toastMsg}
-        </div>
-      )}
-
-      {/* Search & Filters */}
-      <section className="card">
-        <div className="grid" style={{ gap: '10px' }}>
-          <div>
-            <label className="small muted" style={{ fontWeight: 700 }}>
-              🔍 {tr(lang, 'بحث سريع بالاسم أو الباركود أو الكود:', 'Quick Search:')}
-            </label>
-            <input
-              type="search"
-              className="input"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder={tr(lang, 'ابحث عن أوجمنتين، زيثروماكس، 622...', 'Search Augmentin, Zithromax, 622...')}
-            />
-          </div>
-
-          <div>
-            <label className="small muted" style={{ fontWeight: 700 }}>
-              🧪 {tr(lang, 'تصفية حسب المادة الفعالة:', 'Filter by Active Ingredient:')}
-            </label>
-            <select className="input" value={ingFilter} onChange={(e) => setIngFilter(e.target.value)}>
-              <option value="all">{tr(lang, 'جميع المواد الفعالة (32)', 'All Active Ingredients (32)')}</option>
-              {ingredients.map((ing) => (
-                <option key={ing.id} value={ing.id}>
-                  {isAr ? ing.nameAr : ing.nameEn}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="small muted" style={{ fontWeight: 700 }}>
-              🏷️ {tr(lang, 'تصفية حسب حالة الباركود والتعديل:', 'Filter by Status:')}
-            </label>
-            <select
-              className="input"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-            >
-              <option value="all">{tr(lang, `عرض الكل (${products.length})`, `Show All (${products.length})`)}</option>
-              <option value="missing_barcode">{tr(lang, `بدون باركود - لإضافته سريعاً (${missingBarcodeCount})`, `Missing Barcode (${missingBarcodeCount})`)}</option>
-              <option value="verified_barcode">{tr(lang, 'موثق الباركود فقط', 'Verified Barcode Only')}</option>
-              <option value="modified">{tr(lang, `المعدلة أو المضافة حديثاً (${modifiedCount + customAddedCount})`, `Modified / Custom Only (${modifiedCount + customAddedCount})`)}</option>
-            </select>
+          <div className="row wrapRow" style={{ gap: '8px' }}>
+            <button type="button" className="btn" onClick={() => setAdding(true)}>
+              ➕ {tr(lang, 'إضافة دواء تجاري جديد', 'Add Commercial Drug')}
+            </button>
+            <button type="button" className="btn ghost small" onClick={handleReset}>
+              🔄 {tr(lang, 'استعادة الافتراضي', 'Reset Default')}
+            </button>
           </div>
         </div>
 
-        {/* Inline-Editable Table of Commercial Packages */}
-        <div className="tablewrap" style={{ marginTop: '14px' }}>
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>{tr(lang, 'المستحضر التجاري والمادة', 'Trade Name & Ingredient')}</th>
-                <th>{tr(lang, 'التركيز والشركة', 'Strength & Maker')}</th>
-                <th>{tr(lang, 'السعر الرسمي (ج.م) [تعديل مباشر]', 'Price (EGP) [Inline Edit]')}</th>
-                <th>{tr(lang, 'الباركود الخطي (EAN-13) [تعديل مباشر]', 'Barcode [Inline Edit]')}</th>
-                <th>{tr(lang, 'حفظ / تعديل كامل', 'Actions')}</th>
+        <div className="row wrapRow" style={{ gap: '10px', marginTop: '12px' }}>
+          <input
+            style={{ flex: '2 1 240px' }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={tr(lang, 'ابحث بالاسم التجاري أو الباركود أو الشركة...', 'Search by trade name, barcode, or manufacturer...')}
+          />
+          <select style={{ flex: '1 1 200px' }} value={ingFilter} onChange={(e) => setIngFilter(e.target.value)}>
+            <option value="all">{tr(lang, 'كل المواد الفعالة (32)', 'All Active Ingredients (32)')}</option>
+            {ACTIVE_INGREDIENTS.map((ing) => (
+              <option key={ing.id} value={ing.id}>
+                {ing.nameEn} ({ing.nameAr})
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="tablewrap card" style={{ padding: 0, overflowX: 'auto' }}>
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>{tr(lang, 'الاسم التجاري', 'Trade Name')}</th>
+              <th>{tr(lang, 'المادة الفعالة والتركيز', 'Active Ingredient & Strength')}</th>
+              <th>{tr(lang, 'الشركة والعبوة', 'Maker & Pack')}</th>
+              <th>{tr(lang, 'السعر (EGP)', 'Price (EGP)')}</th>
+              <th>{tr(lang, 'الباركود', 'Barcode')}</th>
+              <th>{tr(lang, 'إجراءات', 'Actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.slice(0, 80).map((p) => (
+              <tr key={p.productId}>
+                <td>
+                  <b>{lang === 'ar' ? p.tradeNameAr : p.tradeNameEn}</b>
+                  <div className="small muted">{lang === 'ar' ? p.tradeNameEn : p.tradeNameAr}</div>
+                </td>
+                <td>
+                  <div>{p.scientificComposition}</div>
+                  <span className="small muted">{p.strength} · {pick(p.dosageFormLabel, lang)}</span>
+                </td>
+                <td>
+                  <div>{p.manufacturer}</div>
+                  <span className="small muted">{p.packSize}</span>
+                </td>
+                <td>
+                  <b>{p.priceEgp ? `${p.priceEgp.toFixed(2)} EGP` : '—'}</b>
+                </td>
+                <td>
+                  <code dir="ltr">{p.barcode || '—'}</code>
+                </td>
+                <td>
+                  <div className="row" style={{ gap: '6px' }}>
+                    <button type="button" className="btn small ghost" onClick={() => setEditing(p)}>
+                      ✏️ {tr(lang, 'تعديل', 'Edit')}
+                    </button>
+                    <button type="button" className="btn small danger" onClick={() => handleDelete(p)}>
+                      🗑️
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p) => {
-                const d = getInlineDraft(p);
-                const isModified = isProductModified(p.productId);
-                const isDirty =
-                  d.price !== (p.priceEgp !== null && p.priceEgp !== undefined ? String(p.priceEgp) : '') ||
-                  d.barcode !== (p.barcode || '');
-                return (
-                  <tr
-                    key={p.productId}
-                    style={{
-                      background: isDirty ? 'rgba(22, 163, 74, 0.08)' : isModified ? 'rgba(14, 154, 167, 0.06)' : undefined,
-                    }}
-                  >
-                    <td>
-                      <div className="row" style={{ gap: '6px', alignItems: 'center' }}>
-                        <b>{isAr ? p.tradeNameAr : p.tradeNameEn}</b>
-                        {isModified && (
-                          <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '0.7rem' }}>
-                            {tr(lang, 'معدّل سحابياً ✓', 'Edited ✓')}
-                          </span>
-                        )}
-                      </div>
-                      <div className="small muted">{isAr ? p.tradeNameEn : p.tradeNameAr}</div>
-                      <div className="small">
-                        <Link to={`/medicine/${p.activeIngredientId}`} className="muted">
-                          🔗 {p.scientificComposition}
-                        </Link>
-                      </div>
-                    </td>
-                    <td>
-                      <b dir="ltr">{p.strength}</b>
-                      <div className="small muted">{pick(p.dosageFormLabel, lang)}</div>
-                      <div className="small muted">{p.manufacturer}</div>
-                    </td>
-                    <td style={{ minWidth: '130px' }}>
-                      <input
-                        type="number"
-                        step="0.25"
-                        min="0"
-                        dir="ltr"
-                        className="input"
-                        style={{ padding: '6px 8px', fontWeight: 700, color: '#15803d' }}
-                        value={d.price}
-                        onChange={(e) =>
-                          setInlineDrafts((prev) => ({
-                            ...prev,
-                            [p.productId]: { ...d, price: e.target.value },
-                          }))
-                        }
-                      />
-                    </td>
-                    <td style={{ minWidth: '175px' }}>
-                      <input
-                        type="text"
-                        dir="ltr"
-                        className="input"
-                        placeholder="622..."
-                        style={{ padding: '6px 8px', fontFamily: 'monospace', fontWeight: 700 }}
-                        value={d.barcode}
-                        onChange={(e) =>
-                          setInlineDrafts((prev) => ({
-                            ...prev,
-                            [p.productId]: { ...d, barcode: e.target.value },
-                          }))
-                        }
-                      />
-                    </td>
-                    <td>
-                      <div className="row wrapRow" style={{ gap: '6px' }}>
-                        <button
-                          type="button"
-                          className="btn small"
-                          style={{
-                            background: isDirty ? '#16a34a' : '#0e9aa7',
-                            padding: '6px 10px',
-                          }}
-                          disabled={savingRowId === p.productId}
-                          onClick={() => handleQuickRowSave(p)}
-                        >
-                          {savingRowId === p.productId
-                            ? '...'
-                            : isDirty
-                              ? `💾 ${tr(lang, 'حفظ الآن', 'Save Now')}`
-                              : `💾 ${tr(lang, 'حفظ', 'Save')}`}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn ghost small"
-                          style={{ padding: '6px 10px' }}
-                          onClick={() => {
-                            setEditingProd(p);
-                            setIsCreatingNew(false);
-                          }}
-                        >
-                          ✏️ {tr(lang, 'كامل البيانات', 'Full Edit')}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      {editingProd && (
+      {(editing || adding) && (
         <QuickProductEditorModal
-          product={editingProd}
-          isNew={isCreatingNew}
+          product={editing}
           uid={uid}
           onClose={() => {
-            setEditingProd(null);
-            setIsCreatingNew(false);
-          }}
-          onSaved={(saved) => {
-            setToastMsg(
-              tr(
-                lang,
-                `✅ تم حفظ ونشر (${isAr ? saved.tradeNameAr : saved.tradeNameEn}) لجميع المستخدمين بنجاح!`,
-                `✅ Saved & published (${saved.tradeNameEn}) live to all users!`
-              )
-            );
-            window.setTimeout(() => setToastMsg(''), 4000);
+            setEditing(null);
+            setAdding(false);
           }}
         />
       )}

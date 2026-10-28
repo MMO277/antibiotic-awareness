@@ -78,14 +78,14 @@ const SYN: Record<string, string[]> = {
 
 /** Match common conditions when user asks for the best antibiotic for a specific body part / disease */
 export function matchCondition(x: string): ConditionKind | null {
-  if (/اسنان|ضرس|لثه|خراج|وجع السنان|الم الاسنان|خراج الاسنان|عصب|خلع|dental|tooth|teeth/.test(x)) return 'dental';
-  if (/مسالك|بول|بوليه|حرقان البول|التهاب البول|المثانه|حرقان في البول|uti|urine/.test(x)) return 'uti';
-  if (/لوز|حلق|احتقان الحلق|صديد اللوز|التهاب الحلق|زور|وجع الحلق|throat|tonsil/.test(x)) return 'throat';
-  if (/جلد|حب شباب|دمامل|خراج جلدي|حب الشباب|التهاب جلدي|جرح|جروح|acne|skin/.test(x)) return 'skin';
-  if (/جيوب|انفيه|الجيوب الانفيه|صداع الجيوب|sinus/.test(x)) return 'sinus';
-  if (/صدر|شعبي|شعب هوائيه|كحه ببلغم|التهاب رئوي|cough|chest|bronchitis/.test(x)) return 'chest';
-  if (/جرثومه|معده|جرثومه المعده|حلزونيه|pylori|stomach/.test(x)) return 'stomach';
-  if (/اذن|الاذن|ودن|التهاب الاذن|وجع الودن|ear|otitis/.test(x)) return 'ear';
+  if (/اسنان|ضرس|لثه|خراج|وجع السنان|الم الاسنان|خراج الاسنان|عصب|خلع|dental|tooth|teeth|toothache|dentaire|dents|muelas|zahn|zahnschmerzen|zahnfleischentzundung/.test(x)) return 'dental';
+  if (/مسالك|بول|بوليه|حرقان البول|التهاب البول|المثانه|حرقان في البول|uti|urine|urinary|urinaire|urinaria|harnwegsinfekt|blasenentzundung|urin/.test(x)) return 'uti';
+  if (/لوز|حلق|احتقان الحلق|صديد اللوز|التهاب الحلق|زور|وجع الحلق|throat|tonsil|angine|garganta|halsschmerzen|mandelentzundung|rachen/.test(x)) return 'throat';
+  if (/جلد|حب شباب|دمامل|خراج جلدي|حب الشباب|التهاب جلدي|جرح|جروح|acne|skin|peau|piel|haut|akne|wunde/.test(x)) return 'skin';
+  if (/جيوب|انفيه|الجيوب الانفيه|صداع الجيوب|sinus|nebenhohlen|sinusitis/.test(x)) return 'sinus';
+  if (/صدر|شعبي|شعب هوائيه|كحه ببلغم|التهاب رئوي|cough|chest|bronchitis|toux|tos|husten|bronchien|lunge/.test(x)) return 'chest';
+  if (/جرثومه|معده|جرثومه المعده|حلزونيه|pylori|stomach|estomac|estomago|magen|helicobacter/.test(x)) return 'stomach';
+  if (/اذن|الاذن|ودن|التهاب الاذن|وجع الودن|ear|otitis|oreille|oido|ohr|ohrenschmerzen|mittelohrentzundung/.test(x)) return 'ear';
   return null;
 }
 
@@ -279,16 +279,16 @@ const ASPECTS: { f: TextField; re: RegExp }[] = [
 ];
 
 export function personalKind(x: string): PKind | null {
-  if (/حقنه البرد|مجموعه البرد|الخلطه الثلاثيه|حقنه هتلر|امبول البرد/.test(x)) return 'cold_shot';
-  if (/نسيت|فائته|نسيان الجرعه|نسيت حبه|نسيت قرص|موعد الجرعه/.test(x)) return 'missed_dose';
-  if (/لبن|حليب|اكل|طعام|كالسيوم|زبادي|حديد|شرب اللبن/.test(x)) return 'milk_food';
-  if (/حبوب منع الحمل|منع الحمل|الوسيله/.test(x)) return 'birth_control';
-  if (/اسهال|معده|مغص|بروبيوتيك|بكتيريا نافعه/.test(x)) return 'probiotics';
-  if (/ابني|بنتي|طفلي|ولدي|رضيعي|الاطفال|اطفال|شراب معلق/.test(x)) return 'child';
-  if (/حامل|حمل|مرضع|رضاعه/.test(x)) return 'pregnancy';
-  if (/اوقف|اوئف|وقف الدوا|توقف|بطلت|خفيت|تحسنت|اكمل/.test(x)) return 'stopstart';
+  if (/حقنه البرد|مجموعه البرد|الخلطه الثلاثيه|حقنه هتلر|امبول البرد|cold shot|injections? contre le rhume|inyecciones? .*resfriado|inyeccion para el resfriado|erkaltungsspritze|3 in 1/.test(x)) return 'cold_shot';
+  if (/نسيت|فائته|نسيان الجرعه|نسيت حبه|نسيت قرص|موعد الجرعه|miss(ed)? a dose|oubli(e)? .*dose|olvid(o|e) una dosis|vergessen.*dosis|dosis.*vergessen/.test(x)) return 'missed_dose';
+  if (/لبن|حليب|اكل|طعام|كالسيوم|زبادي|حديد|شرب اللبن|milk|dairy|lait|leche|milch|kalzium/.test(x)) return 'milk_food';
+  if (/حبوب منع الحمل|منع الحمل|الوسيله|birth control|contraceptive|pilule|anticonceptivo|antibabypille|verhutung/.test(x)) return 'birth_control';
+  if (/اسهال|معده|مغص|بروبيوتيك|بكتيريا نافعه|diarrh|yogurt|probiotic|yaourt|yogur|durchfall|joghurt|probiotika/.test(x)) return 'probiotics';
+  if (/ابني|بنتي|طفلي|ولدي|رضيعي|الاطفال|اطفال|شراب معلق|pediatric|store.*suspension|sirop|suspensiones pediatricas|kindersaft|kinder.*antibiotika/.test(x)) return 'child';
+  if (/حامل|حمل|مرضع|رضاعه|pregnan|breastfeed|grossesse|embarazo|schwanger|stillzeit/.test(x)) return 'pregnancy';
+  if (/اوقف|اوئف|وقف الدوا|توقف|بطلت|خفيت|تحسنت|اكمل|stop taking|feel better|arreter.*mieux|suspender.*mejor|absetzen.*besser/.test(x)) return 'stopstart';
   if (/جرعه|جرعات|كم حبه|كام حبه|كم قرص|كام قرص|كم ملغ|كم ملي/.test(x)) return 'dose';
-  if (/رشح|سخونيه|حراره|بلغم/.test(x)) return 'symptom';
+  if (/رشح|سخونيه|حراره|بلغم|treat colds|colds or flu|soignent.*rhume|curan el resfriado|erkaltung oder grippe|helfen antibiotika bei erkaltung/.test(x)) return 'symptom';
   return null;
 }
 
@@ -359,6 +359,7 @@ export function respond(passages: Passage[], meds: Medicine[], raw: string): Rep
         en: `This could indicate severe anaphylaxis or an acute emergency. Stop chatting and seek emergency care immediately: call emergency services (${info.number} in ${info.name.en}) or go to the nearest ER.`,
         fr: `Cela pourrait indiquer une urgence allergique grave. Arrêtez la discussion et appelez immédiatement les secours (${info.number} — ${info.name.fr}) ou rendez-vous aux urgences.`,
         es: `Esto podría indicar una emergencia alérgica grave. Detenga el chat y llame de inmediato a emergencias (${info.number} — ${info.name.es}) o acuda a urgencias.`,
+        de: `Dies könnte auf eine schwere Anaphylaxie oder einen akuten Notfall hinweisen. Beenden Sie den Chat und rufen Sie sofort den Notruf (${info.number} — ${info.name.de}) oder begeben Sie sich in die nächste Notaufnahme.`,
       },
       tone: 'alert',
     };

@@ -22,13 +22,14 @@ interface Props {
 
 const LEVEL_BADGE: Record<
   'easy' | 'medium' | 'hard',
-  { ar: string; en: string; fr: string; es: string; color: string }
+  { ar: string; en: string; fr: string; es: string; de: string; color: string }
 > = {
   easy: {
     ar: 'المستوى التأسيسي (مبتدئ)',
     en: 'Foundation Level (Beginner)',
     fr: 'Niveau Fondamental (Débutant)',
     es: 'Nivel Básico (Principiante)',
+    de: 'Grundstufe (Einsteiger)',
     color: '#10b981',
   },
   medium: {
@@ -36,6 +37,7 @@ const LEVEL_BADGE: Record<
     en: 'Intermediate Stewardship Level',
     fr: 'Niveau Intermédiaire',
     es: 'Nivel Intermedio',
+    de: 'Mittelstufe (Fortgeschritten)',
     color: '#f59e0b',
   },
   hard: {
@@ -43,6 +45,7 @@ const LEVEL_BADGE: Record<
     en: 'Advanced Clinical Stewardship Level',
     fr: 'Niveau Clinique Avancé',
     es: 'Nivel Clínico Avanzado',
+    de: 'Klinische Expertenstufe (Profi)',
     color: '#ef4444',
   },
 };
@@ -158,29 +161,46 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
       ctx.font = '600 24px "IBM Plex Sans Arabic", system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(
-        isAr
-          ? 'منصة الوعي بالمضادات الحيوية • مبادرة الاستخدام الرشيد للدواء في مصر'
-          : 'ANTIBIOTIC AWARENESS PLATFORM • EGYPT STEWARDSHIP INITIATIVE',
+        tr(
+          lang,
+          'منصة الوعي بالمضادات الحيوية • مبادرة الاستخدام الرشيد للدواء في مصر',
+          'ANTIBIOTIC AWARENESS PLATFORM • EGYPT STEWARDSHIP INITIATIVE',
+          'PLATEFORME DE SENSIBILISATION AUX ANTIBIOTIQUES • INITIATIVE AMR',
+          'PLATAFORMA DE CONCIENCIA SOBRE ANTIBIÓTICOS • INICIATIVA RAM',
+          'PLATTFORM FÜR ANTIBIOTIKA-BEWUSSTSEIN • STEWARDSHIP-INITIATIVE'
+        ),
         W / 2,
         215
       );
 
       // Main Certificate Headline
       ctx.fillStyle = '#fde047';
-      ctx.font = 'bold 54px "IBM Plex Sans Arabic", system-ui, sans-serif';
+      ctx.font = 'bold 50px "IBM Plex Sans Arabic", system-ui, sans-serif';
       ctx.fillText(
-        isAr ? 'شهادة سفير الوعي بالمضادات الحيوية' : 'ANTIBIOTIC STEWARDSHIP AMBASSADOR',
+        tr(
+          lang,
+          'شهادة سفير الوعي بالمضادات الحيوية',
+          'ANTIBIOTIC STEWARDSHIP AMBASSADOR',
+          'AMBASSADEUR DU BON USAGE DES ANTIBIOTIQUES',
+          'EMBAJADOR DEL USO PRUDENTE DE ANTIBIÓTICOS',
+          'BOTSCHAFTER FÜR ANTIBIOTIKA-BEWUSSTSEIN'
+        ),
         W / 2,
         290
       );
 
       // Subtitle
       ctx.fillStyle = '#cbd5e1';
-      ctx.font = '400 26px "IBM Plex Sans Arabic", system-ui, sans-serif';
+      ctx.font = '400 25px "IBM Plex Sans Arabic", system-ui, sans-serif';
       ctx.fillText(
-        isAr
-          ? 'تشهد المنصة بأن حامل هذه الشهادة قد اجتاز بنجاح التقييم المعرفي للاستخدام الآمن للمضادات الحيوية'
-          : 'This certifies that the recipient named below has successfully passed the Antibiotic Stewardship Assessment',
+        tr(
+          lang,
+          'تشهد المنصة بأن حامل هذه الشهادة قد اجتاز بنجاح التقييم المعرفي للاستخدام الآمن للمضادات الحيوية',
+          'This certifies that the recipient named below has successfully passed the Antibiotic Stewardship Assessment',
+          'Certifie que le titulaire ci-dessous a réussi l’évaluation sur le bon usage des antibiotiques',
+          'Certifica que el titular nombrado abajo ha superado la evaluación sobre el uso seguro de antibióticos',
+          'Hiermit wird bestätigt, dass die unten genannte Person die Prüfung zum sicheren Antibiotikaeinsatz erfolgreich bestanden hat'
+        ),
         W / 2,
         350
       );
@@ -188,7 +208,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
       // 4. Recipient Name Banner
       const displayRecipient =
         (nameInput || cert.recipientName || '').trim() ||
-        (isAr ? 'سفير الوعي الدوائي' : 'Stewardship Ambassador');
+        tr(lang, 'سفير الوعي الدوائي', 'Stewardship Ambassador', 'Ambassadeur AMR', 'Embajador RAM', 'Stewardship-Botschafter');
 
       ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
       ctx.strokeStyle = 'rgba(251, 191, 36, 0.65)';
@@ -204,10 +224,24 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
 
       // 5. Level & Score Pill Badges
       const lvlInfo = LEVEL_BADGE[cert.level] || LEVEL_BADGE.easy;
-      const lvlText = isAr ? lvlInfo.ar : lang === 'fr' ? lvlInfo.fr : lang === 'es' ? lvlInfo.es : lvlInfo.en;
-      const scoreText = isAr
-        ? `النتيجة: ${cert.score} من ${cert.total} (${cert.percentage}%)`
-        : `Score: ${cert.score}/${cert.total} (${cert.percentage}%)`;
+      const lvlText =
+        isAr
+          ? lvlInfo.ar
+          : lang === 'fr'
+          ? lvlInfo.fr
+          : lang === 'es'
+          ? lvlInfo.es
+          : lang === 'de'
+          ? lvlInfo.de
+          : lvlInfo.en;
+      const scoreText = tr(
+        lang,
+        `النتيجة: ${cert.score} من ${cert.total} (${cert.percentage}%)`,
+        `Score: ${cert.score}/${cert.total} (${cert.percentage}%)`,
+        `Score : ${cert.score}/${cert.total} (${cert.percentage}%)`,
+        `Puntuación: ${cert.score}/${cert.total} (${cert.percentage}%)`,
+        `Ergebnis: ${cert.score}/${cert.total} (${cert.percentage}%)`
+      );
 
       ctx.fillStyle = '#38bdf8';
       ctx.font = 'bold 28px "IBM Plex Sans Arabic", system-ui, sans-serif';
@@ -225,26 +259,45 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
       ctx.fillStyle = '#fde047';
       ctx.font = 'bold 25px "IBM Plex Sans Arabic", system-ui, sans-serif';
       ctx.fillText(
-        isAr ? '🤝 ميثاق وتعهد سفير الوعي الدوائي:' : '🤝 Antibiotic Stewardship Ambassador Pledge:',
+        tr(
+          lang,
+          '🤝 ميثاق وتعهد سفير الوعي الدوائي:',
+          '🤝 Antibiotic Stewardship Ambassador Pledge:',
+          '🤝 Engagement de l’Ambassadeur du Bon Usage :',
+          '🤝 Compromiso del Embajador de Uso Prudente:',
+          '🤝 Versprechen des Botschafters für Antibiotika-Bewusstsein:'
+        ),
         W / 2,
         642
       );
 
       ctx.fillStyle = '#e2e8f0';
-      ctx.font = '400 22px "IBM Plex Sans Arabic", system-ui, sans-serif';
-      const pledgeLine1 = isAr
-        ? '«أتعهد بعدم تناول أو مشاركة أي مضاد حيوي بدون وصفة طبية، وإكمال كورس العلاج الموصوف حتى النهاية،'
-        : '“I pledge never to use or share antibiotics without a medical prescription, to complete my full prescribed course,';
-      const pledgeLine2 = isAr
-        ? 'وتجنب "حقنة البرد" والمضادات في العدوى الفيروسية، والمساهمة في حماية مجتمعي من البكتيريا المقاومة.»'
-        : 'to avoid antibiotics for viral colds, and to help protect my community from antimicrobial resistance.”';
+      ctx.font = '400 21px "IBM Plex Sans Arabic", system-ui, sans-serif';
+      const pledgeLine1 = tr(
+        lang,
+        '«أتعهد بعدم تناول أو مشاركة أي مضاد حيوي بدون وصفة طبية، وإكمال كورس العلاج الموصوف حتى النهاية،',
+        '“I pledge never to use or share antibiotics without a medical prescription, to complete my full prescribed course,',
+        '« Je m’engage à ne jamais prendre ni partager d’antibiotiques sans ordonnance, à suivre mon traitement jusqu’au bout,',
+        '«Me comprometo a no usar ni compartir antibióticos sin receta médica, a completar todo mi tratamiento prescrito,',
+        '„Ich verspreche, niemals Antibiotika ohne ärztliches Rezept einzunehmen oder weiterzugeben, meine Therapie vollständig zu beenden,'
+      );
+      const pledgeLine2 = tr(
+        lang,
+        'وتجنب "حقنة البرد" والمضادات في العدوى الفيروسية، والمساهمة في حماية مجتمعي من البكتيريا المقاومة.»',
+        'to avoid antibiotics for viral colds, and to help protect my community from antimicrobial resistance.”',
+        'à éviter les antibiotiques pour les rhumes viraux et à protéger ma communauté contre l’antibiorésistance. »',
+        'a evitar los antibióticos en resfriados virales y a proteger a mi comunidad frente a la resistencia bacteriana.»',
+        'auf Antibiotika bei viralen Erkältungen zu verzichten und meine Mitmenschen vor Antibiotikaresistenzen zu schützen.“'
+      );
 
       ctx.fillText(pledgeLine1, W / 2, 690);
       ctx.fillText(pledgeLine2, W / 2, 732);
 
       // 7. Bottom Footer: Date + Golden Seal + Verification QR Code
+      const dateLocale =
+        isAr ? 'ar-EG' : lang === 'fr' ? 'fr-FR' : lang === 'es' ? 'es-ES' : lang === 'de' ? 'de-DE' : 'en-GB';
       const dateFormatted = new Date(cert.issuedAtIso).toLocaleDateString(
-        isAr ? 'ar-EG' : 'en-GB',
+        dateLocale,
         { day: '2-digit', month: 'long', year: 'numeric' }
       );
 
@@ -252,7 +305,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
       ctx.textAlign = 'left';
       ctx.fillStyle = '#94a3b8';
       ctx.font = '600 20px "IBM Plex Sans Arabic", system-ui, sans-serif';
-      ctx.fillText(isAr ? 'تاريخ الإصدار:' : 'Issued Date:', 160, 880);
+      ctx.fillText(tr(lang, 'تاريخ الإصدار:', 'Issued Date:', 'Date d’émission :', 'Fecha de emisión:', 'Ausstellungsdatum:'), 160, 880);
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 24px "IBM Plex Sans Arabic", system-ui, sans-serif';
       ctx.fillText(dateFormatted, 160, 915);
@@ -286,7 +339,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fde047';
       ctx.font = 'bold 20px "IBM Plex Sans Arabic", system-ui, sans-serif';
-      ctx.fillText(isAr ? 'معتمد' : 'VERIFIED', 0, -8);
+      ctx.fillText(tr(lang, 'معتمد', 'VERIFIED', 'VÉRIFIÉ', 'VERIFICADO', 'GEPRÜFT'), 0, -8);
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 16px "IBM Plex Sans Arabic", system-ui, sans-serif';
       ctx.fillText('AMR STEWARD', 0, 18);
@@ -312,7 +365,11 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
           ctx.textAlign = 'center';
           ctx.fillStyle = '#cbd5e1';
           ctx.font = '600 16px "IBM Plex Sans Arabic", system-ui, sans-serif';
-          ctx.fillText(isAr ? 'امسح لاختبار وعيك الدوائي' : 'Scan to Take the Quiz', W - 235, 1015);
+          ctx.fillText(
+            tr(lang, 'امسح لاختبار وعيك الدوائي', 'Scan to Take the Quiz', 'Scannez pour faire le quiz', 'Escanea para hacer el test', 'Scannen zum Quiz-Start'),
+            W - 235,
+            1015
+          );
         };
         qrImg.src = qrDataUrl;
       } catch {
@@ -350,13 +407,21 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
         const file = new File([blob], `AMR-Certificate-${cert.certNumber}.png`, { type: 'image/png' });
         if (navigator.canShare({ files: [file] })) {
           await navigator.share({
-            title: tr(lang, 'شهادة سفير الوعي بالمضادات الحيوية', 'Antibiotic Stewardship Certificate', 'Certificat Ambassadeur AMR', 'Certificado Embajador RAM'),
+            title: tr(
+              lang,
+              'شهادة سفير الوعي بالمضادات الحيوية',
+              'Antibiotic Stewardship Certificate',
+              'Certificat Ambassadeur AMR',
+              'Certificado Embajador RAM',
+              'Botschafter-Zertifikat für Antibiotika-Bewusstsein'
+            ),
             text: tr(
               lang,
               `حصلت على شهادة سفير الوعي بالمضادات الحيوية بنتيجة ${cert.percentage}%! اختبر معلوماتك الآن:`,
               `I earned my Antibiotic Stewardship Ambassador Certificate (${cert.percentage}%)! Test your knowledge:`,
               `J'ai obtenu mon certificat d'Ambassadeur du Bon Usage des Antibiotiques (${cert.percentage}%) !`,
-              `¡Obtuve mi Certificado de Embajador del Uso Prudente de Antibióticos (${cert.percentage}%)!`
+              `¡Obtuve mi Certificado de Embajador del Uso Prudente de Antibióticos (${cert.percentage}%)!`,
+              `Ich habe mein Botschafter-Zertifikat für Antibiotika-Bewusstsein (${cert.percentage} %) erhalten! Teste dein Wissen:`
             ),
             files: [file],
           });
@@ -404,10 +469,26 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
         <div className="head" style={{ borderBottom: '1px solid rgba(148,163,184,0.2)', paddingBottom: '10px' }}>
           <div>
             <h3 style={{ margin: 0, color: '#fde047', fontSize: '1.15rem' }}>
-              🏅 {tr(lang, 'شهادة سفير الوعي بالمضادات الحيوية', 'Antibiotic Stewardship Ambassador Certificate', 'Certificat d’Ambassadeur AMR', 'Certificado de Embajador RAM')}
+              🏅{' '}
+              {tr(
+                lang,
+                'شهادة سفير الوعي بالمضادات الحيوية',
+                'Antibiotic Stewardship Ambassador Certificate',
+                'Certificat d’Ambassadeur AMR',
+                'Certificado de Embajador RAM',
+                'Botschafter-Zertifikat für Antibiotika-Bewusstsein'
+              )}
             </h3>
             <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-              ☁️ {tr(lang, 'محفوظة في سجل شهاداتك — يمكنك تعديل الاسم وتحميلها كصورة عالية الجودة', 'Saved to your certificate history — customize your name & download in HD', 'Enregistré dans votre historique — téléchargez en HD', 'Guardado en tu historial — descarga en HD')}
+              ☁️{' '}
+              {tr(
+                lang,
+                'محفوظة في سجل شهاداتك — يمكنك تعديل الاسم وتحميلها كصورة عالية الجودة',
+                'Saved to your certificate history — customize your name & download in HD',
+                'Enregistré dans votre historique — téléchargez en HD',
+                'Guardado en tu historial — descarga en HD',
+                'In Ihrem Zertifikatsverlauf gespeichert — Namen anpassen & in HD herunterladen'
+              )}
             </span>
           </div>
           <button
@@ -430,7 +511,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
         {/* Name Customization Input */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(15, 39, 56, 0.85)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
           <label htmlFor="cert-recipient-name" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#7dd3fc', whiteSpace: 'nowrap' }}>
-            ✍️ {tr(lang, 'الاسم المطبوع على الشهادة:', 'Name on Certificate:', 'Nom sur le certificat :', 'Nombre en el certificado:')}
+            ✍️ {tr(lang, 'الاسم المطبوع على الشهادة:', 'Name on Certificate:', 'Nom sur le certificat :', 'Nombre en el certificado:', 'Name auf dem Zertifikat:')}
           </label>
           <input
             id="cert-recipient-name"
@@ -441,7 +522,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
               setNameInput(e.target.value);
               if (onUpdateName) onUpdateName(e.target.value);
             }}
-            placeholder={tr(lang, 'اكتب اسمك الثلاثي هنا...', 'Enter your full name...', 'Votre nom complet...', 'Escribe tu nombre completo...')}
+            placeholder={tr(lang, 'اكتب اسمك الثلاثي هنا...', 'Enter your full name...', 'Votre nom complet...', 'Escribe tu nombre completo...', 'Ihren vollständigen Namen eingeben...')}
             style={{
               flex: '1 1 220px',
               background: '#041018',
@@ -474,7 +555,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
               className="btn"
               style={{ background: '#f59e0b', borderColor: '#f59e0b', color: '#041018', fontWeight: 800 }}
             >
-              📥 {tr(lang, 'تحميل الشهادة كصورة (HD PNG)', 'Download Certificate (HD PNG)', 'Télécharger (PNG HD)', 'Descargar Certificado (PNG HD)')}
+              📥 {tr(lang, 'تحميل الشهادة كصورة (HD PNG)', 'Download Certificate (HD PNG)', 'Télécharger (PNG HD)', 'Descargar Certificado (PNG HD)', 'Zertifikat herunterladen (HD PNG)')}
             </button>
             <button
               type="button"
@@ -482,7 +563,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
               className="btn"
               style={{ background: '#0e9aa7', borderColor: '#0e9aa7', color: '#ffffff' }}
             >
-              📤 {tr(lang, 'مشاركة الشهادة', 'Share Certificate', 'Partager', 'Compartir')}
+              📤 {tr(lang, 'مشاركة الشهادة', 'Share Certificate', 'Partager', 'Compartir', 'Zertifikat teilen')}
             </button>
           </div>
         </div>
