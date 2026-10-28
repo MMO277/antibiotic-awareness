@@ -40,6 +40,7 @@ export interface EgyptianCommercialProduct {
   route: AdministrationRoute;
   routeLabel: Bi;
   packDetails: Bi;
+  packSize?: Bi | string;
   manufacturer: string;
   countryOfOrigin: string;
   registrationStatus: 'registered_eda' | 'hospital_formulary';
@@ -57,23 +58,23 @@ export interface EgyptianCommercialProduct {
 }
 
 export const DOSAGE_FORM_LABELS: Record<DosageFormType, Bi> = {
-  tablet: { ar: 'أقراص مغلفة / قابلة للمضغ', en: 'Tablets', fr: 'Comprimés pelliculés', es: 'Comprimidos recubiertos', de: 'Filmtabletten / Tabletten' },
-  capsule: { ar: 'كبسولات صلبة', en: 'Capsules', fr: 'Gélules', es: 'Cápsulas', de: 'Hartkapseln' },
-  suspension: { ar: 'شراب معلق فموي (بودرة للتحضير)', en: 'Oral Suspension', fr: 'Suspension buvable', es: 'Suspensión oral', de: 'Suspension zum Einnehmen (Kindersaft)' },
-  vial_iv_im: { ar: 'فيال مسحوق للحقن العضلي/الوريدي', en: 'Vial for IV/IM Injection', fr: 'Flacon injectable (IV/IM)', es: 'Vial para inyección (IV/IM)', de: 'Durchstechflasche zur Injektion (i.v./i.m.)' },
-  ampoule: { ar: 'أمبولات للحقن العضلي/الوريدي', en: 'Ampoules for Injection', fr: 'Ampoules injectables', es: 'Ampollas inyectables', de: 'Injektionsampullen (i.v./i.m.)' },
-  infusion: { ar: 'زجاجة/كيس محلول للتسريب الوريدي', en: 'IV Infusion Bottle/Bag', fr: 'Flacon/Poche pour perfusion IV', es: 'Frasco/Bolsa para perfusión IV', de: 'i.v.-Infusionsflasche / -beutel' },
-  eye_ear_drops: { ar: 'قطرة/مرهم للعين أو الأذن', en: 'Ophthalmic / Otic Drops', fr: 'Collyre / Gouttes auriculaires', es: 'Gotas oftálmicas / óticas', de: 'Augen- / Ohrentropfen' },
-  topical_cream_ointment: { ar: 'كريم / مرهم موضعي للجلد', en: 'Topical Cream / Ointment', fr: 'Crème / Pommade topique', es: 'Crema / Pomada tópica', de: 'Topische Creme / Salbe' },
-  oral_drops: { ar: 'نقط فموية للرضع', en: 'Oral Drops for Infants', fr: 'Gouttes buvables (nourrissons)', es: 'Gotas orales (lactantes)', de: 'Tropfen zum Einnehmen (Säuglinge)' },
-  sachet: { ar: 'أكياس فوارة / حبيبات فموية', en: 'Oral Granules / Sachets', fr: 'Granulés buvables / Sachets', es: 'Gránulos orales / Sobres', de: 'Granulat zum Einnehmen / Beutel' },
+  tablet: { ar: 'أقراص مغلفة / قابلة للمضغ', en: 'Tablets', fr: 'Comprimés pelliculés', es: 'Comprimidos recubiertos' },
+  capsule: { ar: 'كبسولات صلبة', en: 'Capsules', fr: 'Gélules', es: 'Cápsulas' },
+  suspension: { ar: 'شراب معلق فموي (بودرة للتحضير)', en: 'Oral Suspension', fr: 'Suspension buvable', es: 'Suspensión oral' },
+  vial_iv_im: { ar: 'فيال مسحوق للحقن العضلي/الوريدي', en: 'Vial for IV/IM Injection', fr: 'Flacon injectable (IV/IM)', es: 'Vial para inyección (IV/IM)' },
+  ampoule: { ar: 'أمبولات للحقن العضلي/الوريدي', en: 'Ampoules for Injection', fr: 'Ampoules injectables', es: 'Ampollas inyectables' },
+  infusion: { ar: 'زجاجة/كيس محلول للتسريب الوريدي', en: 'IV Infusion Bottle/Bag', fr: 'Flacon/Poche pour perfusion IV', es: 'Frasco/Bolsa para perfusión IV' },
+  eye_ear_drops: { ar: 'قطرة/مرهم للعين أو الأذن', en: 'Ophthalmic / Otic Drops', fr: 'Collyre / Gouttes auriculaires', es: 'Gotas oftálmicas / óticas' },
+  topical_cream_ointment: { ar: 'كريم / مرهم موضعي للجلد', en: 'Topical Cream / Ointment', fr: 'Crème / Pommade topique', es: 'Crema / Pomada tópica' },
+  oral_drops: { ar: 'نقط فموية للرضع', en: 'Oral Drops for Infants', fr: 'Gouttes buvables (nourrissons)', es: 'Gotas orales (lactantes)' },
+  sachet: { ar: 'أكياس فوارة / حبيبات فموية', en: 'Oral Granules / Sachets', fr: 'Granulés buvables / Sachets', es: 'Gránulos orales / Sobres' },
 };
 
 export const ROUTE_LABELS: Record<AdministrationRoute, Bi> = {
-  oral: { ar: 'عن طريق الفم (Oral)', en: 'Oral', fr: 'Voie orale', es: 'Vía oral', de: 'Oral (zum Einnehmen)' },
-  parenteral_iv_im: { ar: 'حقن وريدي أو عضلي (IV / IM)', en: 'Parenteral (IV / IM)', fr: 'Parentérale (IV / IM)', es: 'Parenteral (IV / IM)', de: 'Parenteral (i.v. / i.m. Injektion)' },
-  topical: { ar: 'دهان موضعي جلدي (Topical)', en: 'Topical Cutaneous', fr: 'Voie cutanée / topique', es: 'Vía tópica / cutánea', de: 'Topisch (Anwendung auf der Haut)' },
-  ophthalmic_otic: { ar: 'موضعي للعين أو الأذن (Ophthalmic / Otic)', en: 'Ophthalmic / Otic', fr: 'Ophtalmique / Auriculaire', es: 'Oftálmica / Ótica', de: 'Ophthalmisch / Otisch (Auge / Ohr)' },
+  oral: { ar: 'عن طريق الفم (Oral)', en: 'Oral', fr: 'Voie orale', es: 'Vía oral' },
+  parenteral_iv_im: { ar: 'حقن وريدي أو عضلي (IV / IM)', en: 'Parenteral (IV / IM)', fr: 'Parentérale (IV / IM)', es: 'Parenteral (IV / IM)' },
+  topical: { ar: 'دهان موضعي جلدي (Topical)', en: 'Topical Cutaneous', fr: 'Voie cutanée / topique', es: 'Vía tópica / cutánea' },
+  ophthalmic_otic: { ar: 'موضعي للعين أو الأذن (Ophthalmic / Otic)', en: 'Ophthalmic / Otic', fr: 'Ophtalmique / Auriculaire', es: 'Oftálmica / Ótica' },
 };
 
 export const ACTIVE_INGREDIENTS: ActiveIngredientRecord[] = [
@@ -5679,6 +5680,7 @@ export const EGYPTIAN_COMMERCIAL_PRODUCTS: EgyptianCommercialProduct[] = [
 
 export interface AlternativesClassification {
   exactEquivalents: EgyptianCommercialProduct[];
+  exactMatches: EgyptianCommercialProduct[];
   sameIngredientDifferentFormOrStrength: EgyptianCommercialProduct[];
   therapeuticClassReference: EgyptianCommercialProduct[];
 }
@@ -5722,6 +5724,7 @@ export function getClassifiedAlternatives(
 
   return {
     exactEquivalents,
+    exactMatches: exactEquivalents,
     sameIngredientDifferentFormOrStrength,
     therapeuticClassReference,
   };

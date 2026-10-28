@@ -35,6 +35,13 @@ const WIDGET_CHIPS: Record<string, string[]> = {
     'What if I miss a dose?',
     'Does milk interact with antibiotics?',
   ],
+  de: [
+    'Helfen Antibiotika bei Erkältung?',
+    'Gefahren von Erkältungsspritzen-Mischungen?',
+    'Antibiotika bei Zahnschmerzen?',
+    'Was tun bei vergessener Dosis?',
+    'Wechselwirkung zwischen Milch und Antibiotika?',
+  ],
   fr: [
     'Les antibiotiques soignent-ils le rhume ?',
     'Dangers des injections contre le rhume ?',
@@ -48,13 +55,6 @@ const WIDGET_CHIPS: Record<string, string[]> = {
     '¿Antibiótico para el dolor dental?',
     '¿Qué hacer si olvido una dosis?',
     '¿La leche afecta al antibiótico?',
-  ],
-  de: [
-    "Helfen Antibiotika bei Erkältung?",
-    "Gefahren der 3-in-1-Erkältungsspritze?",
-    "Welches Antibiotikum bei Zahnschmerzen?",
-    "Was tun bei vergessener Dosis?",
-    "Blockiert Milch das Antibiotikum?",
   ],
 };
 

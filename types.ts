@@ -1,4 +1,4 @@
-export type Lang = 'ar' | 'en' | 'fr' | 'es' | 'de';
+export type Lang = 'ar' | 'en' | 'de' | 'fr' | 'es';
 export type Bi = { ar: string; en: string; fr?: string; es?: string; de?: string };
 export type Bilingual = Bi;
 export type Status = 'draft' | 'pending_review' | 'approved' | 'archived';
@@ -23,7 +23,7 @@ export const SUPPORTED_LANGS: LangMeta[] = [
 ];
 
 export function isValidLang(val: string | null | undefined): val is Lang {
-  return val === 'ar' || val === 'en' || val === 'fr' || val === 'es' || val === 'de';
+  return val === 'ar' || val === 'en' || val === 'de' || val === 'fr' || val === 'es';
 }
 
 export const TEXT_FIELDS = [
@@ -52,7 +52,7 @@ export const FIELD_LABELS: Record<TextField, Bi> = {
     en: 'Generic name',
     fr: 'Dénomination commune internationale (DCI)',
     es: 'Nombre genérico (DCI)',
-    de: 'Internationaler Freiname (INN / Generikum)',
+    de: 'Freiname (INN)',
   },
   activeIngredients: {
     ar: 'المواد الفعالة',
@@ -66,14 +66,14 @@ export const FIELD_LABELS: Record<TextField, Bi> = {
     en: 'Drug class',
     fr: 'Classe thérapeutique',
     es: 'Clase farmacológica',
-    de: 'Arzneimittelklasse (Wirkstoffgruppe)',
+    de: 'Wirkstoffklasse',
   },
   mechanism: {
     ar: 'آلية العمل',
     en: 'Mechanism of action',
     fr: 'Mécanisme d’action',
     es: 'Mecanismo de acción',
-    de: 'Wirkmechanismus',
+    de: 'Wirkungsmechanismus',
   },
   strengths: {
     ar: 'التراكيز والأشكال المتوفرة',
@@ -87,14 +87,14 @@ export const FIELD_LABELS: Record<TextField, Bi> = {
     en: 'Approved medical uses',
     fr: 'Indications médicales approuvées',
     es: 'Indicaciones médicas aprobadas',
-    de: 'Zugelassene medizinische Anwendungsgebiete',
+    de: 'Zugelassene Anwendungsgebiete',
   },
   priceEgypt: {
     ar: 'السعر في السوق المصري (EGP)',
     en: 'Price in Egyptian Market (EGP)',
     fr: 'Prix sur le marché égyptien (EGP)',
     es: 'Precio en el mercado egipcio (EGP)',
-    de: 'Offizieller Preis auf dem ägyptischen Markt (EGP)',
+    de: 'Preis auf dem ägyptischen Markt (EGP)',
   },
   substitutes: {
     ar: 'البدائل والمثائل الدوائية المتاحة في مصر',
@@ -115,28 +115,28 @@ export const FIELD_LABELS: Record<TextField, Bi> = {
     en: 'Dosing reference (information only)',
     fr: 'Référence posologique (à titre informatif)',
     es: 'Referencia de dosificación (solo informativa)',
-    de: 'Dosierungsreferenz (nur zur Orientierung)',
+    de: 'Dosierungsrichtlinien',
   },
   contraindications: {
     ar: 'موانع الاستعمال',
     en: 'Contraindications',
     fr: 'Contre-indications',
     es: 'Contraindicaciones',
-    de: 'Gegenanzeigen (Kontraindikationen)',
+    de: 'Gegenanzeigen',
   },
   sideEffects: {
     ar: 'الآثار الجانبية',
     en: 'Side effects',
     fr: 'Effets indésirables',
     es: 'Efectos secundarios',
-    de: 'Nebenwirkungen (Unerwünschte Wirkungen)',
+    de: 'Mögliche Nebenwirkungen',
   },
   interactions: {
     ar: 'التداخلات الدوائية والغذائية',
     en: 'Drug & food interactions',
     fr: 'Interactions médicamenteuses et alimentaires',
     es: 'Interacciones medicamentosas y alimentarias',
-    de: 'Wechselwirkungen mit Medikamenten & Lebensmitteln',
+    de: 'Wechselwirkungen (Medikamente & Nahrung)',
   },
   pregnancyBreastfeeding: {
     ar: 'الحمل والرضاعة',
@@ -150,14 +150,14 @@ export const FIELD_LABELS: Record<TextField, Bi> = {
     en: 'Renal & hepatic precautions',
     fr: 'Précautions rénales et hépatiques',
     es: 'Precauciones renales y hepáticas',
-    de: 'Vorsichtsmaßnahmen bei Nieren- & Leberinsuffizienz',
+    de: 'Vorsichtsmaßnahmen bei Nieren- & Lebererkrankungen',
   },
   patientEducation: {
     ar: 'إرشادات وتثقيف المريض',
     en: 'Patient education',
     fr: 'Conseils et éducation du patient',
     es: 'Educación y consejos para el paciente',
-    de: 'Patientenaufklärung & Einnahmehinweise',
+    de: 'Patientenaufklärung & Beratung',
   },
 };
 
@@ -190,7 +190,7 @@ export type Medicine = Record<TextField, Bi> & {
 
 export function emptyMedicine(id = ''): Medicine {
   const texts = Object.fromEntries(
-    TEXT_FIELDS.map((f) => [f, { ar: '', en: '', fr: '', es: '', de: '' }]),
+    TEXT_FIELDS.map((f) => [f, { ar: '', en: '', fr: '', es: '' }]),
   ) as Record<TextField, Bi>;
   return {
     id,
@@ -285,6 +285,43 @@ const FR_PHRASE_MAP: [RegExp, string][] = [
   [/\bFull Rx Check\b/gi, 'Vérifier une Ordonnance'],
 ];
 
+
+const DE_PHRASE_MAP: [RegExp, string][] = [
+  [/\bCommercial Packages Registry\b/gi, 'Handelspräparate-Register'],
+  [/\bClinical Active Ingredients\b/gi, 'Klinische Wirkstoffe (INN)'],
+  [/\bData Audit & CSV\/JSON Importer\b/gi, 'Daten-Audit & CSV/JSON-Importer'],
+  [/\bCompare 2 Drugs\b/gi, '2 Medikamente vergleichen'],
+  [/\bAll Ingredients\b/gi, 'Alle Wirkstoffe'],
+  [/\bAll Dosage Forms\b/gi, 'Alle Darreichungsformen'],
+  [/\bAll Routes\b/gi, 'Alle Verabreichungswege'],
+  [/\bRoute of Administration\b/gi, 'Verabreichungsweg'],
+  [/\bDosage Form\b/gi, 'Darreichungsform'],
+  [/\bBarcode Verification\b/gi, 'Barcode-Verifizierung'],
+  [/\bVerified Barcode Only\b/gi, 'Nur verifizierter Barcode'],
+  [/\bPending Barcode Check\b/gi, 'Prüfung ausstehend'],
+  [/\bComposition Type\b/gi, 'Zusammensetzungstyp'],
+  [/\bAll \(Single \+ Combo\)\b/gi, 'Alle (Monopräparate + Kombinationen)'],
+  [/\bSingle Ingredient\b/gi, 'Monopräparat'],
+  [/\bCombination Product\b/gi, 'Kombinationspräparat'],
+  [/\bActive Ingredient\b/gi, 'Wirkstoff'],
+  [/\bActive Ingredients\b/gi, 'Wirkstoffe'],
+  [/\bDrug Allergy & Cross-Reactivity Checker\b/gi, 'Arzneimittelallergie- & Kreuzreaktionsprüfung'],
+  [/\bFilm-coated tablets\b/gi, 'Filmtabletten'],
+  [/\bExtended-release tablets\b/gi, 'Retardtabletten'],
+  [/\bTablets\b/gi, 'Tabletten'],
+  [/\bCapsules\b/gi, 'Kapseln'],
+  [/\bOral Suspension\b/gi, 'Oral-Suspension'],
+  [/\boral suspension\b/gi, 'Oral-Suspension'],
+  [/\bNext Step:\b/gi, 'Nächster Schritt:'],
+  [/\bSource:\b/gi, 'Quelle:'],
+  [/\bAllergy Check:\b/gi, 'Allergieprüfung:'],
+  [/\bPrescription Radar\b/gi, 'Rezept-Radar'],
+  [/\bAllergy Safety Check\b/gi, 'Allergiesicherheits-Check'],
+  [/\bInteractions Check\b/gi, 'Wechselwirkungs-Check'],
+  [/\bMy Profile\b/gi, 'Mein Profil'],
+  [/\bFull Rx Check\b/gi, 'Vollständiger Rezept-Check'],
+];
+
 const ES_PHRASE_MAP: [RegExp, string][] = [
   [/\bCommercial Packages Registry\b/gi, 'Registro de Presentaciones Comerciales'],
   [/\bClinical Active Ingredients\b/gi, 'Principios Activos Clínicos (DCI)'],
@@ -365,117 +402,9 @@ const ES_PHRASE_MAP: [RegExp, string][] = [
   [/\bFull Rx Check\b/gi, 'Verificar Receta Completa'],
 ];
 
-const DE_PHRASE_MAP: [RegExp, string][] = [
-  [/\bComplete Egyptian Antibiotics, Alternatives & Barcode Database\b/gi, 'Umfassende Ägyptische Antibiotika-, Generika- & Barcode-Datenbank'],
-  [/\bCommercial Packages Registry\b/gi, 'Register der Handelspackungen'],
-  [/\bClinical Active Ingredients\b/gi, 'Klinische Wirkstoffe (INN)'],
-  [/\bData Audit & CSV\/JSON Importer\b/gi, 'Datenprüfung & CSV/JSON-Import'],
-  [/\bGeneric Cost Saver\b/gi, 'Generika-Preisrechner & Kostenersparnis'],
-  [/\bCompare 2 Drugs\b/gi, '2 Medikamente vergleichen'],
-  [/\bAll Ingredients\b/gi, 'Alle Wirkstoffe'],
-  [/\bAll Dosage Forms\b/gi, 'Alle Darreichungsformen'],
-  [/\bAll Routes\b/gi, 'Alle Verabreichungswege'],
-  [/\bRoute of Administration\b/gi, 'Verabreichungsweg'],
-  [/\bDosage Form\b/gi, 'Darreichungsform'],
-  [/\bBarcode Verification\b/gi, 'Barcode-Verifizierung'],
-  [/\bVerified Barcode Only\b/gi, 'Nur verifizierte Barcodes'],
-  [/\bPending Barcode Check\b/gi, 'Barcode-Prüfung ausstehend'],
-  [/\bComposition Type\b/gi, 'Zusammensetzungstyp'],
-  [/\bAll \(Single \+ Combo\)\b/gi, 'Alle (Einzel + Kombi)'],
-  [/\bSingle Active Ingredient\b/gi, 'Einzelwirkstoff'],
-  [/\bCombination Antibiotic\b/gi, 'Kombinationsantibiotikum'],
-  [/\bSingle Ingredient\b/gi, 'Einzelwirkstoff'],
-  [/\bCombination Product\b/gi, 'Kombinationspräparat'],
-  [/\bActive Ingredient\b/gi, 'Wirkstoff'],
-  [/\bActive Ingredients\b/gi, 'Wirkstoffe'],
-  [/\bEgyptian Market Packages\b/gi, 'Handelspackungen in Ägypten'],
-  [/\bVerified EAN-13 Barcodes\b/gi, 'Verifizierte EAN-13-Barcodes'],
-  [/\bPharma Manufacturers\b/gi, 'Pharmazeutische Hersteller'],
-  [/\bClinical Pro Mode Active \(Physician & Pharmacist View\)\b/gi, 'Klinischer Profi-Modus aktiv (Arzt- & Apothekeransicht)'],
-  [/\bClinical Pro Mode Active \(Physicians & Pharmacists View\)\b/gi, 'Klinischer Profi-Modus aktiv (Arzt- & Apothekeransicht)'],
-  [/\bPatient & Public Mode \(Simplified View\)\b/gi, 'Patienten- & Publikumsmodus (Vereinfachte Ansicht)'],
-  [/\bPatient & Public Mode \(Simplified Guidance & Safe Use\)\b/gi, 'Patienten- & Publikumsmodus (Einfache Einnahmehinweise)'],
-  [/\bPatient Mode\b/gi, 'Patientenmodus'],
-  [/\bClinical Pro Mode\b/gi, 'Klinischer Profi-Modus (Arzt)'],
-  [/\bAlternatives & Details\b/gi, 'Alternativen & Details'],
-  [/\bClinical Guide\b/gi, 'Klinischer Leitfaden'],
-  [/\bStrength & Form:\b/gi, 'Stärke & Form:'],
-  [/\bPackage:\b/gi, 'Packung:'],
-  [/\bManufacturer:\b/gi, 'Hersteller:'],
-  [/\bLinear Barcode:\b/gi, 'Linearer Barcode:'],
-  [/\bSort By:\b/gi, 'Sortieren nach:'],
-  [/\bVerified Barcodes First\b/gi, 'Verifizierte Barcodes zuerst'],
-  [/\bTrade Name \(A-Z\)\b/gi, 'Handelsname (A–Z)'],
-  [/\bPrice: Low to High\b/gi, 'Preis: aufsteigend'],
-  [/\bPrice: High to Low\b/gi, 'Preis: absteigend'],
-  [/\bReset Filters\b/gi, 'Filter zurücksetzen'],
-  [/\bDrug Allergy & Cross-Reactivity Checker\b/gi, 'Arzneimittelallergie- & Kreuzreaktivitäts-Prüfer'],
-  [/\bPediatric Dosage & Syringe Simulator\b/gi, 'Pädiatrischer Dosierungsrechner & Spritzensimulator'],
-  [/\bDrug & Food Interaction Checker\b/gi, 'Wechselwirkungs-Prüfer (Medikamente & Lebensmittel)'],
-  [/\bAntibiotic Side Effects: What Should I Do\?\b/gi, 'Nebenwirkungen von Antibiotika: Was tun?'],
-  [/\bSafe Antibiotic Disposal & Eco-Stewardship\b/gi, 'Sichere Antibiotika-Entsorgung & Umweltschutz'],
-  [/\bSmart Antibiotic Course & Dose Tracker\b/gi, 'Intelligenter Einnahme- & Dosis-Tracker'],
-  [/\bCompare Two Antibiotics Side-by-Side\b/gi, 'Zwei Antibiotika direkt vergleichen'],
-  [/\bMy Health & Allergy Profile\b/gi, 'Mein Gesundheits- & Allergieprofil'],
-  [/\bGreen Prescription \(Non-Antibiotic Self-Care Plan\)\b/gi, 'Grünes Rezept (Symptomlinderung ohne Antibiotika)'],
-  [/\bWorld AMR Awareness Week \(WAAW\)\b/gi, 'Weltweite AMR-Aktionswoche (WAAW)'],
-  [/\bFull Prescription Radar & 24-Hour Smart Scheduler\b/gi, 'Rezept-Radar & Intelligenter 24-Stunden-Einnahmeplan'],
-  [/\bFilm-coated tablets\b/gi, 'Filmtabletten'],
-  [/\bExtended-release tablets\b/gi, 'Retardtabletten'],
-  [/\bDouble-strength tablets\b/gi, 'Doppelstärken-Tabletten'],
-  [/\bTablets\b/gi, 'Tabletten'],
-  [/\bSustained-release capsules\b/gi, 'Retardkapseln'],
-  [/\bCapsules\b/gi, 'Kapseln'],
-  [/\bOral Suspension\b/gi, 'Suspension zum Einnehmen'],
-  [/\boral suspension\b/gi, 'Suspension zum Einnehmen'],
-  [/\bgranules for suspension\b/gi, 'Granulat zur Herstellung einer Suspension'],
-  [/\bbottle for reconstitution\b/gi, 'Flasche zur Rekonstitution'],
-  [/\bpediatric bottle\b/gi, 'Kinderflasche'],
-  [/\bbottle with dropper\b/gi, 'Tropfflasche'],
-  [/\bbottle with dosing syringe\b/gi, 'Flasche mit Dosierspritze'],
-  [/\bsterile dropper bottle\b/gi, 'sterile Tropfflasche'],
-  [/\bIV Infusion bottle\b/gi, 'IV-Infusionsflasche'],
-  [/\bIV infusion bottle\b/gi, 'IV-Infusionsflasche'],
-  [/\bIV bottle\b/gi, 'IV-Flasche'],
-  [/\bIV bag\b/gi, 'IV-Infusionsbeutel'],
-  [/\bbottle\b/gi, 'Flasche'],
-  [/\bLyophilized IV Vial\b/gi, 'Lyophilisierte IV-Durchstechflasche'],
-  [/\bIV Vial\b/gi, 'IV-Durchstechflasche'],
-  [/\bVial \+ solvent ampoule\b/gi, 'Durchstechflasche + Lösungsmittelampulle'],
-  [/\bVial \+ solvent\b/gi, 'Durchstechflasche + Lösungsmittel'],
-  [/\bVial\b/gi, 'Durchstechflasche'],
-  [/\bAmpoules\b/gi, 'Ampullen'],
-  [/\bAmpoule\b/gi, 'Ampulle'],
-  [/\bstrips\b/gi, 'Blisterstreifen'],
-  [/\bstrip\b/gi, 'Blisterstreifen'],
-  [/\bCream tube\b/gi, 'Cremetube'],
-  [/\bOintment tube\b/gi, 'Salbentube'],
-  [/\bTopical pack\b/gi, 'Topische Packung'],
-  [/\btopical gel\/solution\b/gi, 'topisches Gel / Lösung'],
-  [/\bOphthalmic solution\b/gi, 'Augentropfenlösung'],
-  [/\bSterile ophthalmic tube\b/gi, 'Sterile Augensalbentube'],
-  [/\bParenteral \(IV \/ IM\)\b/gi, 'Parenteral (IV / IM)'],
-  [/\bTopical Cutaneous\b/gi, 'Topisch / Kutan (Haut)'],
-  [/\bOphthalmic \/ Otic\b/gi, 'Ophthalmisch / Otisch (Auge / Ohr)'],
-  [/\bOral Granules \/ Sachets\b/gi, 'Granulat zum Einnehmen / Beutel'],
-  [/\bOral Drops\b/gi, 'Tropfen zum Einnehmen'],
-  [/\bOral\b/gi, 'Oral (zum Einnehmen)'],
-  [/\bNext Step:\b/gi, 'Nächster Schritt:'],
-  [/\bSource:\b/gi, 'Quelle:'],
-  [/\bAllergy Check:\b/gi, 'Allergie-Prüfung:'],
-  [/\bStorage Instruction:\b/gi, 'Lagerungshinweis:'],
-  [/\bPrescription Radar\b/gi, 'Rezept-Radar'],
-  [/\bAllergy Safety Check\b/gi, 'Allergie-Sicherheitscheck'],
-  [/\bInteractions Check\b/gi, 'Wechselwirkungs-Check'],
-  [/\bMy Profile\b/gi, 'Mein Profil'],
-  [/\bFull Rx Check\b/gi, 'Komplettes Rezept prüfen'],
-  [/\bDose Schedule\b/gi, 'Einnahmeplan'],
-  [/\bAllergy Check\b/gi, 'Allergie-Check'],
-];
-
 export function localizeFallbackText(text: string, lang: Lang): string {
-  if (!text || (lang !== 'fr' && lang !== 'es' && lang !== 'de')) return text;
-  const rules = lang === 'fr' ? FR_PHRASE_MAP : lang === 'es' ? ES_PHRASE_MAP : DE_PHRASE_MAP;
+  if (!text || (lang !== 'fr' && lang !== 'es')) return text;
+  const rules = lang === 'fr' ? FR_PHRASE_MAP : ES_PHRASE_MAP;
   let out = text;
   for (const [pattern, replacement] of rules) {
     out = out.replace(pattern, replacement);
@@ -492,9 +421,9 @@ export const tr = (
   de?: string
 ): string => {
   if (lang === 'ar') return ar;
+  if (lang === 'de') return de || localizeFallbackText(en, 'de');
   if (lang === 'fr') return fr || localizeFallbackText(en, 'fr');
   if (lang === 'es') return es || localizeFallbackText(en, 'es');
-  if (lang === 'de') return de || localizeFallbackText(en, 'de');
   return en;
 };
 

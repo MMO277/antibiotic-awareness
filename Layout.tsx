@@ -8,7 +8,7 @@ import ChatWidget from './ChatWidget';
 import LogoutModal from './LogoutModal';
 import { useEmergencyLocation } from './emergencyLocation';
 
-// ── Safe, Zero-DOM-Mutation Universal Page TextNode & Attribute Localizer (FR / ES / DE) ──
+// ── Safe, Zero-DOM-Mutation Universal Page TextNode & Attribute Localizer (FR / ES) ──
 const textNodeState = new WeakMap<Text, { baseEn: string; lastOut: string }>();
 const attrState = new WeakMap<Element, Record<string, { baseEn: string; lastOut: string }>>();
 const translationMemoryCache = new Map<string, string>();
@@ -98,42 +98,6 @@ interface NavItem {
   to: string;
   key: string;
   icon: string;
-  shortLabel: string;
-}
-
-interface NavCategory {
-  id: string;
-  icon: string;
-  title: string;
-  shortTitle: string;
-  subtitle: string;
-  items: NavItem[];
-}
-
-function isRouteMatchingItem(itemTo: string, currentPath: string): boolean {
-  if (itemTo === '/') return currentPath === '/';
-  if (itemTo === '/medicines') {
-    return currentPath === '/medicines' || currentPath.startsWith('/medicine/');
-  }
-  if (itemTo === '/articles') {
-    return currentPath === '/articles' || currentPath.startsWith('/articles/');
-  }
-  if (itemTo === '/games') {
-    return (
-      currentPath === '/games' ||
-      [
-        '/game',
-        '/open-world',
-        '/medical-simulator',
-        '/nurse-academy',
-        '/medical-mystery',
-        '/bacteria-lab',
-        '/emergency-shift',
-        '/escape-the-lab',
-      ].includes(currentPath)
-    );
-  }
-  return currentPath === itemTo || currentPath.startsWith(`${itemTo}/`);
 }
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -147,8 +111,6 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [drawerClosing, setDrawerClosing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const [openRibbonCatId, setOpenRibbonCatId] = useState<string | null>(null);
-  const [openDrawerGroups, setOpenDrawerGroups] = useState<Record<string, boolean>>({});
   const authCtx = useAuth();
   const user = authCtx.user;
   const openAuthModal = authCtx.openAuthModal;
@@ -156,282 +118,15 @@ export default function Layout({ children }: { children: ReactNode }) {
   const hamburgerBtnRef = useRef<HTMLButtonElement>(null);
   const drawerCloseBtnRef = useRef<HTMLButtonElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
-  const ribbonWrapRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
 
   const currentLangMeta = SUPPORTED_LANGS.find((l) => l.code === lang) || SUPPORTED_LANGS[0];
-
-  const navCategories: NavCategory[] = [
-    {
-      id: 'drug-directory',
-      icon: '💊',
-      title: tr(lang, 'الدليل والبحث الدوائي', 'Drug Directory & Scanner', 'Répertoire & Scanner', 'Directorio y Escáner', 'Arzneimittelverzeichnis & Scanner'),
-      shortTitle: tr(lang, 'الدليل والأدوية', 'Drug Directory', 'Médicaments', 'Medicamentos', 'Medikamente'),
-      subtitle: tr(
-        lang,
-        'السجل الدوائي (206)، فحص الباركود، ومقارنة الأدوية',
-        '206 medicines registry, barcode scanner & comparison',
-        'Registre (206), scanner code-barres & comparaison',
-        'Registro (206), escáner de código y comparación',
-        'Register (206 Präparate), Barcode-Scanner & Preisvergleich'
-      ),
-      items: [
-        {
-          to: '/medicines',
-          key: 'navMedicines',
-          icon: '💊',
-          shortLabel: tr(lang, 'السجل الدوائي (206)', 'Registry (206)', 'Registre (206)', 'Registro (206)', 'Medikamentenregister (206)'),
-        },
-        {
-          to: '/scan',
-          key: 'navScan',
-          icon: '📷',
-          shortLabel: tr(lang, 'مسح الباركود و QR', 'Scan Barcode', 'Scanner Code', 'Escanear Código', 'Barcode & QR scannen'),
-        },
-        {
-          to: '/cost-saver',
-          key: '',
-          icon: '💰',
-          shortLabel: tr(lang, 'حاسبة البديل الأرخص بنفس الكفاءة', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos', 'Generika-Preisrechner (Günstigste Alternative)'),
-        },
-        {
-          to: '/compare',
-          key: 'navCompare',
-          icon: '⚖️',
-          shortLabel: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar', '2 Medikamente vergleichen'),
-        },
-      ],
-    },
-    {
-      id: 'clinical-safety',
-      icon: '🏥',
-      title: tr(lang, 'أدوات الأمان والفحص السريري', 'Clinical Safety & Checkers', 'Sécurité Clinique & Contrôles', 'Seguridad Clínica y Chequeo', 'Klinische Sicherheit & Prüf-Tools'),
-      shortTitle: tr(lang, 'الفحص والأمان السريري', 'Clinical Safety', 'Sécurité Clinique', 'Seguridad Clínica', 'Klinische Sicherheit'),
-      subtitle: tr(
-        lang,
-        'فاحص الحساسية، التداخلات، رادار الروشتة، وحاسبة الأطفال',
-        'Allergy check, interactions, Rx radar & pediatric dosing',
-        'Allergies, interactions, radar Rx & posologie pédiatrique',
-        'Alergias, interacciones, radar Rx y dosis pediátrica',
-        'Allergie-Check, Wechselwirkungen, Rezept-Radar & Kinderdosierung'
-      ),
-      items: [
-        {
-          to: '/allergy-checker',
-          key: 'navAllergyChecker',
-          icon: '🛡️',
-          shortLabel: tr(lang, 'فاحص الحساسية', 'Allergy Check', 'Allergies', 'Alergias', 'Allergie-Check'),
-        },
-        {
-          to: '/interactions',
-          key: 'navInteractions',
-          icon: '⚡',
-          shortLabel: tr(lang, 'فاحص التداخلات', 'Interactions', 'Interactions', 'Interacciones', 'Wechselwirkungen'),
-        },
-        {
-          to: '/prescription-radar',
-          key: 'navRadar',
-          icon: '📡',
-          shortLabel: tr(lang, 'رادار الروشتة 24س', 'Rx Radar 24h', 'Radar Rx 24h', 'Radar Rx 24h', 'Rezept-Radar 24h'),
-        },
-        {
-          to: '/pediatric-helper',
-          key: 'navPediatric',
-          icon: '👶',
-          shortLabel: tr(lang, 'حاسبة الأطفال', 'Pediatrics', 'Pédiatrie', 'Pediatría', 'Kinderdosierung'),
-        },
-        {
-          to: '/cold-shot-warning',
-          key: '',
-          icon: '💉',
-          shortLabel: tr(lang, 'تحذير «حقنة البرد / الخلطة 3×1»', '3-in-1 Cold Shot Warning', 'Alerte Injection Rhume 3-en-1', 'Alerta Inyección 3 en 1', 'Warnung vor der „3-in-1-Erkältungsspritze“'),
-        },
-        {
-          to: '/side-effects',
-          key: 'navSideEffects',
-          icon: '🚨',
-          shortLabel: tr(lang, 'الأعراض الجانبية والطوارئ', 'Side Effects', 'Effets Secondaires', 'Efectos Secundarios', 'Nebenwirkungen & Notfall'),
-        },
-      ],
-    },
-    {
-      id: 'treatment-care',
-      icon: '🌿',
-      title: tr(lang, 'متابعة العلاج والروشتة الخضراء', 'Treatment & Green Care', 'Suivi & Ordonnance Verte', 'Seguimiento y Receta Verde', 'Therapiebegleitung & Grünes Rezept'),
-      shortTitle: tr(lang, 'متابعة العلاج والبيئة', 'Treatment & Care', 'Suivi & Soins', 'Cuidado y Dosis', 'Therapie & Pflege'),
-      subtitle: tr(
-        lang,
-        'الروشتة الخضراء، منظم الجرعات، ملف صحتي، والتخلص الآمن',
-        'Green Rx, dose tracker, health profile & safe disposal',
-        'Ordonnance verte, suivi des doses, profil santé & élimination',
-        'Receta verde, seguimiento de dosis, perfil y eliminación',
-        'Grünes Rezept, Einnahmeplan, Gesundheitsprofil & Entsorgung'
-      ),
-      items: [
-        {
-          to: '/green-prescription',
-          key: 'navGreenRx',
-          icon: '🌿',
-          shortLabel: tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde', 'Grünes Rezept'),
-        },
-        {
-          to: '/daily-schedule',
-          key: '',
-          icon: '📅',
-          shortLabel: tr(lang, 'مولّد جدول الجرعات للطباعة وواتساب', 'Printable & WhatsApp Schedule', 'Planning Imprimable & WhatsApp', 'Horario para Imprimir y WhatsApp', 'Tages-Einnahmeplan (Druck & WhatsApp)'),
-        },
-        {
-          to: '/tracker',
-          key: 'navTracker',
-          icon: '⏱️',
-          shortLabel: tr(lang, 'متابع الجرعات', 'Dose Tracker', 'Suivi Doses', 'Seguimiento', 'Einnahme-Tracker'),
-        },
-        {
-          to: '/health-profile',
-          key: 'navHealthProfile',
-          icon: '👤',
-          shortLabel: tr(lang, 'ملف صحتي وحساسيتي', 'Health Profile', 'Profil Santé', 'Perfil de Salud', 'Gesundheitsprofil'),
-        },
-        {
-          to: '/safe-disposal',
-          key: 'navSafeDisposal',
-          icon: '♻️',
-          shortLabel: tr(lang, 'التخلص الآمن', 'Safe Disposal', 'Élimination', 'Eliminación', 'Sichere Entsorgung'),
-        },
-      ],
-    },
-    {
-      id: 'interactive-sim',
-      icon: '🎮',
-      title: tr(lang, 'الألعاب والمحاكاة والذكاء الاصطناعي', '3D Sim, Games & AI', 'Jeux 3D, Sim & IA', 'Juegos 3D, Sim e IA', '3D-Simulation, Spiele & KI'),
-      shortTitle: tr(lang, 'الألعاب والتفاعل الذكي', 'Games & AI', 'Jeux & IA', 'Juegos e IA', 'Spiele & KI'),
-      subtitle: tr(
-        lang,
-        'محاكي المستشفى 3D، المساعد الذكي، الاختبارات، والصوتيات',
-        '3D hospital simulator, AI assistant, quizzes & audio',
-        'Simulateur 3D, assistant IA, quiz & audio',
-        'Simulador 3D, asistente IA, cuestionarios y audio',
-        '3D-Krankenhaus-Simulator, KI-Assistent, Quiz & Audio'
-      ),
-      items: [
-        {
-          to: '/games',
-          key: 'navGames',
-          icon: '🎮',
-          shortLabel: tr(lang, 'الألعاب والمحاكاة 3D', 'Games & 3D Sim', 'Jeux & Sim 3D', 'Juegos y Sim 3D', 'Spiele & 3D-Sim'),
-        },
-        {
-          to: '/assistant',
-          key: 'navAssistant',
-          icon: '🤖',
-          shortLabel: tr(lang, 'المساعد الذكي', 'AI Assistant', 'Assistant IA', 'Asistente IA', 'KI-Assistent'),
-        },
-        {
-          to: '/quiz',
-          key: 'navQuiz',
-          icon: '📝',
-          shortLabel: tr(lang, 'اختبر معلوماتك', 'Quizzes', 'Quiz', 'Cuestionarios', 'Wissens-Quiz'),
-        },
-        {
-          to: '/listen',
-          key: 'navListen',
-          icon: '🎧',
-          shortLabel: tr(lang, 'استمع وتعلّم', 'Listen & Learn', 'Écouter', 'Escuchar', 'Hören & Lernen'),
-        },
-      ],
-    },
-    {
-      id: 'awareness-research',
-      icon: '📚',
-      title: tr(lang, 'التوعية والأبحاث والمصادر', 'Awareness & Research', 'Sensibilisation & Recherche', 'Concientización e Investigación', 'Aufklärung & Forschung'),
-      shortTitle: tr(lang, 'التوعية والأبحاث', 'Awareness & Research', 'Sensibilisation', 'Concientización', 'Aufklärung & Forschung'),
-      subtitle: tr(
-        lang,
-        'حملة نوفمبر العالمية، الدليل التوعوي، المقالات، والأبحاث',
-        'WAAW campaign, educational guides, articles & research',
-        'Campagne WAAW, guides éducatifs, articles & recherche',
-        'Campaña WAAW, guías educativas, artículos e investigación',
-        'Welt-AMR-Woche, Leitfäden, Fachartikel & Forschungsumfrage'
-      ),
-      items: [
-        {
-          to: '/awareness-week',
-          key: 'navWAAW',
-          icon: '🌍',
-          shortLabel: tr(lang, 'حملة نوفمبر العالمية', 'WAAW Campaign', 'Campagne WAAW', 'Campaña WAAW', 'WAAW-Kampagne (Nov)'),
-        },
-        {
-          to: '/learn',
-          key: 'navLearn',
-          icon: '📚',
-          shortLabel: tr(lang, 'تعلّم (الدليل التوعوي)', 'Learn Guide', 'Apprendre', 'Aprender', 'Lernleitfaden'),
-        },
-        {
-          to: '/myth',
-          key: 'navMyth',
-          icon: '💡',
-          shortLabel: tr(lang, 'خرافة أم حقيقة', 'Myth or Fact', 'Mythe ou Réalité', 'Mito o Realidad', 'Mythos oder Fakt'),
-        },
-        {
-          to: '/articles',
-          key: 'navArticles',
-          icon: '📰',
-          shortLabel: tr(lang, 'المقالات العلمية', 'Articles', 'Articles', 'Artículos', 'Fachartikel'),
-        },
-        {
-          to: '/research',
-          key: 'navResearch',
-          icon: '📊',
-          shortLabel: tr(lang, 'استبيان البحث', 'Research Survey', 'Recherche', 'Investigación', 'Forschungsumfrage'),
-        },
-        {
-          to: '/methodology',
-          key: 'navMethod',
-          icon: '🔬',
-          shortLabel: tr(lang, 'المنهجية والمصادر', 'Methodology', 'Méthodologie', 'Metodología', 'Methodik & Quellen'),
-        },
-      ],
-    },
-  ];
-
-  // Auto-expand the drawer category that contains the current route
-  useEffect(() => {
-    const activeCat = navCategories.find((cat) =>
-      cat.items.some((item) => isRouteMatchingItem(item.to, pathname))
-    );
-    if (activeCat) {
-      setOpenDrawerGroups((prev) => ({ ...prev, [activeCat.id]: true }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  const toggleDrawerGroup = (catId: string) => {
-    setOpenDrawerGroups((prev) => ({
-      ...prev,
-      [catId]: !prev[catId],
-    }));
-  };
-
-  const areAllDrawerGroupsOpen = navCategories.every((cat) => Boolean(openDrawerGroups[cat.id]));
-
-  const toggleAllDrawerGroups = () => {
-    if (areAllDrawerGroupsOpen) {
-      setOpenDrawerGroups({});
-    } else {
-      const next: Record<string, boolean> = {};
-      navCategories.forEach((cat) => {
-        next[cat.id] = true;
-      });
-      setOpenDrawerGroups(next);
-    }
-  };
 
   const openDrawer = () => {
     if (closeTimerRef.current) {
       window.clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
     }
-    setOpenRibbonCatId(null);
     setDrawerClosing(false);
     setDrawerOpen(true);
   };
@@ -486,11 +181,10 @@ export default function Layout({ children }: { children: ReactNode }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [pathname]);
 
-  // ── Automatic Full-Page TextNode & Attribute Localizer for ALL sub-pages when lang is FR, ES, or DE ──
+  // ── Automatic Full-Page TextNode & Attribute Localizer for ALL sub-pages when lang is FR or ES ──
   useEffect(() => {
     if (typeof document === 'undefined') return;
     let cancelled = false;
-    const isForeignLang = lang === 'fr' || lang === 'es' || lang === 'de';
 
     const processSubtree = () => {
       const root = document.body;
@@ -514,7 +208,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         const raw = textNode.nodeValue || '';
         const prev = textNodeState.get(textNode);
 
-        if (!isForeignLang) {
+        if (lang === 'ar' || lang === 'en') {
           if (prev && raw === prev.lastOut && prev.baseEn !== raw) {
             textNode.nodeValue = prev.baseEn;
           }
@@ -522,12 +216,13 @@ export default function Layout({ children }: { children: ReactNode }) {
           continue;
         }
 
-        // lang is 'fr', 'es', or 'de'
+        // lang is 'fr' or 'es'
         let baseEn = raw;
         if (prev) {
           if (raw === prev.lastOut) {
             baseEn = prev.baseEn;
           } else {
+            // React updated this text node with new content
             baseEn = raw;
           }
         }
@@ -547,6 +242,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               textNode.nodeValue = finalStr;
             }
           } else {
+            // Apply instant offline fallback first
             const offlineOut = localizeFallbackText(baseEn, lang);
             textNodeState.set(textNode, { baseEn, lastOut: offlineOut });
             if (textNode.nodeValue !== offlineOut) {
@@ -568,7 +264,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           const val = el.getAttribute(attrName);
           if (!val) return;
           const prevAttr = record[attrName];
-          if (!isForeignLang) {
+          if (lang === 'ar' || lang === 'en') {
             if (prevAttr && val === prevAttr.lastOut && prevAttr.baseEn !== val) {
               el.setAttribute(attrName, prevAttr.baseEn);
             }
@@ -599,7 +295,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       });
 
       // Batch-translate pending text nodes in chunks so every page translates completely
-      if (isForeignLang && pendingNodes.length > 0) {
+      if ((lang === 'fr' || lang === 'es' || lang === 'de') && pendingNodes.length > 0) {
         const uniqueCores = Array.from(new Set(pendingNodes.map((p) => p.baseEn.trim())));
         const CHUNK_SIZE = 18;
         for (let i = 0; i < uniqueCores.length; i += CHUNK_SIZE) {
@@ -624,6 +320,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 }
               });
             } else {
+              // Fallback: translate individual items in this chunk
               slice.forEach((origCore) => {
                 void fetchNeuralTranslation(origCore, lang).then((singleTr) => {
                   if (cancelled || !singleTr) return;
@@ -650,7 +347,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
     let debounceTimer: number | null = null;
     const observer = new MutationObserver(() => {
-      if (!isForeignLang) return;
+      if (lang !== 'fr' && lang !== 'es') return;
       if (debounceTimer) window.clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => {
         if (!cancelled) processSubtree();
@@ -674,7 +371,6 @@ export default function Layout({ children }: { children: ReactNode }) {
       closeDrawer(false);
     }
     setLangMenuOpen(false);
-    setOpenRibbonCatId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -683,22 +379,9 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
         setLangMenuOpen(false);
       }
-      if (ribbonWrapRef.current && !ribbonWrapRef.current.contains(e.target as Node)) {
-        setOpenRibbonCatId(null);
-      }
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setOpenRibbonCatId(null);
-        setLangMenuOpen(false);
-      }
     };
     document.addEventListener('mousedown', onDocClick);
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', onDocClick);
-      window.removeEventListener('keydown', onKeyDown);
-    };
+    return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
   useEffect(() => {
@@ -738,7 +421,47 @@ export default function Layout({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawerOpen, drawerClosing]);
 
-  const activeRibbonCategory = navCategories.find((cat) => cat.id === openRibbonCatId) || null;
+  const navItems: NavItem[] = [
+    { to: '/', key: 'navHome', icon: '🏠' },
+    { to: '/medicines', key: 'navMedicines', icon: '💊' },
+    { to: '/green-prescription', key: 'navGreenRx', icon: '🌿' },
+    { to: '/awareness-week', key: 'navWAAW', icon: '🌍' },
+    { to: '/compare', key: 'navCompare', icon: '⚖️' },
+    { to: '/prescription-radar', key: 'navRadar', icon: '📡' },
+    { to: '/scan', key: 'navScan', icon: '📷' },
+    { to: '/allergy-checker', key: 'navAllergyChecker', icon: '🛡️' },
+    { to: '/health-profile', key: 'navHealthProfile', icon: '👤' },
+    { to: '/pediatric-helper', key: 'navPediatric', icon: '👶' },
+    { to: '/interactions', key: 'navInteractions', icon: '⚡' },
+    { to: '/tracker', key: 'navTracker', icon: '⏱️' },
+    { to: '/side-effects', key: 'navSideEffects', icon: '🚨' },
+    { to: '/safe-disposal', key: 'navSafeDisposal', icon: '♻️' },
+    { to: '/listen', key: 'navListen', icon: '🎧' },
+    { to: '/assistant', key: 'navAssistant', icon: '🤖' },
+    { to: '/learn', key: 'navLearn', icon: '📚' },
+    { to: '/myth', key: 'navMyth', icon: '💡' },
+    { to: '/quiz', key: 'navQuiz', icon: '📝' },
+    { to: '/articles', key: 'navArticles', icon: '📰' },
+    { to: '/research', key: 'navResearch', icon: '📊' },
+    { to: '/methodology', key: 'navMethod', icon: '🔬' },
+    { to: '/games', key: 'navGames', icon: '🎮' },
+  ];
+
+  const quickBarItems = [
+    { to: '/', label: tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio'), icon: '🏠' },
+    { to: '/medicines', label: tr(lang, 'السجل الدوائي (206)', 'Registry (206)', 'Registre (206)', 'Registro (206)'), icon: '💊' },
+    { to: '/games', label: tr(lang, 'الألعاب والمحاكاة 3D', 'Games & 3D Sim', 'Jeux & Sim 3D', 'Juegos y Sim 3D'), icon: '🎮' },
+    { to: '/green-prescription', label: tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde'), icon: '🌿' },
+    { to: '/awareness-week', label: tr(lang, 'حملة نوفمبر العالمية', 'WAAW Campaign', 'Campagne WAAW', 'Campaña WAAW'), icon: '🌍' },
+    { to: '/compare', label: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar'), icon: '⚖️' },
+    { to: '/prescription-radar', label: tr(lang, 'رادار الروشتة 24س', 'Rx Radar 24h', 'Radar Rx 24h', 'Radar Rx 24h'), icon: '📡' },
+    { to: '/scan', label: tr(lang, 'مسح الباركود', 'Scan Barcode', 'Scanner Code', 'Escanear Código'), icon: '📷' },
+    { to: '/allergy-checker', label: tr(lang, 'فاحص الحساسية', 'Allergy Check', 'Allergies', 'Alergias'), icon: '🛡️' },
+    { to: '/pediatric-helper', label: tr(lang, 'حاسبة الأطفال', 'Pediatrics', 'Pédiatrie', 'Pediatría'), icon: '👶' },
+    { to: '/interactions', label: tr(lang, 'التداخلات', 'Interactions', 'Interactions', 'Interacciones'), icon: '⚡' },
+    { to: '/tracker', label: tr(lang, 'متابع الجرعات', 'Dose Tracker', 'Suivi Doses', 'Seguimiento'), icon: '⏱️' },
+    { to: '/safe-disposal', label: tr(lang, 'التخلص الآمن', 'Safe Disposal', 'Élimination', 'Eliminación'), icon: '♻️' },
+  ];
 
   return (
     <div className="app" dir={pageDir}>
@@ -771,12 +494,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                     'أنت تتصفح الموقع حالياً كزائر',
                     'You are currently browsing as a guest',
                     'Vous naviguez actuellement en tant qu’invité',
-                    'Actualmente navegas como invitado',
-                    'Sie surfen derzeit als Gast'
+                    'Actualmente navegas como invitado'
                   )}
                 >
                   <span aria-hidden="true">👀</span>
-                  <span>{tr(lang, 'وضع الزائر', 'Guest', 'Invité', 'Invitado', 'Gast')}</span>
+                  <span>{tr(lang, 'وضع الزائر', 'Guest', 'Invité', 'Invitado')}</span>
                 </span>
                 <button
                   type="button"
@@ -787,12 +509,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                     'الخروج من وضع الزائر والعودة لشاشة الدخول',
                     'Exit Guest Mode and return to sign in screen',
                     'Quitter le mode invité et se connecter',
-                    'Salir del modo invitado e iniciar sesión',
-                    'Gastmodus verlassen und anmelden'
+                    'Salir del modo invitado e iniciar sesión'
                   )}
                 >
                   <span aria-hidden="true">👤</span>
-                  <span>{tr(lang, 'تسجيل الدخول', 'Sign In', 'Connexion', 'Acceder', 'Anmelden')}</span>
+                  <span>{tr(lang, 'تسجيل الدخول', 'Sign In', 'Connexion', 'Acceder')}</span>
                 </button>
               </div>
             ) : (
@@ -813,11 +534,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                 type="button"
                 className="btn small ghost header-logout-btn"
                 onClick={() => setShowLogoutModal(true)}
-                title={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión', 'Abmelden')}
-                aria-label={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión', 'Abmelden')}
+                title={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
+                aria-label={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
               >
                 <span aria-hidden="true">🚪</span>
-                <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir', 'Abmelden')}</span>
+                <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir')}</span>
               </button>
             )}
 
@@ -829,14 +550,14 @@ export default function Layout({ children }: { children: ReactNode }) {
               aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
               title={
                 dark
-                  ? tr(lang, 'الوضع الفاتح', 'Light mode', 'Mode clair', 'Modo claro', 'Heller Modus')
-                  : tr(lang, 'الوضع الداكن', 'Dark mode', 'Mode sombre', 'Modo oscuro', 'Dunkler Modus')
+                  ? tr(lang, 'الوضع الفاتح', 'Light mode', 'Mode clair', 'Modo claro')
+                  : tr(lang, 'الوضع الداكن', 'Dark mode', 'Mode sombre', 'Modo oscuro')
               }
             >
               {dark ? '☀️' : '🌙'}
             </button>
 
-            {/* 5-Language Switcher Dropdown */}
+            {/* 4-Language Switcher Dropdown (keeps .lang class on direct child of .header-actions) */}
             <div ref={langMenuRef} className="lang lang-switcher-wrap" style={{ position: 'relative', padding: 0 }}>
               <button
                 type="button"
@@ -844,8 +565,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onClick={() => setLangMenuOpen((o) => !o)}
                 aria-expanded={langMenuOpen}
                 aria-haspopup="listbox"
-                aria-label={tr(lang, 'تغيير اللغة', 'Change language', 'Changer de langue', 'Cambiar idioma', 'Sprache ändern')}
-                title={tr(lang, 'اختر لغة المنصة (5 لغات)', 'Select platform language (5 languages)', 'Choisir la langue (5 langues)', 'Seleccionar idioma (5 idiomas)', 'Plattformsprache wählen (5 Sprachen)')}
+                aria-label={tr(lang, 'تغيير اللغة', 'Change language', 'Changer de langue', 'Cambiar idioma')}
+                title={tr(lang, 'اختر لغة المنصة (4 لغات)', 'Select platform language (4 languages)', 'Choisir la langue (4 langues)', 'Seleccionar idioma (4 idiomas)')}
               >
                 <span aria-hidden="true">{currentLangMeta.flag}</span>
                 <span>{currentLangMeta.shortLabel}</span>
@@ -856,7 +577,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <div
                   className="lang-dropdown-menu"
                   role="listbox"
-                  aria-label={tr(lang, 'قائمة اللغات', 'Languages', 'Langues', 'Idiomas', 'Sprachen')}
+                  aria-label={tr(lang, 'قائمة اللغات', 'Languages', 'Langues', 'Idiomas')}
                 >
                   {SUPPORTED_LANGS.map((item) => {
                     const active = item.code === lang;
@@ -891,94 +612,34 @@ export default function Layout({ children }: { children: ReactNode }) {
               onClick={openDrawer}
               aria-expanded={drawerOpen && !drawerClosing}
               aria-controls="site-sections-drawer"
-              aria-label={tr(lang, 'فتح القائمة', 'Open menu', 'Ouvrir le menu', 'Abrir menú', 'Menü öffnen')}
-              title={tr(lang, 'أقسام الموقع الكاملة', 'All Site Sections', 'Toutes les rubriques', 'Todas las secciones', 'Alle Bereiche der Plattform')}
+              aria-label={tr(lang, 'فتح القائمة', 'Open menu', 'Ouvrir le menu', 'Abrir menú')}
+              title={tr(lang, 'أقسام الموقع الكاملة', 'All Site Sections', 'Toutes les rubriques', 'Todas las secciones')}
             >
               <span className="hamburger-icon" aria-hidden="true">☰</span>
-              <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú', 'Menü')}</span>
+              <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú')}</span>
             </button>
           </div>
         </div>
 
-        {/* Grouped Quick-Access Clinical Ribbon with Click-to-Expand Sub-Menus */}
-        <div ref={ribbonWrapRef} className="quick-ribbon-wrap">
+        {/* Sleek Secondary Quick-Access Clinical Ribbon */}
+        <div className="quick-ribbon-wrap">
           <div className="wrap quick-ribbon">
-            <NavLink
-              to="/"
-              end
-              onClick={() => setOpenRibbonCatId(null)}
-              className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
-            >
-              <span aria-hidden="true">🏠</span>
-              <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio', 'Startseite')}</span>
-            </NavLink>
-
-            {navCategories.map((cat) => {
-              const isOpen = openRibbonCatId === cat.id;
-              const hasActiveChild = cat.items.some((item) => isRouteMatchingItem(item.to, pathname));
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  aria-expanded={isOpen}
-                  onClick={() => setOpenRibbonCatId((prev) => (prev === cat.id ? null : cat.id))}
-                  className={`quick-ribbon-link quick-ribbon-group-btn${hasActiveChild ? ' active' : ''}${isOpen ? ' is-open' : ''}`}
-                >
-                  <span aria-hidden="true">{cat.icon}</span>
-                  <span>{cat.shortTitle}</span>
-                  <span className="ribbon-group-count" aria-hidden="true">{cat.items.length}</span>
-                  <span className={`ribbon-group-caret${isOpen ? ' open' : ''}`} aria-hidden="true">▾</span>
-                </button>
-              );
-            })}
+            {quickBarItems.map((qItem) => (
+              <NavLink
+                key={qItem.to}
+                to={qItem.to}
+                end={qItem.to === '/'}
+                className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
+              >
+                <span aria-hidden="true">{qItem.icon}</span>
+                <span>{qItem.label}</span>
+              </NavLink>
+            ))}
           </div>
-
-          {/* Expandable Sub-Items Panel for Selected Ribbon Category */}
-          {activeRibbonCategory && (
-            <div className="ribbon-dropdown-panel" role="region" aria-label={activeRibbonCategory.title}>
-              <div className="wrap ribbon-dropdown-inner">
-                <div className="ribbon-dropdown-header">
-                  <div className="ribbon-dropdown-title-group">
-                    <span className="ribbon-dropdown-icon" aria-hidden="true">{activeRibbonCategory.icon}</span>
-                    <div>
-                      <b className="ribbon-dropdown-title">{activeRibbonCategory.title}</b>
-                      <span className="ribbon-dropdown-sub">{activeRibbonCategory.subtitle}</span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="ribbon-dropdown-close"
-                    onClick={() => setOpenRibbonCatId(null)}
-                    aria-label={tr(lang, 'إغلاق القسم', 'Close category', 'Fermer', 'Cerrar', 'Schließen')}
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="ribbon-dropdown-grid">
-                  {activeRibbonCategory.items.map((subItem) => {
-                    const active = isRouteMatchingItem(subItem.to, pathname);
-                    return (
-                      <NavLink
-                        key={subItem.to}
-                        to={subItem.to}
-                        onClick={() => setOpenRibbonCatId(null)}
-                        className={`ribbon-sub-item${active ? ' active' : ''}`}
-                      >
-                        <span className="ribbon-sub-icon" aria-hidden="true">{subItem.icon}</span>
-                        <span className="ribbon-sub-text">{subItem.key ? t(subItem.key) : subItem.shortLabel}</span>
-                        <span className="ribbon-sub-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
-                      </NavLink>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </header>
 
-      {/* Edge-Attached Dark Teal Glassmorphism Navigation Sidebar with Collapsible Groups */}
+      {/* Edge-Attached Dark Teal Glassmorphism Navigation Sidebar */}
       {drawerOpen && (
         <div
           className={`drawer-backdrop${drawerClosing ? ' is-closing' : ''}`}
@@ -992,15 +653,15 @@ export default function Layout({ children }: { children: ReactNode }) {
             dir={pageDir}
             className={`drawer-panel${drawerClosing ? ' is-closing' : ''}`}
             onClick={(e) => e.stopPropagation()}
-            aria-label={tr(lang, 'القائمة الجانبية لجميع الأقسام', 'Side menu', 'Menu latéral', 'Menú lateral', 'Seitenmenü')}
+            aria-label={tr(lang, 'القائمة الجانبية لجميع الأقسام', 'Side menu', 'Menu latéral', 'Menú lateral')}
           >
             <div className="drawer-header">
               <div className="drawer-brand">
                 <span className="drawer-logo" aria-hidden="true">💊</span>
                 <div className="drawer-brand-text">
-                  <b>{tr(lang, 'أقسام المنصة السريرية', 'Clinical Portal Menu', 'Menu du Portail Clinique', 'Menú del Portal Clínico', 'Klinisches Portal-Menü')}</b>
+                  <b>{tr(lang, 'أقسام المنصة السريرية', 'Clinical Portal Menu', 'Menu du Portail Clinique', 'Menú del Portal Clínico')}</b>
                   <small className="drawer-subtitle">
-                    {tr(lang, 'مجمعة حسب التخصص لسهولة الوصول', 'Grouped by category for quick access', 'Regroupés par catégorie', 'Agrupados por categoría', 'Nach Fachbereichen übersichtlich gruppiert')}
+                    {tr(lang, 'جميع الأدوات والأدلة التوعوية', 'All Clinical Tools & Guides', 'Tous les outils et guides cliniques', 'Todas las herramientas y guías clínicas')}
                   </small>
                 </div>
               </div>
@@ -1009,15 +670,15 @@ export default function Layout({ children }: { children: ReactNode }) {
                 ref={drawerCloseBtnRef}
                 className="drawer-close-btn"
                 onClick={() => closeDrawer(true)}
-                aria-label={tr(lang, 'إغلاق القائمة', 'Close menu', 'Fermer le menu', 'Cerrar menú', 'Menü schließen')}
-                title={tr(lang, 'إغلاق (Esc)', 'Close (Esc)', 'Fermer (Esc)', 'Cerrar (Esc)', 'Schließen (Esc)')}
+                aria-label={tr(lang, 'إغلاق القائمة', 'Close menu', 'Fermer le menu', 'Cerrar menú')}
+                title={tr(lang, 'إغلاق (Esc)', 'Close (Esc)', 'Fermer (Esc)', 'Cerrar (Esc)')}
               >
                 ✕
               </button>
             </div>
 
             {/* Quick Language Selector inside Drawer */}
-            <div className="drawer-lang-bar" aria-label={tr(lang, 'اختيار اللغة', 'Language selection', 'Choix de la langue', 'Selección de idioma', 'Sprachauswahl')}>
+            <div className="drawer-lang-bar" aria-label={tr(lang, 'اختيار اللغة', 'Language selection', 'Choix de la langue', 'Selección de idioma')}>
               {SUPPORTED_LANGS.map((item) => (
                 <button
                   key={item.code}
@@ -1032,79 +693,19 @@ export default function Layout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="drawer-links">
-              {/* Direct Home Item */}
-              <NavLink
-                to="/"
-                end
-                onClick={() => closeDrawer(false)}
-                className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}
-              >
-                <span className="item-icon" aria-hidden="true">🏠</span>
-                <span className="item-title">{t('navHome')}</span>
-                <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
-              </NavLink>
-
-              {/* Helper bar to Expand/Collapse all groups */}
-              <div className="drawer-groups-toolbar">
-                <span className="drawer-groups-hint">
-                  {tr(lang, 'اضغط على أي قسم لعرض أدواته:', 'Tap a category to expand tools:', 'Appuyez pour développer :', 'Toca para expandir:', 'Kategorie antippen, um Werkzeuge anzuzeigen:')}
-                </span>
-                <button
-                  type="button"
-                  className="drawer-expand-all-btn"
-                  onClick={toggleAllDrawerGroups}
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === '/'}
+                  onClick={() => closeDrawer(false)}
+                  className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}
                 >
-                  {areAllDrawerGroupsOpen
-                    ? tr(lang, 'طي الكل ▴', 'Collapse All ▴', 'Tout réduire ▴', 'Contraer todo ▴', 'Alle einklappen ▴')
-                    : tr(lang, 'فتح الكل ▾', 'Expand All ▾', 'Tout ouvrir ▾', 'Expandir todo ▾', 'Alle ausklappen ▾')}
-                </button>
-              </div>
-
-              {/* 5 Categorized Accordion Groups */}
-              {navCategories.map((cat) => {
-                const isOpen = Boolean(openDrawerGroups[cat.id]);
-                const hasActiveChild = cat.items.some((item) => isRouteMatchingItem(item.to, pathname));
-                return (
-                  <div
-                    key={cat.id}
-                    className={`drawer-group${isOpen ? ' is-open' : ''}${hasActiveChild ? ' has-active' : ''}`}
-                  >
-                    <button
-                      type="button"
-                      className={`drawer-group-trigger${hasActiveChild ? ' active-parent' : ''}`}
-                      onClick={() => toggleDrawerGroup(cat.id)}
-                      aria-expanded={isOpen}
-                    >
-                      <span className="item-icon group-icon" aria-hidden="true">{cat.icon}</span>
-                      <div className="drawer-group-text">
-                        <span className="drawer-group-title">{cat.title}</span>
-                        <small className="drawer-group-sub">{cat.subtitle}</small>
-                      </div>
-                      <span className="drawer-group-badge" aria-hidden="true">{cat.items.length}</span>
-                      <span className={`drawer-group-chevron${isOpen ? ' open' : ''}`} aria-hidden="true">▾</span>
-                    </button>
-
-                    {isOpen && (
-                      <div className="drawer-group-items">
-                        {cat.items.map((item) => (
-                          <NavLink
-                            key={item.to}
-                            to={item.to}
-                            onClick={() => closeDrawer(false)}
-                            className={({ isActive }) =>
-                              `drawer-item drawer-sub-item ${isActive || isRouteMatchingItem(item.to, pathname) ? 'active' : ''}`
-                            }
-                          >
-                            <span className="item-icon sub-icon" aria-hidden="true">{item.icon}</span>
-                            <span className="item-title">{item.key ? t(item.key) : item.shortLabel}</span>
-                            <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
-                          </NavLink>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                  <span className="item-icon" aria-hidden="true">{item.icon}</span>
+                  <span className="item-title">{t(item.key)}</span>
+                  <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
+                </NavLink>
+              ))}
 
               <div className="drawer-divider"></div>
 
@@ -1131,7 +732,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   >
                     <span className="item-icon" aria-hidden="true">👤</span>
                     <span className="item-title">
-                      {tr(lang, 'تسجيل الدخول (الخروج من وضع الزائر)', 'Sign In (Exit Guest Mode)', 'Connexion (Quitter le mode invité)', 'Iniciar sesión (Salir de invitado)', 'Anmelden (Gastmodus verlassen)')}
+                      {tr(lang, 'تسجيل الدخول (الخروج من وضع الزائر)', 'Sign In (Exit Guest Mode)', 'Connexion (Quitter le mode invité)', 'Iniciar sesión (Salir de invitado)')}
                     </span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
@@ -1150,7 +751,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     }}
                   >
                     <span className="item-icon" aria-hidden="true">🚪</span>
-                    <span className="item-title">{tr(lang, 'تسجيل الخروج', 'Logout', 'Déconnexion', 'Cerrar sesión', 'Abmelden')}</span>
+                    <span className="item-title">{tr(lang, 'تسجيل الخروج', 'Logout', 'Déconnexion', 'Cerrar sesión')}</span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
                 </>
@@ -1193,44 +794,43 @@ export default function Layout({ children }: { children: ReactNode }) {
                 'المنصة الرقمية الوطنية للتوعية بالاستخدام الرشيد للمضادات الحيوية ومكافحة مقاومة الميكروبات (AMR) وفق أحدث دلائل هيئة الدواء المصرية ومنظمة الصحة العالمية.',
                 'Digital health portal for rational antibiotic stewardship and antimicrobial resistance (AMR) education aligned with EDA and WHO guidelines.',
                 'Portail numérique de santé pour le bon usage des antibiotiques et la lutte contre l’antibiorésistance (AMR), aligné sur les directives de l’OMS et de l’EDA.',
-                'Portal digital de salud para el uso racional de antibióticos y la educación sobre resistencia antimicrobiana (RAM), alineado con las guías de la OMS y la EDA.',
-                'Digitales Gesundheitsportal für sachgerechten Antibiotikaeinsatz (Antibiotic Stewardship) und Aufklärung über antimikrobielle Resistenzen (AMR) gemäß WHO- und EDA-Leitlinien.'
+                'Portal digital de salud para el uso racional de antibióticos y la educación sobre resistencia antimicrobiana (RAM), alineado con las guías de la OMS y la EDA.'
               )}
             </p>
           </div>
 
           <div>
             <h4 style={{ color: '#fff', margin: '0 0 10px' }}>
-              {tr(lang, 'الأدوات السريرية السريعة', 'Quick Clinical Tools', 'Outils Cliniques Rapides', 'Herramientas Clínicas Rápidas', 'Klinische Schnellwerkzeuge')}
+              {tr(lang, 'الأدوات السريرية السريعة', 'Quick Clinical Tools', 'Outils Cliniques Rapides', 'Herramientas Clínicas Rápidas')}
             </h4>
             <ul className="pro-footer-links">
-              <li><Link to="/medicines">{tr(lang, 'السجل الدوائي المصري (206 عبوات)', 'Egyptian Drug Registry (206)', 'Registre des Médicaments (206)', 'Registro de Medicamentos (206)', 'Ägyptisches Arzneimittelregister (206)')}</Link></li>
-              <li><Link to="/games">{tr(lang, 'مركز الألعاب والمحاكاة الطبية 3D', 'Game Center & 3D Medical Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D', 'Spielzentrum & 3D-Krankenhaus-Simulator')}</Link></li>
-              <li><Link to="/scan">{tr(lang, 'ماسح الباركود الخطي ورموز QR', 'Barcode & QR Scanner', 'Scanner Code-Barres & QR', 'Escáner de Código de Barras y QR', 'Barcode- & QR-Code-Scanner')}</Link></li>
-              <li><Link to="/allergy-checker">{tr(lang, 'فاحص الحساسية الدوائية المتقاطعة', 'Drug Allergy Safety Checker', 'Vérificateur d’Allergies Croisées', 'Verificador de Alergias Medicamentosas', 'Arzneimittelallergie- & Kreuzreaktivitäts-Check')}</Link></li>
-              <li><Link to="/pediatric-helper">{tr(lang, 'حاسبة جرعات شراب الأطفال', 'Pediatric Dosage Calculator', 'Calculateur Posologique Pédiatrique', 'Calculadora de Dosis Pediátrica', 'Pädiatrischer Dosierungsrechner')}</Link></li>
-              <li><Link to="/safe-disposal">{tr(lang, 'دليل التخلص الآمن وحماية البيئة', 'Safe Antibiotic Disposal', 'Guide d’Élimination Sûre', 'Guía de Eliminación Segura', 'Sichere Antibiotika-Entsorgung')}</Link></li>
+              <li><Link to="/medicines">{tr(lang, 'السجل الدوائي المصري (206 عبوات)', 'Egyptian Drug Registry (206)', 'Registre des Médicaments (206)', 'Registro de Medicamentos (206)')}</Link></li>
+              <li><Link to="/games">{tr(lang, 'مركز الألعاب والمحاكاة الطبية 3D', 'Game Center & 3D Medical Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D')}</Link></li>
+              <li><Link to="/scan">{tr(lang, 'ماسح الباركود الخطي ورموز QR', 'Barcode & QR Scanner', 'Scanner Code-Barres & QR', 'Escáner de Código de Barras y QR')}</Link></li>
+              <li><Link to="/allergy-checker">{tr(lang, 'فاحص الحساسية الدوائية المتقاطعة', 'Drug Allergy Safety Checker', 'Vérificateur d’Allergies Croisées', 'Verificador de Alergias Medicamentosas')}</Link></li>
+              <li><Link to="/pediatric-helper">{tr(lang, 'حاسبة جرعات شراب الأطفال', 'Pediatric Dosage Calculator', 'Calculateur Posologique Pédiatrique', 'Calculadora de Dosis Pediátrica')}</Link></li>
+              <li><Link to="/safe-disposal">{tr(lang, 'دليل التخلص الآمن وحماية البيئة', 'Safe Antibiotic Disposal', 'Guide d’Élimination Sûre', 'Guía de Eliminación Segura')}</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 style={{ color: '#fff', margin: '0 0 10px' }}>
-              {tr(lang, 'المصادر الطبية الرسمية والطوارئ', 'Official Sources & Emergency', 'Sources Officielles & Urgences', 'Fuentes Oficiales y Emergencias', 'Offizielle Quellen & Notruf')}
+              {tr(lang, 'المصادر الطبية الرسمية والطوارئ', 'Official Sources & Emergency', 'Sources Officielles & Urgences', 'Fuentes Oficiales y Emergencias')}
             </h4>
             <ul className="pro-footer-links">
               <li>
                 <a href="https://edaegypt.gov.eg" target="_blank" rel="noopener noreferrer">
-                  {tr(lang, 'هيئة الدواء المصرية (EDA)', 'Egyptian Drug Authority (EDA)', 'Autorité Égyptienne des Médicaments (EDA)', 'Autoridad Egipcia de Medicamentos (EDA)', 'Ägyptische Arzneimittelbehörde (EDA)')} ↗
+                  {tr(lang, 'هيئة الدواء المصرية (EDA)', 'Egyptian Drug Authority (EDA)', 'Autorité Égyptienne des Médicaments (EDA)', 'Autoridad Egipcia de Medicamentos (EDA)')} ↗
                 </a>
               </li>
               <li>
                 <a href="https://www.who.int/health-topics/antimicrobial-resistance" target="_blank" rel="noopener noreferrer">
-                  {tr(lang, 'منظمة الصحة العالمية (WHO AMR)', 'World Health Organization (WHO)', 'Organisation Mondiale de la Santé (OMS)', 'Organización Mundial de la Salud (OMS)', 'Weltgesundheitsorganisation (WHO AMR)')} ↗
+                  {tr(lang, 'منظمة الصحة العالمية (WHO AMR)', 'World Health Organization (WHO)', 'Organisation Mondiale de la Santé (OMS)', 'Organización Mundial de la Salud (OMS)')} ↗
                 </a>
               </li>
               <li>
                 <a href="https://medlineplus.gov/antibiotics.html" target="_blank" rel="noopener noreferrer">
-                  {tr(lang, 'المكتبة الوطنية للطب (MedlinePlus)', 'NIH MedlinePlus Drug Info', 'Bibliothèque Nationale de Médecine (MedlinePlus)', 'Biblioteca Nacional de Medicina (MedlinePlus)', 'Nationale Medizinische Bibliothek (MedlinePlus)')} ↗
+                  {tr(lang, 'المكتبة الوطنية للطب (MedlinePlus)', 'NIH MedlinePlus Drug Info', 'Bibliothèque Nationale de Médecine (MedlinePlus)', 'Biblioteca Nacional de Medicina (MedlinePlus)')} ↗
                 </a>
               </li>
               <li style={{ marginTop: '8px' }}>
@@ -1244,8 +844,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     `طوارئ الإسعاف (${emergency.flag} ${countryName}): ${emergency.number}`,
                     `Emergency Services (${emergency.flag} ${countryName}): ${emergency.number}`,
                     `Urgences Médicales (${emergency.flag} ${countryName}) : ${emergency.number}`,
-                    `Emergencias Médicas (${emergency.flag} ${countryName}): ${emergency.number}`,
-                    `Rettungsdienst / Notruf (${emergency.flag} ${countryName}): ${emergency.number}`
+                    `Emergencias Médicas (${emergency.flag} ${countryName}): ${emergency.number}`
                   )}
                 </a>
               </li>

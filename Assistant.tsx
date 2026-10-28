@@ -42,6 +42,17 @@ const CHIPS: Record<string, string[]> = {
     'Do antibiotics reduce birth control pill efficacy?',
     'Do antibiotics cure toothaches and dental pain?',
   ],
+  de: [
+    'Helfen Antibiotika bei Erkältung oder Grippe?',
+    'Welche Gefahren bergen Erkältungsspritzen-Mischungen?',
+    'Darf ich das Antibiotikum absetzen, sobald es mir besser geht?',
+    'Was tun, wenn ich eine Einnahme vergessen habe?',
+    'Gibt es Wechselwirkungen zwischen Milch und Antibiotika?',
+    'Wie lagere ich Antibiotika-Suspensionen für Kinder richtig?',
+    'Verursachen Antibiotika Durchfall und hilft Joghurt?',
+    'Beeinträchtigen Antibiotika die Wirkung der Antibabypille?',
+    'Helfen Antibiotika gegen Zahnschmerzen?',
+  ],
   fr: [
     'Les antibiotiques soignent-ils le rhume ou la grippe ?',
     'Quels sont les dangers des injections miracles contre le rhume ?',
@@ -63,17 +74,6 @@ const CHIPS: Record<string, string[]> = {
     '¿Los antibióticos causan diarrea y cómo ayuda el yogur?',
     '¿Los antibióticos reducen la eficacia de los anticonceptivos?',
     '¿Los antibióticos curan el dolor de muelas?',
-  ],
-  de: [
-    "Helfen Antibiotika bei Erkältung oder Grippe?",
-    "Welche Gefahren birgt die 3-in-1-Erkältungsspritze?",
-    "Kann ich das Antibiotikum absetzen, sobald es mir besser geht?",
-    "Was soll ich tun, wenn ich eine Dosis vergessen habe?",
-    "Beeinflusst Milch die Wirkung von Antibiotika?",
-    "Wie bewahre ich Antibiotika-Saft für Kinder richtig auf?",
-    "Verursachen Antibiotika Durchfall und wie hilft Joghurt?",
-    "Beeinträchtigen Antibiotika die Wirkung der Antibabypille?",
-    "Helfen Antibiotika bei Zahnschmerzen?",
   ],
 };
 
