@@ -7,14 +7,12 @@ import { norm, searchMeds } from './search';
 import { pick, tr } from './types';
 import SkeletonCard from './SkeletonCard';
 import { getClinicalProProfile, useClinicalProMode } from './clinicalProData';
-import { useAuth } from './authContext';
-import { useLiveDrugCatalog } from './liveCatalogSync';
-import { QuickProductEditorModal } from './CommercialCatalogEditor';
 import {
   ACTIVE_INGREDIENTS,
   AdministrationRoute,
   DOSAGE_FORM_LABELS,
   DosageFormType,
+  EGYPTIAN_COMMERCIAL_PRODUCTS,
   EgyptianCommercialProduct,
   getClassifiedAlternatives,
   ROUTE_LABELS,
@@ -31,10 +29,6 @@ export default function Medicines() {
   const { t, lang } = useLang();
   const isAr = lang === 'ar';
   const { isProMode, setProMode } = useClinicalProMode();
-  const { role } = useAuth();
-  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
-  const { products: liveCommercialProducts, version } = useLiveDrugCatalog();
-
   const [sp, setSp] = useSearchParams();
   const q = sp.get('q') ?? '';
   const { items, error } = useApproved();
@@ -56,13 +50,9 @@ export default function Medicines() {
   // Modal state for commercial package details & alternatives
   const [selectedProduct, setSelectedProduct] = useState<EgyptianCommercialProduct | null>(null);
 
-  // Live Editor Modal state for direct editing/adding from Medicines page
-  const [editingProduct, setEditingProduct] = useState<EgyptianCommercialProduct | null>(null);
-  const [addingNewProduct, setAddingNewProduct] = useState<boolean>(false);
-
   const allCommercialProducts = useMemo(
-    () => [...liveCommercialProducts, ...importedProducts],
-    [liveCommercialProducts, importedProducts, version]
+    () => [...EGYPTIAN_COMMERCIAL_PRODUCTS, ...importedProducts],
+    [importedProducts]
   );
 
   const auditReport = useMemo(
@@ -233,52 +223,6 @@ export default function Medicines() {
           </div>
         </div>
       </header>
-
-      {/* LIVE CLOUD EDITOR TOOLBAR (Shown when logged in as Editor, Reviewer, or Admin) */}
-      {canEditLive && (
-        <section
-          className="card"
-          style={{
-            border: '2px solid #0284c7',
-            background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.08), rgba(22, 163, 74, 0.08))',
-            padding: '14px 18px',
-          }}
-        >
-          <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-            <div>
-              <div className="row" style={{ gap: '8px', alignItems: 'center' }}>
-                <span className="badge" style={{ background: '#0284c7', color: '#fff', fontWeight: 800 }}>
-                  ⚡ {isAr ? 'وضع المحرر المباشر مفعّل (Live Editor)' : 'Live Cloud Editor Active'}
-                </span>
-                <span className="small muted">
-                  ({isAr ? `صلاحية حسابك: ${role}` : `Role: ${role}`})
-                </span>
-              </div>
-              <p className="small" style={{ margin: '6px 0 0' }}>
-                {isAr
-                  ? 'يمكنك تعديل سعر أي دواء، أو إضافة/تصحيح الباركود (622)، أو إضافة دواء جديد مباشرة من البطاقات بالأسفل — وستظهر التعديلات فوراً لجميع زوار الموقع بدون لمس الكود.'
-                  : 'Edit any drug price, barcode, or package details directly from the cards below—changes sync live to all visitors instantly.'}
-              </p>
-            </div>
-            <div className="row wrapRow" style={{ gap: '8px' }}>
-              <button
-                type="button"
-                className="btn small"
-                style={{ background: '#16a34a', fontWeight: 800 }}
-                onClick={() => setAddingNewProduct(true)}
-              >
-                ➕ {isAr ? 'إضافة دواء تجاري جديد' : 'Add Commercial Drug'}
-              </button>
-              <Link to="/admin/new" className="btn ghost small">
-                🧬 {isAr ? 'إضافة مادة فعالة جديدة' : 'Add Active Ingredient'}
-              </Link>
-              <Link to="/admin" className="btn ghost small">
-                ⚙️ {isAr ? 'لوحة تحكم المحرر الكاملة' : 'Full Editor Dashboard'}
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Clinical Pro Mode vs Patient Mode Toggle Bar */}
       <section className="pro-mode-toggle-banner">
@@ -607,38 +551,21 @@ export default function Medicines() {
                     </div>
                   </div>
 
-                  <div className="stack" style={{ gap: '6px', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border, #f1f5f9)' }}>
-                    <div className="row wrapRow" style={{ gap: '8px' }}>
-                      <button
-                        className="btn"
-                        style={{ flex: 1, padding: '7px 10px', fontSize: '0.88rem' }}
-                        onClick={() => setSelectedProduct(p)}
-                      >
-                        🔍 {isAr ? 'البدائل والباركود والتفاصيل' : 'Alternatives & Details'}
-                      </button>
-                      <Link
-                        to={`/medicine/${p.activeIngredientId}`}
-                        className="btn ghost"
-                        style={{ padding: '7px 10px', fontSize: '0.88rem' }}
-                      >
-                        📖 {isAr ? 'المرجع السريري' : 'Clinical Guide'}
-                      </Link>
-                    </div>
-                    {canEditLive && (
-                      <button
-                        type="button"
-                        className="btn ghost small"
-                        style={{
-                          width: '100%',
-                          borderColor: '#0284c7',
-                          color: '#0284c7',
-                          fontWeight: 700,
-                        }}
-                        onClick={() => setEditingProduct(p)}
-                      >
-                        ✏️ {isAr ? 'تعديل مباشر (السعر / الباركود / البيانات)' : 'Quick Live Edit (Price / Barcode)'}
-                      </button>
-                    )}
+                  <div className="row wrapRow" style={{ gap: '8px', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border, #f1f5f9)' }}>
+                    <button
+                      className="btn"
+                      style={{ flex: 1, padding: '7px 10px', fontSize: '0.88rem' }}
+                      onClick={() => setSelectedProduct(p)}
+                    >
+                      🔍 {isAr ? 'البدائل والباركود والتفاصيل' : 'Alternatives & Details'}
+                    </button>
+                    <Link
+                      to={`/medicine/${p.activeIngredientId}`}
+                      className="btn ghost"
+                      style={{ padding: '7px 10px', fontSize: '0.88rem' }}
+                    >
+                      📖 {isAr ? 'المرجع السريري' : 'Clinical Guide'}
+                    </Link>
                   </div>
                 </div>
               );
@@ -692,58 +619,45 @@ export default function Medicines() {
                   ? '#dc2626'
                   : '#d97706';
               return (
-                <div key={m.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <Link to={`/medicine/${m.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h3 style={{ margin: 0 }}>{pick(m.genericName, lang)}</h3>
-                      {ingMeta && (
-                        <span
-                          className="badge"
-                          style={{
-                            background: `${awareColor}18`,
-                            color: awareColor,
-                            border: `1px solid ${awareColor}`,
-                            fontSize: '0.75rem',
-                          }}
-                        >
-                          WHO {ingMeta.whoAccessGroup}
-                        </span>
-                      )}
-                    </div>
-                    <p className="muted" style={{ margin: '6px 0' }}>{pick(m.drugClass, lang)}</p>
-                    {isProMode && (() => {
-                      const pro = getClinicalProProfile(m.id, ingMeta?.whoAccessGroup || 'Access', m.drugClass.ar, m.drugClass.en);
-                      return (
-                        <div style={{ margin: '6px 0', padding: '8px 10px', borderRadius: '8px', background: 'rgba(14, 154, 167, 0.08)', border: '1px solid rgba(14, 154, 167, 0.28)', fontSize: '0.78rem' }}>
-                          <div><b>🩺 PK/PD:</b> <span dir="ltr">{pro.pkpd.halfLife}</span> · <span dir="ltr">{pro.pkpd.bioavailability}</span></div>
-                          <div style={{ marginTop: '2px' }}><b>🎯 Driver:</b> {pick(pro.pkpd.pkpdDriver, lang)}</div>
-                        </div>
-                      );
-                    })()}
-                    {m.priceEgypt?.ar && (
-                      <p className="small" style={{ color: '#15803d', fontWeight: 600, margin: '4px 0' }}>
-                        💰 {pick(m.priceEgypt, lang).split('\n')[0]}
-                      </p>
-                    )}
-                    {m.brands.length > 0 && (
-                      <p className="small muted" style={{ marginTop: '6px' }}>
-                        📦 {m.brands.slice(0, 4).map((b) => b.name.split(' (')[0]).join(' · ')}
-                        {m.brands.length > 4 ? ` (+${m.brands.length - 4})` : ''}
-                      </p>
-                    )}
-                  </Link>
-                  {canEditLive && (
-                    <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid var(--border, #f1f5f9)' }}>
-                      <Link
-                        to={`/admin/medicine/${m.id}`}
-                        className="btn ghost small"
-                        style={{ width: '100%', textAlign: 'center', borderColor: '#0284c7', color: '#0284c7', fontWeight: 700 }}
+                <Link key={m.id} to={`/medicine/${m.id}`} className="card link">
+                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0 }}>{pick(m.genericName, lang)}</h3>
+                    {ingMeta && (
+                      <span
+                        className="badge"
+                        style={{
+                          background: `${awareColor}18`,
+                          color: awareColor,
+                          border: `1px solid ${awareColor}`,
+                          fontSize: '0.75rem',
+                        }}
                       >
-                        ✏️ {isAr ? 'تعديل النشرة السريرية والجرعات' : 'Edit Clinical Monograph'}
-                      </Link>
-                    </div>
+                        WHO {ingMeta.whoAccessGroup}
+                      </span>
+                    )}
+                  </div>
+                  <p className="muted" style={{ margin: '6px 0' }}>{pick(m.drugClass, lang)}</p>
+                  {isProMode && (() => {
+                    const pro = getClinicalProProfile(m.id, ingMeta?.whoAccessGroup || 'Access', m.drugClass.ar, m.drugClass.en);
+                    return (
+                      <div style={{ margin: '6px 0', padding: '8px 10px', borderRadius: '8px', background: 'rgba(14, 154, 167, 0.08)', border: '1px solid rgba(14, 154, 167, 0.28)', fontSize: '0.78rem' }}>
+                        <div><b>🩺 PK/PD:</b> <span dir="ltr">{pro.pkpd.halfLife}</span> · <span dir="ltr">{pro.pkpd.bioavailability}</span></div>
+                        <div style={{ marginTop: '2px' }}><b>🎯 Driver:</b> {pick(pro.pkpd.pkpdDriver, lang)}</div>
+                      </div>
+                    );
+                  })()}
+                  {m.priceEgypt?.ar && (
+                    <p className="small" style={{ color: '#15803d', fontWeight: 600, margin: '4px 0' }}>
+                      💰 {pick(m.priceEgypt, lang).split('\n')[0]}
+                    </p>
                   )}
-                </div>
+                  {m.brands.length > 0 && (
+                    <p className="small muted" style={{ marginTop: '6px' }}>
+                      📦 {m.brands.slice(0, 4).map((b) => b.name.split(' (')[0]).join(' · ')}
+                      {m.brands.length > 4 ? ` (+${m.brands.length - 4})` : ''}
+                    </p>
+                  )}
+                </Link>
               );
             })}
           </div>
@@ -1047,20 +961,6 @@ export default function Medicines() {
 
             {/* Footer Modal Actions */}
             <div className="row wrapRow" style={{ gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
-              {canEditLive && (
-                <button
-                  type="button"
-                  className="btn"
-                  style={{ background: '#0284c7' }}
-                  onClick={() => {
-                    const target = selectedProduct;
-                    setSelectedProduct(null);
-                    setEditingProduct(target);
-                  }}
-                >
-                  ✏️ {isAr ? 'تعديل سعر / باركود / بيانات هذه العبوة' : 'Edit Package Price / Barcode'}
-                </button>
-              )}
               <Link
                 to={`/medicine/${selectedProduct.activeIngredientId}`}
                 className="btn"
@@ -1079,18 +979,6 @@ export default function Medicines() {
           </div>
         </div>,
         document.body
-      )}
-
-      {/* LIVE CLOUD EDITOR MODAL FOR EDITING OR ADDING COMMERCIAL PRODUCTS */}
-      {(editingProduct || addingNewProduct) && (
-        <QuickProductEditorModal
-          product={editingProduct}
-          defaultIngredientId={selectedIngFilter !== 'all' ? selectedIngFilter : undefined}
-          onClose={() => {
-            setEditingProduct(null);
-            setAddingNewProduct(false);
-          }}
-        />
       )}
     </main>
   );
