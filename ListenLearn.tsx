@@ -1,72 +1,59 @@
-import { pick } from './types';
-import { useEmergencyLocation, formatEmergencyText } from './emergencyLocation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLang } from './i18n';
-import { LISTEN_TOPICS, ListenTopic } from './listenData';
+import { pick } from './types';
+import { AUDIO_TOPICS, AudioTopic } from './audioData';
 import {
   isSpeechSupported,
+  SpeechPlayer,
   getVoices,
   findVoiceForLang,
-  SpeechPlayer,
 } from './speechService';
+import { useEmergencyLocation, formatEmergencyText } from './emergencyLocation';
 
 export default function ListenLearn() {
-  const { lang, setLang } = useLang();
+  const { lang } = useLang();
   const { emergency } = useEmergencyLocation();
-  const [selectedTopicId, setSelectedTopicId] = useState<string>('what-are-antibiotics');
-  const [selectedTopic, setSelectedTopic] = useState<ListenTopic>(LISTEN_TOPICS[0]);
+  const [selectedTopicId, setSelectedTopicId] = useState<string>(AUDIO_TOPICS[0].id);
   const [currentParagraphIdx, setCurrentParagraphIdx] = useState<number>(-1);
-
-  // Playback state
-  const [playing, setPlaying] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const [rate, setRate] = useState(1.0);
-  const [supported, setSupported] = useState(true);
-  const [hasVoice, setHasVoice] = useState(true);
+  const [rate, setRate] = useState<number>(1.0);
+  const [playing, setPlaying] = useState<boolean>(false);
+  const [paused, setPaused] = useState<boolean>(false);
+  const [supported, setSupported] = useState<boolean>(true);
+  const [hasVoice, setHasVoice] = useState<boolean>(true);
 
   const playerRef = useRef<SpeechPlayer | null>(null);
 
+  const selectedTopic: AudioTopic = useMemo(
+    () => AUDIO_TOPICS.find((t) => t.id === selectedTopicId) || AUDIO_TOPICS[0],
+    [selectedTopicId]
+  );
+
   useEffect(() => {
-    const isSup = isSpeechSupported();
-    setSupported(isSup);
+    const isSupp = isSpeechSupported();
+    setSupported(isSupp);
+    if (!isSupp) return;
 
     const player = new SpeechPlayer();
-    playerRef.current = player;
-
     player.onStateChange = (state) => {
       setPlaying(state.playing);
       setPaused(state.paused);
     };
+    playerRef.current = player;
 
-    // Check available voices
-    if (isSup) {
-      getVoices().then((voices) => {
-        const v = findVoiceForLang(voices, lang);
-        setHasVoice(!!v);
-      });
-    }
+    getVoices().then((voices) => {
+      const v = findVoiceForLang(voices, lang);
+      setHasVoice(Boolean(v));
+    });
 
     return () => {
       player.stop();
     };
-  }, []);
-
-  // Update voice check on language change
-  useEffect(() => {
-    if (supported) {
-      getVoices().then((voices) => {
-        const v = findVoiceForLang(voices, lang);
-        setHasVoice(!!v);
-      });
-    }
-    stopPlayback();
   }, [lang]);
 
-  // Update selected topic object
   useEffect(() => {
-    const t = LISTEN_TOPICS.find((item) => item.id === selectedTopicId) || LISTEN_TOPICS[0];
-    setSelectedTopic(t);
+    // Stop any ongoing speech if user changes topic
     stopPlayback();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTopicId]);
 
   const stopPlayback = () => {
@@ -88,9 +75,14 @@ export default function ListenLearn() {
     const p = selectedTopic.paragraphs[index];
     if (!p) return;
     setCurrentParagraphIdx(index);
-    await playerRef.current?.speakText(formatEmergencyText(pick(p.text, lang), emergency, lang), lang, rate, () => {
+    const player = playerRef.current;
+    if (!player) return;
+    const textToSpeak = formatEmergencyText(pick(p.text, lang), emergency, lang);
+    await (player.speakText ? player.speakText(textToSpeak, lang, rate, () => {
       setCurrentParagraphIdx(-1);
-    });
+    }) : player.speak(textToSpeak, lang, rate, () => {
+      setCurrentParagraphIdx(-1);
+    }));
   };
 
   const playEntireTopic = async () => {
@@ -107,9 +99,14 @@ export default function ListenLearn() {
       setCurrentParagraphIdx(idx);
       const p = selectedTopic.paragraphs[idx];
       idx++;
-      await playerRef.current?.speakText(formatEmergencyText(pick(p.text, lang), emergency, lang), lang, rate, () => {
+      const player = playerRef.current;
+      if (!player) return;
+      const textToSpeak = formatEmergencyText(pick(p.text, lang), emergency, lang);
+      await (player.speakText ? player.speakText(textToSpeak, lang, rate, () => {
         speakNext();
-      });
+      }) : player.speak(textToSpeak, lang, rate, () => {
+        speakNext();
+      }));
     };
 
     speakNext();
@@ -141,153 +138,147 @@ export default function ListenLearn() {
         </section>
       ) : null}
 
-      {/* Topic selection chips */}
+      {/* Topic Selector Tabs */}
       <section className="card stack">
-        <h2>📑 {lang === 'ar' ? 'اختر موضوع التوعية للاستماع:' : 'Select an Educational Topic to Listen:'}</h2>
-        <div className="listen-topic-chips">
-          {LISTEN_TOPICS.map((top) => (
-            <button
-              key={top.id}
-              type="button"
-              className={`listen-chip ${selectedTopicId === top.id ? 'active' : ''}`}
-              onClick={() => setSelectedTopicId(top.id)}
-            >
-              <span className="chip-icon">{top.icon}</span>
-              <span className="chip-text">{pick(top.title, lang)}</span>
-              <small className="chip-dur">⏱️ {pick(top.durationEst, lang)}</small>
-            </button>
-          ))}
+        <label style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+          {lang === 'ar' ? 'اختر الموضوع التوعوي للاستماع:' : 'Select an educational topic to listen to:'}
+        </label>
+        <div className="row wrapRow" style={{ gap: '8px' }}>
+          {AUDIO_TOPICS.map((topic) => {
+            const active = topic.id === selectedTopic.id;
+            return (
+              <button
+                key={topic.id}
+                type="button"
+                className={`btn ${active ? '' : 'ghost'}`}
+                style={{ padding: '8px 14px', fontSize: '0.92rem' }}
+                onClick={() => setSelectedTopicId(topic.id)}
+              >
+                {topic.icon} {pick(topic.title, lang)}
+              </button>
+            );
+          })}
         </div>
       </section>
 
-      {/* Main Interactive Audio Player Box */}
-      <section className="card stack audio-player-card" aria-label="Audio Player">
-        <div className="player-header">
-          <div className="topic-badge-row">
-            <span className="topic-icon">{selectedTopic.icon}</span>
-            <div>
-              <h2>{pick(selectedTopic.title, lang)}</h2>
-              <p className="small muted">{formatEmergencyText(pick(selectedTopic.summary, lang), emergency, lang)}</p>
-            </div>
+      {/* Main Audio Player Controller */}
+      <section className="card stack highlight-card" style={{ padding: '20px' }}>
+        <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <span className="badge" style={{ marginBottom: '6px' }}>{selectedTopic.icon} {pick(selectedTopic.title, lang)}</span>
+            <h2 style={{ margin: 0 }}>{pick(selectedTopic.title, lang)}</h2>
+            <p className="small muted" style={{ margin: '4px 0 0' }}>{pick(selectedTopic.summary, lang)}</p>
           </div>
-          <div className="status-pill-wrap">
-            {playing && !paused && <span className="status-pill safe">▶️ {lang === 'ar' ? 'جاري الاستماع...' : 'Playing...'}</span>}
-            {paused && <span className="status-pill unconfirmed">⏸️ {lang === 'ar' ? 'متوقف مؤقتاً' : 'Paused'}</span>}
-            {!playing && !paused && <span className="status-pill upcoming">⏹️ {lang === 'ar' ? 'جاهز للاستماع' : 'Ready'}</span>}
-          </div>
-        </div>
 
-        {/* Player Controls Bar */}
-        <div className="player-controls-row">
-          <div className="main-audio-btns">
+          {/* Master Playback Controls */}
+          <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
             {!playing ? (
               <button
                 type="button"
-                className="btn btn-listen-all"
-                onClick={playEntireTopic}
+                className="btn"
+                style={{ background: '#16a34a', borderColor: '#16a34a', color: '#fff', fontWeight: 700 }}
                 disabled={!supported}
+                onClick={playEntireTopic}
               >
-                ▶️ {lang === 'ar' ? 'قراءة الموضوع كاملاً' : 'Listen to All'}
+                ▶ {lang === 'ar' ? 'تشغيل الموضوع كاملاً' : 'Play Entire Topic'}
               </button>
             ) : paused ? (
-              <button type="button" className="btn btn-resume" onClick={resumePlayback}>
-                ▶️ {lang === 'ar' ? 'استئناف' : 'Resume'}
+              <button
+                type="button"
+                className="btn"
+                style={{ background: '#0284c7', borderColor: '#0284c7', color: '#fff' }}
+                onClick={resumePlayback}
+              >
+                ▶ {lang === 'ar' ? 'استئناف' : 'Resume'}
               </button>
             ) : (
-              <button type="button" className="btn-secondary" onClick={pausePlayback}>
-                ⏸️ {lang === 'ar' ? 'إيقاف مؤقت' : 'Pause'}
+              <button
+                type="button"
+                className="btn"
+                style={{ background: '#d97706', borderColor: '#d97706', color: '#fff' }}
+                onClick={pausePlayback}
+              >
+                ⏸ {lang === 'ar' ? 'إيقاف مؤقت' : 'Pause'}
               </button>
             )}
 
             {(playing || paused) && (
-              <button type="button" className="btn-secondary danger" onClick={stopPlayback}>
-                ⏹️ {lang === 'ar' ? 'إيقاف' : 'Stop'}
-              </button>
-            )}
-          </div>
-
-          {/* Speed & Language Controls */}
-          <div className="player-settings-row">
-            <div className="speed-control">
-              <small><b>{lang === 'ar' ? 'السرعة:' : 'Speed:'}</b></small>
-              <div className="speed-buttons">
-                {[0.75, 1.0, 1.25].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    className={`speed-btn ${rate === r ? 'active' : ''}`}
-                    onClick={() => {
-                      setRate(r);
-                      if (playing) {
-                        stopPlayback();
-                      }
-                    }}
-                  >
-                    {r}×
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="lang-toggle-player">
               <button
                 type="button"
-                className="btn-secondary"
-                onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-                title={lang === 'ar' ? 'Switch to English' : 'التحويل للعربية'}
+                className="btn ghost danger"
+                onClick={stopPlayback}
               >
-                🌐 {lang === 'ar' ? 'English Audio' : 'الصوت بالعربية'}
+                ⏹ {lang === 'ar' ? 'إيقاف تام' : 'Stop'}
               </button>
+            )}
+
+            {/* Reading Speed Selector */}
+            <div className="row" style={{ alignItems: 'center', gap: '4px', marginInlineStart: '6px' }}>
+              <span className="small muted">{lang === 'ar' ? 'السرعة:' : 'Speed:'}</span>
+              <select
+                className="input"
+                style={{ width: 'auto', padding: '4px 8px', fontSize: '0.85rem' }}
+                value={rate}
+                onChange={(e) => setRate(parseFloat(e.target.value))}
+              >
+                <option value="0.8">0.8x ({lang === 'ar' ? 'هادئ' : 'Slow'})</option>
+                <option value="1.0">1.0x ({lang === 'ar' ? 'طبيعي' : 'Normal'})</option>
+                <option value="1.2">1.2x ({lang === 'ar' ? 'سريع' : 'Fast'})</option>
+              </select>
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Emergency Alert Box if topic has one */}
-        {selectedTopic.emergencyNote && (
-          <div className="alert urgent" style={{ marginTop: '14px' }}>
-            <strong>🚨 {lang === 'ar' ? 'تنبيه طوارئ فوري:' : 'Urgent Emergency Notice:'} </strong>
-            {formatEmergencyText(pick(selectedTopic.emergencyNote, lang), emergency, lang)}
-          </div>
-        )}
+      {/* Paragraph-by-Paragraph Interactive Reader Card */}
+      <section className="card stack">
+        <h3 style={{ margin: '0 0 4px' }}>
+          📖 {lang === 'ar' ? 'النص التوعوي المقروء مع زر نطق لكل فقرة:' : 'Written script with individual paragraph playback:'}
+        </h3>
+        <p className="small muted" style={{ margin: '0 0 12px' }}>
+          {lang === 'ar'
+            ? 'يمكنك الضغط على زر 🔊 بجوار أي فقرة للاستماع إليها بمفردها أو تكرارها:'
+            : 'Click the speaker icon next to any paragraph to listen to it individually:'}
+        </p>
 
-        {/* Synchronized Text View with Paragraph Highlight */}
-        <div className="paragraphs-view stack">
-          <h3>📖 {lang === 'ar' ? 'نص الموضوع (متاح للقراءة والاستماع):' : 'Written Content (Read along):'}</h3>
-          {selectedTopic.paragraphs.map((p, idx) => {
+        <div className="stack" style={{ gap: '12px' }}>
+          {selectedTopic.paragraphs.map((para, idx) => {
             const isCurrent = currentParagraphIdx === idx;
             return (
               <div
-                key={p.id}
-                className={`paragraph-card ${isCurrent ? 'active-reading' : ''}`}
+                key={idx}
+                className="card"
+                style={{
+                  padding: '16px',
+                  background: isCurrent ? 'var(--tint)' : 'var(--card-bg)',
+                  borderColor: isCurrent ? 'var(--teal)' : 'var(--line)',
+                  borderWidth: isCurrent ? '2px' : '1px',
+                  transition: 'background 0.2s, border-color 0.2s',
+                }}
               >
-                <div className="p-header">
-                  <span className="p-number">#{idx + 1}</span>
+                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+                  <p style={{ margin: 0, fontSize: '1.02rem', lineHeight: 1.75, flex: 1 }}>
+                    {formatEmergencyText(pick(para.text, lang), emergency, lang)}
+                  </p>
                   <button
                     type="button"
-                    className="p-listen-btn"
+                    className="btn ghost small"
+                    style={{
+                      flexShrink: 0,
+                      padding: '6px 10px',
+                      background: isCurrent ? 'var(--teal)' : undefined,
+                      color: isCurrent ? '#fff' : undefined,
+                    }}
+                    disabled={!supported}
                     onClick={() => playParagraph(idx)}
-                    title={lang === 'ar' ? 'استمع لهذه الفقرة فقط' : 'Listen to this paragraph'}
+                    title={lang === 'ar' ? 'استمع لهذه الفقرة' : 'Listen to this paragraph'}
                   >
-                    🔊 {lang === 'ar' ? 'استمع للفقرة' : 'Listen'}
+                    🔊 {isCurrent ? (lang === 'ar' ? 'جارٍ النطق...' : 'Playing...') : (lang === 'ar' ? 'استمع' : 'Listen')}
                   </button>
                 </div>
-                <p className="p-text">{formatEmergencyText(pick(p.text, lang), emergency, lang)}</p>
               </div>
             );
           })}
-        </div>
-
-        {/* Documented Sources Footer */}
-        <div className="player-sources-footer">
-          <small className="muted">
-            <b>{lang === 'ar' ? 'المصادر المعتمدة لهذا المحتوى:' : 'Clinical Sources:'}</b>{' '}
-            {selectedTopic.sources.map((s, i) => (
-              <span key={i}>
-                {i > 0 && ' · '}
-                <a href={s.url} target="_blank" rel="noopener noreferrer">{s.publisher || s.title}</a>
-              </span>
-            ))}
-          </small>
         </div>
       </section>
     </main>

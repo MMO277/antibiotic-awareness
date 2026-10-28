@@ -206,6 +206,15 @@ export class SpeechPlayer {
     return true;
   }
 
+  public async speakText(
+    text: string,
+    lang: Lang,
+    rate = 1,
+    onDone?: () => void
+  ): Promise<boolean> {
+    return this.speak(text, lang, rate, onDone);
+  }
+
   public pause() {
     if (isSpeechSupported() && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
       window.speechSynthesis.pause();
