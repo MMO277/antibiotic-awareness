@@ -38,7 +38,7 @@ export interface EgyptianCommercialProduct {
   dosageForm: DosageFormType;
   dosageFormLabel: Bi;
   route: AdministrationRoute;
-  routeLabel: Bi;
+  routeLabel?: Bi;
   packDetails?: Bi;
   packSize?: string;
   manufacturer: string;
@@ -46,7 +46,7 @@ export interface EgyptianCommercialProduct {
   registrationStatus: 'registered_eda' | 'hospital_formulary';
   availabilityStatus: 'available' | 'registered_check_stock' | 'hospital_only';
   priceEgp: number | null;
-  unitPriceNote: Bi;
+  unitPriceNote?: Bi;
   priceStatus: 'verified_eda' | 'market_observed' | 'unverified';
   priceUpdatedDate: string;
   priceSource: string;
