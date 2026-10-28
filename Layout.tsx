@@ -193,6 +193,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           icon: '⚖️',
           shortLabel: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar'),
         },
+        {
+          to: '/cost-saver',
+          key: 'navCostSaver',
+          icon: '💰',
+          shortLabel: tr(lang, 'البديل الأرخص والتوفير', 'Generic Cost Saver', 'Économies', 'Ahorro'),
+        },
       ],
     },
     {
@@ -233,6 +239,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           shortLabel: tr(lang, 'حاسبة الأطفال', 'Pediatrics', 'Pédiatrie', 'Pediatría'),
         },
         {
+          to: '/cold-shot-warning',
+          key: 'navColdShot',
+          icon: '💉',
+          shortLabel: tr(lang, 'تحذير حقنة البرد 3×1', 'Cold Shot 3-in-1', 'Cocktail Rhume 3-en-1', 'Inyección 3 en 1'),
+        },
+        {
           to: '/side-effects',
           key: 'navSideEffects',
           icon: '🚨',
@@ -258,6 +270,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           key: 'navGreenRx',
           icon: '🌿',
           shortLabel: tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde'),
+        },
+        {
+          to: '/daily-schedule',
+          key: 'navDailySchedule',
+          icon: '📅',
+          shortLabel: tr(lang, 'مولّد جدول الجرعات والواتساب', 'Daily Schedule', 'Planning Doses', 'Horario de Dosis'),
         },
         {
           to: '/tracker',
@@ -1180,8 +1198,11 @@ export default function Layout({ children }: { children: ReactNode }) {
               {tr(lang, 'الأدوات السريرية السريعة', 'Quick Clinical Tools', 'Outils Cliniques Rapides', 'Herramientas Clínicas Rápidas')}
             </h4>
             <ul className="pro-footer-links">
+              <li><Link to="/cost-saver">{tr(lang, 'حاسبة البديل الأرخص والمثائل 100%', 'Generic Cost Saver & Equivalents', 'Économies Génériques', 'Ahorro en Genéricos')}</Link></li>
+              <li><Link to="/cold-shot-warning">{tr(lang, 'فاحص خطر حقنة البرد 3×1', 'Cold Shot 3-in-1 Mythbuster', 'Alerte Cocktail Rhume 3-en-1', 'Alerta Cóctel Antigripal 3 en 1')}</Link></li>
+              <li><Link to="/daily-schedule">{tr(lang, 'مولّد جدول الجرعات للطباعة وواتساب', 'Printable Daily Schedule Generator', 'Planning Doses & WhatsApp', 'Horario de Dosis y WhatsApp')}</Link></li>
               <li><Link to="/medicines">{tr(lang, 'السجل الدوائي المصري (206 عبوات)', 'Egyptian Drug Registry (206)', 'Registre des Médicaments (206)', 'Registro de Medicamentos (206)')}</Link></li>
-              <li><Link to="/games">{tr(lang, 'مركز الألعاب والمحاكاة الطبية 3D', 'Game Center & 3D Medical Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D')}</Link></li>
+              <li><Link to="/games">{tr(lang, 'مركز الألعاب والمحاكاة الطبية 3D', 'Game Center & 3D Medical Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Jeux & Simulador 3D')}</Link></li>
               <li><Link to="/scan">{tr(lang, 'ماسح الباركود الخطي ورموز QR', 'Barcode & QR Scanner', 'Scanner Code-Barres & QR', 'Escáner de Código de Barras y QR')}</Link></li>
               <li><Link to="/allergy-checker">{tr(lang, 'فاحص الحساسية الدوائية المتقاطعة', 'Drug Allergy Safety Checker', 'Vérificateur d’Allergies Croisées', 'Verificador de Alergias Medicamentosas')}</Link></li>
               <li><Link to="/pediatric-helper">{tr(lang, 'حاسبة جرعات شراب الأطفال', 'Pediatric Dosage Calculator', 'Calculateur Posologique Pédiatrique', 'Calculadora de Dosis Pediátrica')}</Link></li>

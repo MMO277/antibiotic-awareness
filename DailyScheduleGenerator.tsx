@@ -176,7 +176,7 @@ export default function DailyScheduleGenerator() {
 
   return (
     <main className="wrap stack">
-      <section className="card">
+      <section className="card no-print">
         <span className="badge approved" style={{ marginBottom: '8px' }}>
           📅 {tr(lang, 'منظم الجرعات اليومي الذكي • طباعة وصورة وواتساب', 'Smart Daily Dose Organizer • PNG, WhatsApp & Print')}
         </span>
@@ -356,7 +356,7 @@ export default function DailyScheduleGenerator() {
         </div>
       </section>
 
-      <Disclaimer />
+      <div className="no-print"><Disclaimer /></div>
     </main>
   );
 }

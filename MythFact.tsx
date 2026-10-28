@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useLang } from './i18n';
 import { MYTHS } from './contentData';
@@ -58,9 +59,14 @@ export default function MythFact() {
               'Dies ist eine interaktive Selbstlernübung zur Gesundheitsaufklärung.'
             )}
           </p>
-          <button className="btn" onClick={restart}>
-            {L('إعادة', 'Restart', 'Recommencer', 'Reiniciar', 'Neu starten')}
-          </button>
+          <div className="row wrapRow" style={{ justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
+            <button className="btn" onClick={restart}>
+              {L('إعادة', 'Restart', 'Recommencer', 'Reiniciar', 'Neu starten')}
+            </button>
+            <Link to="/cold-shot-warning" className="btn ghost" style={{ borderColor: '#ef4444', color: '#ef4444' }}>
+              💉 {L('فاحص خطر «حقنة البرد 3×1» ←', 'Cold Shot 3-in-1 Warning →')}
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="card">
