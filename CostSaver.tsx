@@ -4,12 +4,14 @@ import { useLang } from './i18n';
 import { pick, tr } from './types';
 import {
   ACTIVE_INGREDIENTS,
-  EGYPTIAN_COMMERCIAL_PRODUCTS,
   EgyptianCommercialProduct,
   getClassifiedAlternatives,
 } from './egyptianDrugDatabase';
 import { norm } from './search';
 import Disclaimer from './Disclaimer';
+import { useAuth } from './authContext';
+import { useLiveDrugCatalog } from './liveCatalogSync';
+import { QuickProductEditorModal } from './CommercialCatalogEditor';
 
 const POPULAR_BRAND_IDS = [
   'EG-ABX-001', // Augmentin 1g
@@ -26,54 +28,61 @@ const POPULAR_BRAND_IDS = [
 export default function CostSaver() {
   const { lang } = useLang();
   const isAr = lang === 'ar';
+  const { role } = useAuth();
+  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const { products: liveProducts, version } = useLiveDrugCatalog();
+
   const [sp] = useSearchParams();
   const ingParam = sp.get('ing') || '';
   const prodParam = sp.get('prod') || '';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [packCount, setPackCount] = useState<number>(1);
+  const [editingProduct, setEditingProduct] = useState<EgyptianCommercialProduct | null>(null);
 
   const initialProduct = useMemo(() => {
     if (prodParam) {
-      const found = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.productId === prodParam);
+      const found = liveProducts.find((p) => p.productId === prodParam);
       if (found) return found;
     }
     if (ingParam) {
-      const byIng = EGYPTIAN_COMMERCIAL_PRODUCTS.filter(
+      const byIng = liveProducts.filter(
         (p) => p.activeIngredientId === ingParam && p.priceEgp !== null
       ).sort((a, b) => (b.priceEgp || 0) - (a.priceEgp || 0));
       if (byIng.length > 0) return byIng[0];
     }
-    return EGYPTIAN_COMMERCIAL_PRODUCTS[0];
-  }, [ingParam, prodParam]);
+    return liveProducts[0];
+  }, [ingParam, prodParam, liveProducts, version]);
 
   const [selectedProduct, setSelectedProduct] = useState<EgyptianCommercialProduct>(initialProduct);
 
   useEffect(() => {
-    setSelectedProduct(initialProduct);
-  }, [initialProduct]);
+    const updated = liveProducts.find((p) => p.productId === selectedProduct?.productId);
+    if (updated) setSelectedProduct(updated);
+    else if (initialProduct) setSelectedProduct(initialProduct);
+  }, [initialProduct, liveProducts, version]);
 
   const searchResults = useMemo(() => {
     const clean = norm(searchQuery);
     if (!clean) return [];
-    return EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => {
+    return liveProducts.filter((p) => {
       const ing = ACTIVE_INGREDIENTS.find((a) => a.id === p.activeIngredientId);
       const hay = norm(
         `${p.tradeNameAr} ${p.tradeNameEn} ${p.scientificComposition} ${p.strength} ${p.manufacturer} ${p.barcode || ''} ${ing?.nameAr || ''} ${ing?.nameEn || ''}`
       );
       return hay.includes(clean);
     }).slice(0, 12);
-  }, [searchQuery]);
+  }, [searchQuery, liveProducts, version]);
 
   const popularShortcuts = useMemo(() => {
-    return POPULAR_BRAND_IDS.map((id) => EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.productId === id)).filter(
+    return POPULAR_BRAND_IDS.map((id) => liveProducts.find((p) => p.productId === id)).filter(
       (p): p is EgyptianCommercialProduct => Boolean(p)
     );
-  }, []);
+  }, [liveProducts, version]);
 
   const alternatives = useMemo(
-    () => getClassifiedAlternatives(selectedProduct, EGYPTIAN_COMMERCIAL_PRODUCTS),
-    [selectedProduct]
+    () => getClassifiedAlternatives(selectedProduct, liveProducts),
+    [selectedProduct, liveProducts, version]
   );
 
   const currentIng = useMemo(
@@ -360,6 +369,7 @@ export default function CostSaver() {
                 <th>{tr(lang, 'الشركة المصنعة', 'Manufacturer')}</th>
                 <th>{tr(lang, 'السعر الرسمي', 'Official Price')}</th>
                 <th>{tr(lang, `مقارنة التكلفة (${packCount} عبوة)`, `Savings (${packCount}x)`)}</th>
+                {canEditLive && <th>{tr(lang, 'تعديل المحرر', 'Live Edit')}</th>}
               </tr>
             </thead>
             <tbody>
@@ -422,6 +432,18 @@ export default function CostSaver() {
                         <span className="small muted">{tr(lang, 'نفس السعر', 'Same price')}</span>
                       )}
                     </td>
+                    {canEditLive && (
+                      <td>
+                        <button
+                          type="button"
+                          className="btn ghost small"
+                          style={{ borderColor: '#0284c7', color: '#0284c7', fontWeight: 700 }}
+                          onClick={() => setEditingProduct(pkg)}
+                        >
+                          ✏️ {isAr ? 'تعديل' : 'Edit'}
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -526,6 +548,13 @@ export default function CostSaver() {
       </section>
 
       <Disclaimer />
+
+      {editingProduct && (
+        <QuickProductEditorModal
+          product={editingProduct}
+          onClose={() => setEditingProduct(null)}
+        />
+      )}
     </main>
   );
 }

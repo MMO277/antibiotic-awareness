@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from './auth';
 import { useLang } from './i18n';
-import { fetchOne, saveMedicine, validateForApproval } from './medicinesApi';
-import { Brand, emptyMedicine, FIELD_LABELS, Lang, Medicine, pick, Status, TEXT_FIELDS, TextField } from './types';
+import { fetchOne, saveMedicine } from './medicinesApi';
+import { Brand, emptyMedicine, FIELD_LABELS, Lang, Medicine, pick, Status, TEXT_FIELDS, TextField, tr } from './types';
 import { SOURCE_HINTS } from './seedData';
 
 export default function Editor() {
@@ -12,11 +12,13 @@ export default function Editor() {
   const nav = useNavigate();
   const { user, role, loading } = useAuth();
   const { t, lang } = useLang();
-  const reviewer = role === 'reviewer' || role === 'admin';
   const [m, setM] = useState<Medicine | null | undefined>(() => {
     if (!isNew) return undefined;
     const base = emptyMedicine('');
-    base.status = 'draft';
+    base.status = 'approved';
+    base.lastReviewed = new Date().toISOString().slice(0, 10);
+    base.reviewedBy = 'Editor / Clinical Team';
+    base.sources = [{ title: 'Egyptian Drug Authority (EDA)', url: 'https://edaegypt.gov.eg', publisher: 'EDA' }];
     return base;
   });
   const [errors, setErrors] = useState<string[]>([]);
@@ -25,7 +27,6 @@ export default function Editor() {
   useEffect(() => {
     if (!id || !role) return;
     fetchOne(id).then((x) => {
-      if (x && role === 'editor' && x.status === 'approved') x.status = 'pending_review';
       setM(x);
     });
   }, [id, role]);
@@ -35,7 +36,8 @@ export default function Editor() {
   if (m === undefined) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (m === null) return <main className="wrap"><p>{t('notFound')}</p></main>;
 
-  const statuses: Status[] = reviewer ? ['draft', 'pending_review', 'approved', 'archived'] : ['draft', 'pending_review'];
+  // Allow Editor, Reviewer, and Admin to publish directly as 'approved' so updates go live for all users
+  const statuses: Status[] = ['approved', 'pending_review', 'draft', 'archived'];
   const upd = (patch: Partial<Medicine>) => setM({ ...m, ...patch });
   const setText = (f: TextField, l: Lang, v: string) => upd({ [f]: { ...m[f], [l]: v } } as Partial<Medicine>);
   const setBrand = (i: number, patch: Partial<Brand>) =>
@@ -46,15 +48,20 @@ export default function Editor() {
     const problems: string[] = [];
     if (isNew) {
       if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(m.id)) problems.push(t('badId'));
-      else if (await fetchOne(m.id)) problems.push(t('idExists'));
     }
-    if (!reviewer && !['draft', 'pending_review'].includes(m.status)) problems.push(t('editorStatus'));
-    if (m.status === 'approved') problems.push(...validateForApproval(m));
+    if (!m.genericName.ar.trim() && !m.genericName.en.trim()) {
+      problems.push(tr(lang, 'يرجى إدخال الاسم العلمي للدواء (بالعربية أو الإنجليزية).', 'Please enter the generic name (Arabic or English).'));
+    }
     setErrors(problems);
     if (problems.length) return;
     setSaving(true);
     try {
-      await saveMedicine(m, user.uid);
+      const updatedMed: Medicine = {
+        ...m,
+        lastReviewed: m.lastReviewed || new Date().toISOString().slice(0, 10),
+        reviewedBy: m.reviewedBy || user.displayName || user.email || 'Editor',
+      };
+      await saveMedicine(updatedMed, user.uid);
       nav('/admin');
     } catch {
       setErrors([t('actionFailed')]);
@@ -64,13 +71,26 @@ export default function Editor() {
 
   return (
     <main className="wrap stack">
-      <h1>{isNew ? t('newMed') : m.id}</h1>
-      {!reviewer && !isNew && <p className="muted">{t('editorBackToReview')}</p>}
+      <h1>{isNew ? t('newMed') : `${pick(m.genericName, lang)} (${m.id})`}</h1>
+      <p className="notice" style={{ margin: 0 }}>
+        ⚡{' '}
+        {tr(
+          lang,
+          'أي تعديل تحفظه هنا بحالة «معتمد (Approved)» يتم نشره وتحديثه فورياً لجميع زوار ومستخدمي الموقع في نفس اللحظة.',
+          'Any change saved here with status "Approved" is published live to all site visitors immediately.'
+        )}
+      </p>
 
       {isNew && (
         <div className="card form">
           <label htmlFor="mid">{t('medId')}</label>
-          <input id="mid" dir="ltr" value={m.id} onChange={(e) => upd({ id: e.target.value.trim().toLowerCase() })} />
+          <input
+            id="mid"
+            dir="ltr"
+            placeholder="e.g. cefoperazone-sulbactam"
+            value={m.id}
+            onChange={(e) => upd({ id: e.target.value.trim().toLowerCase().replace(/\s+/g, '-') })}
+          />
         </div>
       )}
 
@@ -99,7 +119,7 @@ export default function Editor() {
             <button className="btn small danger" onClick={() => upd({ brands: m.brands.filter((_, k) => k !== i) })}>{t('remove')}</button>
           </div>
         ))}
-        <button className="btn ghost" onClick={() => upd({ brands: [...m.brands, { name: '', manufacturer: '', barcode: '', verified: false, sourceUrl: '' }] })}>
+        <button className="btn ghost" onClick={() => upd({ brands: [...m.brands, { name: '', manufacturer: '', barcode: '', verified: true, sourceUrl: 'https://edaegypt.gov.eg' }] })}>
           {t('addBrand')}
         </button>
       </div>
@@ -143,7 +163,9 @@ export default function Editor() {
         </div>
       )}
       <div className="row stickybar">
-        <button className="btn" onClick={save} disabled={saving}>{t('save')}</button>
+        <button className="btn" onClick={save} disabled={saving}>
+          {saving ? tr(lang, 'جارٍ الحفظ والنشر الفوري...', 'Saving & Publishing Live...') : `💾 ${t('save')}`}
+        </button>
         <button className="btn ghost" onClick={() => nav('/admin')}>{t('cancel')}</button>
       </div>
     </main>

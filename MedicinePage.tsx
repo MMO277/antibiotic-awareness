@@ -6,10 +6,13 @@ import { FIELD_LABELS, Medicine, pick, TextField, tr } from './types';
 import StatusBadge from './StatusBadge';
 import QRBlock from './QRBlock';
 import Disclaimer from './Disclaimer';
-import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
+import { ACTIVE_INGREDIENTS, EgyptianCommercialProduct } from './egyptianDrugDatabase';
 import { useSyncedHealthProfile } from './allergyData';
 import { evaluateMedicationSafety } from './medicationSafetyEngine';
 import { getClinicalProProfile, useClinicalProMode } from './clinicalProData';
+import { useAuth } from './authContext';
+import { useLiveDrugCatalog } from './liveCatalogSync';
+import { QuickProductEditorModal } from './CommercialCatalogEditor';
 
 const PATIENT_ORDER: TextField[] = [
   'approvedUses',
@@ -51,6 +54,12 @@ export default function MedicinePage() {
   const isAr = lang === 'ar';
   const { profile } = useSyncedHealthProfile();
   const { isProMode, setProMode } = useClinicalProMode();
+  const { role } = useAuth();
+  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const { products: liveCommercialProducts, version } = useLiveDrugCatalog();
+
+  const [editingProduct, setEditingProduct] = useState<EgyptianCommercialProduct | null>(null);
+  const [addingNewForIng, setAddingNewForIng] = useState<boolean>(false);
 
   // Initialize synchronously from local verified database so it opens in 0ms and never fails
   const [m, setM] = useState<Medicine | null | undefined>(() => findLocalMedicine(id) ?? undefined);
@@ -76,11 +85,11 @@ export default function MedicinePage() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, version]);
 
   const commercialPackages = useMemo(
-    () => (m ? EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => p.activeIngredientId === m.id) : []),
-    [m]
+    () => (m ? liveCommercialProducts.filter((p) => p.activeIngredientId === m.id) : []),
+    [m, liveCommercialProducts, version]
   );
 
   const ingMeta = useMemo(
@@ -134,6 +143,25 @@ export default function MedicinePage() {
       <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <Link to="/medicines">← {t('navMedicines')}</Link>
         <div className="row wrapRow" style={{ gap: '8px' }}>
+          {canEditLive && (
+            <>
+              <Link
+                to={`/admin/medicine/${m.id}`}
+                className="btn small"
+                style={{ background: '#0284c7', fontWeight: 800 }}
+              >
+                ✏️ {isAr ? 'تعديل المادة العلمية والجرعات' : 'Edit Clinical Monograph'}
+              </Link>
+              <button
+                type="button"
+                className="btn small"
+                style={{ background: '#16a34a', fontWeight: 800 }}
+                onClick={() => setAddingNewForIng(true)}
+              >
+                ➕ {isAr ? 'إضافة دواء تجاري لهذه المادة' : 'Add Commercial Brand'}
+              </button>
+            </>
+          )}
           <Link to={`/cost-saver?ing=${encodeURIComponent(m.id)}`} className="btn small" style={{ background: '#15803d' }}>
             💰 {tr(lang, 'حاسبة البديل الأرخص', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos')}
           </Link>
@@ -532,9 +560,21 @@ export default function MedicinePage() {
                     ? `جميع العبوات والمستحضرات والبدائل المسجلة في السوق المصري (${commercialPackages.length} عبوة)`
                     : `Registered Commercial Packages & Alternatives in Egypt (${commercialPackages.length})`}
                 </h2>
-                <Link to={`/cost-saver?ing=${encodeURIComponent(m.id)}`} className="btn small" style={{ background: '#0d9488' }}>
-                  💰 {tr(lang, 'احسب التوفير والبديل الأرخص ←', 'Calculate Cheapest Generic →', 'Calculer le Générique le Moins Cher →', 'Calcular el Genérico Más Barato →')}
-                </Link>
+                <div className="row wrapRow" style={{ gap: '8px' }}>
+                  {canEditLive && (
+                    <button
+                      type="button"
+                      className="btn small"
+                      style={{ background: '#16a34a', fontWeight: 700 }}
+                      onClick={() => setAddingNewForIng(true)}
+                    >
+                      ➕ {isAr ? 'إضافة عبوة تجارية جديدة' : 'Add Commercial Package'}
+                    </button>
+                  )}
+                  <Link to={`/cost-saver?ing=${encodeURIComponent(m.id)}`} className="btn small" style={{ background: '#0d9488' }}>
+                    💰 {tr(lang, 'احسب التوفير والبديل الأرخص ←', 'Calculate Cheapest Generic →', 'Calculer le Générique le Moins Cher →', 'Calcular el Genérico Más Barato →')}
+                  </Link>
+                </div>
               </div>
               <p className="small muted" style={{ marginTop: '6px' }}>
                 {isAr
@@ -550,6 +590,7 @@ export default function MedicinePage() {
                       <th>{isAr ? 'العبوة والشركة' : 'Package & Maker'}</th>
                       <th>{isAr ? 'السعر الرسمي' : 'Price (EGP)'}</th>
                       <th>{isAr ? 'الباركود الخطي (EAN-13)' : 'Linear Barcode'}</th>
+                      {canEditLive && <th>{isAr ? 'تعديل المحرر' : 'Live Edit'}</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -592,6 +633,18 @@ export default function MedicinePage() {
                             </span>
                           )}
                         </td>
+                        {canEditLive && (
+                          <td>
+                            <button
+                              type="button"
+                              className="btn ghost small"
+                              style={{ borderColor: '#0284c7', color: '#0284c7', fontWeight: 700 }}
+                              onClick={() => setEditingProduct(pkg)}
+                            >
+                              ✏️ {isAr ? 'تعديل' : 'Edit'}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -646,6 +699,18 @@ export default function MedicinePage() {
           <Disclaimer />
         </div>
       </div>
+
+      {/* LIVE CLOUD EDITOR MODAL FOR EDITING OR ADDING COMMERCIAL PACKAGES */}
+      {(editingProduct || addingNewForIng) && (
+        <QuickProductEditorModal
+          product={editingProduct}
+          defaultIngredientId={m.id}
+          onClose={() => {
+            setEditingProduct(null);
+            setAddingNewForIng(false);
+          }}
+        />
+      )}
     </main>
   );
 }

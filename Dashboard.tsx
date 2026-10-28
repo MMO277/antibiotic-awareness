@@ -5,12 +5,13 @@ import { db } from './firebase';
 import { Role, useAuth } from './auth';
 import { useLang } from './i18n';
 import { fetchAll, removeMedicine, seedStarter, setStatus, validateForApproval } from './medicinesApi';
-import { Medicine, pick, Status, STATUSES } from './types';
+import { Medicine, pick, Status, STATUSES, tr } from './types';
 import StatusBadge from './StatusBadge';
 import UsersTab from './UsersTab';
 import ResearchTab from './ResearchTab';
 import { LearningImpactDashboard } from './LearningImpactDashboard';
 import QuizResultsTab from './QuizResultsTab';
+import CommercialCatalogTab from './CommercialCatalogEditor';
 
 function diagText(status: string, t: (k: string) => string): string {
   if (status === 'missing') return t('diagMissing');
@@ -58,7 +59,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
   const [items, setItems] = useState<Medicine[] | null>(null);
   const [filter, setFilter] = useState<Status | 'all'>('all');
   const [err, setErr] = useState('');
-  const reviewer = role === 'reviewer' || role === 'admin';
+  const reviewer = role === 'reviewer' || role === 'admin' || role === 'editor';
   const [showUn, setShowUn] = useState(true);
   useEffect(() => {
     getDoc(doc(db, 'settings', 'public'))
@@ -165,7 +166,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
 export default function Dashboard() {
   const { t, lang } = useLang();
   const { user, role, roleStatus, loading, logout } = useAuth();
-  const [tab, setTab] = useState<'meds' | 'research' | 'users' | 'impact' | 'quiz'>('meds');
+  const [tab, setTab] = useState<'catalog' | 'meds' | 'research' | 'users' | 'impact' | 'quiz'>('catalog');
 
   if (loading) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (!user) return <Login />;
@@ -194,7 +195,12 @@ export default function Dashboard() {
         </div>
       </div>
       <div className="tabs" role="tablist">
-        <button className={tab === 'meds' ? 'on' : ''} onClick={() => setTab('meds')}>{t('tabMeds')}</button>
+        <button className={tab === 'catalog' ? 'on' : ''} onClick={() => setTab('catalog')}>
+          💊 {tr(lang, 'الأدوية التجارية والأسعار والباركود (206+)', 'Commercial Drugs, Prices & Barcodes')}
+        </button>
+        <button className={tab === 'meds' ? 'on' : ''} onClick={() => setTab('meds')}>
+          📚 {tr(lang, 'الموسوعة السريرية للمواد الفعالة (32)', 'Clinical Active Ingredients (32)')}
+        </button>
         {role === 'admin' && <button className={tab === 'research' ? 'on' : ''} onClick={() => setTab('research')}>{t('tabResearch')}</button>}
         {role === 'admin' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('tabUsers')}</button>}
         {role === 'admin' && (
@@ -208,6 +214,7 @@ export default function Dashboard() {
           </button>
         )}
       </div>
+      {tab === 'catalog' && <CommercialCatalogTab uid={user.uid} />}
       {tab === 'meds' && <MedsTab role={role} uid={user.uid} />}
       {tab === 'research' && role === 'admin' && <ResearchTab />}
       {tab === 'users' && role === 'admin' && <UsersTab myUid={user.uid} />}

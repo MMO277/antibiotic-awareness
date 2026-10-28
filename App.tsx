@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import PrescriptionRadar from './PrescriptionRadar';
 import AwarenessWeek from './AwarenessWeek';
 import GreenPrescription from './GreenPrescription';
@@ -37,6 +37,7 @@ import BacteriaHunter from './BacteriaHunter';
 import GameCenter from './GameCenter';
 import OpenWorldGame from './OpenWorldGame';
 import Editor from './Editor';
+import { startLiveCatalogSync } from './liveCatalogSync';
 
 // Direct imports for 3D WebGL games so GitHub Pages routes never fail on dynamic chunk/CSS preload
 import MedicalSimulator from './MedicalSimulator';
@@ -98,6 +99,10 @@ function NotFound() {
 }
 
 export default function App() {
+  useEffect(() => {
+    startLiveCatalogSync();
+  }, []);
+
   return (
     <AuthProvider>
       <EmergencyLocationProvider>

@@ -5,6 +5,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -15,6 +16,7 @@ import { db, configured } from './firebase';
 import { Brand, emptyMedicine, FIELD_LABELS, Medicine, Status, TEXT_FIELDS } from './types';
 import { SEED } from './seedData';
 import { EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
+import { CATALOG_DOC_ID, startLiveCatalogSync } from './liveCatalogSync';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function seedToMedicine(s: any): Medicine {
@@ -35,20 +37,18 @@ function seedToMedicine(s: any): Medicine {
 
   extraProducts.forEach((p) => {
     const key = p.barcode ? p.barcode.trim() : p.tradeNameEn;
-    if (!brandMap.has(key)) {
-      brandMap.set(key, {
-        name:
-          p.tradeNameEn +
-          ' (' +
-          p.tradeNameAr +
-          ')' +
-          (p.priceEgp ? ' - ' + p.priceEgp.toFixed(2) + ' ج.م' : ''),
-        manufacturer: p.manufacturer,
-        barcode: p.barcode || '',
-        verified: true,
-        sourceUrl: 'https://edaegypt.gov.eg',
-      });
-    }
+    brandMap.set(key, {
+      name:
+        p.tradeNameEn +
+        ' (' +
+        p.tradeNameAr +
+        ')' +
+        (p.priceEgp ? ' - ' + p.priceEgp.toFixed(2) + ' ج.م' : ''),
+      manufacturer: p.manufacturer,
+      barcode: p.barcode || '',
+      verified: true,
+      sourceUrl: 'https://edaegypt.gov.eg',
+    });
   });
 
   m.brands = Array.from(brandMap.values());
@@ -62,7 +62,22 @@ function seedToMedicine(s: any): Medicine {
   return m;
 }
 
-export const ALL_LOCAL_MEDICINES: Medicine[] = SEED.map(seedToMedicine);
+export function buildAllLocalMedicines(): Medicine[] {
+  return SEED.map(seedToMedicine);
+}
+
+export const ALL_LOCAL_MEDICINES: Medicine[] = buildAllLocalMedicines();
+
+function refreshLocalMedicinesArray(): void {
+  const rebuilt = buildAllLocalMedicines();
+  ALL_LOCAL_MEDICINES.splice(0, ALL_LOCAL_MEDICINES.length, ...rebuilt);
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('aa-live-catalog-updated', () => {
+    refreshLocalMedicinesArray();
+  });
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function normalize(id: string, d: any): Medicine {
@@ -79,30 +94,32 @@ function normalize(id: string, d: any): Medicine {
 }
 
 /**
- * Merges remote Firestore data with rich verified local seed so no clinical field,
- * Egyptian price, substitute, or verified barcode is ever blanked out.
+ * Merges remote Firestore data with verified local seed, giving PRIORITY to remote
+ * Firestore edits so any change saved by an Editor/Reviewer/Admin immediately takes effect
+ * for all users, while falling back to local seed if a field was left blank.
  */
 function smartMerge(remote: Medicine, local?: Medicine): Medicine {
   if (!local) return remote;
 
   const brandMap = new Map<string, Brand>();
+  // Put local brands first, then let remote brands overwrite or add new ones
   (local.brands || []).forEach((b) => {
-    if (b.barcode) brandMap.set(b.barcode.trim(), b);
-    else brandMap.set(b.name, b);
+    const key = b.barcode ? b.barcode.trim() : b.name;
+    brandMap.set(key, b);
   });
   (remote.brands || []).forEach((b) => {
-    if (b.barcode) {
-      if (!brandMap.has(b.barcode.trim())) brandMap.set(b.barcode.trim(), b);
-    } else if (!brandMap.has(b.name)) {
-      brandMap.set(b.name, b);
-    }
+    const key = b.barcode ? b.barcode.trim() : b.name;
+    brandMap.set(key, b);
   });
-  const mergedBrands = Array.from(brandMap.values());
+
+  // If the editor explicitly edited the brands array in Firestore, respect remote brands plus live commercial packages
+  const mergedBrands =
+    remote.brands && remote.brands.length > 0 ? Array.from(brandMap.values()) : local.brands;
 
   const mergedBarcodes = Array.from(
     new Set([
-      ...(local.barcodes || []),
       ...(remote.barcodes || []),
+      ...(local.barcodes || []),
       ...mergedBrands.map((b) => b.barcode?.trim()).filter(Boolean),
     ])
   );
@@ -110,18 +127,18 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
   const merged: Medicine = {
     ...local,
     ...remote,
-    status: 'approved',
+    status: remote.status || 'approved',
     brands: mergedBrands.length > 0 ? mergedBrands : local.brands,
     barcodes: mergedBarcodes.length > 0 ? mergedBarcodes : local.barcodes,
-    sources: local.sources && local.sources.length > 0 ? local.sources : remote.sources,
+    sources: remote.sources && remote.sources.length > 0 ? remote.sources : local.sources,
     lastReviewed: remote.lastReviewed || local.lastReviewed || '2026-10-14',
     reviewedBy: remote.reviewedBy || local.reviewedBy || 'هيئة التمريض السريري / Clinical Review',
   };
 
   for (const f of TEXT_FIELDS) {
     merged[f] = {
-      ar: local[f]?.ar?.trim() ? local[f].ar : remote[f]?.ar || '',
-      en: local[f]?.en?.trim() ? local[f].en : remote[f]?.en || '',
+      ar: remote[f]?.ar?.trim() ? remote[f].ar : local[f]?.ar || '',
+      en: remote[f]?.en?.trim() ? remote[f].en : local[f]?.en || '',
     };
   }
 
@@ -130,11 +147,12 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
 
 /**
  * Synchronously resolves any medicine ID, commercial productId, barcode, or trade name
- * from the local verified database so MedicinePage never fails or shows Not Found.
+ * from the verified database so MedicinePage never fails or shows Not Found.
  */
 export function findLocalMedicine(id: string): Medicine | null {
+  refreshLocalMedicinesArray();
   const clean = decodeURIComponent(id || '').toLowerCase().trim();
-  if (!clean) return null;
+  if (!clean || clean === CATALOG_DOC_ID) return null;
 
   // 1. Direct active ingredient ID match
   const direct = ALL_LOCAL_MEDICINES.find((m) => m.id.toLowerCase() === clean);
@@ -148,6 +166,12 @@ export function findLocalMedicine(id: string): Medicine | null {
   }
 
   // 3. Barcode match
+  const byCommBarcode = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.barcode === clean);
+  if (byCommBarcode) {
+    const parent = ALL_LOCAL_MEDICINES.find((m) => m.id === byCommBarcode.activeIngredientId);
+    if (parent) return parent;
+  }
+
   const byBarcode = ALL_LOCAL_MEDICINES.find(
     (m) => m.barcodes.includes(clean) || m.brands.some((b) => b.barcode === clean)
   );
@@ -166,6 +190,7 @@ export function findLocalMedicine(id: string): Medicine | null {
 }
 
 export async function fetchApproved(): Promise<Medicine[]> {
+  refreshLocalMedicinesArray();
   const out = new Map<string, Medicine>();
   ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
 
@@ -177,6 +202,7 @@ export async function fetchApproved(): Promise<Medicine[]> {
     const col = collection(db, 'medicines');
     const a = await getDocs(query(col, where('status', '==', 'approved')));
     a.docs.forEach((d) => {
+      if (d.id === CATALOG_DOC_ID) return;
       const remote = normalize(d.id, d.data());
       const local = out.get(d.id);
       out.set(d.id, smartMerge(remote, local));
@@ -191,6 +217,7 @@ const isPreviewable = (status: Status, nSources: number) =>
   (status === 'draft' || status === 'pending_review') && nSources > 0;
 
 export async function fetchAll(): Promise<Medicine[]> {
+  refreshLocalMedicinesArray();
   const out = new Map<string, Medicine>();
   ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
   if (!configured || !db) {
@@ -199,6 +226,7 @@ export async function fetchAll(): Promise<Medicine[]> {
   try {
     const snap = await getDocs(collection(db, 'medicines'));
     snap.docs.forEach((d) => {
+      if (d.id === CATALOG_DOC_ID) return;
       const remote = normalize(d.id, d.data());
       const local = out.get(d.id);
       out.set(d.id, smartMerge(remote, local));
@@ -211,6 +239,7 @@ export async function fetchAll(): Promise<Medicine[]> {
 
 export async function fetchOne(id: string): Promise<Medicine | null> {
   const clean = decodeURIComponent(id || '').toLowerCase().trim();
+  if (!clean || clean === CATALOG_DOC_ID) return null;
   const local = findLocalMedicine(clean);
   if (!configured || !db) return local;
   try {
@@ -274,15 +303,67 @@ export const medicineUrl = (id: string) =>
   `${window.location.origin}${window.location.pathname}#/medicine/${id}`;
 
 export function useApproved() {
-  const [items, setItems] = useState<Medicine[] | null>(ALL_LOCAL_MEDICINES);
+  const [items, setItems] = useState<Medicine[] | null>(() => buildAllLocalMedicines());
   const [error, setError] = useState(false);
+
   useEffect(() => {
-    fetchApproved()
-      .then(setItems)
-      .catch(() => {
-        setError(false);
-        setItems(ALL_LOCAL_MEDICINES);
-      });
+    startLiveCatalogSync();
+    let active = true;
+
+    const refreshFromLocalAndRemote = () => {
+      fetchApproved()
+        .then((res) => {
+          if (active) setItems(res);
+        })
+        .catch(() => {
+          if (active) {
+            setError(false);
+            setItems(buildAllLocalMedicines());
+          }
+        });
+    };
+
+    refreshFromLocalAndRemote();
+
+    const onCatalogUpdate = () => {
+      refreshFromLocalAndRemote();
+    };
+    window.addEventListener('aa-live-catalog-updated', onCatalogUpdate);
+
+    let unsubFirestore: (() => void) | null = null;
+    if (configured && db) {
+      try {
+        const col = collection(db, 'medicines');
+        unsubFirestore = onSnapshot(
+          query(col, where('status', '==', 'approved')),
+          (snap) => {
+            if (!active) return;
+            refreshLocalMedicinesArray();
+            const out = new Map<string, Medicine>();
+            ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
+            snap.docs.forEach((d) => {
+              if (d.id === CATALOG_DOC_ID) return;
+              const remote = normalize(d.id, d.data());
+              const local = out.get(d.id);
+              out.set(d.id, smartMerge(remote, local));
+            });
+            setItems(Array.from(out.values()).sort((x, y) => x.id.localeCompare(y.id)));
+          },
+          () => {
+            /* ignore snapshot errors */
+          }
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+
+    return () => {
+      active = false;
+      window.removeEventListener('aa-live-catalog-updated', onCatalogUpdate);
+      if (unsubFirestore) unsubFirestore();
+    };
   }, []);
+
   return { items, error };
 }
