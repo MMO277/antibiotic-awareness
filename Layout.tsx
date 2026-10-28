@@ -98,6 +98,42 @@ interface NavItem {
   to: string;
   key: string;
   icon: string;
+  shortLabel: string;
+}
+
+interface NavCategory {
+  id: string;
+  icon: string;
+  title: string;
+  shortTitle: string;
+  subtitle: string;
+  items: NavItem[];
+}
+
+function isRouteMatchingItem(itemTo: string, currentPath: string): boolean {
+  if (itemTo === '/') return currentPath === '/';
+  if (itemTo === '/medicines') {
+    return currentPath === '/medicines' || currentPath.startsWith('/medicine/');
+  }
+  if (itemTo === '/articles') {
+    return currentPath === '/articles' || currentPath.startsWith('/articles/');
+  }
+  if (itemTo === '/games') {
+    return (
+      currentPath === '/games' ||
+      [
+        '/game',
+        '/open-world',
+        '/medical-simulator',
+        '/nurse-academy',
+        '/medical-mystery',
+        '/bacteria-lab',
+        '/emergency-shift',
+        '/escape-the-lab',
+      ].includes(currentPath)
+    );
+  }
+  return currentPath === itemTo || currentPath.startsWith(`${itemTo}/`);
 }
 
 export default function Layout({ children }: { children: ReactNode }) {
@@ -111,6 +147,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [drawerClosing, setDrawerClosing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [openRibbonCatId, setOpenRibbonCatId] = useState<string | null>(null);
+  const [openDrawerGroups, setOpenDrawerGroups] = useState<Record<string, boolean>>({});
   const authCtx = useAuth();
   const user = authCtx.user;
   const openAuthModal = authCtx.openAuthModal;
@@ -118,15 +156,259 @@ export default function Layout({ children }: { children: ReactNode }) {
   const hamburgerBtnRef = useRef<HTMLButtonElement>(null);
   const drawerCloseBtnRef = useRef<HTMLButtonElement>(null);
   const langMenuRef = useRef<HTMLDivElement>(null);
+  const ribbonWrapRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
 
   const currentLangMeta = SUPPORTED_LANGS.find((l) => l.code === lang) || SUPPORTED_LANGS[0];
+
+  const navCategories: NavCategory[] = [
+    {
+      id: 'drug-directory',
+      icon: '💊',
+      title: tr(lang, 'الدليل والبحث الدوائي', 'Drug Directory & Scanner', 'Répertoire & Scanner', 'Directorio y Escáner'),
+      shortTitle: tr(lang, 'الدليل والأدوية', 'Drug Directory', 'Médicaments', 'Medicamentos'),
+      subtitle: tr(
+        lang,
+        'السجل الدوائي (206)، فحص الباركود، ومقارنة الأدوية',
+        '206 medicines registry, barcode scanner & comparison',
+        'Registre (206), scanner code-barres & comparaison',
+        'Registro (206), escáner de código y comparación'
+      ),
+      items: [
+        {
+          to: '/medicines',
+          key: 'navMedicines',
+          icon: '💊',
+          shortLabel: tr(lang, 'السجل الدوائي (206)', 'Registry (206)', 'Registre (206)', 'Registro (206)'),
+        },
+        {
+          to: '/scan',
+          key: 'navScan',
+          icon: '📷',
+          shortLabel: tr(lang, 'مسح الباركود و QR', 'Scan Barcode', 'Scanner Code', 'Escanear Código'),
+        },
+        {
+          to: '/compare',
+          key: 'navCompare',
+          icon: '⚖️',
+          shortLabel: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar'),
+        },
+      ],
+    },
+    {
+      id: 'clinical-safety',
+      icon: '🏥',
+      title: tr(lang, 'أدوات الأمان والفحص السريري', 'Clinical Safety & Checkers', 'Sécurité Clinique & Contrôles', 'Seguridad Clínica y Chequeo'),
+      shortTitle: tr(lang, 'الفحص والأمان السريري', 'Clinical Safety', 'Sécurité Clinique', 'Seguridad Clínica'),
+      subtitle: tr(
+        lang,
+        'فاحص الحساسية، التداخلات، رادار الروشتة، وحاسبة الأطفال',
+        'Allergy check, interactions, Rx radar & pediatric dosing',
+        'Allergies, interactions, radar Rx & posologie pédiatrique',
+        'Alergias, interacciones, radar Rx y dosis pediátrica'
+      ),
+      items: [
+        {
+          to: '/allergy-checker',
+          key: 'navAllergyChecker',
+          icon: '🛡️',
+          shortLabel: tr(lang, 'فاحص الحساسية', 'Allergy Check', 'Allergies', 'Alergias'),
+        },
+        {
+          to: '/interactions',
+          key: 'navInteractions',
+          icon: '⚡',
+          shortLabel: tr(lang, 'فاحص التداخلات', 'Interactions', 'Interactions', 'Interacciones'),
+        },
+        {
+          to: '/prescription-radar',
+          key: 'navRadar',
+          icon: '📡',
+          shortLabel: tr(lang, 'رادار الروشتة 24س', 'Rx Radar 24h', 'Radar Rx 24h', 'Radar Rx 24h'),
+        },
+        {
+          to: '/pediatric-helper',
+          key: 'navPediatric',
+          icon: '👶',
+          shortLabel: tr(lang, 'حاسبة الأطفال', 'Pediatrics', 'Pédiatrie', 'Pediatría'),
+        },
+        {
+          to: '/side-effects',
+          key: 'navSideEffects',
+          icon: '🚨',
+          shortLabel: tr(lang, 'الأعراض الجانبية والطوارئ', 'Side Effects', 'Effets Secondaires', 'Efectos Secundarios'),
+        },
+      ],
+    },
+    {
+      id: 'treatment-care',
+      icon: '🌿',
+      title: tr(lang, 'متابعة العلاج والروشتة الخضراء', 'Treatment & Green Care', 'Suivi & Ordonnance Verte', 'Seguimiento y Receta Verde'),
+      shortTitle: tr(lang, 'متابعة العلاج والبيئة', 'Treatment & Care', 'Suivi & Soins', 'Cuidado y Dosis'),
+      subtitle: tr(
+        lang,
+        'الروشتة الخضراء، منظم الجرعات، ملف صحتي، والتخلص الآمن',
+        'Green Rx, dose tracker, health profile & safe disposal',
+        'Ordonnance verte, suivi des doses, profil santé & élimination',
+        'Receta verde, seguimiento de dosis, perfil y eliminación'
+      ),
+      items: [
+        {
+          to: '/green-prescription',
+          key: 'navGreenRx',
+          icon: '🌿',
+          shortLabel: tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde'),
+        },
+        {
+          to: '/tracker',
+          key: 'navTracker',
+          icon: '⏱️',
+          shortLabel: tr(lang, 'متابع الجرعات', 'Dose Tracker', 'Suivi Doses', 'Seguimiento'),
+        },
+        {
+          to: '/health-profile',
+          key: 'navHealthProfile',
+          icon: '👤',
+          shortLabel: tr(lang, 'ملف صحتي وحساسيتي', 'Health Profile', 'Profil Santé', 'Perfil de Salud'),
+        },
+        {
+          to: '/safe-disposal',
+          key: 'navSafeDisposal',
+          icon: '♻️',
+          shortLabel: tr(lang, 'التخلص الآمن', 'Safe Disposal', 'Élimination', 'Eliminación'),
+        },
+      ],
+    },
+    {
+      id: 'interactive-sim',
+      icon: '🎮',
+      title: tr(lang, 'الألعاب والمحاكاة والذكاء الاصطناعي', '3D Sim, Games & AI', 'Jeux 3D, Sim & IA', 'Juegos 3D, Sim e IA'),
+      shortTitle: tr(lang, 'الألعاب والتفاعل الذكي', 'Games & AI', 'Jeux & IA', 'Juegos e IA'),
+      subtitle: tr(
+        lang,
+        'محاكي المستشفى 3D، المساعد الذكي، الاختبارات، والصوتيات',
+        '3D hospital simulator, AI assistant, quizzes & audio',
+        'Simulateur 3D, assistant IA, quiz & audio',
+        'Simulador 3D, asistente IA, cuestionarios y audio'
+      ),
+      items: [
+        {
+          to: '/games',
+          key: 'navGames',
+          icon: '🎮',
+          shortLabel: tr(lang, 'الألعاب والمحاكاة 3D', 'Games & 3D Sim', 'Jeux & Sim 3D', 'Juegos y Sim 3D'),
+        },
+        {
+          to: '/assistant',
+          key: 'navAssistant',
+          icon: '🤖',
+          shortLabel: tr(lang, 'المساعد الذكي', 'AI Assistant', 'Assistant IA', 'Asistente IA'),
+        },
+        {
+          to: '/quiz',
+          key: 'navQuiz',
+          icon: '📝',
+          shortLabel: tr(lang, 'اختبر معلوماتك', 'Quizzes', 'Quiz', 'Cuestionarios'),
+        },
+        {
+          to: '/listen',
+          key: 'navListen',
+          icon: '🎧',
+          shortLabel: tr(lang, 'استمع وتعلّم', 'Listen & Learn', 'Écouter', 'Escuchar'),
+        },
+      ],
+    },
+    {
+      id: 'awareness-research',
+      icon: '📚',
+      title: tr(lang, 'التوعية والأبحاث والمصادر', 'Awareness & Research', 'Sensibilisation & Recherche', 'Concientización e Investigación'),
+      shortTitle: tr(lang, 'التوعية والأبحاث', 'Awareness & Research', 'Sensibilisation', 'Concientización'),
+      subtitle: tr(
+        lang,
+        'حملة نوفمبر العالمية، الدليل التوعوي، المقالات، والأبحاث',
+        'WAAW campaign, educational guides, articles & research',
+        'Campagne WAAW, guides éducatifs, articles & recherche',
+        'Campaña WAAW, guías educativas, artículos e investigación'
+      ),
+      items: [
+        {
+          to: '/awareness-week',
+          key: 'navWAAW',
+          icon: '🌍',
+          shortLabel: tr(lang, 'حملة نوفمبر العالمية', 'WAAW Campaign', 'Campagne WAAW', 'Campaña WAAW'),
+        },
+        {
+          to: '/learn',
+          key: 'navLearn',
+          icon: '📚',
+          shortLabel: tr(lang, 'تعلّم (الدليل التوعوي)', 'Learn Guide', 'Apprendre', 'Aprender'),
+        },
+        {
+          to: '/myth',
+          key: 'navMyth',
+          icon: '💡',
+          shortLabel: tr(lang, 'خرافة أم حقيقة', 'Myth or Fact', 'Mythe ou Réalité', 'Mito o Realidad'),
+        },
+        {
+          to: '/articles',
+          key: 'navArticles',
+          icon: '📰',
+          shortLabel: tr(lang, 'المقالات العلمية', 'Articles', 'Articles', 'Artículos'),
+        },
+        {
+          to: '/research',
+          key: 'navResearch',
+          icon: '📊',
+          shortLabel: tr(lang, 'استبيان البحث', 'Research Survey', 'Recherche', 'Investigación'),
+        },
+        {
+          to: '/methodology',
+          key: 'navMethod',
+          icon: '🔬',
+          shortLabel: tr(lang, 'المنهجية والمصادر', 'Methodology', 'Méthodologie', 'Metodología'),
+        },
+      ],
+    },
+  ];
+
+  // Auto-expand the drawer category that contains the current route
+  useEffect(() => {
+    const activeCat = navCategories.find((cat) =>
+      cat.items.some((item) => isRouteMatchingItem(item.to, pathname))
+    );
+    if (activeCat) {
+      setOpenDrawerGroups((prev) => ({ ...prev, [activeCat.id]: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  const toggleDrawerGroup = (catId: string) => {
+    setOpenDrawerGroups((prev) => ({
+      ...prev,
+      [catId]: !prev[catId],
+    }));
+  };
+
+  const areAllDrawerGroupsOpen = navCategories.every((cat) => Boolean(openDrawerGroups[cat.id]));
+
+  const toggleAllDrawerGroups = () => {
+    if (areAllDrawerGroupsOpen) {
+      setOpenDrawerGroups({});
+    } else {
+      const next: Record<string, boolean> = {};
+      navCategories.forEach((cat) => {
+        next[cat.id] = true;
+      });
+      setOpenDrawerGroups(next);
+    }
+  };
 
   const openDrawer = () => {
     if (closeTimerRef.current) {
       window.clearTimeout(closeTimerRef.current);
       closeTimerRef.current = null;
     }
+    setOpenRibbonCatId(null);
     setDrawerClosing(false);
     setDrawerOpen(true);
   };
@@ -371,6 +653,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       closeDrawer(false);
     }
     setLangMenuOpen(false);
+    setOpenRibbonCatId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -379,9 +662,22 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (langMenuRef.current && !langMenuRef.current.contains(e.target as Node)) {
         setLangMenuOpen(false);
       }
+      if (ribbonWrapRef.current && !ribbonWrapRef.current.contains(e.target as Node)) {
+        setOpenRibbonCatId(null);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpenRibbonCatId(null);
+        setLangMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      window.removeEventListener('keydown', onKeyDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -421,47 +717,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drawerOpen, drawerClosing]);
 
-  const navItems: NavItem[] = [
-    { to: '/', key: 'navHome', icon: '🏠' },
-    { to: '/medicines', key: 'navMedicines', icon: '💊' },
-    { to: '/green-prescription', key: 'navGreenRx', icon: '🌿' },
-    { to: '/awareness-week', key: 'navWAAW', icon: '🌍' },
-    { to: '/compare', key: 'navCompare', icon: '⚖️' },
-    { to: '/prescription-radar', key: 'navRadar', icon: '📡' },
-    { to: '/scan', key: 'navScan', icon: '📷' },
-    { to: '/allergy-checker', key: 'navAllergyChecker', icon: '🛡️' },
-    { to: '/health-profile', key: 'navHealthProfile', icon: '👤' },
-    { to: '/pediatric-helper', key: 'navPediatric', icon: '👶' },
-    { to: '/interactions', key: 'navInteractions', icon: '⚡' },
-    { to: '/tracker', key: 'navTracker', icon: '⏱️' },
-    { to: '/side-effects', key: 'navSideEffects', icon: '🚨' },
-    { to: '/safe-disposal', key: 'navSafeDisposal', icon: '♻️' },
-    { to: '/listen', key: 'navListen', icon: '🎧' },
-    { to: '/assistant', key: 'navAssistant', icon: '🤖' },
-    { to: '/learn', key: 'navLearn', icon: '📚' },
-    { to: '/myth', key: 'navMyth', icon: '💡' },
-    { to: '/quiz', key: 'navQuiz', icon: '📝' },
-    { to: '/articles', key: 'navArticles', icon: '📰' },
-    { to: '/research', key: 'navResearch', icon: '📊' },
-    { to: '/methodology', key: 'navMethod', icon: '🔬' },
-    { to: '/games', key: 'navGames', icon: '🎮' },
-  ];
-
-  const quickBarItems = [
-    { to: '/', label: tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio'), icon: '🏠' },
-    { to: '/medicines', label: tr(lang, 'السجل الدوائي (206)', 'Registry (206)', 'Registre (206)', 'Registro (206)'), icon: '💊' },
-    { to: '/games', label: tr(lang, 'الألعاب والمحاكاة 3D', 'Games & 3D Sim', 'Jeux & Sim 3D', 'Juegos y Sim 3D'), icon: '🎮' },
-    { to: '/green-prescription', label: tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde'), icon: '🌿' },
-    { to: '/awareness-week', label: tr(lang, 'حملة نوفمبر العالمية', 'WAAW Campaign', 'Campagne WAAW', 'Campaña WAAW'), icon: '🌍' },
-    { to: '/compare', label: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar'), icon: '⚖️' },
-    { to: '/prescription-radar', label: tr(lang, 'رادار الروشتة 24س', 'Rx Radar 24h', 'Radar Rx 24h', 'Radar Rx 24h'), icon: '📡' },
-    { to: '/scan', label: tr(lang, 'مسح الباركود', 'Scan Barcode', 'Scanner Code', 'Escanear Código'), icon: '📷' },
-    { to: '/allergy-checker', label: tr(lang, 'فاحص الحساسية', 'Allergy Check', 'Allergies', 'Alergias'), icon: '🛡️' },
-    { to: '/pediatric-helper', label: tr(lang, 'حاسبة الأطفال', 'Pediatrics', 'Pédiatrie', 'Pediatría'), icon: '👶' },
-    { to: '/interactions', label: tr(lang, 'التداخلات', 'Interactions', 'Interactions', 'Interacciones'), icon: '⚡' },
-    { to: '/tracker', label: tr(lang, 'متابع الجرعات', 'Dose Tracker', 'Suivi Doses', 'Seguimiento'), icon: '⏱️' },
-    { to: '/safe-disposal', label: tr(lang, 'التخلص الآمن', 'Safe Disposal', 'Élimination', 'Eliminación'), icon: '♻️' },
-  ];
+  const activeRibbonCategory = navCategories.find((cat) => cat.id === openRibbonCatId) || null;
 
   return (
     <div className="app" dir={pageDir}>
@@ -621,25 +877,85 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Sleek Secondary Quick-Access Clinical Ribbon */}
-        <div className="quick-ribbon-wrap">
+        {/* Grouped Quick-Access Clinical Ribbon with Click-to-Expand Sub-Menus */}
+        <div ref={ribbonWrapRef} className="quick-ribbon-wrap">
           <div className="wrap quick-ribbon">
-            {quickBarItems.map((qItem) => (
-              <NavLink
-                key={qItem.to}
-                to={qItem.to}
-                end={qItem.to === '/'}
-                className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
-              >
-                <span aria-hidden="true">{qItem.icon}</span>
-                <span>{qItem.label}</span>
-              </NavLink>
-            ))}
+            <NavLink
+              to="/"
+              end
+              onClick={() => setOpenRibbonCatId(null)}
+              className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
+            >
+              <span aria-hidden="true">🏠</span>
+              <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio')}</span>
+            </NavLink>
+
+            {navCategories.map((cat) => {
+              const isOpen = openRibbonCatId === cat.id;
+              const hasActiveChild = cat.items.some((item) => isRouteMatchingItem(item.to, pathname));
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenRibbonCatId((prev) => (prev === cat.id ? null : cat.id))}
+                  className={`quick-ribbon-link quick-ribbon-group-btn${hasActiveChild ? ' active' : ''}${isOpen ? ' is-open' : ''}`}
+                >
+                  <span aria-hidden="true">{cat.icon}</span>
+                  <span>{cat.shortTitle}</span>
+                  <span className="ribbon-group-count" aria-hidden="true">{cat.items.length}</span>
+                  <span className={`ribbon-group-caret${isOpen ? ' open' : ''}`} aria-hidden="true">▾</span>
+                </button>
+              );
+            })}
           </div>
+
+          {/* Expandable Sub-Items Panel for Selected Ribbon Category */}
+          {activeRibbonCategory && (
+            <div className="ribbon-dropdown-panel" role="region" aria-label={activeRibbonCategory.title}>
+              <div className="wrap ribbon-dropdown-inner">
+                <div className="ribbon-dropdown-header">
+                  <div className="ribbon-dropdown-title-group">
+                    <span className="ribbon-dropdown-icon" aria-hidden="true">{activeRibbonCategory.icon}</span>
+                    <div>
+                      <b className="ribbon-dropdown-title">{activeRibbonCategory.title}</b>
+                      <span className="ribbon-dropdown-sub">{activeRibbonCategory.subtitle}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="ribbon-dropdown-close"
+                    onClick={() => setOpenRibbonCatId(null)}
+                    aria-label={tr(lang, 'إغلاق القسم', 'Close category', 'Fermer', 'Cerrar')}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="ribbon-dropdown-grid">
+                  {activeRibbonCategory.items.map((subItem) => {
+                    const active = isRouteMatchingItem(subItem.to, pathname);
+                    return (
+                      <NavLink
+                        key={subItem.to}
+                        to={subItem.to}
+                        onClick={() => setOpenRibbonCatId(null)}
+                        className={`ribbon-sub-item${active ? ' active' : ''}`}
+                      >
+                        <span className="ribbon-sub-icon" aria-hidden="true">{subItem.icon}</span>
+                        <span className="ribbon-sub-text">{t(subItem.key)}</span>
+                        <span className="ribbon-sub-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Edge-Attached Dark Teal Glassmorphism Navigation Sidebar */}
+      {/* Edge-Attached Dark Teal Glassmorphism Navigation Sidebar with Collapsible Groups */}
       {drawerOpen && (
         <div
           className={`drawer-backdrop${drawerClosing ? ' is-closing' : ''}`}
@@ -661,7 +977,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <div className="drawer-brand-text">
                   <b>{tr(lang, 'أقسام المنصة السريرية', 'Clinical Portal Menu', 'Menu du Portail Clinique', 'Menú del Portal Clínico')}</b>
                   <small className="drawer-subtitle">
-                    {tr(lang, 'جميع الأدوات والأدلة التوعوية', 'All Clinical Tools & Guides', 'Tous les outils et guides cliniques', 'Todas las herramientas y guías clínicas')}
+                    {tr(lang, 'مجمعة حسب التخصص لسهولة الوصول', 'Grouped by category for quick access', 'Regroupés par catégorie', 'Agrupados por categoría')}
                   </small>
                 </div>
               </div>
@@ -693,19 +1009,79 @@ export default function Layout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="drawer-links">
-              {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  end={item.to === '/'}
-                  onClick={() => closeDrawer(false)}
-                  className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}
+              {/* Direct Home Item */}
+              <NavLink
+                to="/"
+                end
+                onClick={() => closeDrawer(false)}
+                className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}
+              >
+                <span className="item-icon" aria-hidden="true">🏠</span>
+                <span className="item-title">{t('navHome')}</span>
+                <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
+              </NavLink>
+
+              {/* Helper bar to Expand/Collapse all groups */}
+              <div className="drawer-groups-toolbar">
+                <span className="drawer-groups-hint">
+                  {tr(lang, 'اضغط على أي قسم لعرض أدواته:', 'Tap a category to expand tools:', 'Appuyez pour développer :', 'Toca para expandir:')}
+                </span>
+                <button
+                  type="button"
+                  className="drawer-expand-all-btn"
+                  onClick={toggleAllDrawerGroups}
                 >
-                  <span className="item-icon" aria-hidden="true">{item.icon}</span>
-                  <span className="item-title">{t(item.key)}</span>
-                  <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
-                </NavLink>
-              ))}
+                  {areAllDrawerGroupsOpen
+                    ? tr(lang, 'طي الكل ▴', 'Collapse All ▴', 'Tout réduire ▴', 'Contraer todo ▴')
+                    : tr(lang, 'فتح الكل ▾', 'Expand All ▾', 'Tout ouvrir ▾', 'Expandir todo ▾')}
+                </button>
+              </div>
+
+              {/* 5 Categorized Accordion Groups */}
+              {navCategories.map((cat) => {
+                const isOpen = Boolean(openDrawerGroups[cat.id]);
+                const hasActiveChild = cat.items.some((item) => isRouteMatchingItem(item.to, pathname));
+                return (
+                  <div
+                    key={cat.id}
+                    className={`drawer-group${isOpen ? ' is-open' : ''}${hasActiveChild ? ' has-active' : ''}`}
+                  >
+                    <button
+                      type="button"
+                      className={`drawer-group-trigger${hasActiveChild ? ' active-parent' : ''}`}
+                      onClick={() => toggleDrawerGroup(cat.id)}
+                      aria-expanded={isOpen}
+                    >
+                      <span className="item-icon group-icon" aria-hidden="true">{cat.icon}</span>
+                      <div className="drawer-group-text">
+                        <span className="drawer-group-title">{cat.title}</span>
+                        <small className="drawer-group-sub">{cat.subtitle}</small>
+                      </div>
+                      <span className="drawer-group-badge" aria-hidden="true">{cat.items.length}</span>
+                      <span className={`drawer-group-chevron${isOpen ? ' open' : ''}`} aria-hidden="true">▾</span>
+                    </button>
+
+                    {isOpen && (
+                      <div className="drawer-group-items">
+                        {cat.items.map((item) => (
+                          <NavLink
+                            key={item.to}
+                            to={item.to}
+                            onClick={() => closeDrawer(false)}
+                            className={({ isActive }) =>
+                              `drawer-item drawer-sub-item ${isActive || isRouteMatchingItem(item.to, pathname) ? 'active' : ''}`
+                            }
+                          >
+                            <span className="item-icon sub-icon" aria-hidden="true">{item.icon}</span>
+                            <span className="item-title">{t(item.key)}</span>
+                            <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               <div className="drawer-divider"></div>
 
@@ -794,7 +1170,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 'المنصة الرقمية الوطنية للتوعية بالاستخدام الرشيد للمضادات الحيوية ومكافحة مقاومة الميكروبات (AMR) وفق أحدث دلائل هيئة الدواء المصرية ومنظمة الصحة العالمية.',
                 'Digital health portal for rational antibiotic stewardship and antimicrobial resistance (AMR) education aligned with EDA and WHO guidelines.',
                 'Portail numérique de santé pour le bon usage des antibiotiques et la lutte contre l’antibiorésistance (AMR), aligné sur les directives de l’OMS et de l’EDA.',
-                'Portal digital de salud para el uso racional de antibióticos y la educación sobre resistencia antimicrobiana (RAM), alineado con las guías de la OMS y la EDA.'
+                'Portal digital de salud para el uso racional de antibióticos y la educación sobre resistencia antimicrobiana (RAM), aligné con las guías de la OMS y la EDA.'
               )}
             </p>
           </div>
