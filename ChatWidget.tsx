@@ -49,6 +49,13 @@ const WIDGET_CHIPS: Record<string, string[]> = {
     '¿Qué hacer si olvido una dosis?',
     '¿La leche afecta al antibiótico?',
   ],
+  de: [
+    "Helfen Antibiotika bei Erkältung?",
+    "Gefahren der 3-in-1-Erkältungsspritze?",
+    "Welches Antibiotikum bei Zahnschmerzen?",
+    "Was tun bei vergessener Dosis?",
+    "Blockiert Milch das Antibiotikum?",
+  ],
 };
 
 export default function ChatWidget() {

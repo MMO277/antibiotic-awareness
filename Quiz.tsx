@@ -35,10 +35,12 @@ const LEVEL_INFO = {
     labelEn: 'Beginner',
     labelFr: 'Débutant',
     labelEs: 'Principiante',
+    labelDe: 'Anfänger',
     descAr: 'أساسيات الوعي بالمضادات الحيوية',
     descEn: 'Antibiotic awareness basics',
     descFr: 'Les bases de la sensibilisation aux antibiotiques',
     descEs: 'Conceptos básicos de conciencia sobre antibióticos',
+    descDe: 'Grundlagen des verantwortungsvollen Antibiotikaeinsatzes',
     count: 8,
   },
   medium: {
@@ -50,10 +52,12 @@ const LEVEL_INFO = {
     labelEn: 'Intermediate',
     labelFr: 'Intermédiaire',
     labelEs: 'Intermedio',
+    labelDe: 'Fortgeschritten',
     descAr: 'مفاهيم أعمق عن المقاومة والاستخدام الصحيح',
     descEn: 'Deeper concepts on resistance & correct use',
     descFr: 'Concepts approfondis sur la résistance et bon usage',
     descEs: 'Conceptos más profundos sobre resistencia y uso correcto',
+    descDe: 'Vertiefte Konzepte zu Resistenzen und richtiger Anwendung',
     count: 8,
   },
   hard: {
@@ -65,10 +69,12 @@ const LEVEL_INFO = {
     labelEn: 'Advanced',
     labelFr: 'Avancé',
     labelEs: 'Avanzado',
+    labelDe: 'Experte',
     descAr: 'معرفة سريرية وعلمية متخصصة',
     descEn: 'Specialist clinical & scientific knowledge',
     descFr: 'Connaissances cliniques et scientifiques spécialisées',
     descEs: 'Conocimiento clínico y científico especializado',
+    descDe: 'Klinisches und wissenschaftliches Fachwissen',
     count: 8,
   },
 };
@@ -444,7 +450,7 @@ export default function Quiz() {
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     <strong style={{ color: d.color, fontSize: '1.1rem' }}>
-                      {lang === 'ar' ? d.labelAr : lang === 'fr' ? d.labelFr : lang === 'es' ? d.labelEs : d.labelEn}
+                      {lang === 'ar' ? d.labelAr : lang === 'fr' ? d.labelFr : lang === 'es' ? d.labelEs : lang === 'de' ? d.labelDe : d.labelEn}
                     </strong>
                     <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
                       ({lvlCount} {tr(lang, 'سؤال', 'questions', 'questions', 'preguntas')})
@@ -456,7 +462,7 @@ export default function Quiz() {
                     )}
                   </div>
                   <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: '#475569' }}>
-                    {lang === 'ar' ? d.descAr : lang === 'fr' ? d.descFr : lang === 'es' ? d.descEs : d.descEn}
+                    {lang === 'ar' ? d.descAr : lang === 'fr' ? d.descFr : lang === 'es' ? d.descEs : lang === 'de' ? d.descDe : d.descEn}
                   </p>
                 </div>
                 <span style={{ color: d.color, fontSize: '1.4rem', flexShrink: 0 }}>{isAr ? '←' : '→'}</span>
@@ -646,7 +652,7 @@ export default function Quiz() {
               marginBottom: '8px',
             }}
           >
-            {info.emoji} {lang === 'ar' ? info.labelAr : lang === 'fr' ? info.labelFr : lang === 'es' ? info.labelEs : info.labelEn}
+            {info.emoji} {lang === 'ar' ? info.labelAr : lang === 'fr' ? info.labelFr : lang === 'es' ? info.labelEs : lang === 'de' ? info.labelDe : info.labelEn}
           </span>
 
           {/* Saved indicator */}
@@ -861,7 +867,7 @@ export default function Quiz() {
               fontWeight: 600,
             }}
           >
-            {info.emoji} {lang === 'ar' ? info.labelAr : lang === 'fr' ? info.labelFr : lang === 'es' ? info.labelEs : info.labelEn}
+            {info.emoji} {lang === 'ar' ? info.labelAr : lang === 'fr' ? info.labelFr : lang === 'es' ? info.labelEs : lang === 'de' ? info.labelDe : info.labelEn}
           </span>
         </div>
       </div>

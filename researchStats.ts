@@ -46,10 +46,10 @@ export function distribution(rows: Row[]): Dist {
 }
 
 export const AGE_GROUPS = [
-  { key: 'u18', ar: 'أقل من 18', en: 'Under 18', fr: 'Moins de 18 ans', es: 'Menores de 18', min: 0, max: 17 },
-  { key: '18-29', ar: '18–29', en: '18–29', fr: '18–29 ans', es: '18–29 años', min: 18, max: 29 },
-  { key: '30-44', ar: '30–44', en: '30–44', fr: '30–44 ans', es: '30–44 años', min: 30, max: 44 },
-  { key: '45+', ar: '45 فأكثر', en: '45+', fr: '45 ans et plus', es: '45+ años', min: 45, max: 200 },
+  { key: 'u18', ar: 'أقل من 18', en: 'Under 18', fr: 'Moins de 18 ans', es: 'Menores de 18', de: 'Unter 18', min: 0, max: 17 },
+  { key: '18-29', ar: '18–29', en: '18–29', fr: '18–29 ans', es: '18–29 años', de: '18–29 Jahre', min: 18, max: 29 },
+  { key: '30-44', ar: '30–44', en: '30–44', fr: '30–44 ans', es: '30–44 años', de: '30–44 Jahre', min: 30, max: 44 },
+  { key: '45+', ar: '45 فأكثر', en: '45+', fr: '45 ans et plus', es: '45+ años', de: '45+ Jahre', min: 45, max: 200 },
 ];
 
 export function byAge(rows: Row[]) {
