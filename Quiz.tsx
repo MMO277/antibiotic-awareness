@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
-import { Question, getQuestionsByLevel } from './quizData';
+import { Question } from './quizData';
 import { pick, tr } from './types';
 import { useAuth } from './authContext';
 import { db, configured } from './firebase';
@@ -13,6 +14,8 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import AmbassadorCertificateModal, { CertificateRecord } from './AmbassadorCertificateModal';
+import { useLiveQuizQuestions } from './liveCatalogSync';
+import { QuestionEditorModal } from './SurveyQuizEditor';
 
 type Level = 'easy' | 'medium' | 'hard';
 type Screen = 'pick' | 'quiz' | 'result';
@@ -135,7 +138,9 @@ function makeCertSerial(level: Level, uid: string): string {
 export default function Quiz() {
   const { t, lang } = useLang();
   const isAr = lang === 'ar';
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const { questions: allLiveQuestions } = useLiveQuizQuestions();
 
   const [screen, setScreen] = useState<Screen>('pick');
   const [level, setLevel] = useState<Level>('easy');
@@ -147,6 +152,10 @@ export default function Quiz() {
   const [wrongAnswers, setWrongAnswers] = useState<WrongAnswer[]>([]);
   const [showReview, setShowReview] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Live Question Editor modal state
+  const [editingGlobalIdx, setEditingGlobalIdx] = useState<number | null>(null);
+  const [addingNewQuestion, setAddingNewQuestion] = useState(false);
 
   // Cloud + Local Certificates State
   const [certificates, setCertificates] = useState<CertificateRecord[]>(() => loadLocalCertificates());
@@ -240,8 +249,8 @@ export default function Quiz() {
 
   const startQuiz = (lvl: Level) => {
     setLevel(lvl);
-    const qs = getQuestionsByLevel(lvl);
-    setQuestions(qs);
+    const qs = allLiveQuestions.filter((item) => item.level === lvl);
+    setQuestions(qs.length > 0 ? qs : allLiveQuestions);
     setCurrentIdx(0);
     setSelectedOpt(null);
     setScore(0);
@@ -366,9 +375,50 @@ export default function Quiz() {
           )}
         </p>
 
+        {canEditLive && (
+          <section
+            className="card"
+            style={{
+              border: '2px solid #0284c7',
+              background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.08), rgba(22, 163, 74, 0.08))',
+              padding: '14px 18px',
+            }}
+          >
+            <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+              <div>
+                <span className="badge" style={{ background: '#0284c7', color: '#fff', fontWeight: 800 }}>
+                  ⚡ {isAr ? 'محرر أسئلة الاختبار والاستبيان مفعّل' : 'Live Quiz & Survey Editor Active'}
+                </span>
+                <p className="small" style={{ margin: '6px 0 0' }}>
+                  {isAr
+                    ? `إجمالي الأسئلة النشطة حالياً: (${allLiveQuestions.length}) سؤالاً — يمكنك إضافة أسئلة جديدة أو تعديل وحذف الأسئلة مباشرة.`
+                    : `Total active questions: (${allLiveQuestions.length}) — add, edit, or remove questions live.`}
+                </p>
+              </div>
+              <div className="row wrapRow" style={{ gap: '8px' }}>
+                <button
+                  type="button"
+                  className="btn small"
+                  style={{ background: '#15803d', fontWeight: 800 }}
+                  onClick={() => {
+                    setEditingGlobalIdx(null);
+                    setAddingNewQuestion(true);
+                  }}
+                >
+                  ➕ {isAr ? 'إضافة سؤال جديد' : 'Add New Question'}
+                </button>
+                <Link to="/admin" className="btn ghost small">
+                  📋 {isAr ? 'إدارة كل الأسئلة' : 'Manage All Questions'}
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
         <div style={{ display: 'grid', gap: '14px' }}>
           {(['easy', 'medium', 'hard'] as Level[]).map((lvl) => {
             const d = LEVEL_INFO[lvl];
+            const lvlCount = allLiveQuestions.filter((item) => item.level === lvl).length || d.count;
             const best = getBestScore(lvl);
             return (
               <button
@@ -397,11 +447,11 @@ export default function Quiz() {
                       {lang === 'ar' ? d.labelAr : lang === 'fr' ? d.labelFr : lang === 'es' ? d.labelEs : d.labelEn}
                     </strong>
                     <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                      ({d.count} {tr(lang, 'سؤال', 'questions', 'questions', 'preguntas')})
+                      ({lvlCount} {tr(lang, 'سؤال', 'questions', 'questions', 'preguntas')})
                     </span>
                     {best > 0 && (
                       <span style={{ fontSize: '0.75rem', background: d.color, color: '#fff', borderRadius: '20px', padding: '2px 8px' }}>
-                        🏅 {tr(lang, 'أفضل:', 'Best:', 'Meilleur :', 'Mejor:')} {best}/{d.count}
+                        🏅 {tr(lang, 'أفضل:', 'Best:', 'Meilleur :', 'Mejor:')} {best}/{lvlCount}
                       </span>
                     )}
                   </div>
@@ -522,6 +572,19 @@ export default function Quiz() {
             cert={activeCertificate}
             onClose={() => setActiveCertificate(null)}
             onUpdateName={handleUpdateCertificateName}
+          />
+        )}
+
+        {(addingNewQuestion || editingGlobalIdx !== null) && (
+          <QuestionEditorModal
+            question={editingGlobalIdx !== null ? allLiveQuestions[editingGlobalIdx] : null}
+            questionIndex={editingGlobalIdx}
+            defaultLevel={level}
+            uid={user?.uid || 'editor'}
+            onClose={() => {
+              setEditingGlobalIdx(null);
+              setAddingNewQuestion(false);
+            }}
           />
         )}
       </main>
@@ -751,6 +814,10 @@ export default function Quiz() {
   }
 
   // ── QUIZ SCREEN ──
+  const globalIndexForCurrent = allLiveQuestions.findIndex(
+    (item) => item.q.ar === q?.q.ar && item.q.en === q?.q.en
+  );
+
   return (
     <main className="wrap narrow stack">
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'space-between', flexWrap: 'wrap' }}>
@@ -769,19 +836,34 @@ export default function Quiz() {
         >
           {isAr ? '← رجوع' : '← Back'}
         </button>
-        <span
-          style={{
-            background: info.bg,
-            color: info.color,
-            border: `1px solid ${info.border}`,
-            borderRadius: '20px',
-            padding: '3px 12px',
-            fontSize: '0.82rem',
-            fontWeight: 600,
-          }}
-        >
-          {info.emoji} {lang === 'ar' ? info.labelAr : lang === 'fr' ? info.labelFr : lang === 'es' ? info.labelEs : info.labelEn}
-        </span>
+        <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
+          {canEditLive && globalIndexForCurrent >= 0 && (
+            <button
+              type="button"
+              className="btn ghost small"
+              style={{ borderColor: '#0284c7', color: '#0284c7', fontWeight: 700 }}
+              onClick={() => {
+                setEditingGlobalIdx(globalIndexForCurrent);
+                setAddingNewQuestion(false);
+              }}
+            >
+              ✏️ {isAr ? 'تعديل هذا السؤال' : 'Edit Question'}
+            </button>
+          )}
+          <span
+            style={{
+              background: info.bg,
+              color: info.color,
+              border: `1px solid ${info.border}`,
+              borderRadius: '20px',
+              padding: '3px 12px',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+            }}
+          >
+            {info.emoji} {lang === 'ar' ? info.labelAr : lang === 'fr' ? info.labelFr : lang === 'es' ? info.labelEs : info.labelEn}
+          </span>
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -903,6 +985,25 @@ export default function Quiz() {
           </div>
         )}
       </div>
+
+      {(addingNewQuestion || editingGlobalIdx !== null) && (
+        <QuestionEditorModal
+          question={editingGlobalIdx !== null ? allLiveQuestions[editingGlobalIdx] : null}
+          questionIndex={editingGlobalIdx}
+          defaultLevel={level}
+          uid={user?.uid || 'editor'}
+          onClose={() => {
+            setEditingGlobalIdx(null);
+            setAddingNewQuestion(false);
+          }}
+          onSaved={(updatedAll) => {
+            const updatedForLvl = updatedAll.filter((item) => item.level === level);
+            if (updatedForLvl.length > 0) {
+              setQuestions(updatedForLvl);
+            }
+          }}
+        />
+      )}
     </main>
   );
 }

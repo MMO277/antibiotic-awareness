@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
 import { useLang } from './i18n';
-import { QUESTIONS } from './quizData';
 import { byAge, Dist, distribution, perQuestion, Resp, Row, toRow } from './researchStats';
 import { pick } from './types';
+import { useAuth } from './authContext';
+import { saveSurveyConfigLive, useLiveQuizQuestions } from './liveCatalogSync';
 
 function Bars({ d }: { d: Dist }) {
   const { t } = useLang();
@@ -32,8 +33,10 @@ interface RowWithSource extends Row {
 
 export default function ResearchTab() {
   const { t, lang } = useLang();
-  const [enabled, setEnabled] = useState(false);
-  const [ref, setRef] = useState('');
+  const { user } = useAuth();
+  const { questions: liveQuestions, surveyConfig } = useLiveQuizQuestions();
+  const [enabled, setEnabled] = useState(surveyConfig?.enabled ?? true);
+  const [ref, setRef] = useState(surveyConfig?.ethicsApprovalRef ?? 'AMR-EDU-2026');
   const [msg, setMsg] = useState('');
   const [rows, setRows] = useState<RowWithSource[] | null>(null);
   const [phase, setPhase] = useState<'all' | 'pre' | 'post'>('all');
@@ -49,14 +52,14 @@ export default function ResearchTab() {
         getDocs(collection(db, 'researchResponses')).catch(() => null),
       ]);
 
-      const combined: { id: string; data: Record<string, any>; col: 'surveyResponses' | 'researchResponses' }[] = [];
+      const combined: { id: string; data: Record<string, unknown>; col: 'surveyResponses' | 'researchResponses' }[] = [];
       const seenIds = new Set<string>();
 
       if (snapSurvey) {
         snapSurvey.docs.forEach((d) => {
           const x = d.data();
           if (x.answers && typeof x.answers === 'object' && !Array.isArray(x.answers)) {
-            if (x.answers._recordType === 'learning_analytics') return;
+            if ((x.answers as Record<string, unknown>)._recordType === 'learning_analytics') return;
           }
           seenIds.add(d.id);
           combined.push({ id: d.id, data: x, col: 'surveyResponses' });
@@ -68,7 +71,7 @@ export default function ResearchTab() {
           if (seenIds.has(d.id)) return;
           const x = d.data();
           if (x.answers && typeof x.answers === 'object' && !Array.isArray(x.answers)) {
-            if (x.answers._recordType === 'learning_analytics') return;
+            if ((x.answers as Record<string, unknown>)._recordType === 'learning_analytics') return;
           }
           combined.push({ id: d.id, data: x, col: 'researchResponses' });
         });
@@ -82,7 +85,7 @@ export default function ResearchTab() {
           if (Array.isArray(x.answers)) {
             parsedAnswers = x.answers.map((v) => (typeof v === 'number' ? v : Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null));
           } else if (x.answers && typeof x.answers === 'object') {
-            parsedAnswers = QUESTIONS.map((_, idx) => {
+            parsedAnswers = liveQuestions.map((_, idx) => {
               const val = (x.answers as Record<string, unknown>)[String(idx)];
               if (typeof val === 'number') return val;
               if (typeof val === 'string' && val.trim() !== '' && Number.isFinite(Number(val))) return Number(val);
@@ -108,44 +111,38 @@ export default function ResearchTab() {
   }
 
   useEffect(() => {
-    if (!db) {
-      setRows([]);
-      return;
+    if (surveyConfig) {
+      setEnabled(surveyConfig.enabled);
+      setRef(surveyConfig.ethicsApprovalRef || 'AMR-EDU-2026');
+    } else if (db) {
+      Promise.all([
+        getDoc(doc(db, 'surveyConfig', 'main')).catch(() => null),
+        getDoc(doc(db, 'researchConfig', 'main')).catch(() => null),
+      ]).then(([s1, s2]) => {
+        if (s1 && s1.exists()) {
+          setEnabled(!!s1.data().enabled);
+          setRef(String(s1.data().ethicsApprovalRef ?? 'AMR-EDU-2026'));
+        } else if (s2 && s2.exists()) {
+          setEnabled(!!s2.data().enabled);
+          setRef(String(s2.data().ethicsApprovalRef ?? 'AMR-EDU-2026'));
+        }
+      });
     }
-    Promise.all([
-      getDoc(doc(db, 'surveyConfig', 'main')).catch(() => null),
-      getDoc(doc(db, 'researchConfig', 'main')).catch(() => null),
-    ]).then(([s1, s2]) => {
-      if (s1 && s1.exists()) {
-        setEnabled(!!s1.data().enabled);
-        setRef(String(s1.data().ethicsApprovalRef ?? ''));
-      } else if (s2 && s2.exists()) {
-        setEnabled(!!s2.data().enabled);
-        setRef(String(s2.data().ethicsApprovalRef ?? ''));
-      }
-    });
     loadRows();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [surveyConfig]);
 
   async function save() {
-    if (!db) return;
     const finalRef = ref.trim() || 'AMR-EDU-2026';
     if (enabled && !ref.trim()) {
       setRef(finalRef);
     }
     setMsg('');
     try {
-      await Promise.all([
-        setDoc(doc(db, 'surveyConfig', 'main'), {
-          enabled,
-          ethicsApprovalRef: finalRef,
-        }),
-        setDoc(doc(db, 'researchConfig', 'main'), {
-          enabled,
-          ethicsApprovalRef: finalRef,
-        }).catch(() => {}),
-      ]);
+      await saveSurveyConfigLive(
+        { enabled, ethicsApprovalRef: finalRef },
+        user?.uid || 'editor'
+      );
       setMsg(t('resSaved') || t('saved'));
     } catch {
       setMsg(t('actionFailed'));
@@ -159,7 +156,7 @@ export default function ResearchTab() {
 
   function exportCSV() {
     if (!rows) return;
-    const headers = ['ID', 'Name/Code', 'Age', 'Phase', 'Language', 'Score', ...QUESTIONS.map((_, i) => `Q${i + 1}`)];
+    const headers = ['ID', 'Name/Code', 'Age', 'Phase', 'Language', 'Score', ...liveQuestions.map((_, i) => `Q${i + 1}`)];
     const lines = [headers.join(',')];
     rows.forEach((r) => {
       const line = [
@@ -294,7 +291,7 @@ export default function ResearchTab() {
             <div className="stack">
               <h3 style={{ margin: 0 }}>{t('resByQ')}</h3>
               {qStats.map((pctCorrect, i) => {
-                const text = pick(QUESTIONS[i]?.q, lang);
+                const text = pick(liveQuestions[i]?.q, lang);
                 const qDist: Dist = {
                   n: filtered.length,
                   know: pctCorrect,
