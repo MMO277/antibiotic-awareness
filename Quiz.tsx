@@ -35,12 +35,12 @@ const LEVEL_INFO = {
     labelEn: 'Beginner',
     labelFr: 'Débutant',
     labelEs: 'Principiante',
-    labelDe: 'Einsteiger',
+    labelDe: 'Anfänger',
     descAr: 'أساسيات الوعي بالمضادات الحيوية',
     descEn: 'Antibiotic awareness basics',
     descFr: 'Les bases de la sensibilisation aux antibiotiques',
     descEs: 'Conceptos básicos de conciencia sobre antibióticos',
-    descDe: 'Grundlagen des sicheren Umgangs mit Antibiotika',
+    descDe: 'Grundlagen des verantwortungsvollen Antibiotikaeinsatzes',
     count: 8,
   },
   medium: {
@@ -57,7 +57,7 @@ const LEVEL_INFO = {
     descEn: 'Deeper concepts on resistance & correct use',
     descFr: 'Concepts approfondis sur la résistance et bon usage',
     descEs: 'Conceptos más profundos sobre resistencia y uso correcto',
-    descDe: 'Vertieftes Wissen über Resistenzen & korrekte Einnahme',
+    descDe: 'Vertiefte Konzepte zu Resistenzen und richtiger Anwendung',
     count: 8,
   },
   hard: {
@@ -74,7 +74,7 @@ const LEVEL_INFO = {
     descEn: 'Specialist clinical & scientific knowledge',
     descFr: 'Connaissances cliniques et scientifiques spécialisées',
     descEs: 'Conocimiento clínico y científico especializado',
-    descDe: 'Spezialisiertes klinisches & wissenschaftliches Fachwissen',
+    descDe: 'Klinisches und wissenschaftliches Fachwissen',
     count: 8,
   },
 };
@@ -549,7 +549,7 @@ export default function Quiz() {
                               fontWeight: 700,
                             }}
                           >
-                            {lvl.emoji} {lang === 'ar' ? lvl.labelAr : lang === 'fr' ? lvl.labelFr : lang === 'es' ? lvl.labelEs : lang === 'de' ? lvl.labelDe : lvl.labelEn} ({c.percentage}%)
+                            {lvl.emoji} {isAr ? lvl.labelAr : lvl.labelEn} ({c.percentage}%)
                           </span>
                         </div>
                         <div className="small muted">

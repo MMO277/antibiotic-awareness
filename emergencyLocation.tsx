@@ -11,7 +11,7 @@ export interface EmergencyCountryInfo {
     en: string;
     fr: string;
     es: string;
-    de: string;
+    de?: string;
   };
 }
 
@@ -44,7 +44,7 @@ export const FEATURED_EMERGENCY_COUNTRIES: EmergencyCountryInfo[] = [
   { code: 'KM', number: '17', flag: '🇰🇲', name: { ar: 'جزر القمر', en: 'Comoros', fr: 'Comores', es: 'Comoras', de: 'Komoren' } },
 
   // Major Global Countries
-  { code: 'US', number: '911', flag: '🇺🇸', name: { ar: 'الولايات المتحدة', en: 'United States', fr: 'États-Unis', es: 'Estados Unidos', de: 'Vereinigte Staaten (USA)' } },
+  { code: 'US', number: '911', flag: '🇺🇸', name: { ar: 'الولايات المتحدة', en: 'United States', fr: 'États-Unis', es: 'Estados Unidos', de: 'Vereinigte Staaten' } },
   { code: 'CA', number: '911', flag: '🇨🇦', name: { ar: 'كندا', en: 'Canada', fr: 'Canada', es: 'Canadá', de: 'Kanada' } },
   { code: 'GB', number: '999', flag: '🇬🇧', name: { ar: 'المملكة المتحدة', en: 'United Kingdom', fr: 'Royaume-Uni', es: 'Reino Unido', de: 'Vereinigtes Königreich' } },
   { code: 'IE', number: '112', flag: '🇮🇪', name: { ar: 'أيرلندا', en: 'Ireland', fr: 'Irlande', es: 'Irlanda', de: 'Irland' } },
@@ -98,48 +98,48 @@ const FEATURED_BY_CODE = new Map<string, EmergencyCountryInfo>(
 
 const ISO_EMERGENCY_NUMBERS: Record<string, string> = {
   AF: '112', AL: '112', AD: '112', AO: '112', AG: '911', AM: '911', AZ: '112',
-  BS: '911', BB: '911', BY: '112', BZ: '911', BJ: '112', BT: '112', BO: '911',
-  BA: '112', BW: '997', BN: '991', BG: '112', BF: '112', BI: '112', CV: '112',
-  KH: '119', CM: '112', CF: '117', TD: '2251', KM: '17', CG: '112', CD: '112',
-  CR: '911', CI: '185', HR: '112', CU: '104', CY: '112', CZ: '112', DO: '911',
-  EC: '911', SV: '911', GQ: '112', ER: '112', EE: '112', SZ: '977', FJ: '911',
-  GA: '1300', GM: '116', GE: '112', GT: '128', GN: '112', GW: '112', GY: '913',
-  HT: '116', HN: '911', HK: '999', HU: '112', IS: '112', IR: '115', IL: '101',
-  JM: '110', KZ: '112', KI: '994', XK: '112', KG: '112', LA: '1195', LV: '112',
-  LS: '121', LR: '911', LI: '112', LT: '112', LU: '112', MO: '999', MG: '117',
-  MW: '998', MV: '102', ML: '15', MT: '112', MH: '911', MU: '114', FM: '911',
-  MD: '112', MC: '112', MN: '103', ME: '112', MZ: '119', MM: '192', NA: '112',
-  NR: '111', NP: '102', NI: '128', NE: '15', KP: '119', MK: '112', PW: '911',
-  PA: '911', PG: '111', PY: '911', PE: '106', RO: '112', RW: '912', KN: '911',
-  LC: '911', VC: '911', WS: '911', SM: '118', ST: '112', SN: '1515', RS: '112',
-  SC: '151', SL: '999', SK: '112', SI: '112', SB: '911', LK: '1990', SR: '115',
-  TW: '119', TJ: '112', TZ: '112', TL: '112', TG: '118', TO: '911', TT: '811',
-  TM: '03', TV: '911', UG: '999', UY: '911', UZ: '103', VU: '112', VA: '112',
-  VE: '911', VN: '115', ZM: '999', ZW: '999',
+  BS: '911', BY: '112', BZ: '911', BJ: '117', BT: '112', BO: '911', BA: '112',
+  BW: '997', BN: '991', BG: '112', BF: '112', BI: '117', CV: '130', KH: '119',
+  CM: '112', CF: '117', TD: '17', KM: '17', CG: '117', CD: '112', CR: '911',
+  CI: '185', HR: '112', CU: '104', CY: '112', CZ: '112', DJ: '19', DM: '999',
+  DO: '911', EC: '911', SV: '911', GQ: '114', ER: '114', EE: '112', SZ: '977',
+  FJ: '911', GA: '1300', GM: '116', GE: '112', GT: '123', GN: '117', GW: '112',
+  GY: '913', HT: '116', HN: '911', HK: '999', HU: '112', IS: '112', IR: '115',
+  IL: '101', JM: '110', KZ: '112', KI: '994', KP: '119', XK: '112', KG: '103',
+  LA: '1195', LV: '112', LS: '121', LR: '911', LI: '112', LT: '112', LU: '112',
+  MO: '999', MG: '117', MW: '998', MV: '102', ML: '15', MT: '112', MH: '911',
+  MU: '114', FM: '911', MD: '112', MC: '112', MN: '103', ME: '112', MZ: '117',
+  MM: '192', NA: '211111', NR: '111', NP: '102', NI: '128', NE: '15', MK: '112',
+  PW: '911', PA: '911', PG: '111', PY: '911', PE: '106', RO: '112', RW: '912',
+  KN: '911', LC: '911', VC: '911', WS: '911', SM: '118', ST: '112', SN: '1515',
+  RS: '194', SC: '151', SL: '999', SK: '112', SI: '112', SB: '911', LK: '1990',
+  SR: '115', TW: '119', TJ: '103', TZ: '114', TL: '112', TG: '118', TO: '911',
+  TT: '811', TM: '03', TV: '911', UG: '911', UY: '911', UZ: '103', VU: '112',
+  VA: '112', VE: '911', VN: '115', ZM: '991', ZW: '994',
 };
 
 const TIMEZONE_TO_COUNTRY: Record<string, string> = {
   'Africa/Cairo': 'EG',
+  'Egypt': 'EG',
   'Asia/Riyadh': 'SA',
   'Asia/Dubai': 'AE',
+  'Asia/Muscat': 'OM',
   'Asia/Kuwait': 'KW',
   'Asia/Qatar': 'QA',
   'Asia/Bahrain': 'BH',
-  'Asia/Muscat': 'OM',
   'Asia/Amman': 'JO',
   'Asia/Baghdad': 'IQ',
   'Asia/Beirut': 'LB',
+  'Asia/Damascus': 'SY',
   'Asia/Gaza': 'PS',
   'Asia/Hebron': 'PS',
-  'Asia/Damascus': 'SY',
+  'Asia/Jerusalem': 'PS',
   'Asia/Aden': 'YE',
   'Africa/Khartoum': 'SD',
-  'Africa/Juba': 'SS',
   'Africa/Tripoli': 'LY',
   'Africa/Tunis': 'TN',
   'Africa/Algiers': 'DZ',
   'Africa/Casablanca': 'MA',
-  'Africa/El_Aaiun': 'MA',
   'Africa/Nouakchott': 'MR',
   'Africa/Mogadishu': 'SO',
   'Africa/Djibouti': 'DJ',
@@ -148,10 +148,7 @@ const TIMEZONE_TO_COUNTRY: Record<string, string> = {
   'Europe/Dublin': 'IE',
   'Europe/Paris': 'FR',
   'Europe/Berlin': 'DE',
-  'Europe/Busingen': 'DE',
   'Europe/Madrid': 'ES',
-  'Africa/Ceuta': 'ES',
-  'Atlantic/Canary': 'ES',
   'Europe/Rome': 'IT',
   'Europe/Amsterdam': 'NL',
   'Europe/Brussels': 'BE',
@@ -163,56 +160,14 @@ const TIMEZONE_TO_COUNTRY: Record<string, string> = {
   'Europe/Helsinki': 'FI',
   'Europe/Warsaw': 'PL',
   'Europe/Lisbon': 'PT',
-  'Atlantic/Madeira': 'PT',
-  'Atlantic/Azores': 'PT',
   'Europe/Athens': 'GR',
   'Europe/Istanbul': 'TR',
-  'Asia/Istanbul': 'TR',
   'Europe/Moscow': 'RU',
   'Europe/Kyiv': 'UA',
   'Europe/Kiev': 'UA',
   'Europe/Bucharest': 'RO',
   'Europe/Budapest': 'HU',
-  'Europe/Prague': 'Czechia',
-  'Europe/Sofia': 'BG',
-  'Europe/Belgrade': 'RS',
-  'Europe/Zagreb': 'HR',
-  'Europe/Ljubljana': 'SI',
-  'Europe/Bratislava': 'SK',
-  'Asia/Kolkata': 'IN',
-  'Asia/Calcutta': 'IN',
-  'Asia/Karachi': 'PK',
-  'Asia/Dhaka': 'BD',
-  'Asia/Jakarta': 'ID',
-  'Asia/Makassar': 'ID',
-  'Asia/Jayapura': 'ID',
-  'Asia/Kuala_Lumpur': 'MY',
-  'Asia/Kuching': 'MY',
-  'Asia/Singapore': 'SG',
-  'Asia/Bangkok': 'TH',
-  'Asia/Manila': 'PH',
-  'Asia/Ho_Chi_Minh': 'VN',
-  'Asia/Saigon': 'VN',
-  'Asia/Shanghai': 'CN',
-  'Asia/Urumqi': 'CN',
-  'Asia/Hong_Kong': 'HK',
-  'Asia/Taipei': 'TW',
-  'Asia/Tokyo': 'JP',
-  'Asia/Seoul': 'KR',
-  'Australia/Sydney': 'AU',
-  'Australia/Melbourne': 'AU',
-  'Australia/Brisbane': 'AU',
-  'Australia/Perth': 'AU',
-  'Australia/Adelaide': 'AU',
-  'Australia/Darwin': 'AU',
-  'Australia/Hobart': 'AU',
-  'Pacific/Auckland': 'NZ',
-  'Africa/Johannesburg': 'ZA',
-  'Africa/Lagos': 'NG',
-  'Africa/Nairobi': 'KE',
-  'Africa/Addis_Ababa': 'ET',
-  'Africa/Accra': 'GH',
-  'Africa/Dakar': 'SN',
+  'Europe/Prague': 'CZ',
   'America/New_York': 'US',
   'America/Chicago': 'US',
   'America/Denver': 'US',
@@ -220,22 +175,37 @@ const TIMEZONE_TO_COUNTRY: Record<string, string> = {
   'America/Phoenix': 'US',
   'America/Anchorage': 'US',
   'Pacific/Honolulu': 'US',
-  'America/Detroit': 'US',
-  'America/Indiana/Indianapolis': 'US',
   'America/Toronto': 'CA',
   'America/Vancouver': 'CA',
   'America/Montreal': 'CA',
   'America/Edmonton': 'CA',
   'America/Winnipeg': 'CA',
   'America/Halifax': 'CA',
-  'America/St_Johns': 'CA',
-  'America/Mexico_City': 'MX',
-  'America/Cancun': 'MX',
-  'America/Monterrey': 'MX',
-  'America/Tijuana': 'MX',
+  'Asia/Kolkata': 'IN',
+  'Asia/Calcutta': 'IN',
+  'Asia/Karachi': 'PK',
+  'Asia/Dhaka': 'BD',
+  'Asia/Jakarta': 'ID',
+  'Asia/Kuala_Lumpur': 'MY',
+  'Asia/Singapore': 'SG',
+  'Asia/Bangkok': 'TH',
+  'Asia/Manila': 'PH',
+  'Asia/Shanghai': 'CN',
+  'Asia/Hong_Kong': 'HK',
+  'Asia/Tokyo': 'JP',
+  'Asia/Seoul': 'KR',
+  'Australia/Sydney': 'AU',
+  'Australia/Melbourne': 'AU',
+  'Australia/Brisbane': 'AU',
+  'Australia/Perth': 'AU',
+  'Pacific/Auckland': 'NZ',
+  'Africa/Johannesburg': 'ZA',
+  'Africa/Lagos': 'NG',
+  'Africa/Nairobi': 'KE',
+  'Africa/Addis_Ababa': 'ET',
+  'Africa/Accra': 'GH',
   'America/Sao_Paulo': 'BR',
-  'America/Fortaleza': 'BR',
-  'America/Manaus': 'BR',
+  'America/Mexico_City': 'MX',
   'America/Buenos_Aires': 'AR',
   'America/Argentina/Buenos_Aires': 'AR',
   'America/Bogota': 'CO',
@@ -376,6 +346,9 @@ export function getCurrentEmergencyInfo(): EmergencyCountryInfo {
 }
 
 export function pickCountryName(info: EmergencyCountryInfo, lang: Lang): string {
+  if (lang === 'de') {
+    return info.name.de || getDynamicCountryName(info.code, 'de') || info.name.en;
+  }
   return info.name[lang] || info.name.en || info.name.ar;
 }
 
@@ -395,7 +368,6 @@ export function formatEmergencyText(text: string, info: EmergencyCountryInfo, la
     .replace(/\(123\s*in\s*Egypt\)/gi, `(${num} in ${cName})`)
     .replace(/\(123\s*en\s*Égypte\s*\/\s*112\)/gi, `(${num} — ${cName})`)
     .replace(/\(123\s*en\s*Egipto\s*\/\s*112\)/gi, `(${num} — ${cName})`)
-    .replace(/\(123\s*in\s*Ägypten\s*\/\s*112\)/gi, `(${num} — ${cName})`)
     .replace(/\(123\)/g, `(${num})`);
 }
 
@@ -417,14 +389,13 @@ const EmergencyLocationContext = createContext<EmergencyContextValue>({
   countriesList: FEATURED_EMERGENCY_COUNTRIES,
 });
 
-export function useEmergencyLocation(): EmergencyContextValue {
-  return useContext(EmergencyLocationContext);
-}
+export const useEmergencyLocation = () => useContext(EmergencyLocationContext);
 
 export function EmergencyLocationProvider({ children }: { children: ReactNode }) {
   const { lang } = useLang();
 
   const [selectedOverride, setSelectedOverrideState] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'AUTO';
     try {
       const saved = localStorage.getItem(STORAGE_OVERRIDE_KEY);
       if (saved && saved.trim()) return saved.trim().toUpperCase();
@@ -434,15 +405,14 @@ export function EmergencyLocationProvider({ children }: { children: ReactNode })
     return 'AUTO';
   });
 
-  const [autoCode, setAutoCode] = useState<string>(() => detectSyncCountryCode());
+  const [detectedCode, setDetectedCode] = useState<string>(() => detectSyncCountryCode());
 
   useEffect(() => {
-    let cancelled = false;
-
+    let active = true;
     try {
-      const cached = sessionStorage.getItem(SESSION_IP_KEY);
-      if (cached && /^[A-Z]{2}$/i.test(cached.trim())) {
-        setAutoCode(cached.trim().toUpperCase());
+      const cachedIp = sessionStorage.getItem(SESSION_IP_KEY);
+      if (cachedIp && /^[A-Z]{2}$/i.test(cachedIp.trim())) {
+        setDetectedCode(cachedIp.trim().toUpperCase());
         return;
       }
     } catch {
@@ -450,70 +420,61 @@ export function EmergencyLocationProvider({ children }: { children: ReactNode })
     }
 
     detectCountryViaIp().then((ipCode) => {
-      if (cancelled || !ipCode) return;
+      if (!active || !ipCode) return;
       try {
         sessionStorage.setItem(SESSION_IP_KEY, ipCode);
       } catch {
         /* ignore */
       }
-      setAutoCode(ipCode);
+      setDetectedCode(ipCode);
     });
 
     return () => {
-      cancelled = true;
+      active = false;
     };
   }, []);
 
+  const effectiveCode = selectedOverride === 'AUTO' ? detectedCode : selectedOverride;
+  const emergency = useMemo(() => resolveEmergencyCountryInfo(effectiveCode), [effectiveCode]);
+  const countryName = useMemo(() => pickCountryName(emergency, lang), [emergency, lang]);
+
+  useEffect(() => {
+    latestActiveEmergencyInfo = emergency;
+    registerEmergencyTextTransform((txt, l) => formatEmergencyText(txt, emergency, l));
+  }, [emergency]);
+
   const setCountryOverride = (codeOrAuto: string) => {
-    const normalized = (codeOrAuto || 'AUTO').trim().toUpperCase();
-    setSelectedOverrideState(normalized);
+    const clean = (codeOrAuto || 'AUTO').trim().toUpperCase();
+    setSelectedOverrideState(clean);
     try {
-      if (normalized === 'AUTO') {
+      if (clean === 'AUTO') {
         localStorage.removeItem(STORAGE_OVERRIDE_KEY);
       } else {
-        localStorage.setItem(STORAGE_OVERRIDE_KEY, normalized);
+        localStorage.setItem(STORAGE_OVERRIDE_KEY, clean);
       }
     } catch {
       /* ignore */
     }
   };
 
-  const activeCode = selectedOverride === 'AUTO' ? autoCode : selectedOverride;
-  const emergency = useMemo(() => resolveEmergencyCountryInfo(activeCode), [activeCode]);
-  const countryName = useMemo(() => pickCountryName(emergency, lang), [emergency, lang]);
-
-  latestActiveEmergencyInfo = emergency;
-  registerEmergencyTextTransform((txt, l) => formatEmergencyText(txt, latestActiveEmergencyInfo, l));
-
-  useEffect(() => {
-    latestActiveEmergencyInfo = emergency;
+  const countriesList = useMemo(() => {
+    const existsInFeatured = FEATURED_EMERGENCY_COUNTRIES.some((c) => c.code === emergency.code);
+    if (existsInFeatured) return FEATURED_EMERGENCY_COUNTRIES;
+    return [emergency, ...FEATURED_EMERGENCY_COUNTRIES];
   }, [emergency]);
 
-  const countriesList = useMemo(() => {
-    const autoInfo = resolveEmergencyCountryInfo(autoCode);
-    if (FEATURED_BY_CODE.has(autoInfo.code)) {
-      return FEATURED_EMERGENCY_COUNTRIES;
-    }
-    return [autoInfo, ...FEATURED_EMERGENCY_COUNTRIES];
-  }, [autoCode]);
-
-  const value = useMemo<EmergencyContextValue>(
-    () => ({
-      emergency,
-      countryName,
-      selectedOverride,
-      isAutoDetected: selectedOverride === 'AUTO',
-      setCountryOverride,
-      countriesList,
-    }),
-    [emergency, countryName, selectedOverride, countriesList]
-  );
-
   return (
-    <EmergencyLocationContext.Provider value={value}>
+    <EmergencyLocationContext.Provider
+      value={{
+        emergency,
+        countryName,
+        selectedOverride,
+        isAutoDetected: selectedOverride === 'AUTO',
+        setCountryOverride,
+        countriesList,
+      }}
+    >
       {children}
     </EmergencyLocationContext.Provider>
   );
 }
-
-registerEmergencyTextTransform((txt, l) => formatEmergencyText(txt, latestActiveEmergencyInfo, l));

@@ -18,7 +18,7 @@ const STATS: Stat[] = [
       en: 'deaths every year directly caused by antibiotic resistance',
       fr: 'décès par an directement causés par l’antibiorésistance',
       es: 'muertes al año causadas directamente por la resistencia a los antibióticos',
-      de: 'Todesfälle pro Jahr, die direkt durch Antibiotikaresistenzen verursacht werden',
+      de: 'Todesfälle pro Jahr direkt verursacht durch Antibiotikaresistenzen',
     },
     source: {
       ar: 'المصدر: The Lancet, 2022',
@@ -61,7 +61,7 @@ const STATS: Stat[] = [
       en: 'Source: WHO',
       fr: 'Source : OMS (WHO)',
       es: 'Fuente: OMS (WHO)',
-      de: 'Quelle: Weltgesundheitsorganisation (WHO)',
+      de: 'Quelle: WHO (Weltgesundheitsorganisation)',
     },
   },
 ];
@@ -125,26 +125,29 @@ export default function ResistanceCounter() {
   const { lang } = useLang();
   return (
     <section className="rc-section">
-      <h2 className="rc-title">
-        {tr(
-          lang,
-          '🦠 مقاومة المضادات الحيوية — أرقام حقيقية',
-          '🦠 Antibiotic Resistance — Real Numbers',
-          '🦠 Antibiorésistance — Chiffres Mondiaux Réels',
-          '🦠 Resistencia a los Antibióticos — Cifras Reales',
-          '🦠 Antibiotikaresistenz — Reale Zahlen weltweit'
-        )}
-      </h2>
-      <p className="rc-sub">
-        {tr(
-          lang,
-          'المقاومة ليست مشكلة مستقبلية — إنها تحدث الآن',
-          'Resistance is not a future problem — it is happening now',
-          'La résistance n’est pas un problème futur — elle agit dès maintenant',
-          'La resistencia no es un problema del futuro: está ocurriendo ahora',
-          'Resistenzen sind kein Problem der Zukunft — sie passieren genau jetzt'
-        )}
-      </p>
+      <div className="rc-header">
+        <span className="rc-badge">
+          ⚠️{' '}
+          {tr(
+            lang,
+            'الأثر العالمي لمقاومة المضادات الحيوية',
+            'Global Impact of Antibiotic Resistance',
+            'Impact mondial de l’antibiorésistance',
+            'Impacto mundial de la resistencia a los antibióticos',
+            'Weltweite Auswirkungen von Antibiotikaresistenzen'
+          )}
+        </span>
+        <h2 className="rc-title">
+          {tr(
+            lang,
+            'لماذا الاستخدام الصحيح للمضادات الحيوية مسألة حياة أو موت؟',
+            'Why is responsible antibiotic use a matter of life and death?',
+            'Pourquoi le bon usage des antibiotiques est-il une question de vie ou de mort ?',
+            '¿Por qué el uso responsable de los antibióticos es una cuestión de vida o muerte?',
+            'Warum ist der verantwortungsvolle Einsatz von Antibiotika überlebenswichtig?'
+          )}
+        </h2>
+      </div>
       <div className="rc-grid">
         {STATS.map((s, i) => (
           <Counter key={i} stat={s} lang={lang} />
