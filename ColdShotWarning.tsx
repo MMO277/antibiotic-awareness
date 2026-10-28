@@ -4,309 +4,428 @@ import { useLang } from './i18n';
 import { Bi, pick, tr } from './types';
 import Disclaimer from './Disclaimer';
 
-interface CocktailComponent {
-  id: 'antibiotic' | 'steroid' | 'nsaid';
+interface ComponentBreakdown {
+  id: 'antibiotic' | 'cortisone' | 'nsaid';
   icon: string;
+  badgeColor: string;
+  badgeBg: string;
   title: Bi;
-  typicalDrug: Bi;
-  myth: Bi;
-  reality: Bi;
-  organHarm: Bi;
+  examples: Bi;
+  whyPeopleTakeIt: Bi;
+  whatActuallyHappens: Bi;
+  organRisks: { icon: string; organ: Bi; impact: Bi }[];
 }
 
-const b = (ar: string, en: string, fr: string, es: string, de: string): Bi => ({
-  ar,
-  en,
-  fr,
-  es,
-  de,
-});
-
-const COCKTAIL_PARTS: CocktailComponent[] = [
+const COLD_SHOT_COMPONENTS: ComponentBreakdown[] = [
   {
     id: 'antibiotic',
-    icon: '🧪',
-    title: b(
-      'المكون الأول: مضاد حيوي وريدي/عضلي (جيل ثالث)',
-      'Component 1: Injectable 3rd-Gen Cephalosporin Antibiotic',
-      'Composant 1 : Antibiotique Céphalosporine 3G Injectable',
-      'Componente 1: Antibiótico Cefalosporina 3G Inyectable',
-      'Komponente 1: Injizierbares Drittgenerations-Cephalosporin (Antibiotikum)'
-    ),
-    typicalDrug: b(
-      'سيفترياكسون (Ceftriaxone 1g) أو سيفوتاكسيم (Cefotaxime 1g)',
-      'Ceftriaxone 1g or Cefotaxime 1g Vial',
-      'Ceftriaxone 1g ou Céfotaxime 1g injectable',
-      'Ceftriaxona 1g o Cefotaxima 1g inyectable',
-      'Ceftriaxon 1 g oder Cefotaxim 1 g Injektionsflasche'
-    ),
-    myth: b(
-      'الخرافة: «الحقنة هتقضي على دور البرد والإنفلونزا في ساعتين!»',
-      'Myth: "A strong antibiotic injection will knock out a severe cold or flu in hours!"',
-      'Mythe : « Une injection d’antibiotique fort guérira le rhume ou la grippe en quelques heures ! »',
-      'Mito: «¡Una inyección fuerte de antibiótico curará el resfriado o la gripe en horas!»',
-      'Mythos: „Eine starke Antibiotika-Spritze beseitigt eine schwere Erkältung oder Grippe in wenigen Stunden!“'
-    ),
-    reality: b(
-      'الحقيقة العلمية: نزلات البرد والإنفلونزا فيروسية 100%، والمضاد الحيوي لا يؤثر في الفيروسات إطلاقاً بل قد يسبب صدمة تحسسية قاتلة (Anaphylaxis) وتوقف القلب في دقائق.',
-      'Clinical Reality: Colds and influenza are 100% viral. Ceftriaxone has zero effect on viruses, carries a high risk of fatal anaphylactic shock, and breeds resistant superbugs.',
-      'Réalité clinique : Le rhume et la grippe sont 100 % viraux. La ceftriaxone est inutile et expose à un choc anaphylactique mortel.',
-      'Realidad clínica: El resfriado y la gripe son 100 % virales. La ceftriaxona no tiene efecto sobre virus y puede causar shock anafiláctico mortal.',
-      'Klinische Realität: Erkältungen und Grippe sind zu 100 % viral. Ceftriaxon wirkt nicht gegen Viren, birgt das Risiko eines tödlichen anaphylaktischen Schocks und fördert multiresistente Keime.'
-    ),
-    organHarm: b(
-      'صدمة تحسسية مفرطة قاتلة، ترسبات بلورية في المرارة والكلى، وتدمير البكتيريا النافعة.',
-      'Fatal IgE anaphylaxis, biliary sludge/renal calcium precipitation, and severe C. difficile colitis.',
-      'Anaphylaxie mortelle, précipitation biliaire/rénale et colite à C. difficile.',
-      'Anafilaxia mortal, precipitación biliar/renal y colitis por C. difficile.',
-      'Lebensbedrohliche Anaphylaxie, biliäre/renale Ausfällungen und schwere C.-difficile-Kolitis.'
-    ),
+    icon: '💉',
+    badgeColor: '#991b1b',
+    badgeBg: '#fee2e2',
+    title: {
+      ar: 'المكون الأول: المضاد الحيوي (سيفترياكسون / سيفوتاكسيم 1 جم)',
+      en: 'Component 1: Injectable Antibiotic (Ceftriaxone / Cefotaxime 1g)',
+    },
+    examples: {
+      ar: 'مثل: سيفترياكسون، سيفاكسون، روسيفين، سيفوتاكس',
+      en: 'e.g., Ceftriaxone, Cefaxone, Rocephin, Cefotax',
+    },
+    whyPeopleTakeIt: {
+      ar: 'الاعتقاد الخاطئ أن المضاد الحيوي «يقضي على دور البرد بسرعة ويمنع نزوله على الصدر».',
+      en: 'The misconception that an antibiotic injection "kills the cold fast and prevents chest infection."',
+    },
+    whatActuallyHappens: {
+      ar: 'نزلات البرد والإنفلونزا عدوى فيروسية 100%، والمضاد الحيوي مصمم لقتل البكتيريا فقط ولا يؤثر إطلاقاً على الفيروسات! أخذ حقنة السيفترياكسون يعرض المريض لخطر الصدمة التحسسية القاتلة (Anaphylactic Shock) وتوقف عضلة القلب والتنفس خلال دقائق.',
+      en: 'Colds and flu are 100% viral; antibiotics have ZERO effect on viruses! Injecting Ceftriaxone exposes the patient to fatal anaphylactic shock and cardiopulmonary arrest within minutes.',
+    },
+    organRisks: [
+      {
+        icon: '🫀',
+        organ: { ar: 'القلب والجهاز التنفسي (صدمة تحسسية قاتلة)', en: 'Heart & Airway (Fatal Anaphylaxis)' },
+        impact: {
+          ar: 'انخفاض حاد ومفاجئ في ضغط الدم، اختناق وتورم الحنجرة، وقد يؤدي للوفاة الفورية حتى لو سبق للمريض أخذ الحقنة من قبل!',
+          en: 'Sudden severe drop in blood pressure, laryngeal edema, and potential cardiac arrest within minutes—even if tolerated previously!',
+        },
+      },
+      {
+        icon: '🦠',
+        organ: { ar: 'مناعة الجسم والبكتيريا المقاومة', en: 'Microbiome & Superbug Resistance' },
+        impact: {
+          ar: 'يقتل البكتيريا النافعة في الأمعاء ويخلق سلالات بكتيرية شرسة لا يستجيب لها المضاد الحيوي عندما يحتاجه المريض فعلاً في عدوى حقيقية.',
+          en: 'Wipes out protective gut flora and breeds resistant bacteria that won’t respond when you truly need an antibiotic.',
+        },
+      },
+    ],
   },
   {
-    id: 'steroid',
+    id: 'cortisone',
     icon: '⚠️',
-    title: b(
-      'المكون الثاني: كورتيزون حقن قوي المفعول',
-      'Component 2: High-Potency Systemic Corticosteroid',
-      'Composant 2 : Corticoïde Systémique Puissant Injectable',
-      'Componente 2: Corticoesteroide Sistémico Potente Inyectable',
-      'Komponente 2: Hochpotentes systemisches Kortikosteroid'
-    ),
-    typicalDrug: b(
-      'ديكساميثازون (Dexamethasone 8mg) أو بيتاميثازون',
-      'Dexamethasone 8mg Ampoule',
-      'Dexaméthasone 8 mg en ampoule',
-      'Dexametasona 8 mg en ampolla',
-      'Dexamethason 8 mg Ampulle'
-    ),
-    myth: b(
-      'الخرافة: «الكورتيزون بيصحصح الجسم ويفك التكسير فوراً بدون ضرر!»',
-      'Myth: "Steroids give instant energy and relief with no downside!"',
-      'Mythe : « La cortisone redonne de l’énergie immédiatement sans danger ! »',
-      'Mito: «¡El corticoide quita el malestar al instante sin ningún riesgo!»',
-      'Mythos: „Kortison gibt sofort Energie und lindert Gliederschmerzen ohne Nebenwirkungen!“'
-    ),
-    reality: b(
-      'الحقيقة العلمية: الكورتيزون يثبط جهاز المناعة الذي يحارب الفيروس، فيسمح للفيروس بالتكاثر الشرس ويرفع سكر الدم وضغط الدم بشكل خطير.',
-      'Clinical Reality: Systemic steroids suppress the immune response needed to clear respiratory viruses, while spiking blood glucose and blood pressure dangerously.',
-      'Réalité clinique : Les corticoïdes affaiblissent l’immunité face au virus et provoquent une hausse brutale de la glycémie et de la tension.',
-      'Realidad clínica: Los corticoides suprimen la inmunidad frente al virus y disparan peligrosamente la glucosa y la presión arterial.',
-      'Klinische Realität: Systemische Kortikosteroide unterdrücken die für die Virusabwehr notwendige Immunantwort und lassen Blutzucker sowie Blutdruck gefährlich ansteigen.'
-    ),
-    organHarm: b(
-      'تثبيط المناعة وتفاقم العدوى، ارتفاع حاد في السكر والضغط، ونزيف أو قرحة المعدة.',
-      'Immune suppression, hyperglycemic crisis in diabetics, hypertensive spikes, and GI ulceration.',
-      'Immunosuppression, crise d’hyperglycémie, poussée hypertensive et ulcère gastrique.',
-      'Inmunosupresión, crisis hiperglucémica, pico hipertensivo y úlcera gástrica.',
-      'Immunsuppression, hyperglykämische Entgleisung, Blutdruckkrisen und Magenulzera.'
-    ),
+    badgeColor: '#92400e',
+    badgeBg: '#fef3c7',
+    title: {
+      ar: 'المكون الثاني: الكورتيزون (ديكساميثازون / بيتاميثازون أمبول)',
+      en: 'Component 2: Corticosteroid (Dexamethasone / Betamethasone)',
+    },
+    examples: {
+      ar: 'مثل: ديكساميثازون 8 مجم، ديكسافين، بيتافوس',
+      en: 'e.g., Dexamethasone 8mg, Dexaphen, Betafos',
+    },
+    whyPeopleTakeIt: {
+      ar: 'يعطي شعوراً خادعاً وسريعاً بـ«النشاط واختفاء التكسير» خلال ساعتين فيظن المريض أنه شُفي!',
+      en: 'Gives a deceptive, temporary burst of energy and masks body aches for a few hours, tricking the patient into feeling cured!',
+    },
+    whatActuallyHappens: {
+      ar: 'الكورتيزون يُثبط جهاز المناعة (Immunosuppression) في اللحظة التي يحتاج فيها جسمك لكل خلية مناعية لمحاربة فيروس البرد! النتيجة: يتكاثر الفيروس بشراسة أكبر وتطول مدة المرض أو تحدث مضاعفات رئوية حقيقية.',
+      en: 'Corticosteroids suppress your immune response at the exact moment your body needs it to fight off the respiratory virus, prolonging viral shedding and increasing secondary infection risk.',
+    },
+    organRisks: [
+      {
+        icon: '🩸',
+        organ: { ar: 'ارتفاع خطير في سكر الدم وضغط الدم', en: 'Severe Blood Sugar & Blood Pressure Spike' },
+        impact: {
+          ar: 'يرفع مستوى السكر في الدم بشكل حاد (قد يدخل مريض السكري في غيبوبة كيتونية) ويحبس الصوديوم والسوائل فيرفع ضغط الدم.',
+          en: 'Triggers acute hyperglycemia (risking diabetic ketoacidosis in diabetics) and sodium/fluid retention that spikes blood pressure.',
+        },
+      },
+      {
+        icon: '🛡️',
+        organ: { ar: 'إضعاف خط الدفاع المناعي', en: 'Immune System Suppression' },
+        impact: {
+          ar: 'يخفي أعراض الالتهاب مؤقتاً بينما ينتشر الفيروس أو الميكروب دون مقاومة طبيعية من الجسم.',
+          en: 'Masks fever and inflammation while allowing the underlying infection to progress unchecked.',
+        },
+      },
+    ],
   },
   {
     id: 'nsaid',
     icon: '🔥',
-    title: b(
-      'المكون الثالث: مسكن ومضاد التهاب غير ستيرويدي حقن',
-      'Component 3: Injectable Non-Steroidal Anti-Inflammatory (NSAID)',
-      'Composant 3 : Anti-Inflammatoire Non Stéroïdien (AINS) Injectable',
-      'Componente 3: Antiinflamatorio No Esteroideo (AINE) Inyectable',
-      'Komponente 3: Injizierbares nichtsteroidales Antirheumatikum (NSAR)'
-    ),
-    typicalDrug: b(
-      'ديكلوفيناك الصوديوم (Diclofenac 75mg) أو كيتورولاك',
-      'Diclofenac 75mg or Ketorolac Ampoule',
-      'Diclofénac 75 mg ou Kétorolac en ampoule',
-      'Diclofenaco 75 mg o Ketorolaco en ampolla',
-      'Diclofenac 75 mg oder Ketorolac Ampulle'
-    ),
-    myth: b(
-      'الخرافة: «خلط المسكن مع الكورتيزون والمضاد في سرنجة واحدة يوفر شكة إبرة!»',
-      'Myth: "Mixing the painkiller, steroid, and antibiotic in one syringe saves a needle prick!"',
-      'Mythe : « Mélanger l’anti-douleur, le corticoïde et l’antibiotique dans une seule seringue évite plusieurs piqûres ! »',
-      'Mito: «¡Mezclar el analgésico, corticoide y antibiótico en una sola jeringa ahorra pinchazos!»',
-      'Mythos: „Das Mischen von Schmerzmittel, Kortison und Antibiotikum in einer Spritze spart Einstiche!“'
-    ),
-    reality: b(
-      'الحقيقة العلمية: الجمع بين حقن الديكلوفيناك والكورتيزون مع الجفاف الناتج عن الحمى يضاعف خطر الفشل الكلوي الحاد ونزيف المعدة والتفاعل الكيميائي داخل السرنجة.',
-      'Clinical Reality: Combining injectable NSAIDs with steroids in a dehydrated febrile patient drastically increases acute kidney injury (AKI), GI bleeding, and chemical precipitation in the syringe.',
-      'Réalité clinique : Associer AINS injectable et corticoïde chez un patient fébrile multiplie le risque d’insuffisance rénale aiguë et d’hémorragie digestive.',
-      'Realidad clínica: Combinar AINE inyectable y corticoide en un paciente febril multiplica el riesgo de insuficiencia renal aguda y hemorragia digestiva.',
-      'Klinische Realität: Die Kombination von injizierbaren NSAR und Kortikosteroiden bei fieberhaften, dehydrierten Patienten erhöht das Risiko für akutes Nierenversagen, Magenblutungen und chemische Ausfällungen drastisch.'
-    ),
-    organHarm: b(
-      'قصور وفشل كلوي حاد، قرحة ونزيف معدي معوي، وارتفاع خطر الجلطات القلبية.',
-      'Acute kidney injury (AKI), severe gastrointestinal hemorrhage, and cardiovascular toxicity.',
-      'Insuffisance rénale aiguë, hémorragie gastro-intestinale et risques cardiovasculaires.',
-      'Lesión renal aguda, hemorragia gastrointestinal grave y riesgo cardiovascular.',
-      'Akutes Nierenversagen (ANV), schwere Magen-Darm-Blutungen und kardiovaskuläre Risiken.'
-    ),
+    badgeColor: '#7c2d12',
+    badgeBg: '#ffedd5',
+    title: {
+      ar: 'المكون الثالث: المسكن القوي (ديكلوفيناك / كيتورولاك أمبول)',
+      en: 'Component 3: Potent Injectable NSAID (Diclofenac / Ketorolac)',
+    },
+    examples: {
+      ar: 'مثل: فولتارين، أولفين، ديكلوفين، كيتولاك',
+      en: 'e.g., Voltaren, Olfen, Declophen, Ketolac',
+    },
+    whyPeopleTakeIt: {
+      ar: 'لخفض الحرارة وتسكين صداع وتكسير الجسم بسرعة.',
+      en: 'To rapidly drop fever and relieve severe headache and muscle aches.',
+    },
+    whatActuallyHappens: {
+      ar: 'إعطاء مسكن غير ستيرويدي قوي بالحقن لمريض يعاني من الحمى وقلة شرب السوائل (جفاف نسبي) يقلل تدفق الدم للكلى بشكل حاد، ومع وجود الكورتيزون يرتفع خطر قرحة ونزيف المعدة الحاد إلى أضعاف مضاعفة!',
+      en: 'Injecting potent NSAIDs in a febrile, mildly dehydrated patient constricts renal blood flow, and combining an NSAID with a corticosteroid multiplies the risk of acute gastrointestinal bleeding!',
+    },
+    organRisks: [
+      {
+        icon: '🫘',
+        organ: { ar: 'الكلى (قصور وفشل كلوي حاد)', en: 'Kidneys (Acute Kidney Injury - AKI)' },
+        impact: {
+          ar: 'يغلق الشريان المغذي لكبيبات الكلى خاصة مع الجفاف والسخونة، وقد يسبب فشلاً كلوياً حاداً.',
+          en: 'Inhibits renal prostaglandins, causing acute renal ischemia and potential kidney failure in dehydrated febrile patients.',
+        },
+      },
+      {
+        icon: '🫁',
+        organ: { ar: 'المعدة والشعب الهوائية', en: 'Stomach & Bronchi (Ulcers & Asthma Attack)' },
+        impact: {
+          ar: 'الجمع بين المسكن والكورتيزون يدمر جدار المعدة ويسبب نزيفاً هضمياً، كما قد يسبب أزمة ربو حادة لمرضى حساسية الصدر.',
+          en: 'Combining NSAIDs + Corticosteroids dramatically increases peptic ulcer bleeding and can trigger severe bronchospasm in asthmatics.',
+        },
+      },
+    ],
   },
 ];
 
 export default function ColdShotWarning() {
   const { lang } = useLang();
-  const [activeTab, setActiveTab] = useState<'antibiotic' | 'steroid' | 'nsaid'>('antibiotic');
-  const [isMixed, setIsMixed] = useState(false);
+  const [activeCompId, setActiveCompId] = useState<'antibiotic' | 'cortisone' | 'nsaid'>('antibiotic');
+  const [syringeMixed, setSyringeMixed] = useState<boolean>(false);
 
-  const currentComp = COCKTAIL_PARTS.find((c) => c.id === activeTab) || COCKTAIL_PARTS[0];
+  const activeComp = COLD_SHOT_COMPONENTS.find((c) => c.id === activeCompId) || COLD_SHOT_COMPONENTS[0];
 
   return (
     <main className="wrap stack">
+      {/* Urgent Warning Hero */}
       <section className="card cold-shot-hero">
-        <span className="badge" style={{ background: '#fee2e2', color: '#991b1b', fontWeight: 800, marginBottom: '8px' }}>
-          🚨 {tr(lang, 'تحذير رسمي من هيئة الدواء المصرية ووزارة الصحة', 'Official Patient Safety Alert • EDA & MoHP Warning')}
-        </span>
-        <h1 style={{ margin: '0 0 6px', color: '#dc2626' }}>
-          💉 {tr(lang, 'حقيقة «حقنة البرد / الخلطة السحرية 3×1» ولماذا قد تكون قاتلة', 'The 3-in-1 "Cold Shot" Cocktail: Why It Can Be Fatal')}
-        </h1>
-        <p className="muted" style={{ margin: 0 }}>
-          {tr(
-            lang,
-            'تُحذّر هيئة الدواء المصرية ومنظمة الصحة العالمية من خلط المضاد الحيوي + الكورتيزون + المسكن لعلاج نزلات البرد والإنفلونزا الفيروسية.',
-            'Clinical breakdown and interactive laboratory simulation explaining why mixing Ceftriaxone, Dexamethasone, and Diclofenac for viral colds is life-threatening.'
-          )}
-        </p>
+        <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+          <div>
+            <span className="badge" style={{ background: '#dc2626', color: '#ffffff', fontWeight: 800, marginBottom: '8px' }}>
+              🚨 {tr(lang, 'تحذير رسمي عاجل من وزارة الصحة وهيئة الدواء المصرية', 'Urgent Official Warning • Egyptian Ministry of Health & EDA')}
+            </span>
+            <h1 style={{ margin: '4px 0 8px', color: '#991b1b' }}>
+              {tr(
+                lang,
+                'حقيقة «حقنة البرد / الخلطة السحرية 3×1»: لماذا قد تتحول إلى حقنة قاتلة؟',
+                'The 3-in-1 "Cold Shot" Mythbuster: Why the Cocktail Injection Can Be Fatal',
+                'Le Mythe de « l’Injection Miracle 3-en-1 » contre le Rhume : Pourquoi est-elle Dangereuse ?',
+                'El Mito de la «Inyección Mágica 3 en 1» para el Resfriado: ¿Por qué puede ser mortal?'
+              )}
+            </h1>
+            <p className="muted" style={{ maxWidth: '75ch', margin: 0 }}>
+              {tr(
+                lang,
+                'يطلب الكثيرون في مصر ما يُعرف شعبياً بـ«حقنة البرد» أو «الخلطة السحرية» (خليط من مضاد حيوي + كورتيزون + مسكن قوي) لعلاج نزلات البرد والإنفلونزا. استكشف علمياً وسريرياً ماذا يفعل كل مكون في جسمك ولماذا تسببت هذه الخلطة في حالات وفاة حقيقية.',
+                'Across Egypt, many people ask pharmacies for the infamous "3-in-1 Cold Shot" (Antibiotic + Corticosteroid + Injectable NSAID) to treat viral colds. Explore the clinical science behind why each ingredient is harmful and why mixing them in one syringe can be fatal.',
+                'Découvrez pourquoi le mélange d’un antibiotique, d’un corticoïde et d’un anti-inflammatoire injectable contre le rhume viral est une erreur médicale grave.',
+                'Descubre por qué mezclar un antibiótico, un corticoide y un analgésico inyectable para un resfriado viral representa un grave peligro médico.'
+              )}
+            </p>
+          </div>
+          <div className="row wrapRow" style={{ gap: '8px' }}>
+            <Link to="/green-prescription" className="btn small" style={{ background: '#15803d' }}>
+              🌿 {tr(lang, 'افتح بديل الروشتة الخضراء الآمنة', 'Open Safe Green Prescription')}
+            </Link>
+            <Link to="/allergy-checker" className="btn ghost small">
+              🛡️ {tr(lang, 'فاحص الحساسية', 'Allergy Checker')}
+            </Link>
+          </div>
+        </div>
       </section>
 
-      <section className="card stack">
-        <h2 style={{ margin: 0 }}>
-          🔍 {tr(lang, 'تشريح مكونات «حقنة البرد الثلاثية» ومخاطر كل أمبول:', 'Inside the 3-in-1 Cold Shot: Inspect Each Component:')}
+      {/* Interactive 3-in-1 Component Explorer */}
+      <section className="card">
+        <h2 style={{ margin: '0 0 6px' }}>
+          🔬 {tr(lang, 'تشريح «حقنة البرد 3×1»: اضغط على كل مكون لكشف خطورته', 'Deconstructing the 3-in-1 Cocktail: Click Each Component to Inspect')}
         </h2>
+        <p className="small muted" style={{ margin: '0 0 14px' }}>
+          {tr(
+            lang,
+            'تتكون الخلطة المتداولة عشوائياً من 3 أمبولات/فيالات دوائية خطيرة عند استخدامها بدون داعٍ طبي:',
+            'The unapproved cold cocktail combines three potent injectable medications that carry severe risks when used for viral colds:'
+          )}
+        </p>
 
+        {/* 3 Component Tabs */}
         <div className="cold-shot-tabs" role="tablist">
-          {COCKTAIL_PARTS.map((c, idx) => (
-            <button
-              key={c.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === c.id}
-              className={`cold-shot-tab-btn ${activeTab === c.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(c.id)}
-            >
-              <span className="cold-tab-num">{idx + 1}</span>
-              <span>{pick(c.title, lang)}</span>
-            </button>
-          ))}
+          {COLD_SHOT_COMPONENTS.map((comp, idx) => {
+            const active = comp.id === activeCompId;
+            return (
+              <button
+                key={comp.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                className={`cold-shot-tab-btn${active ? ' active' : ''}`}
+                onClick={() => setActiveCompId(comp.id)}
+              >
+                <span className="cold-tab-num">{idx + 1}</span>
+                <span className="cold-tab-icon" aria-hidden="true">{comp.icon}</span>
+                <span className="cold-tab-text">{pick(comp.title, lang)}</span>
+              </button>
+            );
+          })}
         </div>
 
-        <div className="cold-shot-detail-panel stack">
-          <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0 }}>
-              {currentComp.icon} {pick(currentComp.typicalDrug, lang)}
+        {/* Active Component Detail Panel */}
+        <div className="cold-shot-detail-panel" role="tabpanel">
+          <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <h3 style={{ margin: 0, color: activeComp.badgeColor }}>
+              {activeComp.icon} {pick(activeComp.title, lang)}
             </h3>
+            <span
+              className="badge"
+              style={{ background: activeComp.badgeBg, color: activeComp.badgeColor, fontWeight: 700 }}
+            >
+              {pick(activeComp.examples, lang)}
+            </span>
           </div>
 
           <div className="cold-myth-vs-reality">
             <div className="cold-box myth">
-              <b>❌ {pick(currentComp.myth, lang)}</b>
+              <b>❌ {tr(lang, 'الوهم الشائع (لماذا يطلبه الناس؟):', 'The Common Myth (Why People Ask For It):')}</b>
+              <p className="small" style={{ margin: '6px 0 0' }}>{pick(activeComp.whyPeopleTakeIt, lang)}</p>
             </div>
             <div className="cold-box reality">
-              <b>✅ {pick(currentComp.reality, lang)}</b>
+              <b>✅ {tr(lang, 'الحقيقة الطبية السريرية:', 'The Clinical Reality:')}</b>
+              <p className="small" style={{ margin: '6px 0 0' }}>{pick(activeComp.whatActuallyHappens, lang)}</p>
             </div>
           </div>
 
-          <div className="cold-organ-card">
-            <span className="cold-organ-icon" aria-hidden="true">🫀</span>
-            <div>
-              <b>{tr(lang, 'الأثر السريري المباشر على أعضاء الجسم:', 'Direct Clinical Organ Toxicity:')}</b>
-              <p className="small" style={{ margin: '4px 0 0' }}>{pick(currentComp.organHarm, lang)}</p>
-            </div>
+          <h4 style={{ margin: '14px 0 8px' }}>
+            🚨 {tr(lang, 'الأعضاء الحيوية المتضررة في جسمك:', 'Direct Organ Systems Put at Risk:')}
+          </h4>
+          <div className="grid" style={{ gap: '10px' }}>
+            {activeComp.organRisks.map((risk, rIdx) => (
+              <div key={rIdx} className="cold-organ-card">
+                <span className="cold-organ-icon" aria-hidden="true">{risk.icon}</span>
+                <div>
+                  <b>{pick(risk.organ, lang)}</b>
+                  <p className="small muted" style={{ margin: '4px 0 0' }}>{pick(risk.impact, lang)}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Interactive Syringe Mixing Hazard Simulator */}
-      <section className="card stack">
-        <h2 style={{ margin: 0 }}>
-          🧪 {tr(lang, 'مختبر المحاكاة: ماذا يحدث عند خلط الأمبولات الثلاثة في سرنجة واحدة؟', 'Interactive Lab: What Happens When All 3 Vials Are Mixed in One Syringe?')}
-        </h2>
+      {/* Interactive Syringe Chemical Incompatibility Lab */}
+      <section className="card highlight-card">
+        <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <div>
+            <h2 style={{ margin: '0 0 4px' }}>
+              🧪 {tr(lang, 'مختبر التنافر الكيميائي: ماذا يحدث عند خلط الـ 3 حقن في سرنجة واحدة؟', 'Pharmaceutical Incompatibility Lab: What Happens Inside the Mixed Syringe?')}
+            </h2>
+            <p className="small muted" style={{ margin: 0 }}>
+              {tr(
+                lang,
+                'حتى لو افترضنا جدلاً حاجة مريض لأكثر من دواء، فإن سحبها وخلطها معاً في سرنجة واحدة يُعد خطأً صيدلانياً قاتلاً:',
+                'Drawing Ceftriaxone, Dexamethasone, and Diclofenac into a single syringe causes dangerous physical and chemical incompatibility:'
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn"
+            style={{ background: syringeMixed ? '#475569' : '#dc2626' }}
+            onClick={() => setSyringeMixed((v) => !v)}
+          >
+            {syringeMixed
+              ? tr(lang, 'إعادة ضبط المحاكاة ↺', 'Reset Simulation ↺')
+              : tr(lang, '🔬 اختبر ماذا يحدث عند خلط السرنجة!', '🔬 Simulate Mixing in One Syringe!')}
+          </button>
+        </div>
 
-        <div className={`cold-syringe-sim ${isMixed ? 'is-mixed' : ''}`}>
-          {!isMixed ? (
-            <div className="stack" style={{ alignItems: 'center' }}>
-              <div className="cold-sim-before" style={{ width: '100%' }}>
-                <div className="cold-vial-item">
-                  <span style={{ fontSize: '1.8rem' }}>🧪</span>
-                  <b>Ceftriaxone 1g</b>
-                  <span className="small muted">{tr(lang, 'مضاد حيوي', 'Antibiotic')}</span>
-                </div>
-                <span className="cold-plus">+</span>
-                <div className="cold-vial-item">
-                  <span style={{ fontSize: '1.8rem' }}>💉</span>
-                  <b>Dexamethasone 8mg</b>
-                  <span className="small muted">{tr(lang, 'كورتيزون', 'Corticosteroid')}</span>
-                </div>
-                <span className="cold-plus">+</span>
-                <div className="cold-vial-item">
-                  <span style={{ fontSize: '1.8rem' }}>🔥</span>
-                  <b>Diclofenac 75mg</b>
-                  <span className="small muted">{tr(lang, 'مسكن NSAID', 'NSAID Painkiller')}</span>
-                </div>
+        <div className={`cold-syringe-sim ${syringeMixed ? 'is-mixed' : ''}`}>
+          {!syringeMixed ? (
+            <div className="cold-sim-before">
+              <div className="cold-vial-item">
+                <span>🧪 الفيال 1</span>
+                <b>سيفترياكسون + مذيب ليدوكايين</b>
+                <small>pH 6.0 – 8.0</small>
               </div>
-              <button
-                type="button"
-                className="btn danger"
-                onClick={() => setIsMixed(true)}
-              >
-                ⚠️ {tr(lang, 'شغّل محاكاة الخلط الكيميائي والفسيولوجي', 'Simulate Syringe Mixing & Physiological Reaction')}
-              </button>
+              <span className="cold-plus">+</span>
+              <div className="cold-vial-item">
+                <span>🧪 الأمبول 2</span>
+                <b>ديكساميثازون فوسفات</b>
+                <small>pH 7.0 – 8.5</small>
+              </div>
+              <span className="cold-plus">+</span>
+              <div className="cold-vial-item">
+                <span>🧪 الأمبول 3</span>
+                <b>ديكلوفيناك الصوديوم</b>
+                <small>يحتوي بروبيلين جليكول</small>
+              </div>
             </div>
           ) : (
-            <div className="stack">
+            <div className="cold-sim-after">
               <div className="cold-sim-alert-head">
-                <span style={{ fontSize: '2.2rem' }}>🚨</span>
+                <span style={{ fontSize: '1.8rem' }} aria-hidden="true">☣️</span>
                 <div>
-                  <h3 style={{ margin: 0, color: '#dc2626' }}>
-                    {tr(lang, 'خطر دوائي جسيم: عدم توافق كيميائي وفيزيائي وتسمم متضاعف!', 'CRITICAL HAZARD: Physical-Chemical Incompatibility & Synergistic Organ Toxicity!')}
-                  </h3>
-                  <p className="small muted" style={{ margin: 0 }}>
-                    {tr(lang, 'نتيجة خلط المواد الثلاث في سرنجة واحدة وإعطائها لمريض مصاب بعدوى فيروسية:', 'Clinical outcome of mixing all three agents in a single syringe for a viral infection:')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid">
-                <div className="cold-reaction-box">
-                  <b>1. {tr(lang, 'ترسّب وتفاعل كيميائي بالسرنجة', 'Chemical Precipitation in Syringe')}</b>
-                  <p className="small">
+                  <b style={{ color: '#991b1b', fontSize: '1.05rem' }}>
+                    {tr(lang, 'نتيجة الخلط الكيميائي داخل السرنجة: تنافر وترسيب وخطر سمية حادة!', 'Chemical Reaction Result: Precipitation, pH Shift & Acute Toxicity!')}
+                  </b>
+                  <p className="small" style={{ margin: '2px 0 0' }}>
                     {tr(
                       lang,
-                      'اختلاف درجة الحموضة (pH) بين ديكلوفيناك وديكساميثازون وسيفترياكسون يؤدي لتكوّن شوائب بلورية غير مرئية قد تسد الشعيرات الدموية.',
-                      'Incompatible pH profiles between Diclofenac, Dexamethasone, and Ceftriaxone cause micro-crystalline precipitation and altered drug stability.'
-                    )}
-                  </p>
-                </div>
-                <div className="cold-reaction-box">
-                  <b>2. {tr(lang, 'صدمة تحسسية قاتلة بدون اختبار', 'Unscreened Fatal Anaphylaxis')}</b>
-                  <p className="small">
-                    {tr(
-                      lang,
-                      'حقن السيفترياكسون سريعاً خارج المستشفى قد يسبب توقف التنفس وهبوط الدورة الدموية الحاد في دقائق.',
-                      'Administering injectable Ceftriaxone outside a hospital setting can trigger acute airway edema and fatal cardiovascular collapse within minutes.'
-                    )}
-                  </p>
-                </div>
-                <div className="cold-reaction-box">
-                  <b>3. {tr(lang, 'ضربة مزدوجة للكلى والمعدة والمناعة', 'Triple Hit to Kidneys, Stomach & Immunity')}</b>
-                  <p className="small">
-                    {tr(
-                      lang,
-                      'الكورتيزون + المسكن معاً يضاعفان خطر نزيف المعدة والفشل الكلوي الحاد بينما يظل الفيروس نشطاً بلا علاج.',
-                      'Co-administering high-dose steroid + injectable NSAID multiplies GI bleeding and acute kidney injury risk while leaving the cold virus untreated.'
+                      'هذا ما يحدث فور سحب الأدوية الثلاثة في سرنجة واحدة قبل حقنها في جسم المريض:',
+                      'Here is what happens the moment these three compounds meet inside a single barrel:'
                     )}
                   </p>
                 </div>
               </div>
 
-              <div className="row wrapRow" style={{ justifyContent: 'space-between' }}>
-                <button type="button" className="btn ghost small" onClick={() => setIsMixed(false)}>
-                  🔄 {tr(lang, 'إعادة ضبط المحاكاة', 'Reset Simulation')}
-                </button>
-                <Link to="/green-prescription" className="btn" style={{ background: '#16a34a' }}>
-                  🌿 {tr(lang, 'احصل على الروشتة الخضرا الآمنة للبرد ←', 'Get Safe Green Prescription for Colds →')}
-                </Link>
+              <div className="grid" style={{ gap: '10px', marginTop: '10px' }}>
+                <div className="cold-reaction-box">
+                  <b>1. 💎 ترسب بلورات مجهرية غير مرئية (Micro-Precipitation)</b>
+                  <p className="small">
+                    {tr(
+                      lang,
+                      'اختلاف درجة الحموضة (pH) والمواد الحافظة بين الديكلوفيناك والسيفترياكسون والديكساميثازون يؤدي لتكون راسب بلوري دقيق يسد الشعيرات الدموية ويسبب تلفاً نسيجياً أو جلطة ميكروبية.',
+                      'Incompatible pH and cosolvents (propylene glycol/benzyl alcohol) trigger microscopic crystal precipitation that damages tissue and capillaries.'
+                    )}
+                  </p>
+                </div>
+                <div className="cold-reaction-box">
+                  <b>2. ❤️‍🔥 سمية الليدوكايين الوريدية (Lidocaine Cardiotoxicity)</b>
+                  <p className="small">
+                    {tr(
+                      lang,
+                      'مذيب السيفترياكسون العضلي يحتوي على مخدر «ليدوكايين»؛ وعند خلطه وإعطائه بالخطأ في الوريد يسبب اضطراباً قاتلاً في كهرباء القلب وتوقف النبض فوراً!',
+                      'IM Ceftriaxone solvent contains Lidocaine; if the mixed cocktail is injected IV or enters a blood vessel, it causes fatal cardiac arrhythmias!'
+                    )}
+                  </p>
+                </div>
+                <div className="cold-reaction-box">
+                  <b>3. ⚡ صدمة تحسسية مركبة (Compound Anaphylaxis)</b>
+                  <p className="small">
+                    {tr(
+                      lang,
+                      'وجود المسكن (ديكلوفيناك) مع المضاد الحيوي (سيفترياكسون) يضاعف إفراز الهستامين واللوكوترايينات، ولا يستطيع أمبول الكورتيزون المخلوط منع الصدمة لأن مفعوله يحتاج ساعات ليبدأ بينما الصدمة تقتل في 5 دقائق!',
+                      'Co-injecting an NSAID + Cephalosporin amplifies histamine/leukotriene release, and Dexamethasone takes hours to work—so it CANNOT stop an acute 5-minute anaphylactic shock!'
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Safe Alternatives & What to Do Instead */}
+      <section className="card" style={{ borderTop: '4px solid #15803d' }}>
+        <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+          <div>
+            <h2 style={{ margin: 0, color: '#15803d' }}>
+              🌿 {tr(lang, 'البديل الطبي الآمن والمعتمد لعلاج نزلات البرد والإنفلونزا', 'Safe, Evidence-Based Protocol for Colds & Flu')}
+            </h2>
+            <p className="small muted" style={{ margin: '4px 0 0' }}>
+              {tr(
+                lang,
+                'بدلاً من المغامرة بحياتك بـ«حقنة البرد»، إليك البروتوكول الآمن المعتمد من منظمة الصحة العالمية وهيئة الدواء المصرية:',
+                'Instead of risking your life with an unapproved injection cocktail, follow the WHO & EDA safe symptomatic protocol:'
+              )}
+            </p>
+          </div>
+          <Link to="/green-prescription" className="btn small" style={{ background: '#15803d' }}>
+            🌿 {tr(lang, 'اصنع روشتتك الخضراء الآمنة الآن ←', 'Generate Your Green Prescription →')}
+          </Link>
+        </div>
+
+        <div className="grid" style={{ gap: '12px' }}>
+          <div className="safe-cold-step">
+            <span className="safe-step-icon" aria-hidden="true">💊</span>
+            <div>
+              <b>{tr(lang, '1. خافض حرارة ومسكن آمن (باراسيتامول)', '1. Safe Antipyretic (Paracetamol)')}</b>
+              <p className="small muted">
+                {tr(
+                  lang,
+                  'أقراص الباراسيتامول الفموية كافية تماماً وآمنة على المعدة والكلى لخفض الحرارة وتسكين الصداع وتكسير الجسم.',
+                  'Oral Paracetamol safely relieves fever, headache, and body aches without harming your kidneys or stomach.'
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="safe-cold-step">
+            <span className="safe-step-icon" aria-hidden="true">💧</span>
+            <div>
+              <b>{tr(lang, '2. بخاخ محلول ملحي للأنف وسوائل دافئة', '2. Saline Nasal Spray & Warm Hydration')}</b>
+              <p className="small muted">
+                {tr(
+                  lang,
+                  'غسيل الأنف بمحلول الملح يفتح مجرى التنفس ويطرد الفيروسات، مع شرب اليانسون والنعناع والليمون الدافئ بالعسل (لمن هم فوق سنة).',
+                  'Isotonic saline spray clears nasal congestion naturally, paired with warm fluids and honey (for ages > 1 year).'
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="safe-cold-step">
+            <span className="safe-step-icon" aria-hidden="true">🩺</span>
+            <div>
+              <b>{tr(lang, '3. متى تزور الطبيب فعلاً؟ (علامات الخطر)', '3. When Should You See a Doctor? (Red Flags)')}</b>
+              <p className="small muted">
+                {tr(
+                  lang,
+                  'إذا استمرت الحرارة المرتفعة لأكثر من 3–4 أيام دون تحسن، أو حدث ضيق في التنفس، أو نهجان، أو ألم شديد بالأذن؛ حينها يفحصك الطبيب ويكتب العلاج المناسب.',
+                  'Seek medical evaluation if high fever persists >3–4 days, or if shortness of breath, chest pain, or severe earache develops.'
+                )}
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

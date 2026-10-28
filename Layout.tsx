@@ -188,16 +188,16 @@ export default function Layout({ children }: { children: ReactNode }) {
           shortLabel: tr(lang, 'مسح الباركود و QR', 'Scan Barcode', 'Scanner Code', 'Escanear Código'),
         },
         {
+          to: '/cost-saver',
+          key: '',
+          icon: '💰',
+          shortLabel: tr(lang, 'حاسبة البديل الأرخص بنفس الكفاءة', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos'),
+        },
+        {
           to: '/compare',
           key: 'navCompare',
           icon: '⚖️',
           shortLabel: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar'),
-        },
-        {
-          to: '/cost-saver',
-          key: 'navCostSaver',
-          icon: '💰',
-          shortLabel: tr(lang, 'البديل الأرخص والتوفير', 'Generic Cost Saver', 'Économies', 'Ahorro'),
         },
       ],
     },
@@ -240,9 +240,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         },
         {
           to: '/cold-shot-warning',
-          key: 'navColdShot',
+          key: '',
           icon: '💉',
-          shortLabel: tr(lang, 'تحذير حقنة البرد 3×1', 'Cold Shot 3-in-1', 'Cocktail Rhume 3-en-1', 'Inyección 3 en 1'),
+          shortLabel: tr(lang, 'تحذير «حقنة البرد / الخلطة 3×1»', '3-in-1 Cold Shot Warning', 'Alerte Injection Rhume 3-en-1', 'Alerta Inyección 3 en 1'),
         },
         {
           to: '/side-effects',
@@ -273,9 +273,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         },
         {
           to: '/daily-schedule',
-          key: 'navDailySchedule',
+          key: '',
           icon: '📅',
-          shortLabel: tr(lang, 'مولّد جدول الجرعات والواتساب', 'Daily Schedule', 'Planning Doses', 'Horario de Dosis'),
+          shortLabel: tr(lang, 'مولّد جدول الجرعات للطباعة وواتساب', 'Printable & WhatsApp Schedule', 'Planning Imprimable & WhatsApp', 'Horario para Imprimir y WhatsApp'),
         },
         {
           to: '/tracker',
@@ -961,7 +961,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                         className={`ribbon-sub-item${active ? ' active' : ''}`}
                       >
                         <span className="ribbon-sub-icon" aria-hidden="true">{subItem.icon}</span>
-                        <span className="ribbon-sub-text">{t(subItem.key)}</span>
+                        <span className="ribbon-sub-text">{subItem.key ? t(subItem.key) : subItem.shortLabel}</span>
                         <span className="ribbon-sub-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                       </NavLink>
                     );
@@ -1091,7 +1091,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                             }
                           >
                             <span className="item-icon sub-icon" aria-hidden="true">{item.icon}</span>
-                            <span className="item-title">{t(item.key)}</span>
+                            <span className="item-title">{item.key ? t(item.key) : item.shortLabel}</span>
                             <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                           </NavLink>
                         ))}
@@ -1198,11 +1198,8 @@ export default function Layout({ children }: { children: ReactNode }) {
               {tr(lang, 'الأدوات السريرية السريعة', 'Quick Clinical Tools', 'Outils Cliniques Rapides', 'Herramientas Clínicas Rápidas')}
             </h4>
             <ul className="pro-footer-links">
-              <li><Link to="/cost-saver">{tr(lang, 'حاسبة البديل الأرخص والمثائل 100%', 'Generic Cost Saver & Equivalents', 'Économies Génériques', 'Ahorro en Genéricos')}</Link></li>
-              <li><Link to="/cold-shot-warning">{tr(lang, 'فاحص خطر حقنة البرد 3×1', 'Cold Shot 3-in-1 Mythbuster', 'Alerte Cocktail Rhume 3-en-1', 'Alerta Cóctel Antigripal 3 en 1')}</Link></li>
-              <li><Link to="/daily-schedule">{tr(lang, 'مولّد جدول الجرعات للطباعة وواتساب', 'Printable Daily Schedule Generator', 'Planning Doses & WhatsApp', 'Horario de Dosis y WhatsApp')}</Link></li>
               <li><Link to="/medicines">{tr(lang, 'السجل الدوائي المصري (206 عبوات)', 'Egyptian Drug Registry (206)', 'Registre des Médicaments (206)', 'Registro de Medicamentos (206)')}</Link></li>
-              <li><Link to="/games">{tr(lang, 'مركز الألعاب والمحاكاة الطبية 3D', 'Game Center & 3D Medical Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Jeux & Simulador 3D')}</Link></li>
+              <li><Link to="/games">{tr(lang, 'مركز الألعاب والمحاكاة الطبية 3D', 'Game Center & 3D Medical Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D')}</Link></li>
               <li><Link to="/scan">{tr(lang, 'ماسح الباركود الخطي ورموز QR', 'Barcode & QR Scanner', 'Scanner Code-Barres & QR', 'Escáner de Código de Barras y QR')}</Link></li>
               <li><Link to="/allergy-checker">{tr(lang, 'فاحص الحساسية الدوائية المتقاطعة', 'Drug Allergy Safety Checker', 'Vérificateur d’Allergies Croisées', 'Verificador de Alergias Medicamentosas')}</Link></li>
               <li><Link to="/pediatric-helper">{tr(lang, 'حاسبة جرعات شراب الأطفال', 'Pediatric Dosage Calculator', 'Calculateur Posologique Pédiatrique', 'Calculadora de Dosis Pediátrica')}</Link></li>

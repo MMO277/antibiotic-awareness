@@ -12,8 +12,6 @@ import ResearchTab from './ResearchTab';
 import { LearningImpactDashboard } from './LearningImpactDashboard';
 import QuizResultsTab from './QuizResultsTab';
 import CommercialCatalogTab from './CommercialCatalogEditor';
-import SurveyQuizManagerTab from './SurveyQuizEditor';
-import { useLiveQuizQuestions } from './liveCatalogSync';
 
 function diagText(status: string, t: (k: string) => string): string {
   if (status === 'missing') return t('diagMissing');
@@ -168,8 +166,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
 export default function Dashboard() {
   const { t, lang } = useLang();
   const { user, role, roleStatus, loading, logout } = useAuth();
-  const { questions } = useLiveQuizQuestions();
-  const [tab, setTab] = useState<'catalog' | 'survey_questions' | 'meds' | 'research' | 'users' | 'impact' | 'quiz'>('catalog');
+  const [tab, setTab] = useState<'catalog' | 'meds' | 'research' | 'users' | 'impact' | 'quiz'>('catalog');
 
   if (loading) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (!user) return <Login />;
@@ -201,32 +198,28 @@ export default function Dashboard() {
         <button className={tab === 'catalog' ? 'on' : ''} onClick={() => setTab('catalog')}>
           💊 {tr(lang, 'الأدوية التجارية والأسعار والباركود (206+)', 'Commercial Drugs, Prices & Barcodes')}
         </button>
-        <button className={tab === 'survey_questions' ? 'on' : ''} onClick={() => setTab('survey_questions')}>
-          📋 {tr(lang, `أسئلة الاستبيان والاختبار (${questions.length})`, `Survey & Quiz Questions (${questions.length})`)}
-        </button>
         <button className={tab === 'meds' ? 'on' : ''} onClick={() => setTab('meds')}>
           📚 {tr(lang, 'الموسوعة السريرية للمواد الفعالة (32)', 'Clinical Active Ingredients (32)')}
         </button>
-        <button className={tab === 'research' ? 'on' : ''} onClick={() => setTab('research')}>
-          📊 {t('tabResearch')}
-        </button>
+        {role === 'admin' && <button className={tab === 'research' ? 'on' : ''} onClick={() => setTab('research')}>{t('tabResearch')}</button>}
         {role === 'admin' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('tabUsers')}</button>}
         {role === 'admin' && (
           <button className={tab === 'impact' ? 'on' : ''} onClick={() => setTab('impact')}>
             {lang === 'ar' ? '📊 قياس الأثر والتعلم' : '📊 Learning Impact'}
           </button>
         )}
-        <button className={tab === 'quiz' ? 'on' : ''} onClick={() => setTab('quiz')}>
-          {lang === 'ar' ? '📝 نتائج الكويز' : '📝 Quiz Results'}
-        </button>
+        {role === 'admin' && (
+          <button className={tab === 'quiz' ? 'on' : ''} onClick={() => setTab('quiz')}>
+            {lang === 'ar' ? '📝 نتائج الكويز' : '📝 Quiz Results'}
+          </button>
+        )}
       </div>
       {tab === 'catalog' && <CommercialCatalogTab uid={user.uid} />}
-      {tab === 'survey_questions' && <SurveyQuizManagerTab uid={user.uid} />}
       {tab === 'meds' && <MedsTab role={role} uid={user.uid} />}
-      {tab === 'research' && <ResearchTab />}
+      {tab === 'research' && role === 'admin' && <ResearchTab />}
       {tab === 'users' && role === 'admin' && <UsersTab myUid={user.uid} />}
       {tab === 'impact' && role === 'admin' && <LearningImpactDashboard />}
-      {tab === 'quiz' && <QuizResultsTab />}
+      {tab === 'quiz' && role === 'admin' && <QuizResultsTab />}
     </main>
   );
 }

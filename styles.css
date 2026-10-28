@@ -5403,667 +5403,690 @@ html.bh-gaming .ms-wrapper.ms-immersive .ms-action-zone { position: absolute !im
 
 
 /* ══════════════════════════════════════════════════════════════════════════
-   UPDATE 50 — GENERIC COST SAVER, COLD SHOT MYTHBUSTER,
-   DAILY SCHEDULE GENERATOR & CLINICAL PRO MODE STYLES
+   4 NEW CLINICAL & PATIENT TOOLS — PRO MODE, COST SAVER, COLD SHOT, SCHEDULE
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* ── 1. Generic Cost Saver (CostSaver.tsx) ── */
-.cost-saver-hero {
-  background: radial-gradient(circle at 90% 10%, rgba(22, 163, 74, 0.16), transparent 50%),
-              linear-gradient(135deg, rgba(8, 41, 64, 0.95), rgba(11, 60, 93, 0.9));
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  padding: 24px;
+/* 1. Clinical Pro Mode Toggle Banner & Panels */
+.pro-mode-toggle-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 14px 18px;
   border-radius: 16px;
-  color: #fff;
+  background: linear-gradient(135deg, rgba(14, 154, 167, 0.12), rgba(7, 42, 64, 0.08));
+  border: 1.5px solid rgba(14, 154, 167, 0.38);
+  box-shadow: 0 6px 20px rgba(8, 47, 73, 0.06);
 }
-.cost-saver-hero h1, .cost-saver-hero p {
-  color: #fff;
+
+.pro-mode-toggle-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1 1 280px;
+  min-width: 0;
 }
+
+.pro-mode-badge-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(14, 154, 167, 0.18);
+  border: 1px solid rgba(14, 154, 167, 0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.pro-mode-title {
+  display: block;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.pro-mode-sub {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.pro-mode-switch-group {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.08);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  gap: 4px;
+}
+
+[data-theme="dark"] .pro-mode-switch-group {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.pro-mode-switch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.pro-mode-switch-btn:hover {
+  color: var(--text);
+}
+
+.pro-mode-switch-btn.active-patient {
+  background: #0e9aa7;
+  color: #ffffff;
+  box-shadow: 0 3px 10px rgba(14, 154, 167, 0.35);
+}
+
+.pro-mode-switch-btn.active-doctor {
+  background: linear-gradient(135deg, #0b3c5d, #0f766e);
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(11, 60, 93, 0.4);
+}
+
+.clinical-pro-panel {
+  border-top: 4px solid #0f766e;
+  background: linear-gradient(180deg, rgba(15, 118, 110, 0.05) 0%, var(--card-bg, #ffffff) 100%);
+}
+
+.clinical-pro-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.clinical-pro-kicker {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #0f766e;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.clinical-atc-pill {
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(15, 118, 110, 0.14);
+  color: #0f766e;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.clinical-pkpd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.clinical-pkpd-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pkpd-label {
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.pkpd-val {
+  font-size: 0.96rem;
+  color: #0f766e;
+  font-weight: 800;
+}
+
+[data-theme="dark"] .pkpd-val {
+  color: #5eead4;
+}
+
+.clinical-subhead {
+  font-size: 1.05rem;
+  margin: 14px 0 8px;
+  color: var(--text);
+}
+
+.clinical-spectrum-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.spectrum-box {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card-bg, #ffffff);
+}
+
+.spectrum-box b {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.88rem;
+}
+
+.spectrum-box p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.clinical-pearl-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fffbeb;
+  border: 1.5px solid #f59e0b;
+  color: #92400e;
+  font-size: 0.9rem;
+}
+
+[data-theme="dark"] .clinical-pearl-box {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fde68a;
+}
+
+.clinical-iv-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--tint);
+  border-inline-start: 4px solid #0e9aa7;
+}
+
+.patient-friendly-summary-card {
+  border-top: 4px solid #0e9aa7;
+}
+
+.patient-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.patient-summary-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--tint);
+  border: 1px solid var(--line);
+}
+
+.patient-summary-item.warning {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+
+[data-theme="dark"] .patient-summary-item.warning {
+  background: rgba(239, 68, 68, 0.14);
+  color: #fca5a5;
+}
+
+.patient-summary-icon {
+  font-size: 1.35rem;
+  flex-shrink: 0;
+}
+
+.patient-summary-item p {
+  margin: 4px 0 0;
+  line-height: 1.45;
+}
+
+/* 2. Generic Cost Saver Styles */
+.cost-saver-hero {
+  border-top: 4px solid #16a34a;
+}
+
 .cost-saver-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 18px;
-  align-items: flex-end;
+  gap: 12px;
+  margin-top: 16px;
 }
+
 .cost-search-col {
-  flex: 1 1 280px;
-  position: relative;
+  flex: 2 1 300px;
 }
-.cost-search-col label, .cost-pack-col label {
-  display: block;
-  font-size: 0.88rem;
-  font-weight: 700;
-  margin-bottom: 6px;
-  color: #e2e8f0;
-}
-.cost-search-col input, .cost-pack-col select {
-  width: 100%;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(15, 23, 42, 0.8);
-  color: #fff;
-  font-size: 0.95rem;
-  outline: none;
-  box-sizing: border-box;
-}
-.cost-search-col input:focus, .cost-pack-col select:focus {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
-}
+
 .cost-pack-col {
-  flex: 0 0 170px;
+  flex: 1 1 180px;
 }
+
 .cost-search-dropdown {
   position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  right: 0;
-  max-height: 320px;
-  overflow-y: auto;
-  background: #0f172a;
-  border: 1px solid #334155;
+  top: calc(100% + 4px);
+  inset-inline: 0;
+  z-index: 400;
+  background: var(--card-bg, #ffffff);
+  border: 1.5px solid #0e9aa7;
   border-radius: 12px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  max-height: 290px;
+  overflow-y: auto;
+  padding: 6px;
 }
+
 .cost-search-option {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  background: transparent;
+  gap: 10px;
+  padding: 9px 12px;
   border: none;
-  border-bottom: 1px solid #1e293b;
-  color: #f1f5f9;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
   text-align: start;
   cursor: pointer;
-  transition: background 0.15s ease;
-  font-family: inherit;
 }
+
 .cost-search-option:hover {
-  background: rgba(34, 197, 94, 0.18);
+  background: var(--tint);
 }
+
 .cost-search-price {
-  font-weight: 700;
-  color: #4ade80;
+  font-weight: 800;
+  color: #15803d;
   white-space: nowrap;
-  font-size: 0.9rem;
 }
+
 .cost-quick-chip {
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  color: #e2e8f0;
-  font-size: 0.82rem;
-  font-weight: 600;
   cursor: pointer;
-  transition: all 0.18s ease;
-  font-family: inherit;
+  border: 1px solid var(--line);
+  background: var(--card-bg, #ffffff);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.16s ease;
 }
-.cost-quick-chip:hover, .cost-quick-chip.active {
-  background: #16a34a;
-  color: #fff;
-  border-color: #22c55e;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4);
+
+.cost-quick-chip:hover,
+.cost-quick-chip.active {
+  background: #0e9aa7;
+  border-color: #0e9aa7;
+  color: #ffffff;
 }
+
 .cost-comparison-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 16px;
-  margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
 }
+
 .cost-card-prescribed {
-  border: 2px solid #64748b;
-  background: var(--card-bg, #fff);
-  padding: 18px;
-  border-radius: 14px;
+  border-top: 4px solid #0284c7;
 }
+
 .cost-card-cheapest {
-  border: 2px solid #22c55e;
-  background: radial-gradient(circle at 95% 10%, rgba(34, 197, 94, 0.12), transparent 45%), var(--card-bg, #fff);
-  box-shadow: 0 4px 18px rgba(34, 197, 94, 0.2);
-  padding: 18px;
-  border-radius: 14px;
+  border-top: 4px solid #16a34a;
+  background: linear-gradient(180deg, rgba(22, 163, 74, 0.05) 0%, var(--card-bg, #ffffff) 100%);
 }
+
 .cost-price-display {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-top: 14px;
-  padding-top: 12px;
-  border-top: 1px dashed var(--line, #e2e8f0);
-}
-.cost-big-num {
-  display: block;
-  font-size: 1.65rem;
-  font-weight: 800;
-  color: var(--ink, #0f172a);
-}
-.cost-big-num.green {
-  color: #16a34a;
-}
-.cost-sub-num {
-  font-weight: 700;
-  color: var(--muted, #64748b);
-  font-size: 0.95rem;
-}
-.cost-saving-pill {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-end;
-  background: rgba(34, 197, 94, 0.14);
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  padding: 5px 12px;
-  border-radius: 10px;
-  color: #15803d;
-  font-size: 0.8rem;
-}
-.cost-saving-pill strong {
-  font-size: 1.05rem;
-  color: #16a34a;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--tint);
 }
 
-/* ── 2. Cold Shot Mythbuster (ColdShotWarning.tsx) ── */
-.cold-shot-hero {
-  background: radial-gradient(circle at 85% 15%, rgba(239, 68, 68, 0.22), transparent 50%),
-              linear-gradient(135deg, #450a0a 0%, #1c0505 100%);
-  border: 2px solid #ef4444;
-  box-shadow: 0 4px 25px rgba(239, 68, 68, 0.35);
-  color: #fff;
-  border-radius: 16px;
-  padding: 24px;
+.cost-big-num {
+  display: block;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text);
 }
-.cold-shot-hero h1, .cold-shot-hero p {
-  color: #fff;
+
+.cost-big-num.green {
+  color: #15803d;
 }
-.cold-box {
+
+.cost-sub-num {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.cost-saving-pill {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #dcfce7;
+  color: #166534;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  font-size: 0.82rem;
+}
+
+.cost-saving-pill strong {
+  font-size: 1.05rem;
+}
+
+/* 3. Cold Shot Mythbuster Styles */
+.cold-shot-hero {
+  border-top: 4px solid #dc2626;
+  background: linear-gradient(180deg, rgba(220, 38, 38, 0.06) 0%, var(--card-bg, #ffffff) 100%);
+}
+
+.cold-shot-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.cold-shot-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1.5px solid var(--line);
+  background: var(--card-bg, #ffffff);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.cold-shot-tab-btn:hover {
+  border-color: #ef4444;
+}
+
+.cold-shot-tab-btn.active {
+  background: #fef2f2;
+  border-color: #dc2626;
+  color: #991b1b;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.14);
+}
+
+[data-theme="dark"] .cold-shot-tab-btn.active {
+  background: rgba(220, 38, 38, 0.2);
+  color: #fecaca;
+}
+
+.cold-tab-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.15);
+  color: #dc2626;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin: 20px 0;
-  padding: 18px;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 14px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  flex-shrink: 0;
 }
+
+.cold-shot-detail-panel {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--tint);
+}
+
+.cold-myth-vs-reality {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.cold-box {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--line);
+}
+
+.cold-box.myth {
+  border-inline-start: 4px solid #f59e0b;
+}
+
+.cold-box.reality {
+  border-inline-start: 4px solid #dc2626;
+}
+
+.cold-organ-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--line);
+}
+
+.cold-organ-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.cold-syringe-sim {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1.5px dashed var(--line);
+  background: var(--tint);
+}
+
+.cold-syringe-sim.is-mixed {
+  border-style: solid;
+  border-color: #ef4444;
+  background: rgba(254, 242, 242, 0.65);
+}
+
+[data-theme="dark"] .cold-syringe-sim.is-mixed {
+  background: rgba(220, 38, 38, 0.12);
+}
+
+.cold-sim-before {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
 .cold-vial-item {
-  flex: 1 1 200px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  flex: 1 1 180px;
   padding: 14px;
   border-radius: 12px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--line);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
+
 .cold-plus {
-  font-size: 1.8rem;
-  font-weight: 900;
-  color: #f87171;
-  user-select: none;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #dc2626;
 }
+
 .cold-sim-alert-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: rgba(239, 68, 68, 0.15);
-  border-radius: 10px;
-  border: 1px solid #ef4444;
-  color: #f87171;
-  font-weight: 700;
-}
-.cold-reaction-box {
-  background: rgba(185, 28, 28, 0.15);
-  border: 1px solid #dc2626;
-  border-radius: 12px;
-  padding: 16px;
-  margin-top: 14px;
-  color: #fee2e2;
-  animation: coldPulseAlert 2s infinite ease-in-out;
-}
-@keyframes coldPulseAlert {
-  0%, 100% { box-shadow: 0 0 8px rgba(220, 38, 38, 0.2); }
-  50% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.5); }
-}
-.cold-shot-tabs {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  margin-bottom: 16px;
-}
-.cold-shot-tabs button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  background: var(--tint, #f1f5f9);
-  border: 1px solid var(--line, #cbd5e1);
-  color: var(--ink, #0f172a);
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  font-family: inherit;
-}
-.cold-shot-tabs button.active {
-  background: #dc2626;
-  color: #fff;
-  border-color: #ef4444;
-}
-.cold-tab-num {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.cold-shot-detail-panel {
-  border-radius: 12px;
-  padding: 18px;
-  border: 1px solid var(--line, #cbd5e1);
-  background: var(--card-bg, #fff);
-}
-.cold-myth-vs-reality {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 14px;
-  margin: 14px 0;
-}
-.cold-myth-vs-reality .myth {
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  padding: 14px;
-  border-radius: 10px;
-}
-.cold-myth-vs-reality .reality {
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  padding: 14px;
-  border-radius: 10px;
-}
-.cold-organ-card {
-  display: flex;
   gap: 12px;
-  padding: 14px;
-  background: var(--tint, #f8fafc);
-  border-radius: 10px;
-  border: 1px solid var(--line, #e2e8f0);
-}
-.cold-organ-icon {
-  font-size: 2rem;
-  line-height: 1;
 }
 
-/* ── 3. Daily Dose Schedule Generator (DailyScheduleGenerator.tsx) ── */
+.cold-reaction-box {
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid #fca5a5;
+}
+
+.cold-reaction-box p {
+  margin: 4px 0 0;
+}
+
+.safe-cold-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--tint);
+  border: 1px solid var(--line);
+}
+
+.safe-step-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.safe-cold-step p {
+  margin: 4px 0 0;
+}
+
+/* 4. Daily Schedule Generator Styles */
 .schedule-routine-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  background: var(--tint, #f1f5f9);
-  padding: 14px;
-  border-radius: 12px;
+  gap: 12px;
   margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--tint);
 }
+
 .schedule-edit-row {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 10px;
   padding: 12px;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--line, #cbd5e1);
-  border-radius: 10px;
-  margin-bottom: 8px;
+  border-radius: 12px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--line);
 }
+
 .schedule-row-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-.schedule-row-field label {
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: var(--muted, #64748b);
-}
-.schedule-row-field input, .schedule-row-field select {
-  padding: 7px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--line, #cbd5e1);
-  background: var(--card-bg, #fff);
-  color: var(--ink, #0f172a);
-  font-size: 0.88rem;
-  box-sizing: border-box;
-}
-.name-col { flex: 2 1 180px; }
-.dose-col { flex: 1 1 110px; }
-.interval-col { flex: 1.5 1 140px; }
-.meal-col { flex: 1.5 1 140px; }
-.days-col { flex: 0.8 1 80px; }
 
-.schedule-poster-card {
-  border: 2px solid var(--teal, #0e9aa7);
-  background: var(--card-bg, #fff);
-  border-radius: 14px;
-  padding: 16px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-}
+.schedule-row-field.name-col { flex: 2 1 200px; }
+.schedule-row-field.dose-col { flex: 1 1 120px; }
+.schedule-row-field.interval-col { flex: 1 1 160px; }
+.schedule-row-field.meal-col { flex: 2 1 220px; }
+.schedule-row-field.days-col { flex: 0 1 100px; }
+
 .schedule-poster-header {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--line);
 }
+
+.schedule-poster-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--tint);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .schedule-clock-slots {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin: 12px 0;
+  gap: 8px;
 }
+
 .schedule-clock-pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 14px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(14, 154, 167, 0.12), rgba(21, 101, 168, 0.08));
-  border: 1px solid rgba(14, 154, 167, 0.35);
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--line);
 }
+
 .clock-period-icon {
-  font-size: 1.35rem;
+  font-size: 1.15rem;
 }
+
 .clock-period-lbl {
   display: block;
-  font-size: 0.72rem;
-  color: var(--muted, #64748b);
-  font-weight: 600;
+  font-size: 0.7rem;
+  color: var(--muted);
 }
+
 .clock-time-val {
-  font-size: 1.1rem;
+  display: block;
+  font-size: 0.92rem;
   font-weight: 800;
-  color: var(--teal-dark, #0a7c87);
+  color: var(--text);
 }
+
 .schedule-days-checkstrip {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--line, #e2e8f0);
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
 }
+
 .schedule-day-box {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  border: 2px dashed var(--line, #cbd5e1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--muted, #64748b);
-  cursor: pointer;
-  user-select: none;
-}
-.schedule-day-box.checked {
-  background: #16a34a;
-  border-color: #16a34a;
-  color: #fff;
-  border-style: solid;
-}
-
-/* ── 4. Clinical Pro Mode Toggle & Panels (MedicinePage.tsx) ── */
-.pro-mode-toggle-banner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 14px 18px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, rgba(8, 41, 64, 0.95), rgba(14, 154, 167, 0.88));
-  border: 1px solid rgba(45, 212, 191, 0.35);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  color: #fff;
-  margin-bottom: 16px;
-}
-.pro-mode-toggle-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.pro-mode-badge-icon {
-  font-size: 1.8rem;
-  line-height: 1;
-}
-.pro-mode-title {
-  display: block;
-  font-size: 1rem;
-  font-weight: 800;
-  color: #ffffff;
-}
-.pro-mode-sub {
-  font-size: 0.78rem;
-  color: #cbd5e1;
-}
-.pro-mode-switch-group {
-  display: inline-flex;
-  padding: 4px;
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  gap: 4px;
-}
-.pro-mode-switch-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
-  color: #cbd5e1;
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-.pro-mode-switch-btn.active-patient {
-  background: #0e9aa7;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(14, 154, 167, 0.4);
-}
-.pro-mode-switch-btn.active-doctor {
-  background: linear-gradient(135deg, #0284c7, #2563eb);
-  color: #fff;
-  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.45);
-}
-
-.clinical-pro-panel {
-  border: 2px solid #0284c7;
-  background: radial-gradient(circle at 95% 5%, rgba(2, 132, 199, 0.08), transparent 40%), var(--card-bg, #fff);
-  border-radius: 14px;
-  padding: 20px;
-  margin: 16px 0;
-  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.12);
-}
-.clinical-pro-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line, #e2e8f0);
-}
-.clinical-pro-kicker {
-  font-size: 1.15rem;
-  font-weight: 800;
-  color: #0284c7;
-}
-.clinical-atc-pill {
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 6px;
-  background: rgba(2, 132, 199, 0.12);
-  border: 1px solid rgba(2, 132, 199, 0.3);
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #0369a1;
-}
-.clinical-subhead {
-  font-size: 0.98rem;
-  font-weight: 800;
-  color: var(--ink, #0f172a);
-  margin: 16px 0 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.clinical-pkpd-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
-}
-.clinical-pkpd-card {
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--tint, #f8fafc);
-  border: 1px solid var(--line, #e2e8f0);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.pkpd-label {
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: var(--muted, #64748b);
-}
-.pkpd-val {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #0284c7;
-}
-.clinical-spectrum-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 10px;
-}
-.spectrum-box {
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--card-bg, #fff);
-  border: 1px solid var(--line, #cbd5e1);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.spectrum-box.gram-pos { border-inline-start: 4px solid #8b5cf6; }
-.spectrum-box.gram-neg { border-inline-start: 4px solid #ef4444; }
-.spectrum-box.anaerobes { border-inline-start: 4px solid #f59e0b; }
-.spectrum-box.atypicals { border-inline-start: 4px solid #06b6d4; }
-.clinical-pearl-box {
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-radius: 10px;
-  padding: 12px 16px;
-  margin-top: 12px;
-  color: #b45309;
-}
-.clinical-crcl-tbl {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 8px;
-}
-.clinical-crcl-tbl th, .clinical-crcl-tbl td {
-  padding: 9px 12px;
-  border: 1px solid var(--line, #cbd5e1);
-  font-size: 0.88rem;
-}
-.clinical-crcl-tbl th {
-  background: var(--tint, #f1f5f9);
-  font-weight: 700;
-}
-.clinical-iv-box {
-  background: var(--tint, #f8fafc);
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-top: 12px;
-  border: 1px solid var(--line, #e2e8f0);
-  font-size: 0.88rem;
-  line-height: 1.6;
-}
-
-.patient-friendly-summary-card {
-  border: 2px solid var(--teal, #0e9aa7);
-  background: var(--card-bg, #fff);
-  border-radius: 14px;
-  padding: 18px;
-  margin: 16px 0;
-}
-.patient-summary-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-  margin-top: 12px;
-}
-.patient-summary-item {
-  display: flex;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 10px;
-  background: var(--tint, #f8fafc);
-  border: 1px solid var(--line, #e2e8f0);
-}
-.patient-summary-icon {
-  font-size: 1.6rem;
-  line-height: 1;
-}
-
-/* Print Overrides for Dose Schedule Poster */
-@media print {
-  .schedule-poster-card {
-    border: 2px solid #000 !important;
-    background: #fff !important;
-    color: #000 !important;
-    box-shadow: none !important;
-    page-break-inside: avoid;
-  }
-  .schedule-clock-pill {
-    border: 1px solid #000 !important;
-    background: #f5f5f5 !important;
-    color: #000 !important;
-  }
-}
-
-.cold-syringe-sim {
-  padding: 16px;
-  border-radius: 14px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px dashed rgba(239, 68, 68, 0.35);
-  transition: all 0.3s ease;
-}
-.cold-syringe-sim.is-mixed {
-  background: radial-gradient(circle, rgba(220, 38, 38, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
-  border: 2px solid #ef4444;
-}
-.cold-sim-before {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--line);
+  font-size: 0.78rem;
+  font-weight: 600;
 }
