@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { pick, tr } from './types';
+import { useAuth } from './authContext';
 import {
   AdministrationRoute,
   DOSAGE_FORM_LABELS,
@@ -50,32 +51,44 @@ export function createEmptyCommercialProduct(defaultIngId = 'amoxicillin-clavula
   };
 }
 
-export function QuickProductEditorModal({
-  product,
-  isNew = false,
-  uid,
-  onClose,
-  onSaved,
-}: {
-  product: EgyptianCommercialProduct;
+export interface QuickProductEditorModalProps {
+  product?: EgyptianCommercialProduct | null;
   isNew?: boolean;
-  uid: string;
+  uid?: string;
+  defaultIngredientId?: string;
   onClose: () => void;
   onSaved?: (saved: EgyptianCommercialProduct) => void;
-}) {
+}
+
+export function QuickProductEditorModal({
+  product,
+  isNew: isNewProp,
+  uid: uidProp,
+  defaultIngredientId = 'amoxicillin-clavulanic-acid',
+  onClose,
+  onSaved,
+}: QuickProductEditorModalProps) {
   const { lang } = useLang();
   const isAr = lang === 'ar';
+  const { user } = useAuth();
+  const uid = uidProp || user?.uid || 'editor';
+  const isNew = isNewProp ?? !product;
   const { ingredients, isBaseProduct, isProductModified } = useLiveDrugCatalog();
 
+  const initialTarget = useMemo<EgyptianCommercialProduct>(
+    () => product ?? createEmptyCommercialProduct(defaultIngredientId),
+    [product, defaultIngredientId]
+  );
+
   const [draft, setDraft] = useState<EgyptianCommercialProduct>(() => ({
-    ...product,
-    packDetails: { ...product.packDetails },
-    unitPriceNote: { ...product.unitPriceNote },
+    ...initialTarget,
+    packDetails: { ...initialTarget.packDetails },
+    unitPriceNote: { ...initialTarget.unitPriceNote },
   }));
   const [priceStr, setPriceStr] = useState<string>(
-    product.priceEgp !== null && product.priceEgp !== undefined ? String(product.priceEgp) : ''
+    initialTarget.priceEgp !== null && initialTarget.priceEgp !== undefined ? String(initialTarget.priceEgp) : ''
   );
-  const [barcodeStr, setBarcodeStr] = useState<string>(product.barcode || '');
+  const [barcodeStr, setBarcodeStr] = useState<string>(initialTarget.barcode || '');
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState('');
 
