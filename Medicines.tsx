@@ -6,6 +6,7 @@ import { useApproved } from './medicinesApi';
 import { norm, searchMeds } from './search';
 import { pick, tr } from './types';
 import SkeletonCard from './SkeletonCard';
+import { getClinicalProProfile, useClinicalProMode } from './clinicalProData';
 import {
   ACTIVE_INGREDIENTS,
   AdministrationRoute,
@@ -27,6 +28,7 @@ type SortOption = 'name' | 'price_asc' | 'price_desc' | 'verified_first';
 export default function Medicines() {
   const { t, lang } = useLang();
   const isAr = lang === 'ar';
+  const { isProMode, setProMode } = useClinicalProMode();
   const [sp, setSp] = useSearchParams();
   const q = sp.get('q') ?? '';
   const { items, error } = useApproved();
@@ -222,6 +224,45 @@ export default function Medicines() {
         </div>
       </header>
 
+      {/* Clinical Pro Mode vs Patient Mode Toggle Bar */}
+      <section className="pro-mode-toggle-banner">
+        <div className="pro-mode-toggle-info">
+          <span className="pro-mode-badge-icon" aria-hidden="true">
+            {isProMode ? '🩺' : '👤'}
+          </span>
+          <div>
+            <b className="pro-mode-title">
+              {isProMode
+                ? tr(lang, 'الوضع الإكلينيكي للطبيب والصيدلي مفعّل (Clinical Pro Mode)', 'Clinical Pro Mode Active (Physician & Pharmacist View)')
+                : tr(lang, 'وضع المريض والجمهور (عرض مبسط للأسعار والبدائل)', 'Patient & Public Mode (Simplified View)')}
+            </b>
+            <span className="pro-mode-sub">
+              {isProMode
+                ? tr(lang, 'يعرض أكواد ATC، فترة نصف العمر (t½)، ومؤشرات الحركية الدوائية (PK/PD) على البطاقات.', 'Showing ATC codes, elimination half-life (t½), and PK/PD drivers on cards.')
+                : tr(lang, 'يمكنك التبديل للوضع الإكلينيكي لعرض بيانات الفارماكولوجيا الدقيقة للأطباء.', 'Switch to Clinical Pro Mode to view PK/PD, spectrum, and CrCl renal cutoffs.')}
+            </span>
+          </div>
+        </div>
+        <div className="pro-mode-switch-group">
+          <button
+            type="button"
+            className={`pro-mode-switch-btn${!isProMode ? ' active-patient' : ''}`}
+            onClick={() => setProMode(false)}
+          >
+            <span aria-hidden="true">👤</span>
+            <span>{tr(lang, 'وضع المريض', 'Patient Mode')}</span>
+          </button>
+          <button
+            type="button"
+            className={`pro-mode-switch-btn${isProMode ? ' active-doctor' : ''}`}
+            onClick={() => setProMode(true)}
+          >
+            <span aria-hidden="true">🩺</span>
+            <span>{tr(lang, 'الوضع الإكلينيكي للطبيب', 'Clinical Pro Mode')}</span>
+          </button>
+        </div>
+      </section>
+
       {/* Main Mode Switcher Tabs */}
       <div className="row wrapRow" style={{ gap: '8px', borderBottom: '2px solid var(--border, #e2e8f0)', paddingBottom: '12px' }}>
         <button
@@ -242,6 +283,9 @@ export default function Medicines() {
         >
           🛡️ {isAr ? 'تقرير الجودة واستيراد البيانات' : 'Data Audit & CSV/JSON Importer'}
         </button>
+        <Link to="/cost-saver" className="btn ghost" style={{ borderColor: '#16a34a', color: '#15803d', fontWeight: 700 }}>
+          💰 {isAr ? 'حاسبة البديل الأرخص بنفس الكفاءة' : 'Generic Cost Saver'}
+        </Link>
         <Link to='/compare' className='btn ghost'>
           ⚖️ {isAr ? 'مقارنة دواءين جنباً إلى جنب' : 'Compare 2 Drugs'}
         </Link>
@@ -593,6 +637,15 @@ export default function Medicines() {
                     )}
                   </div>
                   <p className="muted" style={{ margin: '6px 0' }}>{pick(m.drugClass, lang)}</p>
+                  {isProMode && (() => {
+                    const pro = getClinicalProProfile(m.id, ingMeta?.whoAccessGroup || 'Access', m.drugClass.ar, m.drugClass.en);
+                    return (
+                      <div style={{ margin: '6px 0', padding: '8px 10px', borderRadius: '8px', background: 'rgba(14, 154, 167, 0.08)', border: '1px solid rgba(14, 154, 167, 0.28)', fontSize: '0.78rem' }}>
+                        <div><b>🩺 PK/PD:</b> <span dir="ltr">{pro.pkpd.halfLife}</span> · <span dir="ltr">{pro.pkpd.bioavailability}</span></div>
+                        <div style={{ marginTop: '2px' }}><b>🎯 Driver:</b> {pick(pro.pkpd.pkpdDriver, lang)}</div>
+                      </div>
+                    );
+                  })()}
                   {m.priceEgypt?.ar && (
                     <p className="small" style={{ color: '#15803d', fontWeight: 600, margin: '4px 0' }}>
                       💰 {pick(m.priceEgypt, lang).split('\n')[0]}

@@ -50,6 +50,66 @@ export default function Home() {
 
   const clinicalTools = [
     {
+      to: '/cost-saver',
+      icon: '💰',
+      badge: tr(lang, 'جديد • توفير ونواقص', 'NEW • Cost Saver', 'NOUVEAU • Économies', 'NUEVO • Ahorro'),
+      title: tr(
+        lang,
+        'حاسبة «البديل الأرخص بنفس الكفاءة» والمثائل المتطابقة',
+        'Smart Generic Cost Saver & Identical Equivalents',
+        'Calculateur d’Économies Génériques & Équivalents Exactes',
+        'Calculadora de Ahorro en Genéricos y Equivalentes Exactos'
+      ),
+      desc: tr(
+        lang,
+        'ابحث عن الدواء الموصوف لك لعرض البدائل المصرية المرخصة المتطابقة 100% في المادة الفعالة والتركيز وحساب قيمة التوفير بالجنيه.',
+        'Find 100% identical EDA-licensed generic equivalents with the exact same active ingredient and strength and calculate your EGP savings.',
+        'Trouvez les génériques homologués 100% identiques et calculez vos économies immédiates.',
+        'Encuentra genéricos autorizados 100% idénticos y calcula tu ahorro inmediato en EGP.'
+      ),
+      color: '#16a34a',
+    },
+    {
+      to: '/cold-shot-warning',
+      icon: '💉',
+      badge: tr(lang, 'تحذير عاجل • 3×1', 'URGENT • 3-in-1 Myth', 'ALERTE • Injection 3-en-1', 'ALERTA • Inyección 3 en 1'),
+      title: tr(
+        lang,
+        'فاحص خطر «حقنة البرد / الخلطة السحرية 3×1»',
+        'The 3-in-1 "Cold Shot" Cocktail Mythbuster',
+        'Dangers de « l’Injection Miracle 3-en-1 » contre le Rhume',
+        'Peligros de la «Inyección Mágica 3 en 1» para el Resfriado'
+      ),
+      desc: tr(
+        lang,
+        'اكشف بالتفصيل العلمي ومختبر المحاكاة التفاعلي لماذا يُعد خلط المضاد الحيوي والكورتيزون والمسكن في سرنجة واحدة خطراً قاتلاً.',
+        'Interactive simulation revealing why mixing Ceftriaxone, Dexamethasone, and NSAIDs for viral colds can cause fatal anaphylaxis and kidney failure.',
+        'Simulation interactive expliquant pourquoi mélanger antibiotique, corticoïde et AINS dans une seringue est mortel.',
+        'Simulación interactiva que explica por qué mezclar antibiótico, corticoide y AINE en una jeringa puede ser mortal.'
+      ),
+      color: '#dc2626',
+    },
+    {
+      to: '/daily-schedule',
+      icon: '📅',
+      badge: tr(lang, 'جديد • واتساب وطباعة', 'NEW • PNG & WhatsApp', 'NOUVEAU • PNG & WhatsApp', 'NUEVO • PNG y WhatsApp'),
+      title: tr(
+        lang,
+        'مولّد جدول الجرعات اليومي (حفظ كصورة، واتساب، وطباعة)',
+        'Daily Dose Schedule Generator (PNG Image, WhatsApp & Print)',
+        'Générateur de Planning Quotidien (Image PNG, WhatsApp & Impression)',
+        'Generador de Horario Diario (Imagen PNG, WhatsApp e Impresión)'
+      ),
+      desc: tr(
+        lang,
+        'حدد موعد استيقاظك وأدويتك ليصمم الموقع جدولاً ملوناً بمواعيد كل قرص وتعليمات الطعام جاهزاً للحفظ كصورة أو الإرسال على واتساب.',
+        'Enter your wake-up time and medications to generate a color-coded schedule with meal rules ready to download as PNG or share on WhatsApp.',
+        'Créez un calendrier horaire coloré téléchargeable en image PNG ou partageable sur WhatsApp.',
+        'Crea un horario diario en imagen PNG o compártelo directamente por WhatsApp.'
+      ),
+      color: '#0d9488',
+    },
+    {
       to: '/games',
       icon: '🎮',
       badge: tr(lang, 'جديد • 3D & 2D', 'NEW • 3D & 2D', 'NOUVEAU • 3D & 2D', 'NUEVO • 3D y 2D'),
@@ -554,7 +614,7 @@ export default function Home() {
             {(showAllClinicalTools ? [...clinicalTools].sort((a, b) => {
               const priority = ['/medicines', '/allergy-checker', '/prescription-radar', '/scan', '/compare', '/green-prescription'];
               return (priority.indexOf(a.to) === -1 ? 999 : priority.indexOf(a.to)) - (priority.indexOf(b.to) === -1 ? 999 : priority.indexOf(b.to));
-            }) : ['/medicines', '/allergy-checker', '/prescription-radar', '/scan'].map((path) => clinicalTools.find((tool) => tool.to === path)).filter((tool): tool is (typeof clinicalTools)[number] => Boolean(tool))).map((tool) => (
+            }) : ['/cost-saver', '/cold-shot-warning', '/daily-schedule', '/medicines', '/allergy-checker', '/prescription-radar'].map((path) => clinicalTools.find((tool) => tool.to === path)).filter((tool): tool is (typeof clinicalTools)[number] => Boolean(tool))).map((tool) => (
               <Link
                 key={tool.to}
                 to={tool.to}

@@ -11,6 +11,9 @@ import ListenLearn from './ListenLearn';
 import Tracker from './Tracker';
 import SideEffectsGuide from './SideEffectsGuide';
 import Interactions from './Interactions';
+import CostSaver from './CostSaver';
+import ColdShotWarning from './ColdShotWarning';
+import DailyScheduleGenerator from './DailyScheduleGenerator';
 import { Route, Routes, Link } from 'react-router-dom';
 import { configured } from './firebase';
 import { useLang } from './i18n';
@@ -102,6 +105,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/medicines" element={<Medicines />} />
+          <Route path="/cost-saver" element={<CostSaver />} />
+          <Route path="/cold-shot-warning" element={<ColdShotWarning />} />
+          <Route path="/daily-schedule" element={<DailyScheduleGenerator />} />
           <Route path="/green-prescription" element={<GreenPrescription />} />
           <Route path="/awareness-week" element={<AwarenessWeek />} />
           <Route path="/compare" element={<CompareDrugs />} />

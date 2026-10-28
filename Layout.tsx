@@ -188,6 +188,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           shortLabel: tr(lang, 'مسح الباركود و QR', 'Scan Barcode', 'Scanner Code', 'Escanear Código'),
         },
         {
+          to: '/cost-saver',
+          key: '',
+          icon: '💰',
+          shortLabel: tr(lang, 'حاسبة البديل الأرخص بنفس الكفاءة', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos'),
+        },
+        {
           to: '/compare',
           key: 'navCompare',
           icon: '⚖️',
@@ -233,6 +239,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           shortLabel: tr(lang, 'حاسبة الأطفال', 'Pediatrics', 'Pédiatrie', 'Pediatría'),
         },
         {
+          to: '/cold-shot-warning',
+          key: '',
+          icon: '💉',
+          shortLabel: tr(lang, 'تحذير «حقنة البرد / الخلطة 3×1»', '3-in-1 Cold Shot Warning', 'Alerte Injection Rhume 3-en-1', 'Alerta Inyección 3 en 1'),
+        },
+        {
           to: '/side-effects',
           key: 'navSideEffects',
           icon: '🚨',
@@ -258,6 +270,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           key: 'navGreenRx',
           icon: '🌿',
           shortLabel: tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde'),
+        },
+        {
+          to: '/daily-schedule',
+          key: '',
+          icon: '📅',
+          shortLabel: tr(lang, 'مولّد جدول الجرعات للطباعة وواتساب', 'Printable & WhatsApp Schedule', 'Planning Imprimable & WhatsApp', 'Horario para Imprimir y WhatsApp'),
         },
         {
           to: '/tracker',
@@ -943,7 +961,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                         className={`ribbon-sub-item${active ? ' active' : ''}`}
                       >
                         <span className="ribbon-sub-icon" aria-hidden="true">{subItem.icon}</span>
-                        <span className="ribbon-sub-text">{t(subItem.key)}</span>
+                        <span className="ribbon-sub-text">{subItem.key ? t(subItem.key) : subItem.shortLabel}</span>
                         <span className="ribbon-sub-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                       </NavLink>
                     );
@@ -1073,7 +1091,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                             }
                           >
                             <span className="item-icon sub-icon" aria-hidden="true">{item.icon}</span>
-                            <span className="item-title">{t(item.key)}</span>
+                            <span className="item-title">{item.key ? t(item.key) : item.shortLabel}</span>
                             <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                           </NavLink>
                         ))}
