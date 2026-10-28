@@ -39,8 +39,8 @@ export interface EgyptianCommercialProduct {
   dosageFormLabel: Bi;
   route: AdministrationRoute;
   routeLabel: Bi;
-  packDetails: Bi;
-  packSize?: Bi | string;
+  packDetails?: Bi;
+  packSize?: string;
   manufacturer: string;
   countryOfOrigin: string;
   registrationStatus: 'registered_eda' | 'hospital_formulary';
