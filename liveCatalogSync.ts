@@ -9,17 +9,28 @@ import {
   EgyptianCommercialProduct,
   ROUTE_LABELS,
 } from './egyptianDrugDatabase';
+import { QUESTIONS, Question } from './quizData';
 
 export const CATALOG_DOC_ID = '__commercial_catalog__';
 const LOCAL_CACHE_KEY = 'aa_live_commercial_catalog_v1';
+const LOCAL_QUESTIONS_KEY = 'aa_live_quiz_questions_v1';
+const LOCAL_SURVEY_CFG_KEY = 'aa_live_survey_cfg_v1';
 const CATALOG_EVENT = 'aa-live-catalog-updated';
+const QUESTIONS_EVENT = 'aa-live-questions-updated';
+
+export interface LiveSurveyConfig {
+  enabled: boolean;
+  ethicsApprovalRef: string;
+}
 
 // Snapshot of the original factory arrays at startup so we can always merge or reset cleanly
 const BASE_COMMERCIAL_PRODUCTS: EgyptianCommercialProduct[] = EGYPTIAN_COMMERCIAL_PRODUCTS.map((p) => ({
   ...p,
   dosageFormLabel: { ...p.dosageFormLabel },
-  routeLabel: { ...p.routeLabel },
-  packDetails: { ...p.packDetails },
+  routeLabel: p.routeLabel ? { ...p.routeLabel } : { ...(ROUTE_LABELS[p.route] || ROUTE_LABELS.oral) },
+  packDetails: p.packDetails
+    ? { ...p.packDetails }
+    : { ar: p.packSize || 'عبوة قياسية', en: p.packSize || 'Standard pack' },
   unitPriceNote: { ...p.unitPriceNote },
 }));
 
@@ -29,11 +40,20 @@ const BASE_ACTIVE_INGREDIENTS: ActiveIngredientRecord[] = ACTIVE_INGREDIENTS.map
   components: [...a.components],
 }));
 
+const BASELINE_QUESTIONS: Question[] = QUESTIONS.map((q) => ({
+  ...q,
+  q: { ...q.q },
+  options: q.options.map((o) => ({ ...o })),
+  why: { ...q.why },
+}));
+
 export interface LiveCatalogPayload {
   overrides: Record<string, EgyptianCommercialProduct>;
   customProducts: EgyptianCommercialProduct[];
   deletedProductIds: string[];
   customIngredients: ActiveIngredientRecord[];
+  quizQuestions?: Question[];
+  surveyConfig?: LiveSurveyConfig;
   updatedAtIso?: string;
   updatedBy?: string;
 }
@@ -46,6 +66,8 @@ const emptyPayload = (): LiveCatalogPayload => ({
 });
 
 let currentPayload: LiveCatalogPayload = emptyPayload();
+let currentQuestions: Question[] = [...BASELINE_QUESTIONS];
+let currentSurveyConfig: LiveSurveyConfig | null = null;
 let currentVersion = 1;
 let listenerStarted = false;
 
@@ -67,11 +89,48 @@ function loadCachedPayload(): LiveCatalogPayload {
   }
 }
 
+function loadCachedQuestionsAndSurvey(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const rawQs = localStorage.getItem(LOCAL_QUESTIONS_KEY);
+    if (rawQs) {
+      const parsed = JSON.parse(rawQs);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        currentQuestions = parsed;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const rawCfg = localStorage.getItem(LOCAL_SURVEY_CFG_KEY);
+    if (rawCfg) {
+      const parsed = JSON.parse(rawCfg);
+      if (parsed && typeof parsed.enabled === 'boolean') {
+        currentSurveyConfig = {
+          enabled: parsed.enabled,
+          ethicsApprovalRef: String(parsed.ethicsApprovalRef || 'AMR-EDU-2026'),
+        };
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 function saveCachedPayload(payload: LiveCatalogPayload): void {
   try {
     localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(payload));
   } catch {
     /* ignore */
+  }
+}
+
+function notifyQuestionsUpdated(): void {
+  currentVersion += 1;
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(QUESTIONS_EVENT, { detail: currentVersion }));
   }
 }
 
@@ -98,8 +157,8 @@ function sanitizeProduct(raw: EgyptianCommercialProduct): EgyptianCommercialProd
     route,
     routeLabel: raw.routeLabel?.ar ? raw.routeLabel : ROUTE_LABELS[route] || ROUTE_LABELS.oral,
     packDetails: {
-      ar: raw.packDetails?.ar || 'عبوة قياسية',
-      en: raw.packDetails?.en || raw.packDetails?.ar || 'Standard pack',
+      ar: raw.packDetails?.ar || raw.packSize || 'عبوة قياسية',
+      en: raw.packDetails?.en || raw.packDetails?.ar || raw.packSize || 'Standard pack',
     },
     unitPriceNote: {
       ar: raw.unitPriceNote?.ar || (priceNum ? `السعر الرسمي: ${priceNum.toFixed(2)} ج.م` : 'قيد التحديث'),
@@ -144,7 +203,6 @@ function applyPayloadToGlobalArrays(payload: LiveCatalogPayload): void {
 
   for (const customProd of payload.customProducts || []) {
     if (!customProd || !customProd.productId || deletedSet.has(customProd.productId)) continue;
-    // Avoid duplicate ID if already in base
     const existingIdx = mergedProducts.findIndex((p) => p.productId === customProd.productId);
     const cleanCustom = sanitizeProduct(customProd);
     if (existingIdx >= 0) {
@@ -166,6 +224,7 @@ function applyPayloadToGlobalArrays(payload: LiveCatalogPayload): void {
 if (typeof window !== 'undefined') {
   const initialCached = loadCachedPayload();
   applyPayloadToGlobalArrays(initialCached);
+  loadCachedQuestionsAndSurvey();
 }
 
 export function startLiveCatalogSync(): void {
@@ -188,6 +247,30 @@ export function startLiveCatalogSync(): void {
       };
       saveCachedPayload(nextPayload);
       applyPayloadToGlobalArrays(nextPayload);
+
+      if (Array.isArray(data?.quizQuestions) && data.quizQuestions.length > 0) {
+        currentQuestions = data.quizQuestions as Question[];
+        try {
+          localStorage.setItem(LOCAL_QUESTIONS_KEY, JSON.stringify(currentQuestions));
+        } catch {
+          /* ignore */
+        }
+        notifyQuestionsUpdated();
+      }
+
+      if (data?.surveyConfig && typeof data.surveyConfig === 'object') {
+        const sc = data.surveyConfig as Record<string, unknown>;
+        currentSurveyConfig = {
+          enabled: sc.enabled !== false,
+          ethicsApprovalRef: String(sc.ethicsApprovalRef || 'AMR-EDU-2026'),
+        };
+        try {
+          localStorage.setItem(LOCAL_SURVEY_CFG_KEY, JSON.stringify(currentSurveyConfig));
+        } catch {
+          /* ignore */
+        }
+        notifyQuestionsUpdated();
+      }
     },
     (err) => {
       console.info('Live catalog sync using cached/local dataset:', err);
@@ -222,6 +305,40 @@ export function useLiveDrugCatalog(): {
   };
 }
 
+export function useLiveQuizQuestions(): {
+  questions: Question[];
+  surveyConfig: LiveSurveyConfig | null;
+  version: number;
+} {
+  const [state, setState] = useState<{
+    questions: Question[];
+    surveyConfig: LiveSurveyConfig | null;
+    version: number;
+  }>(() => {
+    startLiveCatalogSync();
+    return {
+      questions: currentQuestions,
+      surveyConfig: currentSurveyConfig,
+      version: currentVersion,
+    };
+  });
+
+  useEffect(() => {
+    startLiveCatalogSync();
+    const onUpdate = () => {
+      setState({
+        questions: [...currentQuestions],
+        surveyConfig: currentSurveyConfig ? { ...currentSurveyConfig } : null,
+        version: currentVersion,
+      });
+    };
+    window.addEventListener(QUESTIONS_EVENT, onUpdate);
+    return () => window.removeEventListener(QUESTIONS_EVENT, onUpdate);
+  }, []);
+
+  return state;
+}
+
 async function persistCatalogPayload(nextPayload: LiveCatalogPayload, uid: string): Promise<void> {
   nextPayload.updatedAtIso = new Date().toISOString();
   nextPayload.updatedBy = uid;
@@ -230,12 +347,16 @@ async function persistCatalogPayload(nextPayload: LiveCatalogPayload, uid: strin
 
   if (configured && db) {
     const catalogRef = doc(db, 'medicines', CATALOG_DOC_ID);
-    await setDoc(catalogRef, {
-      ...nextPayload,
-      status: 'approved',
-      updatedAt: serverTimestamp(),
-      updatedBy: uid,
-    });
+    await setDoc(
+      catalogRef,
+      {
+        ...nextPayload,
+        status: 'approved',
+        updatedAt: serverTimestamp(),
+        updatedBy: uid,
+      },
+      { merge: true }
+    );
   }
 }
 
@@ -266,7 +387,6 @@ export async function saveCommercialProductLive(
     priceUpdatedDate: new Date().toISOString().slice(0, 10),
   });
 
-  // Remove from deleted list if it was previously deleted
   latest.deletedProductIds = (latest.deletedProductIds || []).filter((id) => id !== sanitized.productId);
 
   const isBase = BASE_COMMERCIAL_PRODUCTS.some((b) => b.productId === sanitized.productId);
@@ -286,6 +406,13 @@ export async function saveCommercialProductLive(
 
   await persistCatalogPayload(latest, uid);
   return sanitized;
+}
+
+export async function upsertCommercialProductLive(
+  product: EgyptianCommercialProduct,
+  uid: string
+): Promise<EgyptianCommercialProduct> {
+  return saveCommercialProductLive(product, uid);
 }
 
 export async function deleteCommercialProductLive(productId: string, uid: string): Promise<void> {
@@ -310,6 +437,11 @@ export async function resetCommercialProductToDefault(productId: string, uid: st
   await persistCatalogPayload(latest, uid);
 }
 
+export async function resetCommercialCatalogToDefault(uid: string): Promise<void> {
+  const latest: LiveCatalogPayload = emptyPayload();
+  await persistCatalogPayload(latest, uid);
+}
+
 export async function saveActiveIngredientMetaLive(
   ingredient: ActiveIngredientRecord,
   uid: string
@@ -324,6 +456,76 @@ export async function saveActiveIngredientMetaLive(
     ],
   };
   await persistCatalogPayload(latest, uid);
+}
+
+export async function saveQuizQuestionsLive(
+  nextQuestions: Question[],
+  uid: string
+): Promise<void> {
+  currentQuestions = nextQuestions;
+  try {
+    localStorage.setItem(LOCAL_QUESTIONS_KEY, JSON.stringify(nextQuestions));
+  } catch {
+    /* ignore */
+  }
+  notifyQuestionsUpdated();
+  if (configured && db) {
+    try {
+      const catalogRef = doc(db, 'medicines', CATALOG_DOC_ID);
+      await setDoc(
+        catalogRef,
+        {
+          quizQuestions: nextQuestions,
+          status: 'approved',
+          updatedAt: serverTimestamp(),
+          updatedBy: uid || 'editor',
+        },
+        { merge: true }
+      );
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+export async function resetQuizQuestionsToDefault(uid: string): Promise<void> {
+  const fresh = BASELINE_QUESTIONS.map((q) => ({
+    ...q,
+    q: { ...q.q },
+    options: q.options.map((o) => ({ ...o })),
+    why: { ...q.why },
+  }));
+  await saveQuizQuestionsLive(fresh, uid);
+}
+
+export async function saveSurveyConfigLive(
+  cfg: LiveSurveyConfig,
+  uid: string
+): Promise<void> {
+  currentSurveyConfig = cfg;
+  try {
+    localStorage.setItem(LOCAL_SURVEY_CFG_KEY, JSON.stringify(cfg));
+  } catch {
+    /* ignore */
+  }
+  notifyQuestionsUpdated();
+  if (configured && db) {
+    try {
+      await setDoc(
+        doc(db, 'medicines', CATALOG_DOC_ID),
+        {
+          surveyConfig: cfg,
+          status: 'approved',
+          updatedAt: serverTimestamp(),
+          updatedBy: uid || 'editor',
+        },
+        { merge: true }
+      );
+      await setDoc(doc(db, 'surveyConfig', 'main'), cfg, { merge: true });
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 export function generateNextProductId(): string {
