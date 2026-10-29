@@ -12,6 +12,7 @@ import ResearchTab from './ResearchTab';
 import { LearningImpactDashboard } from './LearningImpactDashboard';
 import QuizResultsTab from './QuizResultsTab';
 import CommercialCatalogTab from './CommercialCatalogEditor';
+import SurveyQuizManagerTab from './SurveyQuizEditor';
 
 function diagText(status: string, t: (k: string) => string): string {
   if (status === 'missing') return t('diagMissing');
@@ -163,10 +164,12 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
   );
 }
 
+type AdminTab = 'users' | 'catalog' | 'meds' | 'survey_bank' | 'research' | 'impact' | 'quiz';
+
 export default function Dashboard() {
   const { t, lang } = useLang();
   const { user, role, roleStatus, loading, logout } = useAuth();
-  const [tab, setTab] = useState<'catalog' | 'meds' | 'research' | 'users' | 'impact' | 'quiz'>('catalog');
+  const [tab, setTab] = useState<AdminTab>('users');
 
   if (loading) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (!user) return <Login />;
@@ -187,37 +190,128 @@ export default function Dashboard() {
 
   return (
     <main className="wrap stack">
-      <div className="head">
+      <div className="head" style={{ flexWrap: 'wrap', gap: '10px' }}>
         <h1>{t('adminTitle')}</h1>
-        <div className="row">
+        <div className="row" style={{ gap: '8px' }}>
           <span className="badge approved">{role}</span>
           <button className="btn small ghost" onClick={logout}>{t('signOut')}</button>
         </div>
       </div>
-      <div className="tabs" role="tablist">
-        <button className={tab === 'catalog' ? 'on' : ''} onClick={() => setTab('catalog')}>
-          💊 {tr(lang, 'الأدوية التجارية والأسعار والباركود (206+)', 'Commercial Drugs, Prices & Barcodes')}
+
+      <div
+        className="tabs"
+        role="tablist"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '8px',
+          borderBottom: '1px solid var(--line)',
+          paddingBottom: '10px',
+        }}
+      >
+        <button
+          className={tab === 'users' ? 'on' : ''}
+          onClick={() => setTab('users')}
+          style={{
+            borderRadius: '10px',
+            border: tab === 'users' ? '2px solid var(--teal)' : '1px solid var(--line)',
+            background: tab === 'users' ? 'var(--tint)' : 'var(--card-bg)',
+            padding: '8px 12px',
+          }}
+        >
+          👥 {tr(lang, 'المستخدمون والصلاحيات (Admin / Editor)', 'Users & Roles (Admin / Editor)', 'Utilisateurs & Rôles', 'Usuarios y Roles', 'Benutzer & Rollen')}
         </button>
-        <button className={tab === 'meds' ? 'on' : ''} onClick={() => setTab('meds')}>
-          📚 {tr(lang, 'الموسوعة السريرية للمواد الفعالة (32)', 'Clinical Active Ingredients (32)')}
+
+        <button
+          className={tab === 'catalog' ? 'on' : ''}
+          onClick={() => setTab('catalog')}
+          style={{
+            borderRadius: '10px',
+            border: tab === 'catalog' ? '2px solid var(--teal)' : '1px solid var(--line)',
+            background: tab === 'catalog' ? 'var(--tint)' : 'var(--card-bg)',
+            padding: '8px 12px',
+          }}
+        >
+          💊 {tr(lang, 'الأدوية التجارية والأسعار (206+)', 'Commercial Drugs & Prices (206+)', 'Médicaments Commerciaux', 'Medicamentos Comerciales', 'Handelspräparate (206+)')}
         </button>
-        {role === 'admin' && <button className={tab === 'research' ? 'on' : ''} onClick={() => setTab('research')}>{t('tabResearch')}</button>}
-        {role === 'admin' && <button className={tab === 'users' ? 'on' : ''} onClick={() => setTab('users')}>{t('tabUsers')}</button>}
+
+        <button
+          className={tab === 'meds' ? 'on' : ''}
+          onClick={() => setTab('meds')}
+          style={{
+            borderRadius: '10px',
+            border: tab === 'meds' ? '2px solid var(--teal)' : '1px solid var(--line)',
+            background: tab === 'meds' ? 'var(--tint)' : 'var(--card-bg)',
+            padding: '8px 12px',
+          }}
+        >
+          📚 {tr(lang, 'المواد الفعالة (32)', 'Active Ingredients (32)', 'Principes Actifs (32)', 'Principios Activos (32)', 'Wirkstoffe (32)')}
+        </button>
+
+        <button
+          className={tab === 'survey_bank' ? 'on' : ''}
+          onClick={() => setTab('survey_bank')}
+          style={{
+            borderRadius: '10px',
+            border: tab === 'survey_bank' ? '2px solid var(--teal)' : '1px solid var(--line)',
+            background: tab === 'survey_bank' ? 'var(--tint)' : 'var(--card-bg)',
+            padding: '8px 12px',
+          }}
+        >
+          📋 {tr(lang, 'تعديل أسئلة الاستبيان والكويز', 'Edit Survey & Quiz Questions', 'Modifier Questions Quiz/Enquête', 'Editar Preguntas de Encuesta/Quiz', 'Umfrage- & Quizfragen bearbeiten')}
+        </button>
+
         {role === 'admin' && (
-          <button className={tab === 'impact' ? 'on' : ''} onClick={() => setTab('impact')}>
-            {lang === 'ar' ? '📊 قياس الأثر والتعلم' : '📊 Learning Impact'}
+          <button
+            className={tab === 'research' ? 'on' : ''}
+            onClick={() => setTab('research')}
+            style={{
+              borderRadius: '10px',
+              border: tab === 'research' ? '2px solid var(--teal)' : '1px solid var(--line)',
+              background: tab === 'research' ? 'var(--tint)' : 'var(--card-bg)',
+              padding: '8px 12px',
+            }}
+          >
+            📊 {t('tabResearch')}
           </button>
         )}
+
         {role === 'admin' && (
-          <button className={tab === 'quiz' ? 'on' : ''} onClick={() => setTab('quiz')}>
-            {lang === 'ar' ? '📝 نتائج الكويز' : '📝 Quiz Results'}
+          <button
+            className={tab === 'impact' ? 'on' : ''}
+            onClick={() => setTab('impact')}
+            style={{
+              borderRadius: '10px',
+              border: tab === 'impact' ? '2px solid var(--teal)' : '1px solid var(--line)',
+              background: tab === 'impact' ? 'var(--tint)' : 'var(--card-bg)',
+              padding: '8px 12px',
+            }}
+          >
+            📈 {tr(lang, 'قياس الأثر والتعلم', 'Learning Impact', 'Impact d’Apprentissage', 'Impacto de Aprendizaje', 'Lernwirkung')}
+          </button>
+        )}
+
+        {role === 'admin' && (
+          <button
+            className={tab === 'quiz' ? 'on' : ''}
+            onClick={() => setTab('quiz')}
+            style={{
+              borderRadius: '10px',
+              border: tab === 'quiz' ? '2px solid var(--teal)' : '1px solid var(--line)',
+              background: tab === 'quiz' ? 'var(--tint)' : 'var(--card-bg)',
+              padding: '8px 12px',
+            }}
+          >
+            📝 {tr(lang, 'نتائج الكويز', 'Quiz Results', 'Résultats du Quiz', 'Resultados del Quiz', 'Quiz-Ergebnisse')}
           </button>
         )}
       </div>
+
+      {tab === 'users' && <UsersTab myUid={user.uid} />}
       {tab === 'catalog' && <CommercialCatalogTab uid={user.uid} />}
       {tab === 'meds' && <MedsTab role={role} uid={user.uid} />}
+      {tab === 'survey_bank' && <SurveyQuizManagerTab uid={user.uid} />}
       {tab === 'research' && role === 'admin' && <ResearchTab />}
-      {tab === 'users' && role === 'admin' && <UsersTab myUid={user.uid} />}
       {tab === 'impact' && role === 'admin' && <LearningImpactDashboard />}
       {tab === 'quiz' && role === 'admin' && <QuizResultsTab />}
     </main>

@@ -13,6 +13,8 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import AmbassadorCertificateModal, { CertificateRecord } from './AmbassadorCertificateModal';
+import { saveQuizQuestionsLive, useLiveQuizQuestions } from './liveCatalogSync';
+import { QuestionEditorModal } from './SurveyQuizEditor';
 
 type Level = 'easy' | 'medium' | 'hard';
 type Screen = 'pick' | 'quiz' | 'result';
@@ -141,7 +143,11 @@ function makeCertSerial(level: Level, uid: string): string {
 export default function Quiz() {
   const { t, lang } = useLang();
   const isAr = lang === 'ar';
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const { questions: liveAllQuestions } = useLiveQuizQuestions();
+  const [editingGlobalIdx, setEditingGlobalIdx] = useState<number | null>(null);
+  const [addingNewQ, setAddingNewQ] = useState(false);
 
   const [screen, setScreen] = useState<Screen>('pick');
   const [level, setLevel] = useState<Level>('easy');
@@ -246,7 +252,8 @@ export default function Quiz() {
 
   const startQuiz = (lvl: Level) => {
     setLevel(lvl);
-    const qs = getQuestionsByLevel(lvl);
+    const liveByLvl = liveAllQuestions.filter((item) => item.level === lvl);
+    const qs = liveByLvl.length > 0 ? liveByLvl : getQuestionsByLevel(lvl);
     setQuestions(qs);
     setCurrentIdx(0);
     setSelectedOpt(null);
@@ -371,6 +378,22 @@ export default function Quiz() {
             'Elige tu nivel. Obtén 75% o más para ganar tu Certificado de Embajador guardado en la nube.'
           )}
         </p>
+
+        {canEditLive && (
+          <div className="card" style={{ border: '2px dashed #0284c7', background: 'var(--tint)' }}>
+            <div className="head" style={{ flexWrap: 'wrap', gap: '8px' }}>
+              <div>
+                <b>🛠️ {tr(lang, 'وضع المحرر/الأدمن: تعديل وإضافة أسئلة الاختبار والاستبيان', 'Editor Mode: Manage Quiz & Survey Questions')}</b>
+                <p className="small muted" style={{ margin: '2px 0 0' }}>
+                  {tr(lang, `إجمالي الأسئلة الحالية: ${liveAllQuestions.length} سؤالاً`, `Total live questions: ${liveAllQuestions.length}`)}
+                </p>
+              </div>
+              <button type="button" className="btn small" onClick={() => setAddingNewQ(true)}>
+                ➕ {tr(lang, 'إضافة سؤال جديد', 'Add Question')}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div style={{ display: 'grid', gap: '14px' }}>
           {(['easy', 'medium', 'hard'] as Level[]).map((lvl) => {
@@ -522,6 +545,19 @@ export default function Quiz() {
             </div>
           )}
         </section>
+
+        {(addingNewQ || editingGlobalIdx !== null) && (
+          <QuestionEditorModal
+            question={editingGlobalIdx !== null ? liveAllQuestions[editingGlobalIdx] : null}
+            questionIndex={editingGlobalIdx}
+            defaultLevel={level}
+            uid={user?.uid || 'editor'}
+            onClose={() => {
+              setAddingNewQ(false);
+              setEditingGlobalIdx(null);
+            }}
+          />
+        )}
 
         {activeCertificate && (
           <AmbassadorCertificateModal
@@ -745,6 +781,19 @@ export default function Quiz() {
           )}
         </div>
 
+        {(addingNewQ || editingGlobalIdx !== null) && (
+          <QuestionEditorModal
+            question={editingGlobalIdx !== null ? liveAllQuestions[editingGlobalIdx] : null}
+            questionIndex={editingGlobalIdx}
+            defaultLevel={level}
+            uid={user?.uid || 'editor'}
+            onClose={() => {
+              setAddingNewQ(false);
+              setEditingGlobalIdx(null);
+            }}
+          />
+        )}
+
         {activeCertificate && (
           <AmbassadorCertificateModal
             cert={activeCertificate}
@@ -819,9 +868,33 @@ export default function Quiz() {
           </span>
         </div>
 
-        <h3 style={{ margin: '0 0 16px', color: 'var(--navy)', fontSize: '1.1rem', lineHeight: 1.5 }}>
-          {pick(q.q, lang)}
-        </h3>
+        <div className="head" style={{ alignItems: 'flex-start', gap: '8px', marginBottom: '12px' }}>
+          <h3 style={{ margin: 0, color: 'var(--navy)', fontSize: '1.1rem', lineHeight: 1.5, flex: 1 }}>
+            {pick(q.q, lang)}
+          </h3>
+          {canEditLive && (
+            <div className="row" style={{ gap: '6px' }}>
+              <button
+                type="button"
+                className="btn small ghost"
+                onClick={() => {
+                  const gIdx = liveAllQuestions.findIndex((item) => item.q.ar === q.q.ar || item.q.en === q.q.en);
+                  if (gIdx !== -1) setEditingGlobalIdx(gIdx);
+                  else setAddingNewQ(true);
+                }}
+              >
+                ✏️ {tr(lang, 'تعديل السؤال', 'Edit')}
+              </button>
+              <button
+                type="button"
+                className="btn small"
+                onClick={() => setAddingNewQ(true)}
+              >
+                ➕
+              </button>
+            </div>
+          )}
+        </div>
 
         <div style={{ display: 'grid', gap: '8px' }}>
           {q.options.map((opt, optIdx) => {
@@ -909,6 +982,18 @@ export default function Quiz() {
           </div>
         )}
       </div>
+      {(addingNewQ || editingGlobalIdx !== null) && (
+        <QuestionEditorModal
+          question={editingGlobalIdx !== null ? liveAllQuestions[editingGlobalIdx] : null}
+          questionIndex={editingGlobalIdx}
+          defaultLevel={level}
+          uid={user?.uid || 'editor'}
+          onClose={() => {
+            setAddingNewQ(false);
+            setEditingGlobalIdx(null);
+          }}
+        />
+      )}
     </main>
   );
 }

@@ -6,6 +6,9 @@ import { useApproved } from './medicinesApi';
 import { norm, searchMeds } from './search';
 import { pick, tr } from './types';
 import SkeletonCard from './SkeletonCard';
+import { useAuth } from './authContext';
+import { deleteCommercialProductLive, useLiveDrugCatalog } from './liveCatalogSync';
+import { QuickProductEditorModal } from './CommercialCatalogEditor';
 import { getClinicalProProfile, useClinicalProMode } from './clinicalProData';
 import {
   ACTIVE_INGREDIENTS,
@@ -29,6 +32,11 @@ export default function Medicines() {
   const { t, lang } = useLang();
   const isAr = lang === 'ar';
   const { isProMode, setProMode } = useClinicalProMode();
+  const { user, role } = useAuth();
+  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const { products: liveCatalogProducts } = useLiveDrugCatalog();
+  const [editingCatalogProd, setEditingCatalogProd] = useState<EgyptianCommercialProduct | null>(null);
+  const [addingCatalogProd, setAddingCatalogProd] = useState(false);
   const [sp, setSp] = useSearchParams();
   const q = sp.get('q') ?? '';
   const { items, error } = useApproved();
@@ -51,8 +59,8 @@ export default function Medicines() {
   const [selectedProduct, setSelectedProduct] = useState<EgyptianCommercialProduct | null>(null);
 
   const allCommercialProducts = useMemo(
-    () => [...EGYPTIAN_COMMERCIAL_PRODUCTS, ...importedProducts],
-    [importedProducts]
+    () => [...liveCatalogProducts, ...importedProducts],
+    [liveCatalogProducts, importedProducts]
   );
 
   const auditReport = useMemo(
@@ -467,6 +475,18 @@ export default function Medicines() {
                 }}
               >
                 ↺ {isAr ? 'إعادة ضبط الفلاتر' : 'Reset Filters'}
+              </button>
+            )}
+            {canEditLive && (
+              <button
+                type="button"
+                className="btn small"
+                onClick={() => {
+                  setEditingCatalogProd(null);
+                  setAddingCatalogProd(true);
+                }}
+              >
+                ➕ {tr(lang, 'إضافة دواء تجاري جديد', 'Add Commercial Drug')}
               </button>
             )}
           </div>
@@ -979,6 +999,17 @@ export default function Medicines() {
           </div>
         </div>,
         document.body
+      )}
+      {(addingCatalogProd || editingCatalogProd !== null) && (
+        <QuickProductEditorModal
+          product={editingCatalogProd}
+          defaultIngredientId={selectedIngFilter !== 'all' ? selectedIngFilter : undefined}
+          uid={user?.uid}
+          onClose={() => {
+            setAddingCatalogProd(false);
+            setEditingCatalogProd(null);
+          }}
+        />
       )}
     </main>
   );

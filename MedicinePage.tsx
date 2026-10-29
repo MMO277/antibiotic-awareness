@@ -6,7 +6,10 @@ import { FIELD_LABELS, Medicine, pick, TextField, tr } from './types';
 import StatusBadge from './StatusBadge';
 import QRBlock from './QRBlock';
 import Disclaimer from './Disclaimer';
-import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
+import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS, EgyptianCommercialProduct } from './egyptianDrugDatabase';
+import { useAuth } from './authContext';
+import { useLiveDrugCatalog } from './liveCatalogSync';
+import { QuickProductEditorModal } from './CommercialCatalogEditor';
 import { useSyncedHealthProfile } from './allergyData';
 import { evaluateMedicationSafety } from './medicationSafetyEngine';
 import { getClinicalProProfile, useClinicalProMode } from './clinicalProData';
@@ -51,6 +54,11 @@ export default function MedicinePage() {
   const isAr = lang === 'ar';
   const { profile } = useSyncedHealthProfile();
   const { isProMode, setProMode } = useClinicalProMode();
+  const { user, role } = useAuth();
+  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const { products: liveCatalogProducts } = useLiveDrugCatalog();
+  const [editingPkg, setEditingPkg] = useState<EgyptianCommercialProduct | null>(null);
+  const [addingPkg, setAddingPkg] = useState(false);
 
   // Initialize synchronously from local verified database so it opens in 0ms and never fails
   const [m, setM] = useState<Medicine | null | undefined>(() => findLocalMedicine(id) ?? undefined);
@@ -79,8 +87,8 @@ export default function MedicinePage() {
   }, [id]);
 
   const commercialPackages = useMemo(
-    () => (m ? EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => p.activeIngredientId === m.id) : []),
-    [m]
+    () => (m ? liveCatalogProducts.filter((p) => p.activeIngredientId === m.id) : []),
+    [m, liveCatalogProducts]
   );
 
   const ingMeta = useMemo(
@@ -646,6 +654,17 @@ export default function MedicinePage() {
           <Disclaimer />
         </div>
       </div>
+      {(addingPkg || editingPkg !== null) && (
+        <QuickProductEditorModal
+          product={editingPkg}
+          defaultIngredientId={m?.id}
+          uid={user?.uid}
+          onClose={() => {
+            setAddingPkg(false);
+            setEditingPkg(null);
+          }}
+        />
+      )}
     </main>
   );
 }

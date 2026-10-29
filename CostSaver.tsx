@@ -10,6 +10,9 @@ import {
 } from './egyptianDrugDatabase';
 import { norm } from './search';
 import Disclaimer from './Disclaimer';
+import { useAuth } from './authContext';
+import { useLiveDrugCatalog } from './liveCatalogSync';
+import { QuickProductEditorModal } from './CommercialCatalogEditor';
 
 const POPULAR_BRAND_IDS = [
   'EG-ABX-001', // Augmentin 1g
@@ -32,20 +35,24 @@ export default function CostSaver() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [packCount, setPackCount] = useState<number>(1);
+  const { user, role } = useAuth();
+  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const { products: liveCatalogProducts } = useLiveDrugCatalog();
+  const [editingProd, setEditingProd] = useState<EgyptianCommercialProduct | null>(null);
 
   const initialProduct = useMemo(() => {
     if (prodParam) {
-      const found = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.productId === prodParam);
+      const found = liveCatalogProducts.find((p) => p.productId === prodParam);
       if (found) return found;
     }
     if (ingParam) {
-      const byIng = EGYPTIAN_COMMERCIAL_PRODUCTS.filter(
+      const byIng = liveCatalogProducts.filter(
         (p) => p.activeIngredientId === ingParam && p.priceEgp !== null
       ).sort((a, b) => (b.priceEgp || 0) - (a.priceEgp || 0));
       if (byIng.length > 0) return byIng[0];
     }
-    return EGYPTIAN_COMMERCIAL_PRODUCTS[0];
-  }, [ingParam, prodParam]);
+    return liveCatalogProducts[0] || EGYPTIAN_COMMERCIAL_PRODUCTS[0];
+  }, [ingParam, prodParam, liveCatalogProducts]);
 
   const [selectedProduct, setSelectedProduct] = useState<EgyptianCommercialProduct>(initialProduct);
 
@@ -56,24 +63,24 @@ export default function CostSaver() {
   const searchResults = useMemo(() => {
     const clean = norm(searchQuery);
     if (!clean) return [];
-    return EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => {
+    return liveCatalogProducts.filter((p) => {
       const ing = ACTIVE_INGREDIENTS.find((a) => a.id === p.activeIngredientId);
       const hay = norm(
         `${p.tradeNameAr} ${p.tradeNameEn} ${p.scientificComposition} ${p.strength} ${p.manufacturer} ${p.barcode || ''} ${ing?.nameAr || ''} ${ing?.nameEn || ''}`
       );
       return hay.includes(clean);
     }).slice(0, 12);
-  }, [searchQuery]);
+  }, [searchQuery, liveCatalogProducts]);
 
   const popularShortcuts = useMemo(() => {
-    return POPULAR_BRAND_IDS.map((id) => EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.productId === id)).filter(
+    return POPULAR_BRAND_IDS.map((id) => liveCatalogProducts.find((p) => p.productId === id)).filter(
       (p): p is EgyptianCommercialProduct => Boolean(p)
     );
-  }, []);
+  }, [liveCatalogProducts]);
 
   const alternatives = useMemo(
-    () => getClassifiedAlternatives(selectedProduct, EGYPTIAN_COMMERCIAL_PRODUCTS),
-    [selectedProduct]
+    () => getClassifiedAlternatives(selectedProduct, liveCatalogProducts),
+    [selectedProduct, liveCatalogProducts]
   );
 
   const currentIng = useMemo(
@@ -525,6 +532,23 @@ export default function CostSaver() {
         </div>
       </section>
 
+      {canEditLive && (
+        <div className="card" style={{ border: '2px dashed #0284c7', background: 'var(--tint)' }}>
+          <div className="head" style={{ flexWrap: 'wrap', gap: '8px' }}>
+            <b>🛠️ {tr(lang, 'وضع المحرر/الأدمن: تعديل بيانات وسعر الدواء المختار حالياً', 'Editor Mode: Edit Selected Commercial Product')}</b>
+            <button type="button" className="btn small" onClick={() => setEditingProd(selectedProduct)}>
+              ✏️ {tr(lang, `تعديل ${selectedProduct.tradeNameAr}`, `Edit ${selectedProduct.tradeNameEn}`)}
+            </button>
+          </div>
+        </div>
+      )}
+      {editingProd && (
+        <QuickProductEditorModal
+          product={editingProd}
+          uid={user?.uid}
+          onClose={() => setEditingProd(null)}
+        />
+      )}
       <Disclaimer />
     </main>
   );

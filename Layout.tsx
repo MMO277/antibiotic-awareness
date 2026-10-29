@@ -38,7 +38,7 @@ function setCachedTranslation(lang: Lang, text: string, translated: string): voi
   }
 }
 
-async function fetchNeuralTranslation(text: string, targetLang: 'fr' | 'es'): Promise<string | null> {
+async function fetchNeuralTranslation(text: string, targetLang: 'fr' | 'es' | 'de'): Promise<string | null> {
   const cached = getCachedTranslation(targetLang, text);
   if (cached) return cached;
   try {
@@ -148,7 +148,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [openRibbonCatId, setOpenRibbonCatId] = useState<string | null>(null);
-  const [openDrawerGroups, setOpenDrawerGroups] = useState<Record<string, boolean>>({});
+  const [openDrawerGroups, setOpenDrawerGroups] = useState<Record<string, boolean>>({ 'drug-directory': true, 'clinical-safety': true, 'treatment-care': true, 'interactive-sim': true, 'awareness-research': true });
   const authCtx = useAuth();
   const user = authCtx.user;
   const openAuthModal = authCtx.openAuthModal;
@@ -165,8 +165,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     {
       id: 'drug-directory',
       icon: '💊',
-      title: tr(lang, 'الدليل والبحث الدوائي', 'Drug Directory & Scanner', 'Répertoire & Scanner', 'Directorio y Escáner'),
-      shortTitle: tr(lang, 'الدليل والأدوية', 'Drug Directory', 'Médicaments', 'Medicamentos'),
+      title: tr(lang, 'الدليل والبحث الدوائي', 'Drug Directory & Scanner', 'Répertoire & Scanner', 'Directorio y Escáner', 'Arzneimittelverzeichnis & Scanner'),
+      shortTitle: tr(lang, 'الدليل والأدوية', 'Drug Directory', 'Médicaments', 'Medicamentos', 'Medikamente'),
       subtitle: tr(
         lang,
         'السجل الدوائي (206)، فحص الباركود، ومقارنة الأدوية',
@@ -191,7 +191,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           to: '/cost-saver',
           key: '',
           icon: '💰',
-          shortLabel: tr(lang, 'حاسبة البديل الأرخص بنفس الكفاءة', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos'),
+          shortLabel: tr(lang, 'حاسبة البديل الأرخص بنفس الكفاءة', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos', 'Generika-Kostenrechner'),
         },
         {
           to: '/compare',
@@ -204,8 +204,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     {
       id: 'clinical-safety',
       icon: '🏥',
-      title: tr(lang, 'أدوات الأمان والفحص السريري', 'Clinical Safety & Checkers', 'Sécurité Clinique & Contrôles', 'Seguridad Clínica y Chequeo'),
-      shortTitle: tr(lang, 'الفحص والأمان السريري', 'Clinical Safety', 'Sécurité Clinique', 'Seguridad Clínica'),
+      title: tr(lang, 'أدوات الأمان والفحص السريري', 'Clinical Safety & Checkers', 'Sécurité Clinique & Contrôles', 'Seguridad Clínica y Chequeo', 'Klinische Sicherheit & Prüfungen'),
+      shortTitle: tr(lang, 'الفحص والأمان السريري', 'Clinical Safety', 'Sécurité Clinique', 'Seguridad Clínica', 'Klinische Sicherheit'),
       subtitle: tr(
         lang,
         'فاحص الحساسية، التداخلات، رادار الروشتة، وحاسبة الأطفال',
@@ -242,7 +242,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           to: '/cold-shot-warning',
           key: '',
           icon: '💉',
-          shortLabel: tr(lang, 'تحذير «حقنة البرد / الخلطة 3×1»', '3-in-1 Cold Shot Warning', 'Alerte Injection Rhume 3-en-1', 'Alerta Inyección 3 en 1'),
+          shortLabel: tr(lang, 'تحذير «حقنة البرد / الخلطة 3×1»', '3-in-1 Cold Shot Warning', 'Alerte Injection Rhume 3-en-1', 'Alerta Inyección 3 en 1', 'Warnung: 3-in-1-Erkältungsspritze'),
         },
         {
           to: '/side-effects',
@@ -255,8 +255,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     {
       id: 'treatment-care',
       icon: '🌿',
-      title: tr(lang, 'متابعة العلاج والروشتة الخضراء', 'Treatment & Green Care', 'Suivi & Ordonnance Verte', 'Seguimiento y Receta Verde'),
-      shortTitle: tr(lang, 'متابعة العلاج والبيئة', 'Treatment & Care', 'Suivi & Soins', 'Cuidado y Dosis'),
+      title: tr(lang, 'متابعة العلاج والروشتة الخضراء', 'Treatment & Green Care', 'Suivi & Ordonnance Verte', 'Seguimiento y Receta Verde', 'Therapie & Grünes Rezept'),
+      shortTitle: tr(lang, 'متابعة العلاج والبيئة', 'Treatment & Care', 'Suivi & Soins', 'Cuidado y Dosis', 'Therapie & Pflege'),
       subtitle: tr(
         lang,
         'الروشتة الخضراء، منظم الجرعات، ملف صحتي، والتخلص الآمن',
@@ -275,7 +275,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           to: '/daily-schedule',
           key: '',
           icon: '📅',
-          shortLabel: tr(lang, 'مولّد جدول الجرعات للطباعة وواتساب', 'Printable & WhatsApp Schedule', 'Planning Imprimable & WhatsApp', 'Horario para Imprimir y WhatsApp'),
+          shortLabel: tr(lang, 'مولّد جدول الجرعات للطباعة وواتساب', 'Printable & WhatsApp Schedule', 'Planning Imprimable & WhatsApp', 'Horario para Imprimir y WhatsApp', 'Dosierungs-Tagesplaner (Druck & WhatsApp)'),
         },
         {
           to: '/tracker',
@@ -300,8 +300,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     {
       id: 'interactive-sim',
       icon: '🎮',
-      title: tr(lang, 'الألعاب والمحاكاة والذكاء الاصطناعي', '3D Sim, Games & AI', 'Jeux 3D, Sim & IA', 'Juegos 3D, Sim e IA'),
-      shortTitle: tr(lang, 'الألعاب والتفاعل الذكي', 'Games & AI', 'Jeux & IA', 'Juegos e IA'),
+      title: tr(lang, 'الألعاب والمحاكاة والذكاء الاصطناعي', '3D Sim, Games & AI', 'Jeux 3D, Sim & IA', 'Juegos 3D, Sim e IA', '3D-Sim, Spiele & KI'),
+      shortTitle: tr(lang, 'الألعاب والتفاعل الذكي', 'Games & AI', 'Jeux & IA', 'Juegos e IA', 'Spiele & KI'),
       subtitle: tr(
         lang,
         'محاكي المستشفى 3D، المساعد الذكي، الاختبارات، والصوتيات',
@@ -339,8 +339,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     {
       id: 'awareness-research',
       icon: '📚',
-      title: tr(lang, 'التوعية والأبحاث والمصادر', 'Awareness & Research', 'Sensibilisation & Recherche', 'Concientización e Investigación'),
-      shortTitle: tr(lang, 'التوعية والأبحاث', 'Awareness & Research', 'Sensibilisation', 'Concientización'),
+      title: tr(lang, 'التوعية والأبحاث والمصادر', 'Awareness & Research', 'Sensibilisation & Recherche', 'Concientización e Investigación', 'Aufklärung & Forschung'),
+      shortTitle: tr(lang, 'التوعية والأبحاث', 'Awareness & Research', 'Sensibilisation', 'Concientización', 'Aufklärung'),
       subtitle: tr(
         lang,
         'حملة نوفمبر العالمية، الدليل التوعوي، المقالات، والأبحاث',
@@ -595,7 +595,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       });
 
       // Batch-translate pending text nodes in chunks so every page translates completely
-      if ((lang === 'fr' || lang === 'es') && pendingNodes.length > 0) {
+      if ((lang === 'fr' || lang === 'es' || lang === 'de') && pendingNodes.length > 0) {
         const uniqueCores = Array.from(new Set(pendingNodes.map((p) => p.baseEn.trim())));
         const CHUNK_SIZE = 18;
         for (let i = 0; i < uniqueCores.length; i += CHUNK_SIZE) {
@@ -647,7 +647,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
     let debounceTimer: number | null = null;
     const observer = new MutationObserver(() => {
-      if (lang !== 'fr' && lang !== 'es') return;
+      if (lang !== 'fr' && lang !== 'es' && lang !== 'de') return;
       if (debounceTimer) window.clearTimeout(debounceTimer);
       debounceTimer = window.setTimeout(() => {
         if (!cancelled) processSubtree();
@@ -890,7 +890,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               title={tr(lang, 'أقسام الموقع الكاملة', 'All Site Sections', 'Toutes les rubriques', 'Todas las secciones')}
             >
               <span className="hamburger-icon" aria-hidden="true">☰</span>
-              <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú')}</span>
+              <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú', 'Menü')}</span>
             </button>
           </div>
         </div>
@@ -905,7 +905,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
             >
               <span aria-hidden="true">🏠</span>
-              <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio')}</span>
+              <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio', 'Startseite')}</span>
             </NavLink>
 
             {navCategories.map((cat) => {
