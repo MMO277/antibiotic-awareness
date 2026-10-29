@@ -52,14 +52,16 @@ export function createEmptyCommercialProduct(defaultIngId = 'amoxicillin-clavula
 
 export function QuickProductEditorModal({
   product,
-  isNew = false,
-  uid,
+  defaultIngredientId,
+  isNew = !product,
+  uid = 'editor',
   onClose,
   onSaved,
 }: {
-  product: EgyptianCommercialProduct;
+  product?: EgyptianCommercialProduct | null;
+  defaultIngredientId?: string;
   isNew?: boolean;
-  uid: string;
+  uid?: string;
   onClose: () => void;
   onSaved?: (saved: EgyptianCommercialProduct) => void;
 }) {
@@ -67,15 +69,26 @@ export function QuickProductEditorModal({
   const isAr = lang === 'ar';
   const { ingredients, isBaseProduct, isProductModified } = useLiveDrugCatalog();
 
+  const initialProd = useMemo(
+    () => product ?? createEmptyCommercialProduct(defaultIngredientId),
+    [product, defaultIngredientId]
+  );
+
   const [draft, setDraft] = useState<EgyptianCommercialProduct>(() => ({
-    ...product,
-    packDetails: { ...product.packDetails },
-    unitPriceNote: { ...product.unitPriceNote },
+    ...initialProd,
+    packDetails: {
+      ar: initialProd.packDetails?.ar || '',
+      en: initialProd.packDetails?.en || '',
+    },
+    unitPriceNote: {
+      ar: initialProd.unitPriceNote?.ar || '',
+      en: initialProd.unitPriceNote?.en || '',
+    },
   }));
   const [priceStr, setPriceStr] = useState<string>(
-    product.priceEgp !== null && product.priceEgp !== undefined ? String(product.priceEgp) : ''
+    initialProd.priceEgp !== null && initialProd.priceEgp !== undefined ? String(initialProd.priceEgp) : ''
   );
-  const [barcodeStr, setBarcodeStr] = useState<string>(product.barcode || '');
+  const [barcodeStr, setBarcodeStr] = useState<string>(initialProd.barcode || '');
   const [saving, setSaving] = useState(false);
   const [errMsg, setErrMsg] = useState('');
 
@@ -406,13 +419,13 @@ export function QuickProductEditorModal({
               type="text"
               className="input"
               placeholder={isAr ? '14 قرص مغلف (شريطان)' : '14 Film-coated tablets'}
-              value={isAr ? draft.packDetails.ar : draft.packDetails.en}
+              value={(isAr ? draft.packDetails?.ar : draft.packDetails?.en) || ''}
               onChange={(e) =>
                 setDraft({
                   ...draft,
                   packDetails: {
-                    ar: isAr ? e.target.value : draft.packDetails.ar || e.target.value,
-                    en: !isAr ? e.target.value : draft.packDetails.en || e.target.value,
+                    ar: isAr ? e.target.value : draft.packDetails?.ar || e.target.value,
+                    en: !isAr ? e.target.value : draft.packDetails?.en || e.target.value,
                   },
                 })
               }
