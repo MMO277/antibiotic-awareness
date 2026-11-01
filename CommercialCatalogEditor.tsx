@@ -208,7 +208,7 @@ export function QuickProductEditorModal({
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700, marginBottom: '4px' }}>
-              {isNew ? `➕ ${tr(lang, 'إضافة دواء جديد', 'New Commercial Product')}` : `✏️ ${draft.productId}`}
+              {isNew ?`${tr(lang,'إضافة دواء جديد','New Commercial Product')}`:`${draft.productId}`}
             </span>
             <h2 style={{ margin: '4px 0 0' }}>
               {isNew
@@ -216,11 +216,11 @@ export function QuickProductEditorModal({
                 : tr(lang, `تعديل بيانات وسعر وباركود: ${draft.tradeNameAr || draft.tradeNameEn}`, `Edit Price, Barcode & Details: ${draft.tradeNameEn}`)}
             </h2>
           </div>
-          <button type="button" className="btn ghost small" onClick={onClose}>✕</button>
+          <button type="button"className="btn ghost small"onClick={onClose}></button>
         </div>
 
         <p className="small muted" style={{ margin: 0 }}>
-          ⚡{' '}
+           
           {tr(
             lang,
             'بمجرد الضغط على «حفظ ونشر فوري»، يتم تحديث السعر والباركود والبيانات في قاعدة بيانات Firebase السحابية وتظهر التعديلات فوراً لجميع المستخدمين في كل صفحات الموقع.',
@@ -232,7 +232,7 @@ export function QuickProductEditorModal({
         <div className="grid" style={{ gap: '12px' }}>
           <div>
             <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              🧪 {tr(lang, 'المادة الفعالة التابع لها الدواء:', 'Active Ingredient:')}
+               {tr(lang,'المادة الفعالة التابع لها الدواء:','Active Ingredient:')}
             </label>
             <select
               className="input"
@@ -266,7 +266,7 @@ export function QuickProductEditorModal({
         <div className="grid" style={{ gap: '12px' }}>
           <div>
             <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              🇪🇬 {tr(lang, 'الاسم التجاري بالعربية:', 'Trade Name (Arabic):')}
+               {tr(lang,'الاسم التجاري بالعربية:','Trade Name (Arabic):')}
             </label>
             <input
               type="text"
@@ -281,7 +281,7 @@ export function QuickProductEditorModal({
 
           <div>
             <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              🇬🇧 {tr(lang, 'الاسم التجاري بالإنجليزية:', 'Trade Name (English):')}
+               {tr(lang,'الاسم التجاري بالإنجليزية:','Trade Name (English):')}
             </label>
             <input
               type="text"
@@ -308,7 +308,7 @@ export function QuickProductEditorModal({
         >
           <div>
             <label className="small" style={{ fontWeight: 800, color: '#15803d', display: 'block', marginBottom: '4px' }}>
-              💰 {tr(lang, 'السعر الرسمي للعبوة بالجنيه المصري (EGP):', 'Official Pack Price (EGP):')}
+               {tr(lang,'السعر الرسمي للعبوة بالجنيه المصري (EGP):','Official Pack Price (EGP):')}
             </label>
             <input
               type="number"
@@ -340,7 +340,7 @@ export function QuickProductEditorModal({
 
           <div>
             <label className="small" style={{ fontWeight: 800, color: '#0369a1', display: 'block', marginBottom: '4px' }}>
-              📷 {tr(lang, 'الباركود الخطي للعلبة (EAN-13 / 622...):', 'Linear Carton Barcode (EAN-13):')}
+               {tr(lang,'الباركود الخطي للعلبة (EAN-13 / 622...):','Linear Carton Barcode (EAN-13):')}
             </label>
             <input
               type="text"
@@ -352,8 +352,7 @@ export function QuickProductEditorModal({
             />
             <span className="small muted" style={{ display: 'block', marginTop: '6px' }}>
               {barcodeStr.trim()
-                ? `✓ ${tr(lang, 'سيتم اعتماده كباركود موثق وقابل للمسح بالكاميرا فوراً', 'Will be marked as Verified & scannable via camera')}`
-                : tr(lang, 'اتركه فارغاً إذا كان الباركود قيد التحقق الميداني', 'Leave blank if barcode is pending physical check')}
+                ?`${tr(lang,'سيتم اعتماده كباركود موثق وقابل للمسح بالكاميرا فوراً','Will be marked as Verified & scannable via camera')}`                : tr(lang, 'اتركه فارغاً إذا كان الباركود قيد التحقق الميداني', 'Leave blank if barcode is pending physical check')}
             </span>
           </div>
         </div>
@@ -362,7 +361,7 @@ export function QuickProductEditorModal({
         <div className="grid" style={{ gap: '12px' }}>
           <div>
             <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              ⚖️ {tr(lang, 'التركيز (Strength):', 'Strength:')}
+               {tr(lang,'التركيز (Strength):','Strength:')}
             </label>
             <input
               type="text"
@@ -376,7 +375,7 @@ export function QuickProductEditorModal({
 
           <div>
             <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              💊 {tr(lang, 'الشكل الصيدلاني:', 'Dosage Form:')}
+               {tr(lang,'الشكل الصيدلاني:','Dosage Form:')}
             </label>
             <select
               className="input"
@@ -393,7 +392,7 @@ export function QuickProductEditorModal({
 
           <div>
             <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              💉 {tr(lang, 'طريق الإعطاء:', 'Administration Route:')}
+               {tr(lang,'طريق الإعطاء:','Administration Route:')}
             </label>
             <select
               className="input"
@@ -413,7 +412,7 @@ export function QuickProductEditorModal({
         <div className="grid" style={{ gap: '12px' }}>
           <div>
             <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              📦 {tr(lang, 'وصف العبوة (عدد الأقراص / الحجم):', 'Package Details:')}
+               {tr(lang,'وصف العبوة (عدد الأقراص / الحجم):','Package Details:')}
             </label>
             <input
               type="text"
@@ -434,7 +433,7 @@ export function QuickProductEditorModal({
 
           <div>
             <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-              🏭 {tr(lang, 'الشركة المصنعة:', 'Manufacturer:')}
+               {tr(lang,'الشركة المصنعة:','Manufacturer:')}
             </label>
             <input
               type="text"
@@ -468,7 +467,7 @@ export function QuickProductEditorModal({
                 onClick={handleDelete}
                 disabled={saving}
               >
-                🗑️ {tr(lang, 'حذف العبوة', 'Delete')}
+                 {tr(lang,'حذف العبوة','Delete')}
               </button>
             )}
           </div>
@@ -480,7 +479,7 @@ export function QuickProductEditorModal({
             <button type="submit" className="btn" style={{ background: '#15803d' }} disabled={saving}>
               {saving
                 ? tr(lang, 'جارٍ النشر الفوري...', 'Publishing Live...')
-                : `💾 ${tr(lang, 'حفظ ونشر فوري لجميع المستخدمين', 'Save & Publish Live')}`}
+                :`${tr(lang,'حفظ ونشر فوري لجميع المستخدمين','Save & Publish Live')}`}
             </button>
           </div>
         </div>
@@ -557,9 +556,8 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
       setToastMsg(
         tr(
           lang,
-          `✅ تم تحديث (${isAr ? p.tradeNameAr : p.tradeNameEn}) ونشره فوراً لجميع المستخدمين!`,
-          `✅ Updated (${p.tradeNameEn}) and published live to all users!`
-        )
+          `تم تحديث (${isAr ? p.tradeNameAr : p.tradeNameEn}) ونشره فوراً لجميع المستخدمين!`,
+          `Updated (${p.tradeNameEn}) and published live to all users!`        )
       );
       window.setTimeout(() => setToastMsg(''), 3500);
     } catch {
@@ -575,7 +573,7 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
           <div>
             <span className="badge" style={{ background: '#dcfce7', color: '#166534', fontWeight: 800, marginBottom: '6px' }}>
-              ☁️ {tr(lang, 'متصل مباشرة بقاعدة بيانات Firebase للمستخدمين (Real-Time Sync)', 'Live Firestore Sync Active')}
+               {tr(lang,'متصل مباشرة بقاعدة بيانات Firebase للمستخدمين (Real-Time Sync)','Live Firestore Sync Active')}
             </span>
             <h2 style={{ margin: '4px 0' }}>
               {tr(
@@ -601,7 +599,7 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
               setIsCreatingNew(true);
             }}
           >
-            ➕ {tr(lang, 'إضافة دواء / عبوة تجارية جديدة', 'Add New Commercial Drug')}
+             {tr(lang,'إضافة دواء / عبوة تجارية جديدة','Add New Commercial Drug')}
           </button>
         </div>
 
@@ -639,7 +637,7 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
         <div className="grid" style={{ gap: '10px' }}>
           <div>
             <label className="small muted" style={{ fontWeight: 700 }}>
-              🔍 {tr(lang, 'بحث سريع بالاسم أو الباركود أو الكود:', 'Quick Search:')}
+               {tr(lang,'بحث سريع بالاسم أو الباركود أو الكود:','Quick Search:')}
             </label>
             <input
               type="search"
@@ -652,7 +650,7 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
 
           <div>
             <label className="small muted" style={{ fontWeight: 700 }}>
-              🧪 {tr(lang, 'تصفية حسب المادة الفعالة:', 'Filter by Active Ingredient:')}
+               {tr(lang,'تصفية حسب المادة الفعالة:','Filter by Active Ingredient:')}
             </label>
             <select className="input" value={ingFilter} onChange={(e) => setIngFilter(e.target.value)}>
               <option value="all">{tr(lang, 'جميع المواد الفعالة (32)', 'All Active Ingredients (32)')}</option>
@@ -666,7 +664,7 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
 
           <div>
             <label className="small muted" style={{ fontWeight: 700 }}>
-              🏷️ {tr(lang, 'تصفية حسب حالة الباركود والتعديل:', 'Filter by Status:')}
+               {tr(lang,'تصفية حسب حالة الباركود والتعديل:','Filter by Status:')}
             </label>
             <select
               className="input"
@@ -712,14 +710,14 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
                         <b>{isAr ? p.tradeNameAr : p.tradeNameEn}</b>
                         {isModified && (
                           <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontSize: '0.7rem' }}>
-                            {tr(lang, 'معدّل سحابياً ✓', 'Edited ✓')}
+                            {tr(lang,'معدّل سحابياً','Edited')}
                           </span>
                         )}
                       </div>
                       <div className="small muted">{isAr ? p.tradeNameEn : p.tradeNameAr}</div>
                       <div className="small">
                         <Link to={`/medicine/${p.activeIngredientId}`} className="muted">
-                          🔗 {p.scientificComposition}
+                           {p.scientificComposition}
                         </Link>
                       </div>
                     </td>
@@ -776,8 +774,7 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
                           {savingRowId === p.productId
                             ? '...'
                             : isDirty
-                              ? `💾 ${tr(lang, 'حفظ الآن', 'Save Now')}`
-                              : `💾 ${tr(lang, 'حفظ', 'Save')}`}
+                              ?`${tr(lang,'حفظ الآن','Save Now')}`                              :`${tr(lang,'حفظ','Save')}`}
                         </button>
                         <button
                           type="button"
@@ -788,7 +785,7 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
                             setIsCreatingNew(false);
                           }}
                         >
-                          ✏️ {tr(lang, 'كامل البيانات', 'Full Edit')}
+                           {tr(lang,'كامل البيانات','Full Edit')}
                         </button>
                       </div>
                     </td>
@@ -813,9 +810,8 @@ export default function CommercialCatalogTab({ uid }: { uid: string }) {
             setToastMsg(
               tr(
                 lang,
-                `✅ تم حفظ ونشر (${isAr ? saved.tradeNameAr : saved.tradeNameEn}) لجميع المستخدمين بنجاح!`,
-                `✅ Saved & published (${saved.tradeNameEn}) live to all users!`
-              )
+                `تم حفظ ونشر (${isAr ? saved.tradeNameAr : saved.tradeNameEn}) لجميع المستخدمين بنجاح!`,
+                `Saved & published (${saved.tradeNameEn}) live to all users!`              )
             );
             window.setTimeout(() => setToastMsg(''), 4000);
           }}

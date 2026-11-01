@@ -153,7 +153,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
       ctx.font = 'bold 40px "IBM Plex Sans Arabic", system-ui, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('🛡️', 0, 2);
+      ctx.fillText('', 0, 2);
       ctx.restore();
 
       // Platform Title
@@ -261,12 +261,11 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
       ctx.fillText(
         tr(
           lang,
-          '🤝 ميثاق وتعهد سفير الوعي الدوائي:',
-          '🤝 Antibiotic Stewardship Ambassador Pledge:',
-          '🤝 Engagement de l’Ambassadeur du Bon Usage :',
-          '🤝 Compromiso del Embajador de Uso Prudente:',
-          '🤝 Versprechen des Botschafters für Antibiotika-Bewusstsein:'
-        ),
+          'ميثاق وتعهد سفير الوعي الدوائي:',
+          'Antibiotic Stewardship Ambassador Pledge:',
+          'Engagement de l’Ambassadeur du Bon Usage :',
+          'Compromiso del Embajador de Uso Prudente:',
+          'Versprechen des Botschafters für Antibiotika-Bewusstsein:'        ),
         W / 2,
         642
       );
@@ -469,7 +468,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
         <div className="head" style={{ borderBottom: '1px solid rgba(148,163,184,0.2)', paddingBottom: '10px' }}>
           <div>
             <h3 style={{ margin: 0, color: '#fde047', fontSize: '1.15rem' }}>
-              🏅{' '}
+               
               {tr(
                 lang,
                 'شهادة سفير الوعي بالمضادات الحيوية',
@@ -480,7 +479,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
               )}
             </h3>
             <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>
-              ☁️{' '}
+               
               {tr(
                 lang,
                 'محفوظة في سجل شهاداتك — يمكنك تعديل الاسم وتحميلها كصورة عالية الجودة',
@@ -504,14 +503,14 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
               fontWeight: 700,
             }}
           >
-            ✕
+            
           </button>
         </div>
 
         {/* Name Customization Input */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', background: 'rgba(15, 39, 56, 0.85)', padding: '10px 14px', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.25)' }}>
           <label htmlFor="cert-recipient-name" style={{ fontSize: '0.85rem', fontWeight: 700, color: '#7dd3fc', whiteSpace: 'nowrap' }}>
-            ✍️ {tr(lang, 'الاسم المطبوع على الشهادة:', 'Name on Certificate:', 'Nom sur le certificat :', 'Nombre en el certificado:', 'Name auf dem Zertifikat:')}
+             {tr(lang,'الاسم المطبوع على الشهادة:','Name on Certificate:','Nom sur le certificat :','Nombre en el certificado:','Name auf dem Zertifikat:')}
           </label>
           <input
             id="cert-recipient-name"
@@ -555,7 +554,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
               className="btn"
               style={{ background: '#f59e0b', borderColor: '#f59e0b', color: '#041018', fontWeight: 800 }}
             >
-              📥 {tr(lang, 'تحميل الشهادة كصورة (HD PNG)', 'Download Certificate (HD PNG)', 'Télécharger (PNG HD)', 'Descargar Certificado (PNG HD)', 'Zertifikat herunterladen (HD PNG)')}
+               {tr(lang,'تحميل الشهادة كصورة (HD PNG)','Download Certificate (HD PNG)','Télécharger (PNG HD)','Descargar Certificado (PNG HD)','Zertifikat herunterladen (HD PNG)')}
             </button>
             <button
               type="button"
@@ -563,7 +562,7 @@ export default function AmbassadorCertificateModal({ cert, onClose, onUpdateName
               className="btn"
               style={{ background: '#0e9aa7', borderColor: '#0e9aa7', color: '#ffffff' }}
             >
-              📤 {tr(lang, 'مشاركة الشهادة', 'Share Certificate', 'Partager', 'Compartir', 'Zertifikat teilen')}
+               {tr(lang,'مشاركة الشهادة','Share Certificate','Partager','Compartir','Zertifikat teilen')}
             </button>
           </div>
         </div>

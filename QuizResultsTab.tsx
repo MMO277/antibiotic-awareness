@@ -18,9 +18,9 @@ interface QuizResult {
 }
 
 const LEVEL_LABELS: Record<string, { ar: string; en: string; color: string; emoji: string }> = {
-  easy:   { ar: 'مبتدئ',  en: 'Beginner',     color: '#16a34a', emoji: '🌱' },
-  medium: { ar: 'متوسط',  en: 'Intermediate', color: '#d97706', emoji: '⚗️' },
-  hard:   { ar: 'متقدم',  en: 'Advanced',     color: '#dc2626', emoji: '🔬' },
+  easy: { ar:'مبتدئ', en:'Beginner', color:'#16a34a', emoji:''},
+  medium: { ar:'متوسط', en:'Intermediate', color:'#d97706', emoji:''},
+  hard: { ar:'متقدم', en:'Advanced', color:'#dc2626', emoji:''},
 };
 
 export default function QuizResultsTab() {
@@ -72,10 +72,10 @@ export default function QuizResultsTab() {
       {/* Stats cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
         {[
-          { label: tr(lang, 'إجمالي المحاولات', 'Total Attempts', 'Total tentatives', 'Total intentos'), value: total, color: '#0284c7', emoji: '📊' },
-          { label: tr(lang, 'مستخدمون مختلفون', 'Unique Users', 'Utilisateurs uniques', 'Usuarios únicos'), value: uniqueUsers, color: '#7c3aed', emoji: '👥' },
-          { label: tr(lang, 'نجحوا', 'Passed', 'Réussis', 'Aprobaron'), value: passed, color: '#16a34a', emoji: '✅' },
-          { label: tr(lang, 'متوسط النتيجة', 'Avg Score', 'Score moyen', 'Puntuación media'), value: `${avgPct}%`, color: '#d97706', emoji: '🎯' },
+          { label: tr(lang,'إجمالي المحاولات','Total Attempts','Total tentatives','Total intentos'), value: total, color:'#0284c7', emoji:''},
+          { label: tr(lang,'مستخدمون مختلفون','Unique Users','Utilisateurs uniques','Usuarios únicos'), value: uniqueUsers, color:'#7c3aed', emoji:''},
+          { label: tr(lang,'نجحوا','Passed','Réussis','Aprobaron'), value: passed, color:'#16a34a', emoji:''},
+          { label: tr(lang,'متوسط النتيجة','Avg Score','Score moyen','Puntuación media'), value:`${avgPct}%`, color:'#d97706', emoji:''},
         ].map((s, i) => (
           <div key={i} style={{ padding: '16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', textAlign: 'center' }}>
             <div style={{ fontSize: '1.6rem' }}>{s.emoji}</div>
@@ -151,7 +151,7 @@ export default function QuizResultsTab() {
                     onMouseEnter={(e) => (e.currentTarget.style.background = '#f8fafc')}
                     onMouseLeave={(e) => (e.currentTarget.style.background = '')}>
                     <td style={{ padding: '10px 12px', color: '#334155' }}>
-                      {r.isAnonymous ? '👤 ' : '🔐 '}{userName}
+                      {r.isAnonymous ?'':''}{userName}
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       <span style={{
@@ -187,8 +187,8 @@ export default function QuizResultsTab() {
                         fontWeight: 600,
                       }}>
                         {r.passed
-                          ? tr(lang, 'ناجح ✓', 'Passed ✓', 'Réussi ✓', 'Aprobado ✓')
-                          : tr(lang, 'راسب ✗', 'Failed ✗', 'Échoué ✗', 'Reprobado ✗')}
+                          ? tr(lang,'ناجح','Passed','Réussi','Aprobado')
+                          : tr(lang,'راسب','Failed','Échoué','Reprobado')}
                       </span>
                     </td>
                     <td style={{ padding: '10px 12px', color: '#94a3b8', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>

@@ -166,20 +166,20 @@ export default function HealthProfile() {
   const renderSeverityBadge = (s: AllergySeverity) => {
     switch (s) {
       case 'life_threatening':
-        return <span className="sev-badge severe">🚨 {isAr ? 'مهددة للحياة (صدمة تحسسية)' : 'Life Threatening'}</span>;
+        return <span className="sev-badge severe"> {isAr ?'مهددة للحياة (صدمة تحسسية)':'Life Threatening'}</span>;
       case 'severe':
-        return <span className="sev-badge severe">🔴 {isAr ? 'شديدة (تورم/ضيق تنفس)' : 'Severe'}</span>;
+        return <span className="sev-badge severe"> {isAr ?'شديدة (تورم/ضيق تنفس)':'Severe'}</span>;
       case 'moderate':
-        return <span className="sev-badge moderate">🟡 {isAr ? 'متوسطة (طفح جلدي واسع)' : 'Moderate'}</span>;
+        return <span className="sev-badge moderate"> {isAr ?'متوسطة (طفح جلدي واسع)':'Moderate'}</span>;
       case 'mild':
-        return <span className="sev-badge safe">🟢 {isAr ? 'خفيفة (حكة موضعية)' : 'Mild'}</span>;
+        return <span className="sev-badge safe"> {isAr ?'خفيفة (حكة موضعية)':'Mild'}</span>;
     }
   };
 
   return (
     <main className="wrap stack">
       <header className="page-head">
-        <h1>👤 {isAr ? 'ملف صحتي وحساسيتي ورحلة علاجي' : 'My Health Profile, Allergy Passport & Treatment Journey'}</h1>
+        <h1> {isAr ?'ملف صحتي وحساسيتي ورحلة علاجي':'My Health Profile, Allergy Passport & Treatment Journey'}</h1>
         <p className="muted">
           {isAr
             ? 'سجل شخصي متكامل لتوثيق حساسيتك الدوائية، روشتاتك الموثّقة، وجداول جرعاتك المحفوظة في حسابك عبر جميع أجهزتك.'
@@ -196,7 +196,7 @@ export default function HealthProfile() {
       <section className="card highlight-card profile-banner">
         <div className="banner-content">
           <div>
-            <h2>🛡️ {isAr ? 'فاحص الحساسية والأمان الدوائي' : 'Smart Allergy Safety Check'}</h2>
+            <h2> {isAr ?'فاحص الحساسية والأمان الدوائي':'Smart Allergy Safety Check'}</h2>
             <p className="small">
               {isAr
                 ? 'تحقق فوراً مما إذا كان أي مضاد حيوي يحتوي على مواد فعالة تطابق حساسيتك المسجلة أو يسبب حساسية متصالبة (Cross-Reactivity).'
@@ -205,10 +205,10 @@ export default function HealthProfile() {
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <Link to="/allergy-checker" className="btn btn-listen-all">
-              ⚡ {isAr ? 'افحص أمان دواء الآن' : 'Check a Medicine'}
+               {isAr ?'افحص أمان دواء الآن':'Check a Medicine'}
             </Link>
             <Link to="/prescription-radar" className="btn-secondary">
-              📡 {isAr ? 'رادار الروشتة ورحلة العلاج' : 'Prescription Radar & Journey'}
+               {isAr ?'رادار الروشتة ورحلة العلاج':'Prescription Radar & Journey'}
             </Link>
           </div>
         </div>
@@ -218,28 +218,28 @@ export default function HealthProfile() {
       <div className="kpi-grid">
         <div className="kpi-item unconfirmed">
           <span className="kpi-num">{profile.allergies.length}</span>
-          <span className="kpi-label">{isAr ? 'أدوية تسبب حساسية ⚠️' : 'Documented Allergies'}</span>
+          <span className="kpi-label">{isAr ?'أدوية تسبب حساسية':'Documented Allergies'}</span>
         </div>
         <div className="kpi-item taken">
           <span className="kpi-num">{schedules.length}</span>
-          <span className="kpi-label">{isAr ? 'جداول علاجية مفعّلة 🗓️' : 'Active Treatment Schedules'}</span>
+          <span className="kpi-label">{isAr ?'جداول علاجية مفعّلة':'Active Treatment Schedules'}</span>
         </div>
         <div className="kpi-item upcoming">
           <span className="kpi-num">{prescriptions.length}</span>
-          <span className="kpi-label">{isAr ? 'روشتات محفوظة بالحساب 📋' : 'Saved Prescriptions'}</span>
+          <span className="kpi-label">{isAr ?'روشتات محفوظة بالحساب':'Saved Prescriptions'}</span>
         </div>
         <div className="kpi-item">
           <span className="kpi-num">{profile.medications.filter((m) => m.status === 'active').length}</span>
-          <span className="kpi-label">{isAr ? 'أدوية بسجل الملف 💊' : 'Profile Medications'}</span>
+          <span className="kpi-label">{isAr ?'أدوية بسجل الملف':'Profile Medications'}</span>
         </div>
       </div>
 
       {/* Personal Identity Card */}
       <section className="card stack">
         <div className="card-head-row">
-          <h2>📋 {isAr ? 'البيانات الشخصية للمريض:' : 'Patient Details:'}</h2>
+          <h2> {isAr ?'البيانات الشخصية للمريض:':'Patient Details:'}</h2>
           <button type="button" className="btn-secondary" onClick={() => setEditingPersonal(!editingPersonal)}>
-            {editingPersonal ? (isAr ? 'إلغاء' : 'Cancel') : (isAr ? '✏️ تعديل البيانات' : '✏️ Edit')}
+            {editingPersonal ? (isAr ?'إلغاء':'Cancel') : (isAr ?'تعديل البيانات':'Edit')}
           </button>
         </div>
 
@@ -266,7 +266,7 @@ export default function HealthProfile() {
               </div>
             </div>
             <button type="submit" className="btn" style={{ alignSelf: 'flex-start' }}>
-              💾 {isAr ? 'حفظ البيانات' : 'Save'}
+               {isAr ?'حفظ البيانات':'Save'}
             </button>
           </form>
         ) : (
@@ -284,7 +284,7 @@ export default function HealthProfile() {
         <div className="card-head-row" style={{ flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <h2>
-              🗓️{' '}
+               
               {isAr
                 ? 'رحلتي العلاجية وروشتاتي المحفوظة بحسابي (Complete Treatment Journey):'
                 : 'My Saved Treatment Journey & Verified Prescriptions:'}
@@ -297,14 +297,14 @@ export default function HealthProfile() {
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <Link to="/prescription-radar" className="btn small">
-              📡 {isAr ? 'التقاط/فحص روشتة في الرادار' : 'Open Prescription Radar'}
+               {isAr ?'التقاط/فحص روشتة في الرادار':'Open Prescription Radar'}
             </Link>
             <Link to="/tracker" className="btn-secondary small">
-              ⏱️ {isAr ? 'متابع الجرعات والتقرير' : 'Open Dose Tracker'}
+              ⏱ {isAr ?'متابع الجرعات والتقرير':'Open Dose Tracker'}
             </Link>
             {(schedules.length > 0 || prescriptions.length > 0) && (
               <button type="button" className="btn-secondary small" onClick={exportFullTreatmentJourney}>
-                📥 {isAr ? 'تصدير تقرير الرحلة العلاجية (JSON)' : 'Export Journey Report (JSON)'}
+                 {isAr ?'تصدير تقرير الرحلة العلاجية (JSON)':'Export Journey Report (JSON)'}
               </button>
             )}
           </div>
@@ -312,8 +312,7 @@ export default function HealthProfile() {
 
         {schedules.length === 0 && prescriptions.length === 0 ? (
           <div className="empty-state-box">
-            <span>📡</span>
-            <p>
+                        <p>
               {isAr
                 ? 'لا توجد روشتات أو جداول علاجية محفوظة بعد. يمكنك تصوير الروشتة أو إدخالها في رادار الروشتة لبدء رحلة العلاج.'
                 : 'No saved prescriptions or active treatment schedules yet. Capture or enter a prescription in Prescription Radar to begin.'}
@@ -328,7 +327,7 @@ export default function HealthProfile() {
                   <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
                       <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
-                        <h4 style={{ margin: 0 }}>💊 {sch.medicineName}</h4>
+                        <h4 style={{ margin: 0 }}> {sch.medicineName}</h4>
                         <span className="verification-badge verified">
                           {formatVerificationStatusLabel(sch.verificationStatus, isAr)}
                         </span>
@@ -359,10 +358,10 @@ export default function HealthProfile() {
                         className="btn-secondary small"
                         onClick={() => downloadScheduleIcs(sch, isAr)}
                       >
-                        📅 {isAr ? 'منبهات (.ics)' : 'Alarms (.ics)'}
+                         {isAr ?'منبهات (.ics)':'Alarms (.ics)'}
                       </button>
                       <Link to="/tracker" className="btn small">
-                        ⏱️ {isAr ? 'تسجيل الجرعات' : 'Log Doses'}
+                        ⏱ {isAr ?'تسجيل الجرعات':'Log Doses'}
                       </Link>
                     </div>
                   </div>
@@ -377,7 +376,7 @@ export default function HealthProfile() {
                   <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
                       <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
-                        <strong>📋 {rx.medicineName}</strong>
+                        <strong> {rx.medicineName}</strong>
                         <span
                           className={`verification-badge ${
                             rx.verificationStatus === 'needs_clarification' ? 'clarify' : 'unverified'
@@ -391,7 +390,7 @@ export default function HealthProfile() {
                       </small>
                     </div>
                     <Link to="/prescription-radar" className="btn-secondary small">
-                      🔍 {isAr ? 'مراجعة وتوثيق في الرادار' : 'Review & Verify in Radar'}
+                       {isAr ?'مراجعة وتوثيق في الرادار':'Review & Verify in Radar'}
                     </Link>
                   </div>
                 </div>
@@ -404,7 +403,7 @@ export default function HealthProfile() {
       <section className="card stack">
         <div className="card-head-row">
           <div>
-            <h2>🚨 {isAr ? 'سجل الحساسية الدوائية (My Allergies):' : 'Documented Drug Allergies:'}</h2>
+            <h2> {isAr ?'سجل الحساسية الدوائية (My Allergies):':'Documented Drug Allergies:'}</h2>
             <p className="small muted">
               {isAr
                 ? 'الأدوية التي تعرضت منها سابقاً لأي تفاعل تحسسي أو طفح جلدي أو ضيق تنفس.'
@@ -412,14 +411,13 @@ export default function HealthProfile() {
             </p>
           </div>
           <button type="button" className="btn" onClick={() => setShowAllergyModal(true)}>
-            ➕ {isAr ? 'تسجيل دواء يسبب حساسية' : 'Add Allergy Record'}
+             {isAr ?'تسجيل دواء يسبب حساسية':'Add Allergy Record'}
           </button>
         </div>
 
         {profile.allergies.length === 0 ? (
           <div className="empty-state-box">
-            <span>🛡️</span>
-            <p>{isAr ? 'لا توجد أدوية مسببة للحساسية مسجلة حالياً في ملفك.' : 'No drug allergies documented yet.'}</p>
+                        <p>{isAr ? 'لا توجد أدوية مسببة للحساسية مسجلة حالياً في ملفك.' : 'No drug allergies documented yet.'}</p>
           </div>
         ) : (
           <div className="allergy-cards-stack">
@@ -429,7 +427,7 @@ export default function HealthProfile() {
                 <div key={all.id} className="allergy-item-card">
                   <div className="allergy-item-head">
                     <div>
-                      <h3 className="allergy-drug-name">⚠️ {all.drugName}</h3>
+                      <h3 className="allergy-drug-name"> {all.drugName}</h3>
                       <span className="small muted">
                         <b>{isAr ? 'العائلة الدوائية:' : 'Family:'}</b> {cat ? pick(cat.name, lang) : all.allergenKey}
                       </span>
@@ -437,7 +435,7 @@ export default function HealthProfile() {
                     <div className="allergy-badges">
                       {renderSeverityBadge(all.severity)}
                       <button type="button" className="btn-secondary danger" onClick={() => deleteAllergy(all.id)}>
-                        🗑️
+                        
                       </button>
                     </div>
                   </div>
@@ -448,11 +446,11 @@ export default function HealthProfile() {
                         <b>{isAr ? 'الأعراض التي حدثت:' : 'Symptoms:'}</b> {all.reportedSymptoms}
                       </p>
                     )}
-                    {all.notes && <p className="notes-line">📝 {all.notes}</p>}
+                    {all.notes && <p className="notes-line"> {all.notes}</p>}
                     <small className="muted evidence-tag">
                       {isAr ? 'حالة التوثيق:' : 'Evidence:'}{' '}
                       {all.evidenceStatus === 'clinically_verified'
-                        ? (isAr ? 'مؤكدة طبياً بفحص الحساسية ✅' : 'Clinically Verified')
+                        ? (isAr ?'مؤكدة طبياً بفحص الحساسية':'Clinically Verified')
                         : (isAr ? 'أبلغ عنها المريض' : 'Patient-Reported')}
                     </small>
                   </div>
@@ -467,7 +465,7 @@ export default function HealthProfile() {
       <section className="card stack">
         <div className="card-head-row">
           <div>
-            <h2>💊 {isAr ? 'قائمة أدويتي الحالية والسابقة:' : 'My Medications:'}</h2>
+            <h2> {isAr ?'قائمة أدويتي الحالية والسابقة:':'My Medications:'}</h2>
             <p className="small muted">
               {isAr
                 ? 'سجل للأدوية التي تتناولها حالياً للرجوع إليها وفحص تداخلاتها.'
@@ -475,14 +473,13 @@ export default function HealthProfile() {
             </p>
           </div>
           <button type="button" className="btn-secondary" onClick={() => setShowMedModal(true)}>
-            ➕ {isAr ? 'إضافة دواء' : 'Add Medication'}
+             {isAr ?'إضافة دواء':'Add Medication'}
           </button>
         </div>
 
         {profile.medications.length === 0 ? (
           <div className="empty-state-box">
-            <span>💊</span>
-            <p>{isAr ? 'لا توجد أدوية مسجلة حالياً.' : 'No medications recorded.'}</p>
+                        <p>{isAr ? 'لا توجد أدوية مسجلة حالياً.' : 'No medications recorded.'}</p>
           </div>
         ) : (
           <div className="med-cards-stack">
@@ -509,7 +506,7 @@ export default function HealthProfile() {
                             ? 'مكتمل'
                             : 'Past'}
                     </span>
-                    <button type="button" className="undo-btn" onClick={() => deleteMedication(m.id)}>✕</button>
+                    <button type="button"className="undo-btn"onClick={() => deleteMedication(m.id)}></button>
                   </div>
                 </div>
               </div>
@@ -521,13 +518,13 @@ export default function HealthProfile() {
       {/* Footer Management Controls */}
       <div className="profile-footer-actions">
         <button type="button" className="btn-secondary" onClick={exportProfileData}>
-          📥 {isAr ? 'تصدير وحفظ الملف الصحي (JSON)' : 'Export Health Profile (JSON)'}
+           {isAr ?'تصدير وحفظ الملف الصحي (JSON)':'Export Health Profile (JSON)'}
         </button>
         <button type="button" className="btn-secondary" onClick={exportFullTreatmentJourney}>
-          📄 {isAr ? 'تصدير تقرير رحلة العلاج الكامل (JSON)' : 'Export Complete Treatment Journey (JSON)'}
+           {isAr ?'تصدير تقرير رحلة العلاج الكامل (JSON)':'Export Complete Treatment Journey (JSON)'}
         </button>
         <button type="button" className="btn-secondary danger" onClick={clearAllData}>
-          🗑️ {isAr ? 'مسح بيانات الملف' : 'Reset Profile'}
+           {isAr ?'مسح بيانات الملف':'Reset Profile'}
         </button>
       </div>
 
@@ -537,7 +534,7 @@ export default function HealthProfile() {
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
               <h3>{isAr ? 'تسجيل دواء يسبب حساسية للمريض' : 'Record Drug Allergy'}</h3>
-              <button type="button" className="close-btn" onClick={() => setShowAllergyModal(false)}>✕</button>
+              <button type="button"className="close-btn"onClick={() => setShowAllergyModal(false)}></button>
             </div>
 
             <form onSubmit={addAllergy} className="stack modal-form">
@@ -595,7 +592,7 @@ export default function HealthProfile() {
 
               <div className="modal-actions">
                 <button type="submit" className="btn">
-                  💾 {isAr ? 'حفظ الحساسية' : 'Save Record'}
+                   {isAr ?'حفظ الحساسية':'Save Record'}
                 </button>
                 <button type="button" className="btn-secondary" onClick={() => setShowAllergyModal(false)}>
                   {isAr ? 'إلغاء' : 'Cancel'}
@@ -613,7 +610,7 @@ export default function HealthProfile() {
           <div className="modal-card" onClick={(e) => e.stopPropagation()}>
             <div className="modal-head">
               <h3>{isAr ? 'إضافة دواء إلى السجل' : 'Add Medication'}</h3>
-              <button type="button" className="close-btn" onClick={() => setShowMedModal(false)}>✕</button>
+              <button type="button"className="close-btn"onClick={() => setShowMedModal(false)}></button>
             </div>
 
             <form onSubmit={addMedication} className="stack modal-form">
@@ -645,7 +642,7 @@ export default function HealthProfile() {
                 </select>
               </div>
               <div className="modal-actions">
-                <button type="submit" className="btn">💾 {isAr ? 'حفظ الدواء' : 'Save'}</button>
+                <button type="submit"className="btn"> {isAr ?'حفظ الدواء':'Save'}</button>
                 <button type="button" className="btn-secondary" onClick={() => setShowMedModal(false)}>{isAr ? 'إلغاء' : 'Cancel'}</button>
               </div>
             </form>

@@ -251,10 +251,10 @@ export default function ResearchTab() {
               <option value="post">{t('post')}</option>
             </select>
             <button type="button" onClick={exportCSV} disabled={!rows || rows.length === 0} className="btn small ghost">
-              📥 {t('resExport')}
+               {t('resExport')}
             </button>
             <button type="button" onClick={clearAll} disabled={!rows || rows.length === 0} className="btn small danger">
-              🗑️ {t('resDelete')}
+               {t('resDelete')}
             </button>
           </div>
         </div>

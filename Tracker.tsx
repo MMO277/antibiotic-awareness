@@ -227,8 +227,8 @@ export default function Tracker() {
         {
           type: 'ocr_extracted_unverified',
           medicineName: extracted.detectedDrugName || (isAr ? 'روشتة مصورة' : 'Captured Prescription'),
-          summaryAr: `📷 تم استخراج بيانات أولية غير موثّقة من صورة الروشتة (${file.name}) — بانتظار المراجعة والتوثيق اليدوي قبل الجدولة.`,
-          summaryEn: `📷 Extracted unverified prescription details from image (${file.name}) — awaiting patient/clinician verification before scheduling.`,
+          summaryAr:`تم استخراج بيانات أولية غير موثّقة من صورة الروشتة (${file.name}) — بانتظار المراجعة والتوثيق اليدوي قبل الجدولة.`,
+          summaryEn:`Extracted unverified prescription details from image (${file.name}) — awaiting patient/clinician verification before scheduling.`,
         },
       ]);
     } catch {
@@ -292,11 +292,9 @@ export default function Tracker() {
         prescriptionId: rxId,
         medicineName: savedRx.medicineName,
         summaryAr: liveValidation.hasBlockingFlags
-          ? `🚨 تم حفظ الروشتة (${savedRx.medicineName}) بحالة «تحتاج لتوضيح من الطبيب/الصيدلي» بدون تفعيل جدول جرعات.`
-          : `📋 تم حفظ الروشتة (${savedRx.medicineName}) كمسودة غير موثّقة لمراجعتها قبل الجدولة.`,
+          ?`تم حفظ الروشتة (${savedRx.medicineName}) بحالة «تحتاج لتوضيح من الطبيب/الصيدلي» بدون تفعيل جدول جرعات.`          :`تم حفظ الروشتة (${savedRx.medicineName}) كمسودة غير موثّقة لمراجعتها قبل الجدولة.`,
         summaryEn: liveValidation.hasBlockingFlags
-          ? `🚨 Saved prescription (${savedRx.medicineName}) as "Flagged for Professional Clarification" without scheduling doses.`
-          : `📋 Saved prescription (${savedRx.medicineName}) as unverified draft pending verification.`,
+          ?`Saved prescription (${savedRx.medicineName}) as"Flagged for Professional Clarification"without scheduling doses.`          :`Saved prescription (${savedRx.medicineName}) as unverified draft pending verification.`,
       }
     );
 
@@ -410,8 +408,8 @@ export default function Tracker() {
         prescriptionId: rxId,
         scheduleId: id,
         medicineName: newSchedule.medicineName,
-        summaryAr: `✅ تم التحقق من تعليمات الروشتة للدواء (${newSchedule.medicineName} — ${newSchedule.prescribedDose}) وتوثيقها بواسطة المريض.`,
-        summaryEn: `✅ Verified prescription instructions for (${newSchedule.medicineName} — ${newSchedule.prescribedDose}).`,
+        summaryAr:`تم التحقق من تعليمات الروشتة للدواء (${newSchedule.medicineName} — ${newSchedule.prescribedDose}) وتوثيقها بواسطة المريض.`,
+        summaryEn:`Verified prescription instructions for (${newSchedule.medicineName} — ${newSchedule.prescribedDose}).`,
       },
       {
         type: editingScheduleId ? ('schedule_updated' as const) : ('schedule_created' as const),
@@ -419,11 +417,9 @@ export default function Tracker() {
         scheduleId: id,
         medicineName: newSchedule.medicineName,
         summaryAr: editingScheduleId
-          ? `🗓️ تم تحديث جدول الجرعات للدواء (${newSchedule.medicineName}) لمدة ${newSchedule.durationDays} أيام.`
-          : `🗓️ تم إنشاء وتفعيل جدول الجرعات للدواء (${newSchedule.medicineName}) لمدة ${newSchedule.durationDays} أيام (${finalDoses.length} جرعة).`,
+          ?`تم تحديث جدول الجرعات للدواء (${newSchedule.medicineName}) لمدة ${newSchedule.durationDays} أيام.`          :`تم إنشاء وتفعيل جدول الجرعات للدواء (${newSchedule.medicineName}) لمدة ${newSchedule.durationDays} أيام (${finalDoses.length} جرعة).`,
         summaryEn: editingScheduleId
-          ? `🗓️ Updated treatment schedule for (${newSchedule.medicineName}) for ${newSchedule.durationDays} days.`
-          : `🗓️ Created active treatment schedule for (${newSchedule.medicineName}) for ${newSchedule.durationDays} days (${finalDoses.length} doses).`,
+          ?`Updated treatment schedule for (${newSchedule.medicineName}) for ${newSchedule.durationDays} days.`          :`Created active treatment schedule for (${newSchedule.medicineName}) for ${newSchedule.durationDays} days (${finalDoses.length} doses).`,
       },
     ];
 
@@ -629,7 +625,7 @@ export default function Tracker() {
       {activeDueBanner && (
         <section className="card no-print" style={{ background: '#ecfdf5', border: '2px solid #10b981', color: '#065f46' }}>
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            <strong>🔔 {activeDueBanner}</strong>
+            <strong> {activeDueBanner}</strong>
             <button type="button" className="btn-secondary small" onClick={() => setActiveDueBanner(null)}>
               {isAr ? 'إغلاق التنبيه' : 'Dismiss'}
             </button>
@@ -662,7 +658,7 @@ export default function Tracker() {
           <div className="radar-sync-bar local">
             <div>
               <strong>
-                👤{' '}
+                 
                 {isAr
                   ? 'وضع الزائر — البيانات محفوظة محلياً على هذا الجهاز فقط'
                   : 'Guest Mode — Data Saved Locally on This Device Only'}
@@ -674,13 +670,13 @@ export default function Tracker() {
               </p>
             </div>
             <button type="button" className="btn small" onClick={() => openAuthModal('login')}>
-              🔐 {isAr ? 'تسجيل الدخول للمزامنة' : 'Sign In to Sync'}
+               {isAr ?'تسجيل الدخول للمزامنة':'Sign In to Sync'}
             </button>
           </div>
         ) : syncStatus === 'loading' ? (
           <div className="radar-sync-bar loading">
             <strong>
-              🔄{' '}
+               
               {isAr
                 ? 'جارٍ مزامنة وتحميل جداولك العلاجية من السحابة...'
                 : 'Loading and syncing your cloud treatment schedules...'}
@@ -699,21 +695,21 @@ export default function Tracker() {
           <div className="radar-sync-bar offline">
             <div>
               <strong>
-                📡{' '}
+                 
                 {isAr
                   ? 'محفوظ محلياً على هذا الجهاز — في انتظار الإنترنت لتأكيد الحفظ السحابي'
                   : 'Saved Locally — Waiting for Internet to Confirm Cloud Sync'}
               </strong>
             </div>
             <button type="button" className="btn-secondary small" onClick={retrySync}>
-              🔄 {isAr ? 'إعادة المحاولة' : 'Retry'}
+               {isAr ?'إعادة المحاولة':'Retry'}
             </button>
           </div>
         ) : syncStatus === 'error' ? (
           <div className="radar-sync-bar error">
             <div>
               <strong>
-                ⚠️{' '}
+                 
                 {isAr
                   ? 'تعذر تأكيد الحفظ السحابي (محفوظ محلياً على هذا الجهاز فقط)'
                   : 'Cloud Sync Unconfirmed (Saved Locally on This Device Only)'}
@@ -721,16 +717,15 @@ export default function Tracker() {
               {syncError && <p className="small" style={{ margin: '2px 0 0' }}>{syncError}</p>}
             </div>
             <button type="button" className="btn-secondary small" onClick={retrySync}>
-              🔄 {isAr ? 'إعادة المحاولة' : 'Retry'}
+               {isAr ?'إعادة المحاولة':'Retry'}
             </button>
           </div>
         ) : (
           <div className="radar-sync-bar synced">
             <strong>
-              ☁️{' '}
+               
               {isAr
-                ? 'تم تأكيد المزامنة السحابية عبر أجهزتك ✓'
-                : 'Confirmed Synced Across Your Devices ✓'}
+                ?'تم تأكيد المزامنة السحابية عبر أجهزتك'                :'Confirmed Synced Across Your Devices'}
             </strong>
             <span className="small" style={{ marginInlineStart: '10px' }}>
               ({user?.email || user?.displayName || (isAr ? 'حساب موثق' : 'Authenticated')}
@@ -742,7 +737,7 @@ export default function Tracker() {
 
       {/* Clinical safety disclaimer */}
       <section className="notice quick no-print">
-        <strong>⚠️ {isAr ? 'تنبيه سريري مهم:' : 'Clinical Safety Note:'} </strong>
+        <strong> {isAr ?'تنبيه سريري مهم:':'Clinical Safety Note:'} </strong>
         {isAr
           ? 'هذه الأداة لتنظيم الجرعات الموصوفة لك فقط؛ لا تعتمد الـ OCR تلقائياً، ولا تخترع جرعات أو تكراراً أو مدة علاج، ولا تضاعف الجرعات أو تحسب جرعة تعويضية. راجع الطبيب أو الصيدلي دائماً.'
           : 'This tool tracks verified prescriptions only; it never auto-approves OCR, never invents doses/frequencies/durations, and never doubles a dose or calculates replacement doses. Always consult your doctor or pharmacist.'}
@@ -761,7 +756,7 @@ export default function Tracker() {
               setShowAddModal(true);
             }}
           >
-            ➕ {isAr ? 'إضافة وتوثيق جدول علاج جديد' : 'New Verified Treatment Schedule'}
+             {isAr ?'إضافة وتوثيق جدول علاج جديد':'New Verified Treatment Schedule'}
           </button>
           <button
             type="button"
@@ -773,18 +768,18 @@ export default function Tracker() {
               setShowAddModal(true);
             }}
           >
-            📷 {isAr ? 'تصوير / رفع صورة روشتة (OCR)' : 'Capture / Upload Rx (OCR)'}
+             {isAr ?'تصوير / رفع صورة روشتة (OCR)':'Capture / Upload Rx (OCR)'}
           </button>
           <Link to="/prescription-radar" className="btn-secondary">
-            📡 {isAr ? 'فحص الروشتة الكاملة في الرادار' : 'Open Full Prescription Radar'}
+             {isAr ?'فحص الروشتة الكاملة في الرادار':'Open Full Prescription Radar'}
           </Link>
           {(schedules.length > 0 || prescriptions.length > 0) && (
             <>
               <button type="button" className="btn-secondary" onClick={handlePrintReport}>
-                🖨️ {isAr ? 'طباعة التقرير العلاجي / PDF' : 'Print Treatment Report / PDF'}
+                 {isAr ?'طباعة التقرير العلاجي / PDF':'Print Treatment Report / PDF'}
               </button>
               <button type="button" className="btn-secondary" onClick={handleExportReportJson}>
-                📥 {isAr ? 'تصدير التقرير (JSON)' : 'Export Report (JSON)'}
+                 {isAr ?'تصدير التقرير (JSON)':'Export Report (JSON)'}
               </button>
             </>
           )}
@@ -793,24 +788,24 @@ export default function Tracker() {
         <div className="notif-bar" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
           {!notifSupported || notifPermission === 'unsupported' ? (
             <span className="notif-pill">
-              ℹ️ {isAr ? 'الإشعارات غير مدعومة (استخدم منبهات .ics)' : 'Notifications Unsupported (Use .ics)'}
+              ℹ {isAr ?'الإشعارات غير مدعومة (استخدم منبهات .ics)':'Notifications Unsupported (Use .ics)'}
             </span>
           ) : notifPermission === 'granted' ? (
             <>
               <span className="notif-pill active">
-                🔔 {isAr ? 'التنبيهات مفعلة أثناء فتح المتصفح' : 'Browser Notifications Active'}
+                 {isAr ?'التنبيهات مفعلة أثناء فتح المتصفح':'Browser Notifications Active'}
               </span>
               <button type="button" className="btn-secondary small" onClick={sendTestNotification}>
-                🔔 {isAr ? 'تجربة التنبيه' : 'Test Alert'}
+                 {isAr ?'تجربة التنبيه':'Test Alert'}
               </button>
             </>
           ) : notifPermission === 'denied' ? (
             <span className="notif-pill" style={{ background: '#fef2f2', color: '#991b1b', borderColor: '#f87171' }}>
-              🔕 {isAr ? 'الإشعارات محظورة (استخدم منبهات .ics)' : 'Notifications Blocked (Use .ics)'}
+               {isAr ?'الإشعارات محظورة (استخدم منبهات .ics)':'Notifications Blocked (Use .ics)'}
             </span>
           ) : (
             <button type="button" className="btn-secondary" onClick={requestNotifPermission}>
-              🔔 {isAr ? 'تفعيل تنبيهات المتصفح' : 'Enable Reminders'}
+               {isAr ?'تفعيل تنبيهات المتصفح':'Enable Reminders'}
             </button>
           )}
         </div>
@@ -819,16 +814,15 @@ export default function Tracker() {
       {/* Reminder Limitations Notice (Priority 5) */}
       <section className="reminder-limitations-box no-print">
         <strong>
-          ℹ️ {isAr ? 'توضيح طريقة عمل الإشعارات:' : 'How Dose Notifications Work:'}{' '}
+          ℹ {isAr ?'توضيح طريقة عمل الإشعارات:':'How Dose Notifications Work:'} 
         </strong>
         <span className="small">
           {isAr
-            ? 'عند تفعيل الإشعارات، يظهر إشعار منبثق على الشاشة طالما أن المتصفح مفتوح. ولضمان التنبيه حتى عند إغلاق المتصفح، اضغط «📅 منبهات الموبايل (.ics)» في أي جدول لإضافة المواعيد لتقويم ومنبه هاتفك.'
-            : 'When enabled, a system notification pops up while the browser remains open. For alarms when the browser is closed, click "📅 Phone Alarms (.ics)" on any schedule.'}
+            ?'عند تفعيل الإشعارات، يظهر إشعار منبثق على الشاشة طالما أن المتصفح مفتوح. ولضمان التنبيه حتى عند إغلاق المتصفح، اضغط « منبهات الموبايل (.ics)» في أي جدول لإضافة المواعيد لتقويم ومنبه هاتفك.'            :'When enabled, a system notification pops up while the browser remains open. For alarms when the browser is closed, click"Phone Alarms (.ics)"on any schedule.'}
         </span>
         {notifError && (
           <p className="small" style={{ margin: '6px 0 0', color: '#b45309', fontWeight: 700 }}>
-            ⚠️ {notifError}
+             {notifError}
           </p>
         )}
       </section>
@@ -837,7 +831,7 @@ export default function Tracker() {
       {unscheduledPrescriptions.length > 0 && (
         <section className="card stack no-print rx-verification-queue-box">
           <h3 style={{ margin: 0 }}>
-            📋{' '}
+             
             {isAr
               ? 'روشتات محفوظة بانتظار المراجعة أو استكمال التوضيح الطبي (قبل تفعيل الجدول):'
               : 'Saved Prescriptions Pending Verification or Clarification (Unscheduled):'}
@@ -848,7 +842,7 @@ export default function Tracker() {
                 <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
-                      <strong>💊 {rx.medicineName || (isAr ? 'دواء غير محدد' : 'Unspecified Medicine')}</strong>
+                      <strong> {rx.medicineName || (isAr ?'دواء غير محدد':'Unspecified Medicine')}</strong>
                       <span
                         className={`verification-badge ${
                           rx.verificationStatus === 'needs_clarification' ? 'clarify' : 'unverified'
@@ -878,14 +872,14 @@ export default function Tracker() {
                       className="btn small"
                       onClick={() => openVerifySavedPrescription(rx)}
                     >
-                      🔍 {isAr ? 'مراجعة وتوثيق وتفعيل الجدول' : 'Review, Verify & Schedule'}
+                       {isAr ?'مراجعة وتوثيق وتفعيل الجدول':'Review, Verify & Schedule'}
                     </button>
                     <button
                       type="button"
                       className="btn-secondary danger small"
                       onClick={() => deletePrescriptionById(rx.id)}
                     >
-                      🗑️ {isAr ? 'حذف' : 'Delete'}
+                       {isAr ?'حذف':'Delete'}
                     </button>
                   </div>
                 </div>
@@ -898,8 +892,7 @@ export default function Tracker() {
       {/* Schedules List with Initial Loading Protection */}
       {initialLoading ? (
         <section className="card stack empty-tracker no-print">
-          <span className="empty-icon">☁️</span>
-          <h3>
+                    <h3>
             {isAr
               ? 'جارٍ تحميل جداولك العلاجية من حسابك السحابي...'
               : 'Loading your cloud treatment schedules...'}
@@ -912,8 +905,7 @@ export default function Tracker() {
         </section>
       ) : schedules.length === 0 ? (
         <section className="card stack empty-tracker no-print">
-          <span className="empty-icon">💊</span>
-          <h3>{isAr ? 'لا توجد جداول علاجية نشطة حالياً' : 'No Active Treatment Schedules'}</h3>
+                    <h3>{isAr ? 'لا توجد جداول علاجية نشطة حالياً' : 'No Active Treatment Schedules'}</h3>
           <p className="muted">
             {isAr
               ? 'اضغط على زر «إضافة وتوثيق جدول علاج جديد» أو «تصوير / رفع صورة روشتة (OCR)» للتحقق من التعليمات وحساب المواعيد.'
@@ -942,7 +934,7 @@ export default function Tracker() {
               <div className="schedule-header">
                 <div>
                   <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
-                    <h2 className="sch-title" style={{ margin: 0 }}>💊 {sch.medicineName}</h2>
+                    <h2 className="sch-title"style={{ margin: 0 }}> {sch.medicineName}</h2>
                     <span className="verification-badge verified">
                       {formatVerificationStatusLabel(sch.verificationStatus, isAr)}
                     </span>
@@ -962,7 +954,7 @@ export default function Tracker() {
                   </p>
                   {sch.notes && (
                     <p className="sch-notes">
-                      📝 <i>{sch.notes}</i>
+                       <i>{sch.notes}</i>
                     </p>
                   )}
                 </div>
@@ -972,17 +964,17 @@ export default function Tracker() {
                     className="btn-secondary small"
                     onClick={() => downloadScheduleIcs(sch, isAr)}
                   >
-                    📅 {isAr ? 'منبهات الموبايل (.ics)' : 'Phone Alarms (.ics)'}
+                     {isAr ?'منبهات الموبايل (.ics)':'Phone Alarms (.ics)'}
                   </button>
                   <button type="button" className="btn-secondary" onClick={() => openEdit(sch)}>
-                    ✏️ {isAr ? 'تعديل' : 'Edit'}
+                     {isAr ?'تعديل':'Edit'}
                   </button>
                   <button
                     type="button"
                     className="btn-secondary danger"
                     onClick={() => deleteSchedule(sch.id)}
                   >
-                    🗑️ {isAr ? 'حذف' : 'Delete'}
+                     {isAr ?'حذف':'Delete'}
                   </button>
                 </div>
               </div>
@@ -995,7 +987,7 @@ export default function Tracker() {
                 </div>
                 <div className="kpi-item taken">
                   <span className="kpi-num">{takenCount}</span>
-                  <span className="kpi-label">{isAr ? 'جرعات تم أخذها ✅' : 'Recorded Taken ✅'}</span>
+                  <span className="kpi-label">{isAr ?'جرعات تم أخذها':'Recorded Taken'}</span>
                 </div>
                 <div className="kpi-item upcoming">
                   <span className="kpi-num">{upcomingCount}</span>
@@ -1004,13 +996,13 @@ export default function Tracker() {
                 <div className="kpi-item unconfirmed">
                   <span className="kpi-num">{unconfirmedCount}</span>
                   <span className="kpi-label">
-                    {isAr ? 'غير مسجلة (متأخرة غير مؤكدة) ⚠️' : 'Missing Record (Overdue Unconfirmed) ⚠️'}
+                    {isAr ?'غير مسجلة (متأخرة غير مؤكدة)':'Missing Record (Overdue Unconfirmed)'}
                   </span>
                 </div>
                 <div className="kpi-item missed">
                   <span className="kpi-num">{missedCount}</span>
                   <span className="kpi-label">
-                    {isAr ? 'فائتة مؤكدة صراحةً ❌' : 'Confirmed Missed ❌'}
+                    {isAr ?'فائتة مؤكدة صراحةً':'Confirmed Missed'}
                   </span>
                 </div>
               </div>
@@ -1026,8 +1018,7 @@ export default function Tracker() {
                 </div>
                 <small className="muted progress-note">
                   {isAr
-                    ? '⚠️ تنبيه: نسبة الالتزام تعكس الجرعات المسجلة ولا تعني الشفاء السريري التام. يجب إكمال الكورس حتى آخر جرعة حسب توجيه الطبيب.'
-                    : 'Note: Progress percentage reflects recorded doses only, not clinical cure. Always finish the entire prescribed duration.'}
+                    ?'تنبيه: نسبة الالتزام تعكس الجرعات المسجلة ولا تعني الشفاء السريري التام. يجب إكمال الكورس حتى آخر جرعة حسب توجيه الطبيب.'                    : 'Note: Progress percentage reflects recorded doses only, not clinical cure. Always finish the entire prescribed duration.'}
                 </small>
               </div>
 
@@ -1035,7 +1026,7 @@ export default function Tracker() {
               {(unconfirmedCount > 0 || missedCount > 0) && (
                 <div className="unconfirmed-banner">
                   <strong>
-                    ⚠️{' '}
+                     
                     {isAr
                       ? 'إرشادات السلامة للجرعات غير المسجلة أو الفائتة:'
                       : 'Safe Guidance for Missing Records or Missed Doses:'}{' '}
@@ -1048,7 +1039,7 @@ export default function Tracker() {
 
               {/* Daily Dose Timeline */}
               <div className="timeline-section">
-                <h3>📅 {isAr ? 'جدول الجرعات اليومي:' : 'Daily Dose Timeline:'}</h3>
+                <h3> {isAr ?'جدول الجرعات اليومي:':'Daily Dose Timeline:'}</h3>
                 <div className="timeline-grid">
                   {Object.entries(dayGroups).map(([dayNum, dayDoses]) => (
                     <div key={dayNum} className="day-card">
@@ -1065,16 +1056,16 @@ export default function Tracker() {
                               <div className="dose-left">
                                 <span className="dose-time">⏰ {formatTime12Hour(timeDisplay, isAr)}</span>
                                 <span className={`status-pill ${status}`}>
-                                  {status === 'taken' && (isAr ? 'تم أخذها ✅' : 'Taken ✅')}
+                                  {status ==='taken'&& (isAr ?'تم أخذها':'Taken')}
                                   {status === 'upcoming' && (isAr ? 'قادمة ⏳' : 'Upcoming ⏳')}
                                   {status === 'unconfirmed' &&
-                                    (isAr ? 'لم تُسجّل (متأخرة غير مؤكدة) ⚠️' : 'Missing Record (Unconfirmed) ⚠️')}
+                                    (isAr ?'لم تُسجّل (متأخرة غير مؤكدة)':'Missing Record (Unconfirmed)')}
                                   {status === 'missed' &&
-                                    (isAr ? 'فائتة مؤكدة ❌' : 'Confirmed Missed ❌')}
+                                    (isAr ?'فائتة مؤكدة':'Confirmed Missed')}
                                 </span>
                                 {dose.documentedOutcome && (
                                   <small className="muted" style={{ display: 'block', width: '100%', fontSize: '0.74rem' }}>
-                                    📌 {formatDocumentedOutcomeLabel(dose.documentedOutcome, isAr)}
+                                     {formatDocumentedOutcomeLabel(dose.documentedOutcome, isAr)}
                                   </small>
                                 )}
                                 {dose.status === 'taken' && dose.takenAt && (
@@ -1091,7 +1082,7 @@ export default function Tracker() {
                                 )}
                                 {dose.note && (
                                   <small className="muted" style={{ display: 'block', width: '100%', fontSize: '0.74rem' }}>
-                                    📝 {dose.note}
+                                     {dose.note}
                                   </small>
                                 )}
                               </div>
@@ -1103,7 +1094,7 @@ export default function Tracker() {
                                       className="undo-btn"
                                       onClick={() => openDocumentDoseModal(sch.id, dose, sch.medicineName)}
                                     >
-                                      📝 {isAr ? 'ملاحظة' : 'Note'}
+                                       {isAr ?'ملاحظة':'Note'}
                                     </button>
                                     <button
                                       type="button"
@@ -1119,7 +1110,7 @@ export default function Tracker() {
                                       onClick={() => handleDoseAction(sch.id, dose.id, 'missed')}
                                       title={isAr ? 'تصحيح إلى فائتة' : 'Change to Missed'}
                                     >
-                                      ✕ {isAr ? 'فائتة' : 'Missed'}
+                                       {isAr ?'فائتة':'Missed'}
                                     </button>
                                   </>
                                 ) : status === 'missed' ? (
@@ -1129,14 +1120,14 @@ export default function Tracker() {
                                       className="btn-take"
                                       onClick={() => handleDoseAction(sch.id, dose.id, 'taken')}
                                     >
-                                      ✓ {isAr ? 'أخذتها' : 'Taken'}
+                                       {isAr ?'أخذتها':'Taken'}
                                     </button>
                                     <button
                                       type="button"
                                       className="undo-btn"
                                       onClick={() => openDocumentDoseModal(sch.id, dose, sch.medicineName)}
                                     >
-                                      📝 {isAr ? 'ملاحظة' : 'Note'}
+                                       {isAr ?'ملاحظة':'Note'}
                                     </button>
                                     <button
                                       type="button"
@@ -1153,21 +1144,21 @@ export default function Tracker() {
                                       className="btn-take"
                                       onClick={() => handleDoseAction(sch.id, dose.id, 'taken')}
                                     >
-                                      ✓ {isAr ? 'أخذت الجرعة' : 'Mark Taken'}
+                                       {isAr ?'أخذت الجرعة':'Mark Taken'}
                                     </button>
                                     <button
                                       type="button"
                                       className="btn-missed"
                                       onClick={() => handleDoseAction(sch.id, dose.id, 'missed')}
                                     >
-                                      ✕ {isAr ? 'فائتة' : 'Mark Missed'}
+                                       {isAr ?'فائتة':'Mark Missed'}
                                     </button>
                                     <button
                                       type="button"
                                       className="undo-btn"
                                       onClick={() => openDocumentDoseModal(sch.id, dose, sch.medicineName)}
                                     >
-                                      📝 {isAr ? 'توثيق' : 'Document'}
+                                       {isAr ?'توثيق':'Document'}
                                     </button>
                                   </>
                                 )}
@@ -1191,15 +1182,15 @@ export default function Tracker() {
           <div className="row no-print" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <h2 style={{ margin: 0 }}>
-                📄 {isAr ? 'تقرير رحلة العلاج والمتابعة للطباعة أو التصدير' : 'Printable & Exportable Treatment Journey Report'}
+                 {isAr ?'تقرير رحلة العلاج والمتابعة للطباعة أو التصدير':'Printable & Exportable Treatment Journey Report'}
               </h2>
             </div>
             <div className="row wrapRow" style={{ gap: '8px' }}>
               <button type="button" className="btn" onClick={handlePrintReport}>
-                🖨️ {isAr ? 'طباعة / حفظ PDF' : 'Print / Save PDF'}
+                 {isAr ?'طباعة / حفظ PDF':'Print / Save PDF'}
               </button>
               <button type="button" className="btn-secondary" onClick={handleExportReportJson}>
-                📥 {isAr ? 'تصدير التقرير (JSON)' : 'Export Report (JSON)'}
+                 {isAr ?'تصدير التقرير (JSON)':'Export Report (JSON)'}
               </button>
             </div>
           </div>
@@ -1216,7 +1207,7 @@ export default function Tracker() {
               {profile.displayName ? ` · ${isAr ? 'المريض:' : 'Patient:'} ${profile.displayName}` : ''}
             </p>
             <div className="report-disclaimer-box">
-              <strong>⚠️ {isAr ? 'إخلاء مسؤولية:' : 'Disclaimer:'} </strong>
+              <strong> {isAr ?'إخلاء مسؤولية:':'Disclaimer:'} </strong>
               {isAr
                 ? 'هذا التقرير مُدار بواسطة المريض للمتابعة الشخصية ولا يُعد سجلاً سريرياً موثقاً. الجرعات «غير المسجلة (متأخرة غير مؤكدة)» تختلف عن «الجرعات الفائتة المؤكدة صراحةً». راجع الطبيب أو الصيدلي دائماً.'
                 : 'This report is maintained by the patient and is not a verified clinical record. Missing records (Overdue Unconfirmed) are distinct from Confirmed Missed doses. Always verify with your doctor or pharmacist.'}
@@ -1260,10 +1251,10 @@ export default function Tracker() {
                             <td>{isAr ? `اليوم ${d.dayNumber} (#${d.doseNumberInDay})` : `Day ${d.dayNumber} (#${d.doseNumberInDay})`}</td>
                             <td>{d.scheduledTime.replace('T', ' ').slice(0, 16)}</td>
                             <td>
-                              {st === 'taken' && (isAr ? 'تم أخذها (مؤكدة) ✅' : 'Confirmed Taken ✅')}
-                              {st === 'missed' && (isAr ? 'فائتة مؤكدة صراحةً ❌' : 'Confirmed Missed ❌')}
+                              {st ==='taken'&& (isAr ?'تم أخذها (مؤكدة)':'Confirmed Taken')}
+                              {st ==='missed'&& (isAr ?'فائتة مؤكدة صراحةً':'Confirmed Missed')}
                               {st === 'unconfirmed' &&
-                                (isAr ? 'سجل مفقود — متأخرة غير مؤكدة ⚠️' : 'Missing Record — Overdue Unconfirmed ⚠️')}
+                                (isAr ?'سجل مفقود — متأخرة غير مؤكدة':'Missing Record — Overdue Unconfirmed')}
                               {st === 'upcoming' && (isAr ? 'قادمة ⏳' : 'Upcoming ⏳')}
                             </td>
                             <td>
@@ -1311,7 +1302,7 @@ export default function Tracker() {
                       : 'Capture & Verify New Treatment Schedule'}
                 </h3>
                 <button type="button" className="close-btn" onClick={() => setShowAddModal(false)}>
-                  ✕
+                  
                 </button>
               </div>
 
@@ -1320,7 +1311,7 @@ export default function Tracker() {
                 <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <strong>
-                      📷{' '}
+                       
                       {isAr
                         ? 'التقاط صورة الروشتة (OCR) أو الإدخال اليدوي:'
                         : 'Prescription Image Capture (OCR) or Manual Entry:'}
@@ -1333,7 +1324,7 @@ export default function Tracker() {
                   </div>
                   <div className="row wrapRow" style={{ gap: '8px' }}>
                     <label className="btn-secondary small" style={{ cursor: 'pointer', margin: 0 }}>
-                      📁 {isAr ? 'رفع صورة روشتة' : 'Upload Rx Image'}
+                       {isAr ?'رفع صورة روشتة':'Upload Rx Image'}
                       <input
                         type="file"
                         accept="image/*"
@@ -1342,7 +1333,7 @@ export default function Tracker() {
                       />
                     </label>
                     <label className="btn-secondary small" style={{ cursor: 'pointer', margin: 0 }}>
-                      📸 {isAr ? 'كاميرا الموبايل' : 'Camera Capture'}
+                       {isAr ?'كاميرا الموبايل':'Camera Capture'}
                       <input
                         type="file"
                         accept="image/*"
@@ -1365,14 +1356,14 @@ export default function Tracker() {
 
                 {ocrError && (
                   <div className="ocr-status-banner error" style={{ marginTop: '10px' }}>
-                    ⚠️ {ocrError}
+                     {ocrError}
                   </div>
                 )}
 
                 {isOcrUnverified && (
                   <div className="ocr-unverified-banner" style={{ marginTop: '10px' }}>
                     <strong>
-                      ⚠️{' '}
+                       
                       {isAr
                         ? 'بيانات مستخرجة بالـ OCR (غير موثّقة — لا تُعتمد تلقائياً):'
                         : 'Unverified OCR-Extracted Information (Never Auto-Approved):'}
@@ -1384,7 +1375,7 @@ export default function Tracker() {
                     </p>
                     {ocrExtraction && ocrExtraction.unreadableFields.length > 0 && (
                       <p className="small" style={{ margin: '6px 0 0', fontWeight: 700, color: '#991b1b' }}>
-                        🔍{' '}
+                         
                         {isAr
                           ? `حقول غير مقروءة وتحتاج لإدخال/تأكيد يدوي: ${ocrExtraction.unreadableFields.join(' ، ')}`
                           : `Unreadable fields requiring manual entry/clarification: ${ocrExtraction.unreadableFields.join(', ')}`}
@@ -1402,7 +1393,7 @@ export default function Tracker() {
                     <b>{isAr ? 'اسم المضاد الحيوي:' : 'Antibiotic Name:'} *</b>
                     {isOcrUnverified && medName && (
                       <span className="ocr-field-tag">
-                        {isAr ? '⚠️ مستخرج غير موثّق' : '⚠️ Unverified OCR'}
+                        {isAr ?'مستخرج غير موثّق':'Unverified OCR'}
                       </span>
                     )}
                   </label>
@@ -1429,7 +1420,7 @@ export default function Tracker() {
                       <b>{isAr ? 'الجرعة الموصوفة بالروشتة:' : 'Prescribed Dose:'} *</b>
                       {isOcrUnverified && prescribedDose && (
                         <span className="ocr-field-tag">
-                          {isAr ? '⚠️ مستخرج غير موثّق' : '⚠️ Unverified OCR'}
+                          {isAr ?'مستخرج غير موثّق':'Unverified OCR'}
                         </span>
                       )}
                     </label>
@@ -1462,7 +1453,7 @@ export default function Tracker() {
                 <div className="form-row">
                   <div className="form-group">
                     <label>
-                      <b>🕒 {isAr ? 'وقت بدء أول جرعة:' : 'First Dose Start Time:'} *</b>
+                      <b> {isAr ?'وقت بدء أول جرعة:':'First Dose Start Time:'} *</b>
                     </label>
                     <input
                       type="time"
@@ -1474,7 +1465,7 @@ export default function Tracker() {
 
                   <div className="form-group">
                     <label>
-                      <b>🔢 {isAr ? 'عدد الجرعات يومياً (يحسب المواعيد تلقائياً):' : 'Doses Per Day (Auto-Calculates Times):'} *</b>
+                      <b> {isAr ?'عدد الجرعات يومياً (يحسب المواعيد تلقائياً):':'Doses Per Day (Auto-Calculates Times):'} *</b>
                     </label>
                     <select value={frequency} onChange={(e) => handleFrequencyChange(e.target.value)}>
                       <option value="">
@@ -1492,7 +1483,7 @@ export default function Tracker() {
                   <div className="form-group">
                     <label>
                       <b>
-                        ✨{' '}
+                         
                         {isAr
                           ? 'مواعيد الجرعات المحسوبة تلقائياً خلال اليوم:'
                           : 'Auto-Calculated Scheduled Dose Times:'}
@@ -1563,7 +1554,7 @@ export default function Tracker() {
                 {liveValidation.blockingFlags.length > 0 && (
                   <div className="clarification-gate-box blocking">
                     <strong>
-                      🚨{' '}
+                       
                       {isAr
                         ? 'تعليمات ناقصة أو متعارضة تتطلب توضيحاً مهنياً (لا يمكن جدولة الجرعات قبل تصحيحها):'
                         : 'Missing or Contradictory Instructions Flagged for Professional Clarification (Scheduling Blocked):'}
@@ -1579,7 +1570,7 @@ export default function Tracker() {
                 {liveValidation.warningFlags.length > 0 && (
                   <div className="clarification-gate-box warning">
                     <strong>
-                      ⚠️{' '}
+                       
                       {isAr
                         ? 'تنبيهات الأمان الدوائي:'
                         : 'Medication Safety Warnings:'}
@@ -1618,7 +1609,7 @@ export default function Tracker() {
                     className="btn"
                     disabled={!liveValidation.canCreateSchedule}
                   >
-                    ✅{' '}
+                     
                     {editingScheduleId
                       ? isAr
                         ? 'توثيق وتحديث الجدول'
@@ -1632,7 +1623,7 @@ export default function Tracker() {
                     className="btn-secondary"
                     onClick={handleSaveUnverifiedPrescriptionOnly}
                   >
-                    📋{' '}
+                     
                     {isAr
                       ? 'حفظ الروشتة للاستشارة الطبية (بدون تفعيل جدول)'
                       : 'Save for Clarification (Without Schedule)'}
@@ -1654,13 +1645,13 @@ export default function Tracker() {
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
               <div className="modal-head">
                 <h3>
-                  📝{' '}
+                   
                   {isAr
                     ? `توثيق تفاصيل الجرعة — ${docModalTarget.medicineName}`
                     : `Document Dose Details — ${docModalTarget.medicineName}`}
                 </h3>
                 <button type="button" className="close-btn" onClick={() => setDocModalTarget(null)}>
-                  ✕
+                  
                 </button>
               </div>
               <form onSubmit={handleSaveDocumentedDose} className="stack modal-form">
@@ -1686,9 +1677,9 @@ export default function Tracker() {
                       );
                     }}
                   >
-                    <option value="taken">{isAr ? '✅ تم أخذ الجرعة' : '✅ Dose Taken'}</option>
+                    <option value="taken">{isAr ?'تم أخذ الجرعة':'Dose Taken'}</option>
                     <option value="missed">
-                      {isAr ? '❌ لم تُؤخذ (فائتة / مؤجلة طبياً)' : '❌ Not Taken (Missed / Clinician Hold)'}
+                      {isAr ?'لم تُؤخذ (فائتة / مؤجلة طبياً)':'Not Taken (Missed / Clinician Hold)'}
                     </option>
                   </select>
                 </div>
@@ -1747,7 +1738,7 @@ export default function Tracker() {
 
                 <div className="modal-actions">
                   <button type="submit" className="btn">
-                    💾 {isAr ? 'حفظ توثيق الجرعة' : 'Save Dose Documentation'}
+                     {isAr ?'حفظ توثيق الجرعة':'Save Dose Documentation'}
                   </button>
                   <button
                     type="button"

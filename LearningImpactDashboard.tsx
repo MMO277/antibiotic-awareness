@@ -179,7 +179,7 @@ export function LearningImpactDashboard() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ margin: 0, color: 'var(--brand, #00897b)' }}>
-              {isAr ? '📊 لوحة قياس الأثر والتحصيل المعرفي' : '📊 Awareness & Learning Impact Dashboard'}
+              {isAr ?'لوحة قياس الأثر والتحصيل المعرفي':'Awareness & Learning Impact Dashboard'}
             </h2>
             <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', color: 'var(--text-muted, #666)' }}>
               {isAr
@@ -192,7 +192,7 @@ export function LearningImpactDashboard() {
             className="btn btn-secondary"
             style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem' }}
           >
-            📥 {isAr ? 'تصدير التقرير المجمع (CSV)' : 'Export Aggregated Report (CSV)'}
+             {isAr ?'تصدير التقرير المجمع (CSV)':'Export Aggregated Report (CSV)'}
           </button>
         </div>
 
@@ -207,7 +207,7 @@ export function LearningImpactDashboard() {
             lineHeight: 1.5
           }}
         >
-          <strong>ℹ️ {isAr ? 'ضوابط التفسير العلمي السليم:' : 'Scientific Interpretation Guidelines:'}</strong>{' '}
+          <strong>ℹ {isAr ?'ضوابط التفسير العلمي السليم:':'Scientific Interpretation Guidelines:'}</strong> 
           {isAr
             ? 'هذه اللوحة تقيس فقط التحصيل المعرفي والتفاعل التوعوي. لا يجوز علمياً استنتاج معدلات مقاومة الميكروبات، أو حساسية البكتيريا، أو المآلات السريرية في المستشفيات من نتائج استيعاب الموقع، كما أن تحسن الدرجات لا يُعد دليلاً جازماً على تغيير السلوك اليومي للمريض.'
             : 'This dashboard measures educational comprehension only. It must never be used to infer bacterial resistance rates, susceptibility patterns, or clinical outcomes. Test improvements do not constitute proof of real-world behavioral changes.'}
@@ -269,7 +269,7 @@ export function LearningImpactDashboard() {
             backgroundColor: 'transparent'
           }}
         >
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📭</div>
+          <div style={{ fontSize:'2.5rem', marginBottom:'0.5rem'}}></div>
           <h3 style={{ margin: 0 }}>
             {isAr ? 'لا توجد بيانات تفاعل كافية بعد' : 'No Sufficient Activity Data Yet'}
           </h3>
@@ -307,7 +307,7 @@ export function LearningImpactDashboard() {
               </div>
               {analytics.isSuppressed ? (
                 <div style={{ fontSize: '0.8rem', color: '#d32f2f', margin: '0.7rem 0', fontWeight: 600 }}>
-                  ⚠️ {isAr ? 'محجوب (عينة < 5 لحماية الخصوصية)' : 'Suppressed (N < 5 for privacy)'}
+                   {isAr ?'محجوب (عينة < 5 لحماية الخصوصية)':'Suppressed (N < 5 for privacy)'}
                 </div>
               ) : (
                 <div style={{ fontSize: '1.6rem', fontWeight: 'bold', margin: '0.3rem 0' }}>
@@ -327,7 +327,7 @@ export function LearningImpactDashboard() {
               </div>
               {analytics.isSuppressed ? (
                 <div style={{ fontSize: '0.8rem', color: '#d32f2f', margin: '0.7rem 0', fontWeight: 600 }}>
-                  ⚠️ {isAr ? 'محجوب (عينة < 5)' : 'Suppressed (N < 5)'}
+                   {isAr ?'محجوب (عينة < 5)':'Suppressed (N < 5)'}
                 </div>
               ) : (
                 <div
@@ -363,7 +363,7 @@ export function LearningImpactDashboard() {
 
           <div className="card" style={{ padding: '1.25rem', overflowX: 'auto' }}>
             <h3 style={{ margin: '0 0 1rem', fontSize: '1.1rem' }}>
-              {isAr ? '📐 معادلات واشتقاق المؤشرات الإحصائية المعتمدة' : '📐 Metric Definitions & Mathematical Formulations'}
+              {isAr ?'معادلات واشتقاق المؤشرات الإحصائية المعتمدة':'Metric Definitions & Mathematical Formulations'}
             </h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', textAlign: isAr ? 'right' : 'left' }}>
               <thead>

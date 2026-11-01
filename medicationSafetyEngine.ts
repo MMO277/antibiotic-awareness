@@ -1620,28 +1620,28 @@ export function evaluateMedicationSafety(input: SafetyEngineInput): SafetyAssess
   let summaryBanner: Bi;
   if (overallStatus === 'urgent_review') {
     summaryBanner = {
-      ar: '🚨 تنبيه عاجل: تم رصد تعارض خطير (حساسية مؤكدة أو تداخل دوائي حاد أو مانع استعمال) يستدعي مراجعة الطبيب أو الصيدلي فوراً قبل الاستخدام.',
-      en: '🚨 Urgent Review Required: High-risk allergy, severe drug interaction, or contraindication detected. Consult your physician or pharmacist immediately before use.',
+      ar:'تنبيه عاجل: تم رصد تعارض خطير (حساسية مؤكدة أو تداخل دوائي حاد أو مانع استعمال) يستدعي مراجعة الطبيب أو الصيدلي فوراً قبل الاستخدام.',
+      en:'Urgent Review Required: High-risk allergy, severe drug interaction, or contraindication detected. Consult your physician or pharmacist immediately before use.',
     };
   } else if (overallStatus === 'warning_review') {
     summaryBanner = {
-      ar: '⚠️ تحذير سريري: تم رصد تكرار في المادة الفعالة أو حساسية متصالبة أو تداخل دوائي متوسط يستلزم مراجعة الطبيب أو الصيدلي وتنظيم الجرعات.',
-      en: '⚠️ Clinical Warning: Duplicate active ingredient, cross-reactivity risk, or moderate interaction detected. Prompt pharmacist or physician review is advised.',
+      ar:'تحذير سريري: تم رصد تكرار في المادة الفعالة أو حساسية متصالبة أو تداخل دوائي متوسط يستلزم مراجعة الطبيب أو الصيدلي وتنظيم الجرعات.',
+      en:'Clinical Warning: Duplicate active ingredient, cross-reactivity risk, or moderate interaction detected. Prompt pharmacist or physician review is advised.',
     };
   } else if (overallStatus === 'incomplete_check') {
     summaryBanner = {
-      ar: '🔍 فحص غير مكتمل (Unable to Verify): تعذر التأكد من المادة الفعالة لبعض الأصناف أو مصدر البيانات — لا تفترض الأمان التلقائي وراجع الصيدلي.',
-      en: '🔍 Incomplete Check (Unable to Verify): One or more medications or data sources could not be verified — do not assume safety without pharmacist verification.',
+      ar:'فحص غير مكتمل (Unable to Verify): تعذر التأكد من المادة الفعالة لبعض الأصناف أو مصدر البيانات — لا تفترض الأمان التلقائي وراجع الصيدلي.',
+      en:'Incomplete Check (Unable to Verify): One or more medications or data sources could not be verified — do not assume safety without pharmacist verification.',
     };
   } else if (overallStatus === 'caution_verify') {
     summaryBanner = {
-      ar: '🟡 تنبيه يحتاج للتحقق: يرجى مراجعة الملاحظات الإرشادية أدناه مع الصيدلي.',
-      en: '🟡 Verification Advised: Please review the caution notes below with your pharmacist.',
+      ar:'تنبيه يحتاج للتحقق: يرجى مراجعة الملاحظات الإرشادية أدناه مع الصيدلي.',
+      en:'Verification Advised: Please review the caution notes below with your pharmacist.',
     };
   } else {
     summaryBanner = {
-      ar: 'ℹ️ لم يتم رصد تعارضات مباشرة في القواعد المفحوصة حالياً — تذكر أن «عدم ظهور تحذيرات» لا يعني ضمان أمان الروشتة بنسبة 100%، التزم دائماً بمراجعة الصيدلي والطبيب.',
-      en: 'ℹ️ No direct conflicts detected in the rules checked — remember that "no alerts found" never guarantees a prescription is 100% safe. Always verify with your pharmacist and physician.',
+      ar:'ℹ لم يتم رصد تعارضات مباشرة في القواعد المفحوصة حالياً — تذكر أن «عدم ظهور تحذيرات» لا يعني ضمان أمان الروشتة بنسبة 100%، التزم دائماً بمراجعة الصيدلي والطبيب.',
+      en:'ℹ No direct conflicts detected in the rules checked — remember that"no alerts found"never guarantees a prescription is 100% safe. Always verify with your pharmacist and physician.',
     };
   }
 

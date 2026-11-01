@@ -771,8 +771,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     'Actualmente navegas como invitado'
                   )}
                 >
-                  <span aria-hidden="true">👀</span>
-                  <span>{tr(lang, 'وضع الزائر', 'Guest', 'Invité', 'Invitado')}</span>
+                                    <span>{tr(lang, 'وضع الزائر', 'Guest', 'Invité', 'Invitado')}</span>
                 </span>
                 <button
                   type="button"
@@ -786,8 +785,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     'Salir del modo invitado e iniciar sesión'
                   )}
                 >
-                  <span aria-hidden="true">👤</span>
-                  <span>{tr(lang, 'تسجيل الدخول', 'Sign In', 'Connexion', 'Acceder')}</span>
+                                    <span>{tr(lang, 'تسجيل الدخول', 'Sign In', 'Connexion', 'Acceder')}</span>
                 </button>
               </div>
             ) : (
@@ -797,8 +795,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   className="chip header-user-chip"
                   title={user.email || ''}
                 >
-                  <span aria-hidden="true">👤</span>
-                  <span className="header-username">{user.displayName || user.email?.split('@')[0]}</span>
+                                    <span className="header-username">{user.displayName || user.email?.split('@')[0]}</span>
                 </Link>
               </div>
             )}
@@ -811,8 +808,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 title={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
                 aria-label={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
               >
-                <span aria-hidden="true">🚪</span>
-                <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir')}</span>
+                                <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir')}</span>
               </button>
             )}
 
@@ -889,8 +885,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               aria-label={tr(lang, 'فتح القائمة', 'Open menu', 'Ouvrir le menu', 'Abrir menú')}
               title={tr(lang, 'أقسام الموقع الكاملة', 'All Site Sections', 'Toutes les rubriques', 'Todas las secciones')}
             >
-              <span className="hamburger-icon" aria-hidden="true">☰</span>
-              <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú', 'Menü')}</span>
+                            <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú', 'Menü')}</span>
             </button>
           </div>
         </div>
@@ -904,8 +899,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               onClick={() => setOpenRibbonCatId(null)}
               className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
             >
-              <span aria-hidden="true">🏠</span>
-              <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio', 'Startseite')}</span>
+                            <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio', 'Startseite')}</span>
             </NavLink>
 
             {navCategories.map((cat) => {
@@ -946,7 +940,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     onClick={() => setOpenRibbonCatId(null)}
                     aria-label={tr(lang, 'إغلاق القسم', 'Close category', 'Fermer', 'Cerrar')}
                   >
-                    ✕
+                    
                   </button>
                 </div>
 
@@ -991,8 +985,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           >
             <div className="drawer-header">
               <div className="drawer-brand">
-                <span className="drawer-logo" aria-hidden="true">💊</span>
-                <div className="drawer-brand-text">
+                                <div className="drawer-brand-text">
                   <b>{tr(lang, 'أقسام المنصة السريرية', 'Clinical Portal Menu', 'Menu du Portail Clinique', 'Menú del Portal Clínico')}</b>
                   <small className="drawer-subtitle">
                     {tr(lang, 'مجمعة حسب التخصص لسهولة الوصول', 'Grouped by category for quick access', 'Regroupés par catégorie', 'Agrupados por categoría')}
@@ -1007,7 +1000,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 aria-label={tr(lang, 'إغلاق القائمة', 'Close menu', 'Fermer le menu', 'Cerrar menú')}
                 title={tr(lang, 'إغلاق (Esc)', 'Close (Esc)', 'Fermer (Esc)', 'Cerrar (Esc)')}
               >
-                ✕
+                
               </button>
             </div>
 
@@ -1034,8 +1027,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onClick={() => closeDrawer(false)}
                 className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}
               >
-                <span className="item-icon" aria-hidden="true">🏠</span>
-                <span className="item-title">{t('navHome')}</span>
+                                <span className="item-title">{t('navHome')}</span>
                 <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
               </NavLink>
 
@@ -1108,8 +1100,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onClick={() => closeDrawer(false)}
                 className={({ isActive }) => `drawer-item admin ${isActive ? 'active' : ''}`}
               >
-                <span className="item-icon" aria-hidden="true">⚙️</span>
-                <span className="item-title">{t('navAdmin')}</span>
+                                <span className="item-title">{t('navAdmin')}</span>
                 <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
               </NavLink>
 
@@ -1124,8 +1115,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                       handleExitGuestMode();
                     }}
                   >
-                    <span className="item-icon" aria-hidden="true">👤</span>
-                    <span className="item-title">
+                                        <span className="item-title">
                       {tr(lang, 'تسجيل الدخول (الخروج من وضع الزائر)', 'Sign In (Exit Guest Mode)', 'Connexion (Quitter le mode invité)', 'Iniciar sesión (Salir de invitado)')}
                     </span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
@@ -1144,8 +1134,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                       setShowLogoutModal(true);
                     }}
                   >
-                    <span className="item-icon" aria-hidden="true">🚪</span>
-                    <span className="item-title">{tr(lang, 'تسجيل الخروج', 'Logout', 'Déconnexion', 'Cerrar sesión')}</span>
+                                        <span className="item-title">{tr(lang, 'تسجيل الخروج', 'Logout', 'Déconnexion', 'Cerrar sesión')}</span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
                 </>
@@ -1177,8 +1166,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="wrap pro-footer-grid">
           <div>
             <div className="row" style={{ gap: '10px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '1.6rem' }}>💊</span>
-              <div>
+                            <div>
                 <b style={{ fontSize: '1.05rem', color: '#fff' }}>{t('appName')}</b>
               </div>
             </div>
@@ -1232,7 +1220,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   href={`tel:${emergency.number}`}
                   style={{ color: '#fca5a5', fontWeight: 700, textDecoration: 'none' }}
                 >
-                  🚑{' '}
+                   
                   {tr(
                     lang,
                     `طوارئ الإسعاف (${emergency.flag} ${countryName}): ${emergency.number}`,

@@ -341,8 +341,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'separate',
-            titleAr: '⚠️ تعارض امتصاص قوي (مخلبة كيميائية Chelation)',
-            titleEn: '⚠️ Major Absorption Chelation — Separate by 2 Hours',
+            titleAr:'تعارض امتصاص قوي (مخلبة كيميائية Chelation)',
+            titleEn:'Major Absorption Chelation — Separate by 2 Hours',
             ruleAr:
               'الكالسيوم والحليب يرتبطان بالمضاد الحيوي في المعدة ويمنعان امتصاصه بنسبة تصل إلى 50%. افصل بينهما ساعتين على الأقل.',
             ruleEn:
@@ -353,8 +353,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'safe',
-            titleAr: '✅ لا يوجد تعارض في الامتصاص مع الألبان',
-            titleEn: '✅ No Absorption Conflict with Dairy',
+            titleAr:'لا يوجد تعارض في الامتصاص مع الألبان',
+            titleEn:'No Absorption Conflict with Dairy',
             ruleAr: 'يمكن تناول منتجات الألبان بأمان مع هذا المضاد الحيوي دون تأثر مفعوله.',
             ruleEn: 'Dairy products do not block the absorption of this antibiotic.',
           });
@@ -365,8 +365,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'separate',
-            titleAr: '⚠️ فصل زمني إلزامي (ساعتين إلى 3 ساعات)',
-            titleEn: '⚠️ Mandatory 2–3 Hour Separation',
+            titleAr:'فصل زمني إلزامي (ساعتين إلى 3 ساعات)',
+            titleEn:'Mandatory 2–3 Hour Separation',
             ruleAr:
               'أقراص الحديد والزنك تُبطل امتصاص هذا المضاد الحيوي إذا أُخذت في نفس الوقت. خذ الحديد بعد جرعة المضاد بـ 3 إلى 4 ساعات على الأقل.',
             ruleEn:
@@ -377,8 +377,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'safe',
-            titleAr: '✅ آمن ويفضل الفصل ساعة لراحة المعدة',
-            titleEn: '✅ Safe (1-hour spacing recommended for stomach comfort)',
+            titleAr:'آمن ويفضل الفصل ساعة لراحة المعدة',
+            titleEn:'Safe (1-hour spacing recommended for stomach comfort)',
             ruleAr: 'لا يوجد تفاعل كيميائي مباشر، ويفضل أخذ الحديد بعد الغداء لتقليل ثقل المعدة.',
             ruleEn: 'No direct chemical chelation; taking iron after lunch minimizes stomach upset.',
           });
@@ -389,8 +389,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'separate',
-            titleAr: '⚠️ مضادات الحموضة تقلل امتصاص المضاد الحيوي',
-            titleEn: '⚠️ Antacids Reduce Antibiotic Absorption',
+            titleAr:'مضادات الحموضة تقلل امتصاص المضاد الحيوي',
+            titleEn:'Antacids Reduce Antibiotic Absorption',
             ruleAr:
               'أملاح الألومنيوم والماغنيسيوم تقلل امتصاص الدواء. يجب الفصل ساعتين على الأقل قبل أو بعد جرعة المضاد الحيوي.',
             ruleEn:
@@ -401,8 +401,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'safe',
-            titleAr: '✅ آمن عند الفصل البسيط',
-            titleEn: '✅ Safe with Standard Spacing',
+            titleAr:'آمن عند الفصل البسيط',
+            titleEn:'Safe with Standard Spacing',
             ruleAr: 'لا يؤثر بشكل جوهري على امتصاص هذا المضاد الحيوي.',
             ruleEn: 'Does not significantly alter absorption of this antibiotic.',
           });
@@ -413,8 +413,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'danger',
-            titleAr: '🚫 تحذير: تجنب الجمع مع المسكنات القوية (NSAIDs)',
-            titleEn: '🚫 Warning: Avoid Combining Quinolones with NSAIDs',
+            titleAr:'تحذير: تجنب الجمع مع المسكنات القوية (NSAIDs)',
+            titleEn:'Warning: Avoid Combining Quinolones with NSAIDs',
             ruleAr:
               'الجمع بين الفلوروكينولونات (مثل سيبروفار/تافانيك) والمسكنات المضادة للالتهاب (كتافلام/بروفين) يزيد خطر تنبيه الجهاز العصبي والإجهاد الكلوي. راجع الطبيب المعالج أو الصيدلي قبل الجمع بينهما.',
             ruleEn:
@@ -425,8 +425,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'separate',
-            titleAr: '⚠️ يُؤخذ بعد الأكل فقط مع شرب كوب ماء كامل',
-            titleEn: '⚠️ Take Strictly After Meals with Water',
+            titleAr:'يُؤخذ بعد الأكل فقط مع شرب كوب ماء كامل',
+            titleEn:'Take Strictly After Meals with Water',
             ruleAr:
               'لتجنب التهاب جدار المعدة أو إجهاد الكلى، لا تأخذ المسكن على معدة فارغة أبداً.',
             ruleEn: 'Never take NSAIDs on an empty stomach to protect gastric mucosa and kidneys.',
@@ -437,8 +437,8 @@ export default function PrescriptionRadar() {
           coMedId: cid,
           coMedName: name,
           level: 'safe',
-          titleAr: '✅ آمن تماماً ولا يتعارض مع المضاد الحيوي',
-          titleEn: '✅ Completely Safe — No Interaction',
+          titleAr:'آمن تماماً ولا يتعارض مع المضاد الحيوي',
+          titleEn:'Completely Safe — No Interaction',
           ruleAr:
             'الباراسيتامول لا يتعارض كيميائياً مع المضاد الحيوي عند استخدامه وفق تعليمات الطبيب أو الصيدلي.',
           ruleEn:
@@ -449,8 +449,8 @@ export default function PrescriptionRadar() {
           coMedId: cid,
           coMedName: name,
           level: 'separate',
-          titleAr: '💡 ممتاز لحماية الأمعاء — بشرط الفصل ساعتين!',
-          titleEn: '💡 Great for Gut Protection — Must Separate by 2 Hours!',
+          titleAr:'ممتاز لحماية الأمعاء — بشرط الفصل ساعتين!',
+          titleEn:'Great for Gut Protection — Must Separate by 2 Hours!',
           ruleAr:
             'إذا أخذت البروبيوتيك أو الزبادي في نفس لحظة المضاد الحيوي، سيقتل المضاد البكتيريا النافعة فوراً! خذه بعد جرعة المضاد بساعتين.',
           ruleEn:
@@ -462,8 +462,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'danger',
-            titleAr: '🚨 تفاعل خطير: يرفع سيولة الدم (INR) وخطر النزيف',
-            titleEn: '🚨 High-Risk Interaction: Elevates INR & Bleeding Risk',
+            titleAr:'تفاعل خطير: يرفع سيولة الدم (INR) وخطر النزيف',
+            titleEn:'High-Risk Interaction: Elevates INR & Bleeding Risk',
             ruleAr:
               'هذا المضاد الحيوي يثبط تكسير الوارفارين في الكبد مما يضاعف خطر النزيف. يجب مراجعة الطبيب فوراً لقياس سيولة الدم (INR) أو تعديل الجرعة.',
             ruleEn:
@@ -474,8 +474,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'separate',
-            titleAr: '⚠️ راقب تحليل السيولة (INR) عند استخدام أي مضاد حيوي',
-            titleEn: '⚠️ Monitor INR During Any Antibiotic Course',
+            titleAr:'راقب تحليل السيولة (INR) عند استخدام أي مضاد حيوي',
+            titleEn:'Monitor INR During Any Antibiotic Course',
             ruleAr: 'أي مضاد حيوي قد يقلل بكتيريا الأمعاء المنتجة لفيتامين K؛ أبلغ طبيبك دائماً.',
             ruleEn: 'All antibiotics can alter gut vitamin K flora; inform your physician.',
           });
@@ -486,8 +486,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'danger',
-            titleAr: '🚨 تفاعل خطير (CYP3A4): خطر انحلال العضلات',
-            titleEn: '🚨 Severe CYP3A4 Interaction: Myopathy Risk',
+            titleAr:'تفاعل خطير (CYP3A4): خطر انحلال العضلات',
+            titleEn:'Severe CYP3A4 Interaction: Myopathy Risk',
             ruleAr:
               'كلاريثرومايسين وإريثرومايسين يمنعان تكسير أدوية الكوليسترول (أتور/زوكور). يجب استشارة الطبيب المعالج أو الصيدلي قبل تناولهما معاً.',
             ruleEn:
@@ -498,8 +498,8 @@ export default function PrescriptionRadar() {
             coMedId: cid,
             coMedName: name,
             level: 'safe',
-            titleAr: '✅ آمن مع جرعة المساء المعتادة',
-            titleEn: '✅ Safe with Standard Evening Dose',
+            titleAr:'آمن مع جرعة المساء المعتادة',
+            titleEn:'Safe with Standard Evening Dose',
             ruleAr: 'لا يوجد تثبيط إنزيمي مباشر مع هذا المضاد الحيوي؛ استمر على جرعة الكوليسترول مساءً.',
             ruleEn: 'No direct CYP3A4 inhibition with this antibiotic; continue evening statin dose.',
           });
@@ -509,8 +509,8 @@ export default function PrescriptionRadar() {
           coMedId: cid,
           coMedName: name,
           level: 'separate',
-          titleAr: 'ℹ️ تنبيه في حال حدوث قيء أو إسهال شديد',
-          titleEn: 'ℹ️ Backup Advice Only if Severe Vomiting/Diarrhea Occurs',
+          titleAr:'ℹ تنبيه في حال حدوث قيء أو إسهال شديد',
+          titleEn:'ℹ Backup Advice Only if Severe Vomiting/Diarrhea Occurs',
           ruleAr:
             'المضادات الحيوية العادية (غير الريفامبيسين) لا تُبطل مفعول حبوب منع الحمل مباشرة، إلا إذا تسبب المضاد في قيء أو إسهال شديد يمنع امتصاص القرص.',
           ruleEn:
@@ -574,7 +574,7 @@ export default function PrescriptionRadar() {
         hhmm: t,
         timeAr: formatTime12Hour(t, true),
         timeEn: formatTime12Hour(t, false),
-        badge: '💊',
+        badge:'',
         itemsAr: [
           `الجرعة ${idx + 1} (${intervalLabelAr}): ${abxName} — (${foodRuleAr})`,
           ...(idx === 0 && selectedCoMeds.includes('paracetamol')
@@ -597,7 +597,7 @@ export default function PrescriptionRadar() {
         hhmm: probTime,
         timeAr: formatTime12Hour(probTime, true),
         timeEn: formatTime12Hour(probTime, false),
-        badge: '🥣',
+        badge:'',
         itemsAr: [
           'البروبيوتيك أو كوب الزبادي الطبيعي (بعد الجرعة الأولى بساعتين ونصف لضمان عدم قتل الخمائر النافعة)',
         ],
@@ -628,7 +628,7 @@ export default function PrescriptionRadar() {
         hhmm: sepTime,
         timeAr: formatTime12Hour(sepTime, true),
         timeEn: formatTime12Hour(sepTime, false),
-        badge: '🛡️',
+        badge:'',
         itemsAr: middayMedsAr,
         itemsEn: middayMedsEn,
       });
@@ -651,7 +651,7 @@ export default function PrescriptionRadar() {
         hhmm: nightTime,
         timeAr: formatTime12Hour(nightTime, true),
         timeEn: formatTime12Hour(nightTime, false),
-        badge: '🌙',
+        badge:'',
         itemsAr: nightAr,
         itemsEn: nightEn,
       });
@@ -772,8 +772,8 @@ export default function PrescriptionRadar() {
         {
           type: 'ocr_extracted_unverified',
           medicineName: extracted.detectedDrugName || (isAr ? 'روشتة مصورة' : 'Captured Prescription'),
-          summaryAr: `📷 تم استخراج بيانات أولية غير موثّقة من صورة الروشتة (${file.name}) — بانتظار المراجعة والتوثيق اليدوي قبل الجدولة.`,
-          summaryEn: `📷 Extracted unverified prescription details from image (${file.name}) — awaiting patient/clinician verification before scheduling.`,
+          summaryAr:`تم استخراج بيانات أولية غير موثّقة من صورة الروشتة (${file.name}) — بانتظار المراجعة والتوثيق اليدوي قبل الجدولة.`,
+          summaryEn:`Extracted unverified prescription details from image (${file.name}) — awaiting patient/clinician verification before scheduling.`,
         },
       ]);
     } catch {
@@ -957,11 +957,9 @@ export default function PrescriptionRadar() {
         prescriptionId: rxId,
         medicineName: savedRx.medicineName,
         summaryAr: liveValidation.hasBlockingFlags
-          ? `🚨 تم حفظ الروشتة (${savedRx.medicineName}) بحالة «تحتاج لتوضيح من الطبيب/الصيدلي» بدون تفعيل جدول جرعات.`
-          : `📋 تم حفظ الروشتة (${savedRx.medicineName}) كمسودة غير موثّقة لمراجعتها قبل الجدولة.`,
+          ?`تم حفظ الروشتة (${savedRx.medicineName}) بحالة «تحتاج لتوضيح من الطبيب/الصيدلي» بدون تفعيل جدول جرعات.`          :`تم حفظ الروشتة (${savedRx.medicineName}) كمسودة غير موثّقة لمراجعتها قبل الجدولة.`,
         summaryEn: liveValidation.hasBlockingFlags
-          ? `🚨 Saved prescription (${savedRx.medicineName}) as "Flagged for Professional Clarification" without scheduling doses.`
-          : `📋 Saved prescription (${savedRx.medicineName}) as unverified draft pending verification.`,
+          ?`Saved prescription (${savedRx.medicineName}) as"Flagged for Professional Clarification"without scheduling doses.`          :`Saved prescription (${savedRx.medicineName}) as unverified draft pending verification.`,
       }
     );
 
@@ -1075,8 +1073,8 @@ export default function PrescriptionRadar() {
         prescriptionId: rxId,
         scheduleId: id,
         medicineName: newSchedule.medicineName,
-        summaryAr: `✅ تم التحقق من تعليمات الروشتة للدواء (${newSchedule.medicineName} — ${newSchedule.prescribedDose}) وتوثيقها بواسطة المريض.`,
-        summaryEn: `✅ Verified prescription instructions for (${newSchedule.medicineName} — ${newSchedule.prescribedDose}).`,
+        summaryAr:`تم التحقق من تعليمات الروشتة للدواء (${newSchedule.medicineName} — ${newSchedule.prescribedDose}) وتوثيقها بواسطة المريض.`,
+        summaryEn:`Verified prescription instructions for (${newSchedule.medicineName} — ${newSchedule.prescribedDose}).`,
       },
       {
         type: editingScheduleId ? ('schedule_updated' as const) : ('schedule_created' as const),
@@ -1084,11 +1082,9 @@ export default function PrescriptionRadar() {
         scheduleId: id,
         medicineName: newSchedule.medicineName,
         summaryAr: editingScheduleId
-          ? `🗓️ تم تحديث جدول الجرعات للدواء (${newSchedule.medicineName}) لمدة ${newSchedule.durationDays} أيام.`
-          : `🗓️ تم إنشاء وتفعيل جدول الجرعات للدواء (${newSchedule.medicineName}) لمدة ${newSchedule.durationDays} أيام (${generatedDoses.length} جرعة).`,
+          ?`تم تحديث جدول الجرعات للدواء (${newSchedule.medicineName}) لمدة ${newSchedule.durationDays} أيام.`          :`تم إنشاء وتفعيل جدول الجرعات للدواء (${newSchedule.medicineName}) لمدة ${newSchedule.durationDays} أيام (${generatedDoses.length} جرعة).`,
         summaryEn: editingScheduleId
-          ? `🗓️ Updated treatment schedule for (${newSchedule.medicineName}) for ${newSchedule.durationDays} days.`
-          : `🗓️ Created active treatment schedule for (${newSchedule.medicineName}) for ${newSchedule.durationDays} days (${generatedDoses.length} doses).`,
+          ?`Updated treatment schedule for (${newSchedule.medicineName}) for ${newSchedule.durationDays} days.`          :`Created active treatment schedule for (${newSchedule.medicineName}) for ${newSchedule.durationDays} days (${generatedDoses.length} doses).`,
       },
     ];
 
@@ -1198,7 +1194,7 @@ export default function PrescriptionRadar() {
         <div className="radar-sync-bar local">
           <div>
             <strong>
-              👤{' '}
+               
               {isAr
                 ? 'وضع الزائر — البيانات محفوظة محلياً على هذا الجهاز فقط'
                 : 'Guest Mode — Data Saved Locally on This Device Only'}
@@ -1210,7 +1206,7 @@ export default function PrescriptionRadar() {
             </p>
           </div>
           <button type="button" className="btn small" onClick={() => openAuthModal('login')}>
-            🔐 {isAr ? 'تسجيل الدخول للمزامنة السحابية' : 'Sign In for Cloud Sync'}
+             {isAr ?'تسجيل الدخول للمزامنة السحابية':'Sign In for Cloud Sync'}
           </button>
         </div>
       );
@@ -1220,7 +1216,7 @@ export default function PrescriptionRadar() {
       return (
         <div className="radar-sync-bar loading">
           <strong>
-            🔄{' '}
+             
             {isAr
               ? 'جارٍ تحميل ومزامنة روشتاتك السحابية من حسابك...'
               : 'Loading and synchronizing your cloud prescriptions...'}
@@ -1247,7 +1243,7 @@ export default function PrescriptionRadar() {
         <div className="radar-sync-bar offline">
           <div>
             <strong>
-              📡{' '}
+               
               {isAr
                 ? 'محفوظ محلياً على هذا الجهاز — في انتظار الاتصال بالإنترنت للتأكيد السحابي'
                 : 'Saved Locally on This Device — Waiting for Internet Connection to Confirm Cloud Sync'}
@@ -1259,7 +1255,7 @@ export default function PrescriptionRadar() {
             </p>
           </div>
           <button type="button" className="btn-secondary small" onClick={retrySync}>
-            🔄 {isAr ? 'إعادة المحاولة' : 'Retry Sync'}
+             {isAr ?'إعادة المحاولة':'Retry Sync'}
           </button>
         </div>
       );
@@ -1270,7 +1266,7 @@ export default function PrescriptionRadar() {
         <div className="radar-sync-bar error">
           <div>
             <strong>
-              ⚠️{' '}
+               
               {isAr
                 ? 'تعذر تأكيد الحفظ السحابي (التعديلات محفوظة محلياً على هذا الجهاز فقط حالياً)'
                 : 'Cloud Sync Failed (Changes Are Saved Locally on This Device Only)'}
@@ -1282,7 +1278,7 @@ export default function PrescriptionRadar() {
             )}
           </div>
           <button type="button" className="btn-secondary small" onClick={retrySync}>
-            🔄 {isAr ? 'إعادة المحاولة الآن' : 'Retry Cloud Sync'}
+             {isAr ?'إعادة المحاولة الآن':'Retry Cloud Sync'}
           </button>
         </div>
       );
@@ -1292,10 +1288,9 @@ export default function PrescriptionRadar() {
       <div className="radar-sync-bar synced">
         <div>
           <strong>
-            ☁️{' '}
+             
             {isAr
-              ? 'تم تأكيد الحفظ والمزامنة السحابية عبر أجهزتك ✓'
-              : 'Confirmed Saved & Synced Across Your Devices ✓'}
+              ?'تم تأكيد الحفظ والمزامنة السحابية عبر أجهزتك'              :'Confirmed Saved & Synced Across Your Devices'}
           </strong>
           <span className="small" style={{ marginInlineStart: '10px', opacity: 0.9 }}>
             ({user?.email || user?.displayName || (isAr ? 'حساب موثق' : 'Authenticated Account')}
@@ -1322,7 +1317,7 @@ export default function PrescriptionRadar() {
         }}
       >
         <span className="badge" style={{ background: '#38bdf825', color: '#7dd3fc', borderColor: '#38bdf850' }}>
-          📡 {isAr ? 'أداة الصيدلة الإكلينيكية الذكية + رحلة علاج المريض المتكاملة' : 'Smart Clinical Pharmacy Tool + Complete Patient Treatment Journey'}
+           {isAr ?'أداة الصيدلة الإكلينيكية الذكية + رحلة علاج المريض المتكاملة':'Smart Clinical Pharmacy Tool + Complete Patient Treatment Journey'}
         </span>
         <h1 style={{ color: '#fff', margin: '8px 0' }}>
           {isAr
@@ -1340,7 +1335,7 @@ export default function PrescriptionRadar() {
             className="btn"
             onClick={() => openSaveFromRadar('ocr_upload')}
           >
-            📷 {isAr ? 'تصوير / رفع صورة روشتة (OCR)' : 'Upload / Capture Prescription (OCR)'}
+             {isAr ?'تصوير / رفع صورة روشتة (OCR)':'Upload / Capture Prescription (OCR)'}
           </button>
           <button
             type="button"
@@ -1348,7 +1343,7 @@ export default function PrescriptionRadar() {
             style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }}
             onClick={() => openSaveFromRadar('manual_entry')}
           >
-            ✍️ {isAr ? 'إدخال الروشتة يدوياً وتفعيل المتابعة' : 'Manual Prescription Entry'}
+             {isAr ?'إدخال الروشتة يدوياً وتفعيل المتابعة':'Manual Prescription Entry'}
           </button>
         </div>
       </section>
@@ -1357,7 +1352,7 @@ export default function PrescriptionRadar() {
       {activeDueBanner && (
         <section className="card no-print" style={{ background: '#ecfdf5', border: '2px solid #10b981', color: '#065f46' }}>
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-            <strong>🔔 {activeDueBanner}</strong>
+            <strong> {activeDueBanner}</strong>
             <button type="button" className="btn-secondary small" onClick={() => setActiveDueBanner(null)}>
               {isAr ? 'إغلاق التنبيه' : 'Dismiss'}
             </button>
@@ -1389,7 +1384,7 @@ export default function PrescriptionRadar() {
 
       {/* Clinical Safety Disclaimer */}
       <section className="notice quick no-print">
-        <strong>⚕️ {isAr ? 'ضوابط السلامة الدوائية:' : 'Clinical Safety Boundaries:'} </strong>
+        <strong> {isAr ?'ضوابط السلامة الدوائية:':'Clinical Safety Boundaries:'} </strong>
         {isAr
           ? 'هذا الرادار أداة تنظيمية وتثقيفية مساندة؛ لا يعتمد نتائج الـ OCR تلقائياً أبداً، ولا يخترع جرعة أو تكراراً أو مدة علاج أو طريقة إعطاء، ولا يضاعف الجرعات أو يصف جرعة تعويضية. عند وجود أي نقص أو تعارض في الروشتة أو عند نسيان جرعة، راجع الطبيب المعالج أو الصيدلي دائماً.'
           : 'This tool supports prescription organization and safety education; it never auto-approves OCR extractions, never invents a dose, frequency, duration, or route, and never doubles a dose or prescribes a replacement dose. Always clarify missing or contradictory instructions with your prescribing doctor or pharmacist.'}
@@ -1399,17 +1394,17 @@ export default function PrescriptionRadar() {
       <section className="card stack no-print">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <h2 style={{ margin: 0 }}>
-            1️⃣{' '}
+            1⃣ 
             {isAr
               ? 'اختر المضاد الحيوي، ووقت بدء أول جرعة، وعدد الجرعات اليومية:'
               : '1. Select Antibiotic, First Dose Start Time & Daily Dose Count:'}
           </h2>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <button type="button" className="btn-secondary small" onClick={() => openSaveFromRadar('ocr_upload')}>
-              📷 {isAr ? 'التقاط/رفع روشتة (OCR)' : 'Capture/Upload Rx (OCR)'}
+               {isAr ?'التقاط/رفع روشتة (OCR)':'Capture/Upload Rx (OCR)'}
             </button>
             <button type="button" className="btn small" onClick={() => openSaveFromRadar('manual_entry')}>
-              💾 {isAr ? 'توثيق وحفظ هذه الروشتة لمتابعة الجرعات' : 'Verify & Save Prescription to Track'}
+               {isAr ?'توثيق وحفظ هذه الروشتة لمتابعة الجرعات':'Verify & Save Prescription to Track'}
             </button>
           </div>
         </div>
@@ -1417,7 +1412,7 @@ export default function PrescriptionRadar() {
         <div className="grid">
           <div>
             <label htmlFor="radar-abx" style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-              💊 {isAr ? 'المضاد الحيوي في الروشتة:' : 'Prescribed Antibiotic:'}
+               {isAr ?'المضاد الحيوي في الروشتة:':'Prescribed Antibiotic:'}
             </label>
             <select
               id="radar-abx"
@@ -1435,7 +1430,7 @@ export default function PrescriptionRadar() {
 
           <div>
             <label htmlFor="radar-first-time" style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-              🕒 {isAr ? 'وقت بدء أول جرعة:' : 'First Dose Start Time:'}
+               {isAr ?'وقت بدء أول جرعة:':'First Dose Start Time:'}
             </label>
             <input
               id="radar-first-time"
@@ -1448,7 +1443,7 @@ export default function PrescriptionRadar() {
 
           <div>
             <label htmlFor="radar-freq" style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-              🔢 {isAr ? 'عدد الجرعات في اليوم (يحسب باقي المواعيد تلقائياً):' : 'Doses Per Day (Auto-Calculates Schedule):'}
+               {isAr ?'عدد الجرعات في اليوم (يحسب باقي المواعيد تلقائياً):':'Doses Per Day (Auto-Calculates Schedule):'}
             </label>
             <select
               id="radar-freq"
@@ -1484,7 +1479,7 @@ export default function PrescriptionRadar() {
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <strong>
-                ✨{' '}
+                 
                 {isAr
                   ? 'مواعيد الجرعات المحسوبة تلقائياً بناءً على وقت البدء:'
                   : 'Auto-Calculated Daily Dose Times from Your Start Time:'}
@@ -1502,7 +1497,7 @@ export default function PrescriptionRadar() {
                       fontWeight: 700,
                     }}
                   >
-                    💊 {isAr ? `الجرعة ${i + 1}:` : `Dose ${i + 1}:`} {formatTime12Hour(t, isAr)}
+                     {isAr ?`الجرعة ${i + 1}:`:`Dose ${i + 1}:`} {formatTime12Hour(t, isAr)}
                   </span>
                 ))}
               </div>
@@ -1539,7 +1534,7 @@ export default function PrescriptionRadar() {
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <div>
               <strong>
-                🛡️ {isAr ? 'فحص سجل الحساسية الدوائية:' : 'Patient Allergy Safety Check:'}{' '}
+                 {isAr ?'فحص سجل الحساسية الدوائية:':'Patient Allergy Safety Check:'} 
                 {pick(allergyCheck.title, lang)}
               </strong>
               <p className="small" style={{ margin: '4px 0 0' }}>
@@ -1557,7 +1552,7 @@ export default function PrescriptionRadar() {
       {/* Step 2: Select Co-Medications in the Prescription */}
       <section className="card stack no-print">
         <h2 style={{ margin: 0 }}>
-          2️⃣ {isAr ? 'حدد باقي الأدوية أو المكملات الموجودة معك في الروشتة:' : '2. Select Co-Medications & Supplements in Your Prescription:'}
+          2⃣ {isAr ?'حدد باقي الأدوية أو المكملات الموجودة معك في الروشتة:':'2. Select Co-Medications & Supplements in Your Prescription:'}
         </h2>
         <div className="grid">
           {CO_MEDICATIONS.map((cm) => {
@@ -1599,7 +1594,7 @@ export default function PrescriptionRadar() {
       {/* Step 3: Radar Findings */}
       <section className="card stack no-print">
         <h2 style={{ margin: 0 }}>
-          3️⃣ {isAr ? 'نتيجة فحص رادار الروشتة الكاملة:' : '3. Multi-Drug Prescription Radar Findings:'}
+          3⃣ {isAr ?'نتيجة فحص رادار الروشتة الكاملة:':'3. Multi-Drug Prescription Radar Findings:'}
         </h2>
         <div className="stack" style={{ gap: '10px' }}>
           {findings.map((f) => {
@@ -1638,7 +1633,7 @@ export default function PrescriptionRadar() {
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <h2 style={{ margin: 0 }}>
-              🗓️ {isAr ? 'جدول تنظيم مواعيد اليوم الذكي (مرتب تلقائياً حسب وقت البدء)' : 'Optimized 24-Hour Smart Medication Schedule'}
+               {isAr ?'جدول تنظيم مواعيد اليوم الذكي (مرتب تلقائياً حسب وقت البدء)':'Optimized 24-Hour Smart Medication Schedule'}
             </h2>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               {isAr
@@ -1648,10 +1643,10 @@ export default function PrescriptionRadar() {
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <button type="button" className="btn small" onClick={() => openSaveFromRadar('manual_entry')}>
-              ➕ {isAr ? 'توثيق وحفظ الروشتة بهذه المواعيد' : 'Verify & Save With These Times'}
+               {isAr ?'توثيق وحفظ الروشتة بهذه المواعيد':'Verify & Save With These Times'}
             </button>
             <button type="button" className="btn ghost small" onClick={handlePrintReport}>
-              🖨️ {isAr ? 'طباعة الجدول والتقرير (PDF)' : 'Print Schedule & Report (PDF)'}
+               {isAr ?'طباعة الجدول والتقرير (PDF)':'Print Schedule & Report (PDF)'}
             </button>
           </div>
         </div>
@@ -1700,10 +1695,10 @@ export default function PrescriptionRadar() {
 
         <div className="row wrapRow" style={{ gap: '10px', marginTop: '8px' }}>
           <Link to={`/medicine/${selectedAbx}`} className="btn">
-            💊 {isAr ? 'فتح النشرة السريرية الكاملة للمضاد الحيوي ←' : 'Open Full Antibiotic Monograph →'}
+             {isAr ?'فتح النشرة السريرية الكاملة للمضاد الحيوي ←':'Open Full Antibiotic Monograph →'}
           </Link>
           <Link to="/tracker" className="btn ghost">
-            ⏱️ {isAr ? 'فتح صفحة متابع الكورس المستقلة' : 'Open Standalone Course Tracker'}
+            ⏱ {isAr ?'فتح صفحة متابع الكورس المستقلة':'Open Standalone Course Tracker'}
           </Link>
         </div>
       </section>
@@ -1713,7 +1708,7 @@ export default function PrescriptionRadar() {
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <h2 style={{ margin: 0 }}>
-              5️⃣{' '}
+              5⃣ 
               {isAr
                 ? 'روشتاتي المحفوظة ومتابعة رحلة العلاج عبر الأجهزة'
                 : '5. My Saved Prescriptions & Cross-Device Treatment Journey'}
@@ -1727,18 +1722,18 @@ export default function PrescriptionRadar() {
 
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <button type="button" className="btn-secondary small" onClick={() => openSaveFromRadar('ocr_upload')}>
-              📷 {isAr ? 'تصوير / رفع روشتة (OCR)' : 'Capture / Upload Rx (OCR)'}
+               {isAr ?'تصوير / رفع روشتة (OCR)':'Capture / Upload Rx (OCR)'}
             </button>
             <button type="button" className="btn small" onClick={() => openSaveFromRadar('manual_entry')}>
-              ➕ {isAr ? 'إضافة روشتة وتوثيقها' : 'Add & Verify Prescription'}
+               {isAr ?'إضافة روشتة وتوثيقها':'Add & Verify Prescription'}
             </button>
             {(schedules.length > 0 || prescriptions.length > 0) && (
               <>
                 <button type="button" className="btn-secondary small" onClick={handlePrintReport}>
-                  🖨️ {isAr ? 'طباعة التقرير / PDF' : 'Print Report / PDF'}
+                   {isAr ?'طباعة التقرير / PDF':'Print Report / PDF'}
                 </button>
                 <button type="button" className="btn-secondary small" onClick={handleExportReportJson}>
-                  📥 {isAr ? 'تصدير التقرير (JSON)' : 'Export Report (JSON)'}
+                   {isAr ?'تصدير التقرير (JSON)':'Export Report (JSON)'}
                 </button>
               </>
             )}
@@ -1749,7 +1744,7 @@ export default function PrescriptionRadar() {
         {unscheduledPrescriptions.length > 0 && (
           <div className="rx-verification-queue-box">
             <h3 style={{ margin: '0 0 6px' }}>
-              📋{' '}
+               
               {isAr
                 ? 'روشتات محفوظة بانتظار المراجعة أو استكمال التوضيح الطبي (قبل تفعيل الجدول):'
                 : 'Saved Prescriptions Pending Verification or Professional Clarification (Unscheduled):'}
@@ -1765,7 +1760,7 @@ export default function PrescriptionRadar() {
                   <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
                       <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
-                        <strong>💊 {rx.medicineName || (isAr ? 'دواء غير محدد' : 'Unspecified Medicine')}</strong>
+                        <strong> {rx.medicineName || (isAr ?'دواء غير محدد':'Unspecified Medicine')}</strong>
                         <span
                           className={`verification-badge ${
                             rx.verificationStatus === 'needs_clarification' ? 'clarify' : 'unverified'
@@ -1797,14 +1792,14 @@ export default function PrescriptionRadar() {
                         className="btn small"
                         onClick={() => openVerifySavedPrescription(rx)}
                       >
-                        🔍 {isAr ? 'مراجعة وتوثيق وتفعيل الجدول' : 'Review, Verify & Schedule'}
+                         {isAr ?'مراجعة وتوثيق وتفعيل الجدول':'Review, Verify & Schedule'}
                       </button>
                       <button
                         type="button"
                         className="btn-secondary danger small"
                         onClick={() => deletePrescriptionById(rx.id)}
                       >
-                        🗑️ {isAr ? 'حذف' : 'Delete'}
+                         {isAr ?'حذف':'Delete'}
                       </button>
                     </div>
                   </div>
@@ -1819,40 +1814,39 @@ export default function PrescriptionRadar() {
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <strong>
-                🔔 {isAr ? 'كيف تعمل إشعارات مواعيد الجرعات؟' : 'How Do Dose Notifications Work?'}
+                 {isAr ?'كيف تعمل إشعارات مواعيد الجرعات؟':'How Do Dose Notifications Work?'}
               </strong>
               <p className="small" style={{ margin: '4px 0 0', lineHeight: 1.55 }}>
                 {isAr
-                  ? 'عند تفعيل إشعارات المتصفح، يظهر لك إشعار منبثق خارجي على شاشة الهاتف أو الكمبيوتر (System Notification) بالإضافة إلى تنبيه داخل الصفحة طالما أن المتصفح مفتوح. أما إذا أغلقت المتصفح تماماً، فلا تعمل إشعارات الويب الخلفية؛ لذلك وفرنا لك أيضاً زر «📅 تحميل منبهات الموبايل (.ics)» داخل كل روشتة لإضافة مواعيد الجرعات لمنبه وتقويم هاتفك مباشرةً!'
-                  : 'When browser notifications are enabled, a system notification pops up on your screen (along with an in-page banner) while the browser remains open. Web notifications cannot fire when the browser is completely closed; click "📅 Phone Alarms (.ics)" on any saved prescription for native calendar alarms.'}
+                  ?'عند تفعيل إشعارات المتصفح، يظهر لك إشعار منبثق خارجي على شاشة الهاتف أو الكمبيوتر (System Notification) بالإضافة إلى تنبيه داخل الصفحة طالما أن المتصفح مفتوح. أما إذا أغلقت المتصفح تماماً، فلا تعمل إشعارات الويب الخلفية؛ لذلك وفرنا لك أيضاً زر « تحميل منبهات الموبايل (.ics)» داخل كل روشتة لإضافة مواعيد الجرعات لمنبه وتقويم هاتفك مباشرةً!'                  :'When browser notifications are enabled, a system notification pops up on your screen (along with an in-page banner) while the browser remains open. Web notifications cannot fire when the browser is completely closed; click"Phone Alarms (.ics)"on any saved prescription for native calendar alarms.'}
               </p>
               {notifError && (
                 <p className="small" style={{ margin: '6px 0 0', color: '#b45309', fontWeight: 700 }}>
-                  ⚠️ {notifError}
+                   {notifError}
                 </p>
               )}
             </div>
             <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
               {!notifSupported || notifPermission === 'unsupported' ? (
                 <span className="notif-pill">
-                  ℹ️ {isAr ? 'إشعارات المتصفح غير مدعومة (استخدم منبهات .ics)' : 'Browser Notifications Unsupported (Use .ics Alarms)'}
+                  ℹ {isAr ?'إشعارات المتصفح غير مدعومة (استخدم منبهات .ics)':'Browser Notifications Unsupported (Use .ics Alarms)'}
                 </span>
               ) : notifPermission === 'granted' ? (
                 <>
                   <span className="notif-pill active">
-                    🔔 {isAr ? 'تنبيهات المتصفح مفعّلة أثناء فتح الموقع' : 'In-Browser Reminders Active'}
+                     {isAr ?'تنبيهات المتصفح مفعّلة أثناء فتح الموقع':'In-Browser Reminders Active'}
                   </span>
                   <button type="button" className="btn-secondary small" onClick={sendTestNotification}>
-                    🔔 {isAr ? 'تجربة التنبيه' : 'Test Alert'}
+                     {isAr ?'تجربة التنبيه':'Test Alert'}
                   </button>
                 </>
               ) : notifPermission === 'denied' ? (
                 <span className="notif-pill" style={{ background: '#fef2f2', color: '#991b1b', borderColor: '#f87171' }}>
-                  🔕 {isAr ? 'الإشعارات محظورة من المتصفح (استخدم منبهات .ics)' : 'Notifications Blocked in Browser (Use .ics Alarms)'}
+                   {isAr ?'الإشعارات محظورة من المتصفح (استخدم منبهات .ics)':'Notifications Blocked in Browser (Use .ics Alarms)'}
                 </span>
               ) : (
                 <button type="button" className="btn-secondary small" onClick={requestNotifPermission}>
-                  🔔 {isAr ? 'تفعيل تنبيهات المتصفح' : 'Enable Browser Reminders'}
+                   {isAr ?'تفعيل تنبيهات المتصفح':'Enable Browser Reminders'}
                 </button>
               )}
             </div>
@@ -1862,7 +1856,7 @@ export default function PrescriptionRadar() {
         {/* Safe Missed-Dose Clinical Guidance (Priority 3) */}
         <div className="safe-missed-dose-box">
           <strong>
-            ⚕️{' '}
+             
             {isAr
               ? 'إرشادات السلامة عند تأخر أو نسيان الجرعة (مهم جداً):'
               : 'Safe Clinical Guidance for Overdue or Missed Doses:'}
@@ -1890,7 +1884,7 @@ export default function PrescriptionRadar() {
         {initialLoading ? (
           <div className="card center" style={{ padding: '36px 20px', textAlign: 'center' }}>
             <div style={{ fontSize: '2.2rem', marginBottom: '10px' }} aria-hidden="true">
-              ☁️
+              
             </div>
             <h3 style={{ margin: '0 0 6px' }}>
               {isAr
@@ -1905,8 +1899,7 @@ export default function PrescriptionRadar() {
           </div>
         ) : schedules.length === 0 ? (
           <div className="card stack empty-tracker" style={{ margin: 0 }}>
-            <span className="empty-icon">💊</span>
-            <h3>
+                        <h3>
               {isAr
                 ? 'لا توجد جداول علاجية مفعّلة حالياً'
                 : 'No Active Verified Treatment Schedules'}
@@ -1918,10 +1911,10 @@ export default function PrescriptionRadar() {
             </p>
             <div className="row wrapRow" style={{ marginTop: '8px', gap: '8px', justifyContent: 'center' }}>
               <button type="button" className="btn" onClick={() => openSaveFromRadar('ocr_upload')}>
-                📷 {isAr ? 'رفع صورة روشتة أو التقاطها بالكاميرا' : 'Upload or Capture Prescription Image'}
+                 {isAr ?'رفع صورة روشتة أو التقاطها بالكاميرا':'Upload or Capture Prescription Image'}
               </button>
               <button type="button" className="btn-secondary" onClick={() => openSaveFromRadar('manual_entry')}>
-                ✍️ {isAr ? 'إدخال الروشتة يدوياً وتفعيل المتابعة' : 'Enter Prescription Manually'}
+                 {isAr ?'إدخال الروشتة يدوياً وتفعيل المتابعة':'Enter Prescription Manually'}
               </button>
             </div>
           </div>
@@ -1965,7 +1958,7 @@ export default function PrescriptionRadar() {
                     <div>
                       <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
                         <h3 className="sch-title" style={{ margin: 0 }}>
-                          💊 {sch.medicineName}
+                           {sch.medicineName}
                         </h3>
                         <span className="verification-badge verified">
                           {formatVerificationStatusLabel(sch.verificationStatus, isAr)}
@@ -1994,7 +1987,7 @@ export default function PrescriptionRadar() {
                       )}
                       {sch.notes && (
                         <p className="sch-notes">
-                          📝 <b>{isAr ? 'تعليمات الطبيب/الصيدلي:' : 'Prescribed Instructions:'}</b>{' '}
+                           <b>{isAr ?'تعليمات الطبيب/الصيدلي:':'Prescribed Instructions:'}</b> 
                           <i>{sch.notes}</i>
                         </p>
                       )}
@@ -2007,28 +2000,28 @@ export default function PrescriptionRadar() {
                         onClick={() => downloadScheduleIcs(sch, isAr)}
                         title={isAr ? 'إضافة مواعيد الجرعات لتقويم ومنبه الهاتف' : 'Add dose alarms to phone calendar'}
                       >
-                        📅 {isAr ? 'منبهات الموبايل (.ics)' : 'Phone Alarms (.ics)'}
+                         {isAr ?'منبهات الموبايل (.ics)':'Phone Alarms (.ics)'}
                       </button>
                       <button
                         type="button"
                         className="btn-secondary small"
                         onClick={() => loadScheduleIntoRadar(sch)}
                       >
-                        📡 {isAr ? 'عرض في الرادار' : 'Load in Radar'}
+                         {isAr ?'عرض في الرادار':'Load in Radar'}
                       </button>
                       <button
                         type="button"
                         className="btn-secondary small"
                         onClick={() => openEditSchedule(sch)}
                       >
-                        ✏️ {isAr ? 'تعديل' : 'Edit'}
+                         {isAr ?'تعديل':'Edit'}
                       </button>
                       <button
                         type="button"
                         className="btn-secondary danger small"
                         onClick={() => handleDeleteSchedule(sch.id)}
                       >
-                        🗑️ {isAr ? 'حذف' : 'Delete'}
+                         {isAr ?'حذف':'Delete'}
                       </button>
                     </div>
                   </div>
@@ -2041,7 +2034,7 @@ export default function PrescriptionRadar() {
                     </div>
                     <div className="kpi-item taken">
                       <span className="kpi-num">{takenCount}</span>
-                      <span className="kpi-label">{isAr ? 'تم أخذها ✅' : 'Taken ✅'}</span>
+                      <span className="kpi-label">{isAr ?'تم أخذها':'Taken'}</span>
                     </div>
                     <div className="kpi-item upcoming">
                       <span className="kpi-num">{upcomingCount}</span>
@@ -2050,13 +2043,13 @@ export default function PrescriptionRadar() {
                     <div className="kpi-item unconfirmed">
                       <span className="kpi-num">{unconfirmedCount}</span>
                       <span className="kpi-label">
-                        {isAr ? 'غير مسجلة (متأخرة غير مؤكدة) ⚠️' : 'Missing Record (Overdue Unconfirmed) ⚠️'}
+                        {isAr ?'غير مسجلة (متأخرة غير مؤكدة)':'Missing Record (Overdue Unconfirmed)'}
                       </span>
                     </div>
                     <div className="kpi-item missed">
                       <span className="kpi-num">{missedCount}</span>
                       <span className="kpi-label">
-                        {isAr ? 'فائتة مؤكدة صراحةً ❌' : 'Confirmed Missed ❌'}
+                        {isAr ?'فائتة مؤكدة صراحةً':'Confirmed Missed'}
                       </span>
                     </div>
                   </div>
@@ -2074,8 +2067,7 @@ export default function PrescriptionRadar() {
                     </div>
                     <small className="muted progress-note">
                       {isAr
-                        ? '⚠️ تنبيه: يعكس هذا المؤشر الجرعات التي سجلتها فقط ولا يعني الشفاء السريري التام. أكمل الكورس كاملاً حسب توجيه الطبيب.'
-                        : 'Note: Progress reflects recorded doses only and does not indicate clinical cure. Always complete the full prescribed course.'}
+                        ?'تنبيه: يعكس هذا المؤشر الجرعات التي سجلتها فقط ولا يعني الشفاء السريري التام. أكمل الكورس كاملاً حسب توجيه الطبيب.'                        : 'Note: Progress reflects recorded doses only and does not indicate clinical cure. Always complete the full prescribed course.'}
                     </small>
                   </div>
 
@@ -2083,20 +2075,19 @@ export default function PrescriptionRadar() {
                   {(unconfirmedCount > 0 || missedCount > 0) && (
                     <div className="unconfirmed-banner">
                       <strong>
-                        ⚠️{' '}
+                         
                         {isAr
                           ? 'تنبيه أمان للجرعات غير المسجلة أو الفائتة:'
                           : 'Safety Notice for Missing Records or Confirmed Missed Doses:'}{' '}
                       </strong>
                       {isAr
-                        ? 'الجرعات «المتأخرة غير المؤكدة» هي مواعيد مضت ولم تسجل قرارها بعد (وليست فائتة مؤكدة). إذا كنت قد أخذتها، اضغط «✓ أخذت الجرعة». أما إذا نسيتها فعلاً، فلا تضاعف الجرعة أبداً ولا تأخذ جرعة تعويضية — استشر الطبيب أو الصيدلي.'
-                        : '"Overdue (Unconfirmed)" doses are past scheduled times with no recorded entry yet (distinct from Confirmed Missed doses). If you took the dose, click "Mark Taken". If you missed it, never double a dose or take a replacement dose — consult your doctor or pharmacist.'}
+                        ?'الجرعات «المتأخرة غير المؤكدة» هي مواعيد مضت ولم تسجل قرارها بعد (وليست فائتة مؤكدة). إذا كنت قد أخذتها، اضغط « أخذت الجرعة». أما إذا نسيتها فعلاً، فلا تضاعف الجرعة أبداً ولا تأخذ جرعة تعويضية — استشر الطبيب أو الصيدلي.'                        : '"Overdue (Unconfirmed)" doses are past scheduled times with no recorded entry yet (distinct from Confirmed Missed doses). If you took the dose, click "Mark Taken". If you missed it, never double a dose or take a replacement dose — consult your doctor or pharmacist.'}
                     </div>
                   )}
 
                   {/* Daily Dose Schedule & Accidental Entry Correction */}
                   <div className="timeline-section">
-                    <h4>📅 {isAr ? 'جدول الجرعات اليومي وتوثيق الحالات:' : 'Daily Dose Schedule & Documentation Controls:'}</h4>
+                    <h4> {isAr ?'جدول الجرعات اليومي وتوثيق الحالات:':'Daily Dose Schedule & Documentation Controls:'}</h4>
                     <div className="timeline-grid">
                       {Object.entries(dayGroups).map(([dayNum, dayDoses]) => (
                         <div key={dayNum} className="day-card">
@@ -2113,16 +2104,16 @@ export default function PrescriptionRadar() {
                                   <div className="dose-left">
                                     <span className="dose-time">⏰ {formatTime12Hour(timeDisplay, isAr)}</span>
                                     <span className={`status-pill ${status}`}>
-                                      {status === 'taken' && (isAr ? 'تم أخذها ✅' : 'Taken ✅')}
+                                      {status ==='taken'&& (isAr ?'تم أخذها':'Taken')}
                                       {status === 'upcoming' && (isAr ? 'قادمة ⏳' : 'Upcoming ⏳')}
                                       {status === 'unconfirmed' &&
-                                        (isAr ? 'لم تُسجّل (متأخرة غير مؤكدة) ⚠️' : 'Missing Record (Unconfirmed) ⚠️')}
+                                        (isAr ?'لم تُسجّل (متأخرة غير مؤكدة)':'Missing Record (Unconfirmed)')}
                                       {status === 'missed' &&
-                                        (isAr ? 'فائتة مؤكدة ❌' : 'Confirmed Missed ❌')}
+                                        (isAr ?'فائتة مؤكدة':'Confirmed Missed')}
                                     </span>
                                     {dose.documentedOutcome && (
                                       <small className="muted" style={{ display: 'block', width: '100%', fontSize: '0.74rem' }}>
-                                        📌 {formatDocumentedOutcomeLabel(dose.documentedOutcome, isAr)}
+                                         {formatDocumentedOutcomeLabel(dose.documentedOutcome, isAr)}
                                       </small>
                                     )}
                                     {dose.status === 'taken' && dose.takenAt && (
@@ -2139,7 +2130,7 @@ export default function PrescriptionRadar() {
                                     )}
                                     {dose.note && (
                                       <small className="muted" style={{ display: 'block', width: '100%', fontSize: '0.74rem' }}>
-                                        📝 {dose.note}
+                                         {dose.note}
                                       </small>
                                     )}
                                   </div>
@@ -2153,7 +2144,7 @@ export default function PrescriptionRadar() {
                                           onClick={() => openDocumentDoseModal(sch.id, dose, sch.medicineName)}
                                           title={isAr ? 'إضافة أو تعديل ملاحظة التوثيق' : 'Edit dose note/outcome'}
                                         >
-                                          📝 {isAr ? 'ملاحظة' : 'Note'}
+                                           {isAr ?'ملاحظة':'Note'}
                                         </button>
                                         <button
                                           type="button"
@@ -2169,7 +2160,7 @@ export default function PrescriptionRadar() {
                                           onClick={() => handleDoseAction(sch.id, dose.id, 'missed')}
                                           title={isAr ? 'تصحيح إلى فائتة' : 'Change to Missed'}
                                         >
-                                          ✕ {isAr ? 'فائتة' : 'Missed'}
+                                           {isAr ?'فائتة':'Missed'}
                                         </button>
                                       </>
                                     ) : status === 'missed' ? (
@@ -2180,14 +2171,14 @@ export default function PrescriptionRadar() {
                                           onClick={() => handleDoseAction(sch.id, dose.id, 'taken')}
                                           title={isAr ? 'تصحيح إلى تم أخذها' : 'Correct to Taken'}
                                         >
-                                          ✓ {isAr ? 'أخذتها' : 'Taken'}
+                                           {isAr ?'أخذتها':'Taken'}
                                         </button>
                                         <button
                                           type="button"
                                           className="undo-btn"
                                           onClick={() => openDocumentDoseModal(sch.id, dose, sch.medicineName)}
                                         >
-                                          📝 {isAr ? 'ملاحظة' : 'Note'}
+                                           {isAr ?'ملاحظة':'Note'}
                                         </button>
                                         <button
                                           type="button"
@@ -2205,14 +2196,14 @@ export default function PrescriptionRadar() {
                                           className="btn-take"
                                           onClick={() => handleDoseAction(sch.id, dose.id, 'taken')}
                                         >
-                                          ✓ {isAr ? 'أخذت الجرعة' : 'Mark Taken'}
+                                           {isAr ?'أخذت الجرعة':'Mark Taken'}
                                         </button>
                                         <button
                                           type="button"
                                           className="btn-missed"
                                           onClick={() => handleDoseAction(sch.id, dose.id, 'missed')}
                                         >
-                                          ✕ {isAr ? 'فائتة' : 'Mark Missed'}
+                                           {isAr ?'فائتة':'Mark Missed'}
                                         </button>
                                         <button
                                           type="button"
@@ -2220,7 +2211,7 @@ export default function PrescriptionRadar() {
                                           onClick={() => openDocumentDoseModal(sch.id, dose, sch.medicineName)}
                                           title={isAr ? 'توثيق سبب تأجيل أو ملاحظة للجرعة' : 'Document note or clinical hold'}
                                         >
-                                          📝 {isAr ? 'توثيق' : 'Document'}
+                                           {isAr ?'توثيق':'Document'}
                                         </button>
                                       </>
                                     )}
@@ -2238,7 +2229,7 @@ export default function PrescriptionRadar() {
                   {recordedHistory.length > 0 && (
                     <div className="dose-history-log">
                       <h4 style={{ margin: '0 0 8px' }}>
-                        🕒 {isAr ? 'سجل تاريخ الجرعات الموثّقة (الموعد المجدول مقابل الفعلي):' : 'Recorded Dose History Log (Scheduled vs Actual Timestamp):'}
+                         {isAr ?'سجل تاريخ الجرعات الموثّقة (الموعد المجدول مقابل الفعلي):':'Recorded Dose History Log (Scheduled vs Actual Timestamp):'}
                       </h4>
                       <div className="tablewrap">
                         <table className="tbl">
@@ -2264,11 +2255,8 @@ export default function PrescriptionRadar() {
                                   <div>
                                     {hd.status === 'taken'
                                       ? isAr
-                                        ? '✅ تم أخذها'
-                                        : '✅ Taken'
-                                      : isAr
-                                        ? '❌ فائتة مؤكدة'
-                                        : '❌ Confirmed Missed'}
+                                        ?'تم أخذها'                                        :'Taken'                                      : isAr
+                                        ?'فائتة مؤكدة'                                        :'Confirmed Missed'}
                                   </div>
                                   {hd.documentedOutcome && (
                                     <small className="muted">
@@ -2300,7 +2288,7 @@ export default function PrescriptionRadar() {
         {treatmentEvents.length > 0 && (
           <div className="dose-history-log" style={{ marginTop: '10px' }}>
             <h4 style={{ margin: '0 0 8px' }}>
-              📜{' '}
+               
               {isAr
                 ? 'سجل أحداث رحلة العلاج المحفوظ في حسابك (يتزامن عبر أجهزتك):'
                 : 'Saved Patient Treatment Journey Event Log (Synced Across Devices):'}
@@ -2334,7 +2322,7 @@ export default function PrescriptionRadar() {
         <div className="row no-print" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <h2 style={{ margin: 0 }}>
-              📄 {isAr ? 'تقرير رحلة علاج المريض الشامل (للطباعة أو التصدير)' : 'Complete Patient Treatment Journey Report (Print / Export)'}
+               {isAr ?'تقرير رحلة علاج المريض الشامل (للطباعة أو التصدير)':'Complete Patient Treatment Journey Report (Print / Export)'}
             </h2>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               {isAr
@@ -2344,10 +2332,10 @@ export default function PrescriptionRadar() {
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <button type="button" className="btn" onClick={handlePrintReport}>
-              🖨️ {isAr ? 'طباعة / حفظ كملف PDF' : 'Print / Save as PDF'}
+               {isAr ?'طباعة / حفظ كملف PDF':'Print / Save as PDF'}
             </button>
             <button type="button" className="btn-secondary" onClick={handleExportReportJson}>
-              📥 {isAr ? 'تصدير التقرير (JSON)' : 'Export Report (JSON)'}
+               {isAr ?'تصدير التقرير (JSON)':'Export Report (JSON)'}
             </button>
           </div>
         </div>
@@ -2366,7 +2354,7 @@ export default function PrescriptionRadar() {
           </p>
           <div className="report-disclaimer-box">
             <strong>
-              ⚠️ {isAr ? 'إخلاء مسؤولية وضوابط السلامة:' : 'Safety & Clinical Disclaimer:'}{' '}
+               {isAr ?'إخلاء مسؤولية وضوابط السلامة:':'Safety & Clinical Disclaimer:'} 
             </strong>
             {isAr
               ? 'هذا التقرير مُدار بواسطة المريض للمتابعة الشخصية ولا يُعد سجلاً سريرياً موثقاً. الجرعات «غير المسجلة (متأخرة غير مؤكدة)» تعني مواعيد مضت ولم يُسجل المريض حالتها بعد، وهي تختلف عن «الجرعات الفائتة المؤكدة صراحةً». لا تضاعف أي جرعة ولا تأخذ جرعة تعويضية دون استشارة الطبيب أو الصيدلي.'
@@ -2377,7 +2365,7 @@ export default function PrescriptionRadar() {
         {prescriptions.length > 0 && (
           <div className="report-block">
             <h3 style={{ margin: '0 0 6px' }}>
-              📋 {isAr ? 'حالة توثيق الروشتات المحفوظة:' : 'Saved Prescriptions & Verification Status:'}
+               {isAr ?'حالة توثيق الروشتات المحفوظة:':'Saved Prescriptions & Verification Status:'}
             </h3>
             <ul className="small" style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.65 }}>
               {prescriptions.map((rx) => (
@@ -2394,7 +2382,7 @@ export default function PrescriptionRadar() {
 
         <div className="report-block">
           <h3 style={{ margin: '0 0 6px' }}>
-            🔬 {isAr ? 'ملخص فحص رادار الروشتة والتنبيهات الدوائية (24 ساعة):' : 'Current 24-Hour Prescription Radar & Safety Warnings:'}
+             {isAr ?'ملخص فحص رادار الروشتة والتنبيهات الدوائية (24 ساعة):':'Current 24-Hour Prescription Radar & Safety Warnings:'}
           </h3>
           <p className="small" style={{ margin: '0 0 6px' }}>
             <b>{isAr ? 'المضاد الحيوي المحدد:' : 'Selected Antibiotic:'}</b>{' '}
@@ -2414,7 +2402,7 @@ export default function PrescriptionRadar() {
         {schedules.length > 0 && (
           <div className="report-block">
             <h3 style={{ margin: '0 0 8px' }}>
-              💊 {isAr ? 'الخطط العلاجية وسجل الجرعات التفصيلي:' : 'Treatment Plans & Detailed Dose History:'}
+               {isAr ?'الخطط العلاجية وسجل الجرعات التفصيلي:':'Treatment Plans & Detailed Dose History:'}
             </h3>
             {schedules.map((sch) => {
               const stats = calculateScheduleProgress(sch);
@@ -2462,12 +2450,11 @@ export default function PrescriptionRadar() {
                               <td>{isAr ? `اليوم ${d.dayNumber} (#${d.doseNumberInDay})` : `Day ${d.dayNumber} (#${d.doseNumberInDay})`}</td>
                               <td>{d.scheduledTime.replace('T', ' ').slice(0, 16)}</td>
                               <td>
-                                {st === 'taken' && (isAr ? 'تم أخذها (مؤكدة) ✅' : 'Confirmed Taken ✅')}
-                                {st === 'missed' && (isAr ? 'جرعة فائتة مؤكدة صراحةً ❌' : 'Confirmed Missed Dose ❌')}
+                                {st ==='taken'&& (isAr ?'تم أخذها (مؤكدة)':'Confirmed Taken')}
+                                {st ==='missed'&& (isAr ?'جرعة فائتة مؤكدة صراحةً':'Confirmed Missed Dose')}
                                 {st === 'unconfirmed' &&
                                   (isAr
-                                    ? 'سجل مفقود — متأخرة غير مؤكدة ⚠️'
-                                    : 'Missing Record — Overdue Unconfirmed ⚠️')}
+                                    ?'سجل مفقود — متأخرة غير مؤكدة'                                    :'Missing Record — Overdue Unconfirmed')}
                                 {st === 'upcoming' && (isAr ? 'قادمة في الجدول ⏳' : 'Upcoming Scheduled ⏳')}
                               </td>
                               <td>
@@ -2516,7 +2503,7 @@ export default function PrescriptionRadar() {
                       : 'Capture & Verify Prescription for Cross-Device Journey'}
                 </h3>
                 <button type="button" className="close-btn" onClick={() => setShowSaveModal(false)}>
-                  ✕
+                  
                 </button>
               </div>
 
@@ -2525,7 +2512,7 @@ export default function PrescriptionRadar() {
                 <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <strong>
-                      📷{' '}
+                       
                       {isAr
                         ? 'التقاط صورة الروشتة (OCR) أو الإدخال اليدوي:'
                         : 'Prescription Image Capture (OCR) or Manual Entry:'}
@@ -2538,7 +2525,7 @@ export default function PrescriptionRadar() {
                   </div>
                   <div className="row wrapRow" style={{ gap: '8px' }}>
                     <label className="btn-secondary small" style={{ cursor: 'pointer', margin: 0 }}>
-                      📁 {isAr ? 'رفع صورة روشتة' : 'Upload Rx Image'}
+                       {isAr ?'رفع صورة روشتة':'Upload Rx Image'}
                       <input
                         type="file"
                         accept="image/*"
@@ -2547,7 +2534,7 @@ export default function PrescriptionRadar() {
                       />
                     </label>
                     <label className="btn-secondary small" style={{ cursor: 'pointer', margin: 0 }}>
-                      📸 {isAr ? 'كاميرا الموبايل' : 'Camera Capture'}
+                       {isAr ?'كاميرا الموبايل':'Camera Capture'}
                       <input
                         type="file"
                         accept="image/*"
@@ -2566,7 +2553,7 @@ export default function PrescriptionRadar() {
                           setOcrError(null);
                         }}
                       >
-                        ✍️ {isAr ? 'تحويل لإدخال يدوي' : 'Switch to Manual Entry'}
+                         {isAr ?'تحويل لإدخال يدوي':'Switch to Manual Entry'}
                       </button>
                     )}
                   </div>
@@ -2583,14 +2570,14 @@ export default function PrescriptionRadar() {
 
                 {ocrError && (
                   <div className="ocr-status-banner error" style={{ marginTop: '10px' }}>
-                    ⚠️ {ocrError}
+                     {ocrError}
                   </div>
                 )}
 
                 {isOcrUnverified && (
                   <div className="ocr-unverified-banner" style={{ marginTop: '10px' }}>
                     <strong>
-                      ⚠️{' '}
+                       
                       {isAr
                         ? 'بيانات مستخرجة بالـ OCR (غير موثّقة — لا تُعتمد تلقائياً):'
                         : 'Unverified OCR-Extracted Information (Never Auto-Approved):'}
@@ -2611,7 +2598,7 @@ export default function PrescriptionRadar() {
                     )}
                     {ocrExtraction && ocrExtraction.unreadableFields.length > 0 && (
                       <p className="small" style={{ margin: '6px 0 0', fontWeight: 700, color: '#991b1b' }}>
-                        🔍{' '}
+                         
                         {isAr
                           ? `حقول غير مقروءة في الصورة وتحتاج لإدخال/تأكيد يدوي: ${ocrExtraction.unreadableFields.join(' ، ')}`
                           : `Unreadable fields requiring manual entry/clarification: ${ocrExtraction.unreadableFields.join(', ')}`}
@@ -2636,7 +2623,7 @@ export default function PrescriptionRadar() {
                     <b>{isAr ? 'اسم المضاد الحيوي كما في الروشتة:' : 'Prescribed Antibiotic Name:'} *</b>
                     {isOcrUnverified && medName && (
                       <span className="ocr-field-tag">
-                        {isAr ? '⚠️ مستخرج غير موثّق' : '⚠️ Unverified OCR'}
+                        {isAr ?'مستخرج غير موثّق':'Unverified OCR'}
                       </span>
                     )}
                   </label>
@@ -2668,7 +2655,7 @@ export default function PrescriptionRadar() {
                       <b>{isAr ? 'الجرعة والتركيز كما في الروشتة:' : 'Prescribed Dose & Strength:'} *</b>
                       {isOcrUnverified && prescribedDose && (
                         <span className="ocr-field-tag">
-                          {isAr ? '⚠️ مستخرج غير موثّق' : '⚠️ Unverified OCR'}
+                          {isAr ?'مستخرج غير موثّق':'Unverified OCR'}
                         </span>
                       )}
                     </label>
@@ -2699,7 +2686,7 @@ export default function PrescriptionRadar() {
                 <div className="form-row">
                   <div className="form-group">
                     <label>
-                      <b>🕒 {isAr ? 'وقت بدء أول جرعة:' : 'First Dose Start Time:'} *</b>
+                      <b> {isAr ?'وقت بدء أول جرعة:':'First Dose Start Time:'} *</b>
                     </label>
                     <input
                       type="time"
@@ -2711,7 +2698,7 @@ export default function PrescriptionRadar() {
 
                   <div className="form-group">
                     <label>
-                      <b>🔢 {isAr ? 'التكرار اليومي بالروشتة (يحسب الأوقات تلقائياً):' : 'Prescribed Daily Frequency:'} *</b>
+                      <b> {isAr ?'التكرار اليومي بالروشتة (يحسب الأوقات تلقائياً):':'Prescribed Daily Frequency:'} *</b>
                     </label>
                     <select value={scheduleFreq} onChange={(e) => handleScheduleFreqChange(e.target.value)}>
                       <option value="">
@@ -2729,7 +2716,7 @@ export default function PrescriptionRadar() {
                   <div className="form-group">
                     <label>
                       <b>
-                        ✨{' '}
+                         
                         {isAr
                           ? 'مواعيد الجرعات المحسوبة تلقائياً خلال اليوم (يمكنك تعديل أي موعد عند الحاجة):'
                           : 'Auto-Calculated Scheduled Dose Times (Editable if needed):'}
@@ -2798,7 +2785,7 @@ export default function PrescriptionRadar() {
                 {liveValidation.blockingFlags.length > 0 && (
                   <div className="clarification-gate-box blocking">
                     <strong>
-                      🚨{' '}
+                       
                       {isAr
                         ? 'تعليمات ناقصة أو متعارضة تتطلب توضيحاً مهنياً (لا يمكن جدولة الجرعات قبل تصحيحها):'
                         : 'Missing or Contradictory Instructions Flagged for Professional Clarification (Scheduling Blocked):'}
@@ -2814,7 +2801,7 @@ export default function PrescriptionRadar() {
                 {liveValidation.warningFlags.length > 0 && (
                   <div className="clarification-gate-box warning">
                     <strong>
-                      ⚠️{' '}
+                       
                       {isAr
                         ? 'تنبيهات الأمان الدوائي والتداخلات:'
                         : 'Medication Safety & Interaction Warnings:'}
@@ -2860,7 +2847,7 @@ export default function PrescriptionRadar() {
                         : undefined
                     }
                   >
-                    ✅{' '}
+                     
                     {editingScheduleId
                       ? isAr
                         ? 'توثيق وتحديث الجدول العلاجي'
@@ -2875,7 +2862,7 @@ export default function PrescriptionRadar() {
                     className="btn-secondary"
                     onClick={handleSaveUnverifiedPrescriptionOnly}
                   >
-                    📋{' '}
+                     
                     {isAr
                       ? 'حفظ الروشتة للاستشارة الطبية (بدون تفعيل جدول)'
                       : 'Save for Professional Clarification (Without Schedule)'}
@@ -2898,13 +2885,13 @@ export default function PrescriptionRadar() {
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
               <div className="modal-head">
                 <h3>
-                  📝{' '}
+                   
                   {isAr
                     ? `توثيق تفاصيل الجرعة — ${docModalTarget.medicineName}`
                     : `Document Dose Details — ${docModalTarget.medicineName}`}
                 </h3>
                 <button type="button" className="close-btn" onClick={() => setDocModalTarget(null)}>
-                  ✕
+                  
                 </button>
               </div>
               <form onSubmit={handleSaveDocumentedDose} className="stack modal-form">
@@ -2930,9 +2917,9 @@ export default function PrescriptionRadar() {
                       );
                     }}
                   >
-                    <option value="taken">{isAr ? '✅ تم أخذ الجرعة' : '✅ Dose Taken'}</option>
+                    <option value="taken">{isAr ?'تم أخذ الجرعة':'Dose Taken'}</option>
                     <option value="missed">
-                      {isAr ? '❌ لم تُؤخذ (فائتة / مؤجلة طبياً)' : '❌ Not Taken (Missed / Clinician Hold)'}
+                      {isAr ?'لم تُؤخذ (فائتة / مؤجلة طبياً)':'Not Taken (Missed / Clinician Hold)'}
                     </option>
                   </select>
                 </div>
@@ -2991,7 +2978,7 @@ export default function PrescriptionRadar() {
 
                 <div className="modal-actions">
                   <button type="submit" className="btn">
-                    💾 {isAr ? 'حفظ توثيق الجرعة' : 'Save Dose Documentation'}
+                     {isAr ?'حفظ توثيق الجرعة':'Save Dose Documentation'}
                   </button>
                   <button
                     type="button"

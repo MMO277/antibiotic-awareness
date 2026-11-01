@@ -81,7 +81,7 @@ export default function DidYouKnow() {
 
   return (
     <div className="dyk-card">
-      <div className="dyk-icon" aria-hidden="true">💡</div>
+      <div className="dyk-icon"aria-hidden="true"></div>
       <div>
         <p className="dyk-label">{tr(lang, 'هل تعلم؟', 'Did you know?', 'Le saviez-vous ?', '¿Sabías que...?', 'Wussten Sie schon?')}</p>
         <p className="dyk-text">{pick(fact, lang)}</p>

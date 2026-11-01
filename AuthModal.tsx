@@ -303,7 +303,7 @@ export default function AuthModal() {
                 {isAr ? 'تخطي الحركة' : 'Skip Animation'}
               </button>
               <button type="button" className="auth-guest-btn" onClick={continueAsGuest}>
-                👀 {isAr ? 'متابعة كزائر' : 'Continue as Guest'}
+                 {isAr ?'متابعة كزائر':'Continue as Guest'}
               </button>
             </div>
           </div>
@@ -316,7 +316,7 @@ export default function AuthModal() {
             onClick={closeAuthModal}
             aria-label={isAr ? 'إغلاق' : 'Close'}
           >
-            ✕
+            
           </button>
         )}
 
@@ -330,7 +330,7 @@ export default function AuthModal() {
               onClick={closeAuthModal}
               aria-label={isAr ? 'إغلاق' : 'Close'}
             >
-              ✕
+              
             </button>
 
             {/* Modal Header */}
@@ -358,7 +358,7 @@ export default function AuthModal() {
             {/* Guest Mode Notice when Firebase is not configured */}
             {!configured && (
               <div className="auth-guest">
-                <strong>{isAr ? '⚠️ تنبيه وضع الزائر:' : '⚠️ Guest Mode Notice:'}</strong>{' '}
+                <strong>{isAr ?'تنبيه وضع الزائر:':'Guest Mode Notice:'}</strong> 
                 {isAr
                   ? 'خدمة الحسابات السحابية غير مفعّلة في هذه النسخة لعدم توفر إعدادات Firebase. يمكنك متابعة استخدام وتصفح جميع أقسام وأدوات الموقع (الملف الصحي، حاسبة الجرعات، التداخلات، والتنبيهات) كضيف بشكل كامل وآمن محلياً.'
                   : 'Cloud accounts are not configured in this build. You can continue safely using all platform tools (Health Profile, Dosage Calculator, Interactions, Tracker) offline as a guest.'}
@@ -424,14 +424,14 @@ export default function AuthModal() {
             {/* Error Alert */}
             {errorMessage && (
               <div className="auth-error" role="alert">
-                ⚠️ {errorMessage}
+                 {errorMessage}
               </div>
             )}
 
             {/* Success Alert for Password Reset */}
             {modalMode === 'forgot' && resetSent && (
               <div className="auth-success" role="status">
-                ✅ {isAr ? 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.' : 'Password reset link sent to your email.'}
+                 {isAr ?'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني.':'Password reset link sent to your email.'}
               </div>
             )}
 
@@ -531,8 +531,7 @@ export default function AuthModal() {
                   </label>
                   <p>
                     {isAr
-                      ? '🔒 تنبيه أمان: إذا كنت تستخدم جهازاً مشتركاً أو عاماً (في عيادة أو مقهى إنترنت)، اترك هذا الخيار مغلقاً ليتم إنهاء جلستك فور إغلاق المتصفح لحماية بياناتك الصحية.'
-                      : '🔒 Security note: If using a shared or public device, leave unchecked to auto-logout when browser closes.'}
+                      ?'تنبيه أمان: إذا كنت تستخدم جهازاً مشتركاً أو عاماً (في عيادة أو مقهى إنترنت)، اترك هذا الخيار مغلقاً ليتم إنهاء جلستك فور إغلاق المتصفح لحماية بياناتك الصحية.'                      :'Security note: If using a shared or public device, leave unchecked to auto-logout when browser closes.'}
                   </p>
                 </div>
               )}
@@ -560,7 +559,7 @@ export default function AuthModal() {
             {/* Continue as Guest option for all visitors */}
             <div className="auth-guest-prompt">
               <button type="button" className="auth-guest-link" onClick={continueAsGuest}>
-                👀 {isAr ? 'متابعة التصفح كزائر بدون حساب' : 'Continue browsing as guest'}
+                 {isAr ?'متابعة التصفح كزائر بدون حساب':'Continue browsing as guest'}
               </button>
             </div>
           </div>

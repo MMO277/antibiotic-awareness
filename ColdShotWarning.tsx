@@ -153,7 +153,7 @@ export default function ColdShotWarning() {
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div>
             <span className="badge" style={{ background: '#dc2626', color: '#ffffff', fontWeight: 800, marginBottom: '8px' }}>
-              🚨 {tr(lang, 'تحذير رسمي عاجل من وزارة الصحة وهيئة الدواء المصرية', 'Urgent Official Warning • Egyptian Ministry of Health & EDA')}
+               {tr(lang,'تحذير رسمي عاجل من وزارة الصحة وهيئة الدواء المصرية','Urgent Official Warning • Egyptian Ministry of Health & EDA')}
             </span>
             <h1 style={{ margin: '4px 0 8px', color: '#991b1b' }}>
               {tr(
@@ -176,10 +176,10 @@ export default function ColdShotWarning() {
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <Link to="/green-prescription" className="btn small" style={{ background: '#15803d' }}>
-              🌿 {tr(lang, 'افتح بديل الروشتة الخضراء الآمنة', 'Open Safe Green Prescription')}
+               {tr(lang,'افتح بديل الروشتة الخضراء الآمنة','Open Safe Green Prescription')}
             </Link>
             <Link to="/allergy-checker" className="btn ghost small">
-              🛡️ {tr(lang, 'فاحص الحساسية', 'Allergy Checker')}
+               {tr(lang,'فاحص الحساسية','Allergy Checker')}
             </Link>
           </div>
         </div>
@@ -188,7 +188,7 @@ export default function ColdShotWarning() {
       {/* Interactive 3-in-1 Component Explorer */}
       <section className="card">
         <h2 style={{ margin: '0 0 6px' }}>
-          🔬 {tr(lang, 'تشريح «حقنة البرد 3×1»: اضغط على كل مكون لكشف خطورته', 'Deconstructing the 3-in-1 Cocktail: Click Each Component to Inspect')}
+           {tr(lang,'تشريح «حقنة البرد 3×1»: اضغط على كل مكون لكشف خطورته','Deconstructing the 3-in-1 Cocktail: Click Each Component to Inspect')}
         </h2>
         <p className="small muted" style={{ margin: '0 0 14px' }}>
           {tr(
@@ -235,17 +235,17 @@ export default function ColdShotWarning() {
 
           <div className="cold-myth-vs-reality">
             <div className="cold-box myth">
-              <b>❌ {tr(lang, 'الوهم الشائع (لماذا يطلبه الناس؟):', 'The Common Myth (Why People Ask For It):')}</b>
+              <b> {tr(lang,'الوهم الشائع (لماذا يطلبه الناس؟):','The Common Myth (Why People Ask For It):')}</b>
               <p className="small" style={{ margin: '6px 0 0' }}>{pick(activeComp.whyPeopleTakeIt, lang)}</p>
             </div>
             <div className="cold-box reality">
-              <b>✅ {tr(lang, 'الحقيقة الطبية السريرية:', 'The Clinical Reality:')}</b>
+              <b> {tr(lang,'الحقيقة الطبية السريرية:','The Clinical Reality:')}</b>
               <p className="small" style={{ margin: '6px 0 0' }}>{pick(activeComp.whatActuallyHappens, lang)}</p>
             </div>
           </div>
 
           <h4 style={{ margin: '14px 0 8px' }}>
-            🚨 {tr(lang, 'الأعضاء الحيوية المتضررة في جسمك:', 'Direct Organ Systems Put at Risk:')}
+             {tr(lang,'الأعضاء الحيوية المتضررة في جسمك:','Direct Organ Systems Put at Risk:')}
           </h4>
           <div className="grid" style={{ gap: '10px' }}>
             {activeComp.organRisks.map((risk, rIdx) => (
@@ -266,7 +266,7 @@ export default function ColdShotWarning() {
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
           <div>
             <h2 style={{ margin: '0 0 4px' }}>
-              🧪 {tr(lang, 'مختبر التنافر الكيميائي: ماذا يحدث عند خلط الـ 3 حقن في سرنجة واحدة؟', 'Pharmaceutical Incompatibility Lab: What Happens Inside the Mixed Syringe?')}
+               {tr(lang,'مختبر التنافر الكيميائي: ماذا يحدث عند خلط الـ 3 حقن في سرنجة واحدة؟','Pharmaceutical Incompatibility Lab: What Happens Inside the Mixed Syringe?')}
             </h2>
             <p className="small muted" style={{ margin: 0 }}>
               {tr(
@@ -284,7 +284,7 @@ export default function ColdShotWarning() {
           >
             {syringeMixed
               ? tr(lang, 'إعادة ضبط المحاكاة ↺', 'Reset Simulation ↺')
-              : tr(lang, '🔬 اختبر ماذا يحدث عند خلط السرنجة!', '🔬 Simulate Mixing in One Syringe!')}
+              : tr(lang,'اختبر ماذا يحدث عند خلط السرنجة!','Simulate Mixing in One Syringe!')}
           </button>
         </div>
 
@@ -292,19 +292,19 @@ export default function ColdShotWarning() {
           {!syringeMixed ? (
             <div className="cold-sim-before">
               <div className="cold-vial-item">
-                <span>🧪 الفيال 1</span>
+                <span> الفيال 1</span>
                 <b>سيفترياكسون + مذيب ليدوكايين</b>
                 <small>pH 6.0 – 8.0</small>
               </div>
               <span className="cold-plus">+</span>
               <div className="cold-vial-item">
-                <span>🧪 الأمبول 2</span>
+                <span> الأمبول 2</span>
                 <b>ديكساميثازون فوسفات</b>
                 <small>pH 7.0 – 8.5</small>
               </div>
               <span className="cold-plus">+</span>
               <div className="cold-vial-item">
-                <span>🧪 الأمبول 3</span>
+                <span> الأمبول 3</span>
                 <b>ديكلوفيناك الصوديوم</b>
                 <small>يحتوي بروبيلين جليكول</small>
               </div>
@@ -312,8 +312,7 @@ export default function ColdShotWarning() {
           ) : (
             <div className="cold-sim-after">
               <div className="cold-sim-alert-head">
-                <span style={{ fontSize: '1.8rem' }} aria-hidden="true">☣️</span>
-                <div>
+                                <div>
                   <b style={{ color: '#991b1b', fontSize: '1.05rem' }}>
                     {tr(lang, 'نتيجة الخلط الكيميائي داخل السرنجة: تنافر وترسيب وخطر سمية حادة!', 'Chemical Reaction Result: Precipitation, pH Shift & Acute Toxicity!')}
                   </b>
@@ -329,7 +328,7 @@ export default function ColdShotWarning() {
 
               <div className="grid" style={{ gap: '10px', marginTop: '10px' }}>
                 <div className="cold-reaction-box">
-                  <b>1. 💎 ترسب بلورات مجهرية غير مرئية (Micro-Precipitation)</b>
+                  <b>1. ترسب بلورات مجهرية غير مرئية (Micro-Precipitation)</b>
                   <p className="small">
                     {tr(
                       lang,
@@ -339,7 +338,7 @@ export default function ColdShotWarning() {
                   </p>
                 </div>
                 <div className="cold-reaction-box">
-                  <b>2. ❤️‍🔥 سمية الليدوكايين الوريدية (Lidocaine Cardiotoxicity)</b>
+                  <b>2. ‍ سمية الليدوكايين الوريدية (Lidocaine Cardiotoxicity)</b>
                   <p className="small">
                     {tr(
                       lang,
@@ -349,7 +348,7 @@ export default function ColdShotWarning() {
                   </p>
                 </div>
                 <div className="cold-reaction-box">
-                  <b>3. ⚡ صدمة تحسسية مركبة (Compound Anaphylaxis)</b>
+                  <b>3. صدمة تحسسية مركبة (Compound Anaphylaxis)</b>
                   <p className="small">
                     {tr(
                       lang,
@@ -369,7 +368,7 @@ export default function ColdShotWarning() {
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
           <div>
             <h2 style={{ margin: 0, color: '#15803d' }}>
-              🌿 {tr(lang, 'البديل الطبي الآمن والمعتمد لعلاج نزلات البرد والإنفلونزا', 'Safe, Evidence-Based Protocol for Colds & Flu')}
+               {tr(lang,'البديل الطبي الآمن والمعتمد لعلاج نزلات البرد والإنفلونزا','Safe, Evidence-Based Protocol for Colds & Flu')}
             </h2>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               {tr(
@@ -380,14 +379,13 @@ export default function ColdShotWarning() {
             </p>
           </div>
           <Link to="/green-prescription" className="btn small" style={{ background: '#15803d' }}>
-            🌿 {tr(lang, 'اصنع روشتتك الخضراء الآمنة الآن ←', 'Generate Your Green Prescription →')}
+             {tr(lang,'اصنع روشتتك الخضراء الآمنة الآن ←','Generate Your Green Prescription →')}
           </Link>
         </div>
 
         <div className="grid" style={{ gap: '12px' }}>
           <div className="safe-cold-step">
-            <span className="safe-step-icon" aria-hidden="true">💊</span>
-            <div>
+                        <div>
               <b>{tr(lang, '1. خافض حرارة ومسكن آمن (باراسيتامول)', '1. Safe Antipyretic (Paracetamol)')}</b>
               <p className="small muted">
                 {tr(
@@ -400,8 +398,7 @@ export default function ColdShotWarning() {
           </div>
 
           <div className="safe-cold-step">
-            <span className="safe-step-icon" aria-hidden="true">💧</span>
-            <div>
+                        <div>
               <b>{tr(lang, '2. بخاخ محلول ملحي للأنف وسوائل دافئة', '2. Saline Nasal Spray & Warm Hydration')}</b>
               <p className="small muted">
                 {tr(
@@ -414,8 +411,7 @@ export default function ColdShotWarning() {
           </div>
 
           <div className="safe-cold-step">
-            <span className="safe-step-icon" aria-hidden="true">🩺</span>
-            <div>
+                        <div>
               <b>{tr(lang, '3. متى تزور الطبيب فعلاً؟ (علامات الخطر)', '3. When Should You See a Doctor? (Red Flags)')}</b>
               <p className="small muted">
                 {tr(

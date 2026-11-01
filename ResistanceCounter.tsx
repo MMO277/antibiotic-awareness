@@ -128,11 +128,10 @@ export default function ResistanceCounter() {
       <h2 className="rc-title">
         {tr(
           lang,
-          '🦠 مقاومة المضادات الحيوية — أرقام حقيقية',
-          '🦠 Antibiotic Resistance — Real Numbers',
-          '🦠 Antibiorésistance — Chiffres Mondiaux Réels',
-          '🦠 Resistencia a los Antibióticos — Cifras Reales'
-        )}
+          'مقاومة المضادات الحيوية — أرقام حقيقية',
+          'Antibiotic Resistance — Real Numbers',
+          'Antibiorésistance — Chiffres Mondiaux Réels',
+          'Resistencia a los Antibióticos — Cifras Reales'        )}
       </h2>
       <p className="rc-sub">
         {tr(

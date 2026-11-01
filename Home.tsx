@@ -453,8 +453,7 @@ export default function Home() {
       <section className="pro-hero">
         <div className="wrap pro-hero-inner">
           <div className="pro-hero-badge">
-            <span>💊</span>
-            <span>
+                        <span>
               {tr(
                 lang,
                 'منصة الوعي بالمضادات الحيوية',
@@ -479,10 +478,10 @@ export default function Home() {
             <div className="pro-art-orbit pro-art-orbit-one" />
             <div className="pro-art-orbit pro-art-orbit-two" />
             <div className="pro-art-cross">＋</div>
-            <div className="pro-art-shield"><span>✚</span><i /></div>
+            <div className="pro-art-shield"><i /></div>
             <div className="pro-art-pill"><span /><span /></div>
             <div className="pro-art-mini-card pro-art-card-top">
-              <b>✓</b>
+              <b></b>
               <span>{tr(lang, 'أمان الدواء', 'Medication safety', 'Sécurité des médicaments', 'Seguridad medicamentosa')}</span>
             </div>
             <div className="pro-art-mini-card pro-art-card-bottom">
@@ -494,8 +493,7 @@ export default function Home() {
           {/* Search Bar with Instant Live Autocomplete Dropdown */}
           <div className="pro-search-wrap" style={{ position: 'relative', maxWidth: '850px', marginInline: 'auto', width: '100%' }}>
             <form className="pro-search-box" onSubmit={go} role="search">
-              <span className="pro-search-icon">🔍</span>
-              <input
+                            <input
                 value={q}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setTimeout(() => setFocused(false), 200)}
@@ -553,19 +551,19 @@ export default function Home() {
           {/* Hero Quick CTA Pills */}
           <div className="pro-hero-actions">
             <Link to="/games" className="pro-cta-btn primary-cta" style={{ background: '#0e9aa7', color: '#ffffff' }}>
-              🎮 {tr(lang, 'مركز الألعاب ومحاكي المستشفى 3D', 'Game Center & 3D Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D')}
+               {tr(lang,'مركز الألعاب ومحاكي المستشفى 3D','Game Center & 3D Simulator','Centre de Jeux & Simulateur 3D','Centro de Juegos y Simulador 3D')}
             </Link>
             <Link to="/green-prescription" className="pro-cta-btn primary-cta" style={{ background: '#10b981', color: '#052e16' }}>
-              🌿 {tr(lang, 'الروشتة الخضرا الذكية', 'Green Prescription', 'Ordonnance Verte', 'Receta Verde')}
+               {tr(lang,'الروشتة الخضرا الذكية','Green Prescription','Ordonnance Verte','Receta Verde')}
             </Link>
             <Link to="/medicines" className="pro-cta-btn secondary-cta">
-              💊 {tr(lang, 'تصفح الـ 206 مستحضرات والبدائل', 'Browse 206 Egyptian Packages', 'Parcourir les 206 Médicaments', 'Explorar 206 Medicamentos')}
+               {tr(lang,'تصفح الـ 206 مستحضرات والبدائل','Browse 206 Egyptian Packages','Parcourir les 206 Médicaments','Explorar 206 Medicamentos')}
             </Link>
             <Link to="/allergy-checker" className="pro-cta-btn secondary-cta">
-              🛡️ {tr(lang, 'فاحص الحساسية الدوائية', 'Allergy Safety Checker', 'Vérificateur d’Allergies', 'Verificador de Alergias')}
+               {tr(lang,'فاحص الحساسية الدوائية','Allergy Safety Checker','Vérificateur d’Allergies','Verificador de Alergias')}
             </Link>
             <Link to="/pediatric-helper" className="pro-cta-btn secondary-cta">
-              👶 {tr(lang, 'حاسبة جرعات الأطفال', 'Pediatric Dosing', 'Posologie Pédiatrique', 'Dosis Pediátrica')}
+               {tr(lang,'حاسبة جرعات الأطفال','Pediatric Dosing','Posologie Pédiatrique','Dosis Pediátrica')}
             </Link>
           </div>
 
@@ -597,7 +595,7 @@ export default function Home() {
           <div className="head pro-section-heading" style={{ marginBottom: '14px' }}>
             <div>
               <h2 style={{ fontSize: '1.45rem', marginBottom: '4px' }}>
-                🏥 {tr(lang, 'منظومة الأدوات السريرية والتمريضية الذكية', 'Smart Clinical & Nursing Stewardship Suite', 'Suite Clinique & Outils de Bon Usage des Antibiotiques', 'Suite Clínica de Uso Prudente y Seguridad del Paciente')}
+                 {tr(lang,'منظومة الأدوات السريرية والتمريضية الذكية','Smart Clinical & Nursing Stewardship Suite','Suite Clinique & Outils de Bon Usage des Antibiotiques','Suite Clínica de Uso Prudente y Seguridad del Paciente')}
               </h2>
               <p className="muted small" style={{ margin: 0 }}>
                 {tr(
@@ -664,7 +662,7 @@ export default function Home() {
           <div className="head" style={{ marginBottom: '12px' }}>
             <div>
               <h2 style={{ margin: 0 }}>
-                🇪🇬 {tr(lang, 'أشهر المضادات الحيوية تداولاً في الصيدليات المصرية', 'Most Prescribed Antibiotics in Egyptian Pharmacies', 'Antibiotiques les Plus Prescrits (Référentiel Officiel)', 'Antibióticos Más Recetados (Referencia Oficial)')}
+                 {tr(lang,'أشهر المضادات الحيوية تداولاً في الصيدليات المصرية','Most Prescribed Antibiotics in Egyptian Pharmacies','Antibiotiques les Plus Prescrits (Référentiel Officiel)','Antibióticos Más Recetados (Referencia Oficial)')}
               </h2>
               <p className="small muted" style={{ margin: '4px 0 0' }}>
                 {tr(
@@ -702,7 +700,7 @@ export default function Home() {
         {/* WHO AWaRe Classification Banner */}
         <section className="card">
           <h2>
-            🌍{' '}
+             
             {tr(
               lang,
               'تصنيف منظمة الصحة العالمية للمضادات الحيوية (WHO AWaRe Classification)',
@@ -723,7 +721,7 @@ export default function Home() {
           <div className="grid" style={{ marginTop: '12px' }}>
             <div className="card" style={{ borderTop: '4px solid #16a34a', background: 'var(--bg-subtle, #f0fdf4)' }}>
               <h3 style={{ color: '#15803d', margin: '0 0 6px' }}>
-                🟢 Access ({tr(lang, 'فئة الإتاحة الأساسية', 'First/Second Line', 'Accès prioritaire / 1re intention', 'Acceso / Primera línea')})
+                 Access ({tr(lang,'فئة الإتاحة الأساسية','First/Second Line','Accès prioritaire / 1re intention','Acceso / Primera línea')})
               </h3>
               <p className="small" style={{ margin: 0 }}>
                 {tr(
@@ -737,7 +735,7 @@ export default function Home() {
             </div>
             <div className="card" style={{ borderTop: '4px solid #d97706', background: 'var(--bg-subtle, #fffbeb)' }}>
               <h3 style={{ color: '#b45309', margin: '0 0 6px' }}>
-                🟡 Watch ({tr(lang, 'فئة المراقبة والحذر', 'Stewardship Watch', 'Surveillance / Vigilance', 'Vigilancia / Uso controlado')})
+                 Watch ({tr(lang,'فئة المراقبة والحذر','Stewardship Watch','Surveillance / Vigilance','Vigilancia / Uso controlado')})
               </h3>
               <p className="small" style={{ margin: 0 }}>
                 {tr(
@@ -751,7 +749,7 @@ export default function Home() {
             </div>
             <div className="card" style={{ borderTop: '4px solid #dc2626', background: 'var(--bg-subtle, #fef2f2)' }}>
               <h3 style={{ color: '#b91c1c', margin: '0 0 6px' }}>
-                🔴 Reserve ({tr(lang, 'فئة الملاذ الأخير المقيدة', 'Last-Resort Reserve', 'Réserve / Dernier recours', 'Reserva / Último recurso')})
+                 Reserve ({tr(lang,'فئة الملاذ الأخير المقيدة','Last-Resort Reserve','Réserve / Dernier recours','Reserva / Último recurso')})
               </h3>
               <p className="small" style={{ margin: 0 }}>
                 {tr(
@@ -775,7 +773,7 @@ export default function Home() {
         {/* Articles Section */}
         <section>
           <div className="head">
-            <h2>📰 {t('articlesTitle')}</h2>
+            <h2> {t('articlesTitle')}</h2>
             <Link to="/articles" className="btn ghost small">{t('seeAll')} {isAr ? '←' : '→'}</Link>
           </div>
           <div className="grid">
@@ -793,7 +791,7 @@ export default function Home() {
         <div className="grid">
           <section className="card quizcta">
             <div>
-              <h2>📝 {t('quizTitle')}</h2>
+              <h2> {t('quizTitle')}</h2>
               <p className="small muted">{t('quizIntro')}</p>
             </div>
             <Link to="/quiz" className="btn">
@@ -804,7 +802,7 @@ export default function Home() {
           <section className="card quizcta">
             <div>
               <h2>
-                🎧{' '}
+                 
                 {tr(
                   lang,
                   'استمع وتعلّم (التثقيف الصوتي)',

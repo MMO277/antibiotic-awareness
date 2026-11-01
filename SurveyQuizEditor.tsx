@@ -113,22 +113,22 @@ export function QuestionEditorModal({
       >
         <div className="head">
           <h3 style={{ margin: 0 }}>
-            📋{' '}
+             
             {isNew
               ? tr(lang, 'إضافة سؤال جديد للاختبار والاستبيان', 'Add New Quiz / Survey Question')
               : tr(lang, `تعديل السؤال رقم ${(questionIndex ?? 0) + 1}`, `Edit Question #${(questionIndex ?? 0) + 1}`)}
           </h3>
           <button type="button" className="btn ghost small" onClick={onClose}>
-            ✕
+            
           </button>
         </div>
 
         <div>
           <label>{tr(lang, 'مستوى الصعوبة', 'Difficulty Level')}</label>
           <select value={level} onChange={(e) => setLevel(e.target.value as 'easy' | 'medium' | 'hard')}>
-            <option value="easy">{tr(lang, '🌱 مبتدئ (Easy)', '🌱 Beginner (Easy)')}</option>
-            <option value="medium">{tr(lang, '⚗️ متوسط (Medium)', '⚗️ Intermediate (Medium)')}</option>
-            <option value="hard">{tr(lang, '🔬 متقدم (Hard)', '🔬 Advanced (Hard)')}</option>
+            <option value="easy">{tr(lang,'مبتدئ (Easy)','Beginner (Easy)')}</option>
+            <option value="medium">{tr(lang,'متوسط (Medium)','Intermediate (Medium)')}</option>
+            <option value="hard">{tr(lang,'متقدم (Hard)','Advanced (Hard)')}</option>
           </select>
         </div>
 
@@ -155,7 +155,7 @@ export function QuestionEditorModal({
                 />
                 <b>
                   {tr(lang, `الخيار ${idx + 1}`, `Option ${idx + 1}`)}{' '}
-                  {answer === idx ? `✅ (${tr(lang, 'الإجابة الصحيحة', 'Correct Answer')})` : ''}
+                  {answer === idx ?`(${tr(lang,'الإجابة الصحيحة','Correct Answer')})`:''}
                 </b>
               </label>
               <input
@@ -189,7 +189,7 @@ export function QuestionEditorModal({
             {tr(lang, 'إلغاء', 'Cancel')}
           </button>
           <button type="submit" className="btn" disabled={saving}>
-            {saving ? tr(lang, 'جارٍ الحفظ...', 'Saving...') : tr(lang, '💾 حفظ السؤال', '💾 Save Question')}
+            {saving ? tr(lang,'جارٍ الحفظ...','Saving...') : tr(lang,'حفظ السؤال','Save Question')}
           </button>
         </div>
       </form>
@@ -222,7 +222,7 @@ export default function SurveyQuizManagerTab({ uid }: { uid: string }) {
         <div className="head" style={{ flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <h2 style={{ margin: 0 }}>
-              📋 {tr(lang, `بنك أسئلة الاستبيان والاختبار التفاعلي (${questions.length} سؤالاً)`, `Survey & Quiz Question Bank (${questions.length} questions)`)}
+               {tr(lang,`بنك أسئلة الاستبيان والاختبار التفاعلي (${questions.length} سؤالاً)`,`Survey & Quiz Question Bank (${questions.length} questions)`)}
             </h2>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               {tr(
@@ -234,10 +234,10 @@ export default function SurveyQuizManagerTab({ uid }: { uid: string }) {
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <button type="button" className="btn" onClick={() => setAdding(true)}>
-              ➕ {tr(lang, 'إضافة سؤال جديد', 'Add Question')}
+               {tr(lang,'إضافة سؤال جديد','Add Question')}
             </button>
             <button type="button" className="btn ghost small" onClick={handleReset}>
-              🔄 {tr(lang, 'استعادة الافتراضي', 'Reset Default')}
+               {tr(lang,'استعادة الافتراضي','Reset Default')}
             </button>
           </div>
         </div>
@@ -252,10 +252,10 @@ export default function SurveyQuizManagerTab({ uid }: { uid: string }) {
               </span>
               <div className="row" style={{ gap: '6px' }}>
                 <button type="button" className="btn small ghost" onClick={() => setEditingIdx(idx)}>
-                  ✏️ {tr(lang, 'تعديل', 'Edit')}
+                   {tr(lang,'تعديل','Edit')}
                 </button>
                 <button type="button" className="btn small danger" onClick={() => handleDelete(idx)}>
-                  🗑️ {tr(lang, 'حذف', 'Delete')}
+                   {tr(lang,'حذف','Delete')}
                 </button>
               </div>
             </div>
@@ -263,12 +263,12 @@ export default function SurveyQuizManagerTab({ uid }: { uid: string }) {
             <ul className="small" style={{ margin: '0 0 6px', paddingInlineStart: '20px' }}>
               {q.options.map((o, oIdx) => (
                 <li key={oIdx} style={{ fontWeight: oIdx === q.answer ? 700 : 400, color: oIdx === q.answer ? '#15803d' : undefined }}>
-                  {pick(o, lang)} {oIdx === q.answer ? '✓' : ''}
+                  {pick(o, lang)} {oIdx === q.answer ?'':''}
                 </li>
               ))}
             </ul>
             <p className="small muted" style={{ margin: 0 }}>
-              💡 {pick(q.why, lang)}
+               {pick(q.why, lang)}
             </p>
           </div>
         ))}

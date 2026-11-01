@@ -495,12 +495,10 @@ export default function Scan() {
       method,
       confidenceLabelAr:
         method === 'barcode_exact'
-          ? '🟢 تطابق قطعي 100% عبر الباركود المصري (EAN-13)'
-          : '🤖 تمت قراءة اسم الدواء من الصورة تلقائياً وعرض كامل معلوماته',
+          ?'تطابق قطعي 100% عبر الباركود المصري (EAN-13)'          :'تمت قراءة اسم الدواء من الصورة تلقائياً وعرض كامل معلوماته',
       confidenceLabelEn:
         method === 'barcode_exact'
-          ? '🟢 100% Exact Egyptian Barcode Match (EAN-13)'
-          : '🤖 Automatically Read Drug Name from Image — Full Profile Below',
+          ?'100% Exact Egyptian Barcode Match (EAN-13)'          :'Automatically Read Drug Name from Image — Full Profile Below',
       detectedText: isAr ? prod.tradeNameAr : prod.tradeNameEn,
       matchedIngredientId: prod.activeIngredientId,
       matchedTradeName: isAr
@@ -705,8 +703,8 @@ export default function Scan() {
 
     return {
       method,
-      confidenceLabelAr: 'ℹ️ تحليل القارئ البصري',
-      confidenceLabelEn: 'ℹ️ Visual Reader Analysis',
+      confidenceLabelAr:'ℹ تحليل القارئ البصري',
+      confidenceLabelEn:'ℹ Visual Reader Analysis',
       detectedText: rawText,
       summary: rawText,
     };
@@ -983,9 +981,7 @@ export default function Scan() {
 
     setStatusStep(
       isAr
-        ? '🔍 جاري قراءة اسم الدواء (عربي / إنجليزي) من الصورة تلقائياً...'
-        : '🔍 Automatically reading medicine name (Arabic / English) from image...'
-    );
+        ?'جاري قراءة اسم الدواء (عربي / إنجليزي) من الصورة تلقائياً...'        :'Automatically reading medicine name (Arabic / English) from image...'    );
 
     // 1) Normalize image & check native barcode
     let inspected = {
@@ -1093,9 +1089,7 @@ export default function Scan() {
     // 5) Run In-Browser Local Tesseract OCR (eng+ara)
     setStatusStep(
       isAr
-        ? '📖 جاري قراءة الحروف العربية والإنجليزية محلياً من الصورة...'
-        : '📖 Reading English and Arabic characters locally from image...'
-    );
+        ?'جاري قراءة الحروف العربية والإنجليزية محلياً من الصورة...'        :'Reading English and Arabic characters locally from image...'    );
     const localOcrText = await performClientSideOcr(inspected.normalizedDataUrl);
     if (localOcrText) {
       const ocrMatched = matchDrugFromText(localOcrText, 'local_ocr');
@@ -1207,8 +1201,7 @@ export default function Scan() {
     <main className="wrap narrow stack">
       <h1>
         {isAr
-          ? '📷 الماسح الذكي الموحد (باركود + قارئ العلبة والشريط عربي / إنجليزي)'
-          : '📷 Unified Smart Scanner (Barcode + Arabic/English Box & Blister Reader)'}
+          ?'الماسح الذكي الموحد (باركود + قارئ العلبة والشريط عربي / إنجليزي)'          :'Unified Smart Scanner (Barcode + Arabic/English Box & Blister Reader)'}
       </h1>
 
       {/* Safety Notice */}
@@ -1224,8 +1217,7 @@ export default function Scan() {
       >
         <p style={{ margin: '0 0 6px', fontSize: '0.96rem', color: '#0369a1', fontWeight: 700 }}>
           {isAr
-            ? '🛡️ قراءة تلقائية شاملة لجميع المضادات الحيوية (بالعربية أو الإنجليزية):'
-            : '🛡️ Universal Automatic Reading for All Antibiotics (Arabic or English):'}
+            ?'قراءة تلقائية شاملة لجميع المضادات الحيوية (بالعربية أو الإنجليزية):'            :'Universal Automatic Reading for All Antibiotics (Arabic or English):'}
         </p>
         <p style={{ margin: 0, fontSize: '0.88rem', color: '#0c4a6e', lineHeight: 1.65 }}>
           {isAr
@@ -1245,7 +1237,7 @@ export default function Scan() {
           {/* Action 1: Live Video Camera */}
           {!running ? (
             <button type="button" className="btn" onClick={start}>
-              📹 {isAr ? 'تشغيل الكاميرا المباشرة' : 'Start Live Camera'}
+               {isAr ?'تشغيل الكاميرا المباشرة':'Start Live Camera'}
             </button>
           ) : (
             <>
@@ -1255,17 +1247,17 @@ export default function Scan() {
                 onClick={captureLiveFrameForVision}
                 style={{ background: '#10b981', borderColor: '#059669' }}
               >
-                📸 {isAr ? 'التقاط صورة للعلبة الآن' : 'Capture Frame Now'}
+                 {isAr ?'التقاط صورة للعلبة الآن':'Capture Frame Now'}
               </button>
               <button type="button" className="btn ghost" onClick={stop}>
-                ⏹️ {t('scanStop')}
+                ⏹ {t('scanStop')}
               </button>
             </>
           )}
 
           {/* Action 2: Snap Photo via Mobile Camera Directly */}
           <label className="btn" style={{ cursor: 'pointer', background: '#0891b2', borderColor: '#0891b2' }}>
-            📸 {busy ? t('loading') : L('صوّر العلبة بالكاميرا', 'Take Photo with Camera')}
+             {busy ? t('loading') : L('صوّر العلبة بالكاميرا','Take Photo with Camera')}
             <input
               type="file"
               accept="image/*"
@@ -1278,7 +1270,7 @@ export default function Scan() {
 
           {/* Action 3: Upload Existing Image from Phone Gallery / Files */}
           <label className="btn ghost" style={{ cursor: 'pointer', borderColor: '#0284c7', color: '#0369a1' }}>
-            📁 {busy ? t('loading') : L('ارفع صورة من المعرض / الملفات', 'Upload from Gallery / Files')}
+             {busy ? t('loading') : L('ارفع صورة من المعرض / الملفات','Upload from Gallery / Files')}
             <input
               type="file"
               accept="image/*"
@@ -1368,7 +1360,7 @@ export default function Scan() {
                 </h2>
                 {fullMedicine && (
                   <p style={{ margin: '0 0 6px', fontWeight: 700, color: '#0f172a', fontSize: '0.96rem' }}>
-                    🧪 {isAr ? 'المادة الفعالة: ' : 'Active Ingredient: '}
+                     {isAr ?'المادة الفعالة:':'Active Ingredient:'}
                     {pick(fullMedicine.genericName, lang)}
                   </p>
                 )}
@@ -1407,7 +1399,7 @@ export default function Scan() {
                 }}
               >
                 <h3 style={{ margin: 0, color: '#065f46', fontSize: '1.08rem' }}>
-                  📋 {isAr ? 'المعلومات الطبية والدوائية الكاملة للمستحضر:' : 'Complete Clinical & Pharmaceutical Information:'}
+                   {isAr ?'المعلومات الطبية والدوائية الكاملة للمستحضر:':'Complete Clinical & Pharmaceutical Information:'}
                 </h3>
 
                 <div
@@ -1442,7 +1434,7 @@ export default function Scan() {
                             color: isWarning ? '#92400e' : '#0b3c5d',
                           }}
                         >
-                          {isWarning ? '⚠️ ' : '📌 '}
+                          {isWarning ?'':''}
                           {label}
                         </h4>
                         <p
@@ -1475,7 +1467,7 @@ export default function Scan() {
                 }}
               >
                 <h3 style={{ margin: 0, color: '#065f46', fontSize: '1.05rem' }}>
-                  🇪🇬{' '}
+                   
                   {isAr
                     ? `جميع العبوات والبدائل المصرية المتطابقة في نفس المادة الفعالة (${commercialAlternatives.length} مستحضر):`
                     : `All Identical Egyptian Commercial Packages & Generics (${commercialAlternatives.length}):`}
@@ -1533,7 +1525,7 @@ export default function Scan() {
             {scanResult.matchedIngredientId && (
               <div className="row wrapRow" style={{ gap: '10px', marginTop: '10px' }}>
                 <Link to={`/medicine/${scanResult.matchedIngredientId}`} className="btn" style={{ fontWeight: 700 }}>
-                  📖 {isAr ? 'فتح صفحة الدواء المستقلة ورمز QR ←' : 'Open Dedicated Drug Page & QR →'}
+                   {isAr ?'فتح صفحة الدواء المستقلة ورمز QR ←':'Open Dedicated Drug Page & QR →'}
                 </Link>
                 <button
                   type="button"
@@ -1554,13 +1546,13 @@ export default function Scan() {
                     nav('/prescription-radar');
                   }}
                 >
-                  🗓️ {isAr ? 'توثيق الروشتة وبدء رحلة العلاج ←' : 'Verify Rx & Start Treatment Journey →'}
+                   {isAr ?'توثيق الروشتة وبدء رحلة العلاج ←':'Verify Rx & Start Treatment Journey →'}
                 </button>
                 <Link to="/prescription-radar" className="btn ghost">
-                  📡 {isAr ? 'فحص الدواء في رادار الروشتة 24 ساعة' : 'Check in 24h Prescription Radar'}
+                   {isAr ?'فحص الدواء في رادار الروشتة 24 ساعة':'Check in 24h Prescription Radar'}
                 </Link>
                 <Link to="/allergy-checker" className="btn ghost">
-                  🛡️ {isAr ? 'فحص الحساسية المتقاطعة' : 'Cross-Allergy Checker'}
+                   {isAr ?'فحص الحساسية المتقاطعة':'Cross-Allergy Checker'}
                 </Link>
               </div>
             )}
@@ -1571,7 +1563,7 @@ export default function Scan() {
       {/* Unified Manual Input with Live Suggestions */}
       <section className="card stack">
         <label htmlFor="bc" style={{ fontWeight: 700 }}>
-          🔎 {isAr ? 'أو ابحث مباشرة برقم الباركود (622...) أو اسم الدواء (عربي / إنجليزي):' : 'Or search directly by barcode (622...) or medicine name (English / Arabic):'}
+           {isAr ?'أو ابحث مباشرة برقم الباركود (622...) أو اسم الدواء (عربي / إنجليزي):':'Or search directly by barcode (622...) or medicine name (English / Arabic):'}
         </label>
         <div style={{ position: 'relative' }}>
           <div className="row">
@@ -1654,7 +1646,7 @@ export default function Scan() {
         {/* Instant Interactive Demo Chips */}
         <div>
           <p className="small muted" style={{ margin: '6px 0 8px', fontWeight: 600 }}>
-            ✨ {isAr ? 'تجارب سريعة لمعاينة عرض المعلومات الشاملة للدواء:' : 'Quick Demos to Preview Full Drug Report:'}
+             {isAr ?'تجارب سريعة لمعاينة عرض المعلومات الشاملة للدواء:':'Quick Demos to Preview Full Drug Report:'}
           </p>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             {DEMO_UNIFIED_SAMPLES.map((sample) => (
@@ -1667,7 +1659,7 @@ export default function Scan() {
                   handleBarcodeOrTextInput(sample.tradeMatch);
                 }}
               >
-                {sample.method === 'barcode_exact' ? '🟢' : '🤖'} {isAr ? sample.titleAr : sample.titleEn}
+                {sample.method ==='barcode_exact'?'':''} {isAr ? sample.titleAr : sample.titleEn}
               </button>
             ))}
           </div>

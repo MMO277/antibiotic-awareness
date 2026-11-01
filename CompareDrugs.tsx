@@ -139,13 +139,13 @@ export default function CompareDrugs() {
       <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
         <Link to="/">← {isAr ? 'الرئيسية' : 'Home'}</Link>
         <Link to="/medicines" className="btn ghost small">
-          💊 {isAr ? 'تصفح السجل الكامل (206 عبوات)' : 'Browse Full Registry (206)'}
+           {isAr ?'تصفح السجل الكامل (206 عبوات)':'Browse Full Registry (206)'}
         </Link>
       </div>
 
       <header className="med-head">
         <h1>
-          ⚖️{' '}
+           
           {isAr
             ? 'المقارنة السريرية والدوائية بين المضادات الحيوية جنباً إلى جنب'
             : 'Side-by-Side Antibiotic Clinical & Package Comparison'}
@@ -163,13 +163,13 @@ export default function CompareDrugs() {
           className={`btn ${mode === 'packages' ? '' : 'ghost'}`}
           onClick={() => setMode('packages')}
         >
-          📦 {isAr ? 'مقارنة عبوتين تجاريتين بالسوق المصري (التكافؤ والسعر)' : 'Compare 2 Commercial Packages (Equivalence & Price)'}
+           {isAr ?'مقارنة عبوتين تجاريتين بالسوق المصري (التكافؤ والسعر)':'Compare 2 Commercial Packages (Equivalence & Price)'}
         </button>
         <button
           className={`btn ${mode === 'ingredients' ? '' : 'ghost'}`}
           onClick={() => setMode('ingredients')}
         >
-          🧬 {isAr ? 'مقارنة مادتين فعالتين سريرياً (الجرعات والحمل والكلى)' : 'Compare 2 Active Ingredients Clinically'}
+           {isAr ?'مقارنة مادتين فعالتين سريرياً (الجرعات والحمل والكلى)':'Compare 2 Active Ingredients Clinically'}
         </button>
       </div>
 
@@ -179,7 +179,7 @@ export default function CompareDrugs() {
           {/* Quick Presets */}
           <div className="card">
             <div className="small muted" style={{ marginBottom: '8px', fontWeight: 600 }}>
-              ⚡ {isAr ? 'مقارنات سريعة شائعة بضغطة واحدة:' : 'Quick Popular Comparisons:'}
+               {isAr ?'مقارنات سريعة شائعة بضغطة واحدة:':'Quick Popular Comparisons:'}
             </div>
             <div className="row wrapRow" style={{ gap: '8px' }}>
               {quickPackagePresets.map((pr, idx) => (
@@ -201,7 +201,7 @@ export default function CompareDrugs() {
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))' }}>
             <div className="card" style={{ borderTop: '4px solid #0284c7' }}>
               <label style={{ fontWeight: 700, display: 'block', marginBottom: '8px', color: '#0284c7' }}>
-                1️⃣ {isAr ? 'المستحضر التجاري الأول:' : 'First Commercial Package:'}
+                1⃣ {isAr ?'المستحضر التجاري الأول:':'First Commercial Package:'}
               </label>
               <select value={pkgIdA} onChange={(e) => setPkgIdA(e.target.value)}>
                 {EGYPTIAN_COMMERCIAL_PRODUCTS.map((p) => (
@@ -216,7 +216,7 @@ export default function CompareDrugs() {
 
             <div className="card" style={{ borderTop: '4px solid #0d9488' }}>
               <label style={{ fontWeight: 700, display: 'block', marginBottom: '8px', color: '#0d9488' }}>
-                2️⃣ {isAr ? 'المستحضر التجاري الثاني:' : 'Second Commercial Package:'}
+                2⃣ {isAr ?'المستحضر التجاري الثاني:':'Second Commercial Package:'}
               </label>
               <select value={pkgIdB} onChange={(e) => setPkgIdB(e.target.value)}>
                 {EGYPTIAN_COMMERCIAL_PRODUCTS.map((p) => (
@@ -244,19 +244,14 @@ export default function CompareDrugs() {
             <h3 style={{ margin: '0 0 6px' }}>
               {packageVerdict.exactMatch
                 ? isAr
-                  ? '✅ حكم التكافؤ الصيدلاني: مثيلان متطابقان تماماً (نفس المادة الفعالة والتركيز والشكل الصيدلاني)'
-                  : '✅ Equivalence Verdict: Exact Generic Equivalents (Identical Ingredient, Strength & Dosage Form)'
-                : packageVerdict.sameIng
+                  ?'حكم التكافؤ الصيدلاني: مثيلان متطابقان تماماً (نفس المادة الفعالة والتركيز والشكل الصيدلاني)'                  :'Equivalence Verdict: Exact Generic Equivalents (Identical Ingredient, Strength & Dosage Form)'                : packageVerdict.sameIng
                 ? isAr
-                  ? 'ℹ️ حكم التكافؤ: نفس المادة الفعالة ولكن يختلفان في التركيز أو الشكل الصيدلاني'
-                  : 'ℹ️ Equivalence Verdict: Same Active Ingredient, Different Strength or Dosage Form'
-                : isAr
-                ? '⚠️ تنبيه سريري: هذان المستحضران يحتويان على مادتين فعالتين مختلفتين — لا يُستبدل أحدهما بالآخر إلا بقرار الطبيب'
-                : '⚠️ Clinical Alert: Different Active Ingredients — Do Not Substitute Without Physician Approval'}
+                  ?'ℹ حكم التكافؤ: نفس المادة الفعالة ولكن يختلفان في التركيز أو الشكل الصيدلاني'                  :'ℹ Equivalence Verdict: Same Active Ingredient, Different Strength or Dosage Form'                : isAr
+                ?'تنبيه سريري: هذان المستحضران يحتويان على مادتين فعالتين مختلفتين — لا يُستبدل أحدهما بالآخر إلا بقرار الطبيب'                :'Clinical Alert: Different Active Ingredients — Do Not Substitute Without Physician Approval'}
             </h3>
             {packageVerdict.priceDiff !== null && packageVerdict.priceDiff > 0 && packageVerdict.cheaperPkg && (
               <p style={{ margin: 0, color: '#15803d', fontWeight: 700 }}>
-                💰{' '}
+                 
                 {isAr
                   ? `فارق السعر: اختيار «${packageVerdict.cheaperPkg.tradeNameAr}» يوفر ${packageVerdict.priceDiff.toFixed(2)} جنيه مصري في العبوة الواحدة.`
                   : `Cost Difference: Choosing "${packageVerdict.cheaperPkg.tradeNameEn}" saves ${packageVerdict.priceDiff.toFixed(2)} EGP per pack.`}
@@ -336,7 +331,7 @@ export default function CompareDrugs() {
                   <td><b>{isAr ? 'الباركود الخطي (EAN-13)' : 'Linear Barcode'}</b></td>
                   <td dir="ltr">
                     {pkgA.barcode ? (
-                      <code>{pkgA.barcode} ✓</code>
+                      <code>{pkgA.barcode} </code>
                     ) : (
                       <span className="small muted" dir="rtl">
                         {isAr ? 'قيد التحقق الميداني' : 'Pending field check'}
@@ -345,7 +340,7 @@ export default function CompareDrugs() {
                   </td>
                   <td dir="ltr">
                     {pkgB.barcode ? (
-                      <code>{pkgB.barcode} ✓</code>
+                      <code>{pkgB.barcode} </code>
                     ) : (
                       <span className="small muted" dir="rtl">
                         {isAr ? 'قيد التحقق الميداني' : 'Pending field check'}
@@ -357,12 +352,12 @@ export default function CompareDrugs() {
                   <td><b>{isAr ? 'المرجع السريري الكامل' : 'Clinical Monograph'}</b></td>
                   <td>
                     <Link to={`/medicine/${pkgA.activeIngredientId}`} className="btn ghost small">
-                      📖 {isAr ? 'فتح النشرة السريرية' : 'Open Monograph'}
+                       {isAr ?'فتح النشرة السريرية':'Open Monograph'}
                     </Link>
                   </td>
                   <td>
                     <Link to={`/medicine/${pkgB.activeIngredientId}`} className="btn ghost small">
-                      📖 {isAr ? 'فتح النشرة السريرية' : 'Open Monograph'}
+                       {isAr ?'فتح النشرة السريرية':'Open Monograph'}
                     </Link>
                   </td>
                 </tr>
@@ -378,7 +373,7 @@ export default function CompareDrugs() {
           {/* Quick Clinical Presets */}
           <div className="card">
             <div className="small muted" style={{ marginBottom: '8px', fontWeight: 600 }}>
-              ⚡ {isAr ? 'مقارنات سريرية سريعة:' : 'Quick Clinical Comparisons:'}
+               {isAr ?'مقارنات سريرية سريعة:':'Quick Clinical Comparisons:'}
             </div>
             <div className="row wrapRow" style={{ gap: '8px' }}>
               {quickClinicalPresets.map((pr, idx) => (
@@ -400,7 +395,7 @@ export default function CompareDrugs() {
           <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))' }}>
             <div className="card" style={{ borderTop: '4px solid #0284c7' }}>
               <label style={{ fontWeight: 700, display: 'block', marginBottom: '8px', color: '#0284c7' }}>
-                1️⃣ {isAr ? 'المادة الفعالة الأولى:' : 'First Active Ingredient:'}
+                1⃣ {isAr ?'المادة الفعالة الأولى:':'First Active Ingredient:'}
               </label>
               <select value={medIdA} onChange={(e) => setMedIdA(e.target.value)}>
                 {ALL_LOCAL_MEDICINES.map((m) => (
@@ -413,7 +408,7 @@ export default function CompareDrugs() {
 
             <div className="card" style={{ borderTop: '4px solid #0d9488' }}>
               <label style={{ fontWeight: 700, display: 'block', marginBottom: '8px', color: '#0d9488' }}>
-                2️⃣ {isAr ? 'المادة الفعالة الثانية:' : 'Second Active Ingredient:'}
+                2⃣ {isAr ?'المادة الفعالة الثانية:':'Second Active Ingredient:'}
               </label>
               <select value={medIdB} onChange={(e) => setMedIdB(e.target.value)}>
                 {ALL_LOCAL_MEDICINES.map((m) => (

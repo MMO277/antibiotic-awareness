@@ -64,7 +64,7 @@ export default function MythFact() {
               {L('إعادة', 'Restart', 'Recommencer', 'Reiniciar', 'Neu starten')}
             </button>
             <Link to="/cold-shot-warning" className="btn ghost" style={{ borderColor: '#ef4444', color: '#ef4444' }}>
-              💉 {L('فاحص خطر «حقنة البرد 3×1» ←', 'Cold Shot 3-in-1 Warning →')}
+               {L('فاحص خطر «حقنة البرد 3×1» ←','Cold Shot 3-in-1 Warning →')}
             </Link>
           </div>
         </div>

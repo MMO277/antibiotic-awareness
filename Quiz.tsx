@@ -26,7 +26,7 @@ interface WrongAnswer {
 
 const LEVEL_INFO = {
   easy: {
-    emoji: '🌱',
+    emoji:'',
     color: '#16a34a',
     bg: '#dcfce7',
     border: '#86efac',
@@ -43,7 +43,7 @@ const LEVEL_INFO = {
     count: 8,
   },
   medium: {
-    emoji: '⚗️',
+    emoji:'',
     color: '#d97706',
     bg: '#fef3c7',
     border: '#fcd34d',
@@ -60,7 +60,7 @@ const LEVEL_INFO = {
     count: 8,
   },
   hard: {
-    emoji: '🔬',
+    emoji:'',
     color: '#dc2626',
     bg: '#fee2e2',
     border: '#fca5a5',
@@ -368,7 +368,7 @@ export default function Quiz() {
   if (screen === 'pick') {
     return (
       <main className="wrap narrow stack">
-        <h1>📝 {t('navQuiz')}</h1>
+        <h1> {t('navQuiz')}</h1>
         <p className="muted">
           {tr(
             lang,
@@ -383,13 +383,13 @@ export default function Quiz() {
           <div className="card" style={{ border: '2px dashed #0284c7', background: 'var(--tint)' }}>
             <div className="head" style={{ flexWrap: 'wrap', gap: '8px' }}>
               <div>
-                <b>🛠️ {tr(lang, 'وضع المحرر/الأدمن: تعديل وإضافة أسئلة الاختبار والاستبيان', 'Editor Mode: Manage Quiz & Survey Questions')}</b>
+                <b> {tr(lang,'وضع المحرر/الأدمن: تعديل وإضافة أسئلة الاختبار والاستبيان','Editor Mode: Manage Quiz & Survey Questions')}</b>
                 <p className="small muted" style={{ margin: '2px 0 0' }}>
                   {tr(lang, `إجمالي الأسئلة الحالية: ${liveAllQuestions.length} سؤالاً`, `Total live questions: ${liveAllQuestions.length}`)}
                 </p>
               </div>
               <button type="button" className="btn small" onClick={() => setAddingNewQ(true)}>
-                ➕ {tr(lang, 'إضافة سؤال جديد', 'Add Question')}
+                 {tr(lang,'إضافة سؤال جديد','Add Question')}
               </button>
             </div>
           </div>
@@ -430,7 +430,7 @@ export default function Quiz() {
                     </span>
                     {best > 0 && (
                       <span style={{ fontSize: '0.75rem', background: d.color, color: '#fff', borderRadius: '20px', padding: '2px 8px' }}>
-                        🏅 {tr(lang, 'أفضل:', 'Best:', 'Meilleur :', 'Mejor:')} {best}/{d.count}
+                         {tr(lang,'أفضل:','Best:','Meilleur :','Mejor:')} {best}/{d.count}
                       </span>
                     )}
                   </div>
@@ -456,7 +456,7 @@ export default function Quiz() {
           <div className="head">
             <div>
               <h2 style={{ margin: 0, fontSize: '1.15rem' }}>
-                🏅 {tr(lang, 'شهاداتي المحفوظة على السحابة', 'My Cloud-Saved Certificates', 'Mes Certificats Sauvegardés', 'Mis Certificados Guardados')}
+                 {tr(lang,'شهاداتي المحفوظة على السحابة','My Cloud-Saved Certificates','Mes Certificats Sauvegardés','Mis Certificados Guardados')}
               </h2>
               <p className="small muted" style={{ margin: '2px 0 0' }}>
                 {user
@@ -477,7 +477,7 @@ export default function Quiz() {
               </p>
             </div>
             <span className="badge approved">
-              ☁️ {certificates.length} {tr(lang, 'شهادة', 'Certificates', 'Certificats', 'Certificados')}
+               {certificates.length} {tr(lang,'شهادة','Certificates','Certificats','Certificados')}
             </span>
           </div>
 
@@ -486,7 +486,7 @@ export default function Quiz() {
           ) : certificates.length === 0 ? (
             <div className="subcard center" style={{ padding: '20px' }}>
               <p style={{ margin: 0, color: 'var(--muted)', fontSize: '0.9rem' }}>
-                🎓 {tr(lang, 'لم تحصل على شهادة بعد. ابدأ أي مستوى أعلاه واجتزه بنسبة 75%+ لإصدار شهادتك الرسمية فوراً!', 'No certificates yet. Complete any quiz level above with 75%+ to issue your official certificate!', 'Aucun certificat pour le moment. Réussissez un quiz avec 75 %+ !', '¡Aún no tienes certificados. Aprueba cualquier nivel con 75%+!')}
+                 {tr(lang,'لم تحصل على شهادة بعد. ابدأ أي مستوى أعلاه واجتزه بنسبة 75%+ لإصدار شهادتك الرسمية فوراً!','No certificates yet. Complete any quiz level above with 75%+ to issue your official certificate!','Aucun certificat pour le moment. Réussissez un quiz avec 75 %+ !','¡Aún no tienes certificados. Aprueba cualquier nivel con 75%+!')}
               </p>
             </div>
           ) : (
@@ -508,8 +508,7 @@ export default function Quiz() {
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontSize: '1.8rem' }}>🏅</span>
-                      <div>
+                                            <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <b>{c.recipientName}</b>
                           <span
@@ -526,7 +525,7 @@ export default function Quiz() {
                           </span>
                         </div>
                         <div className="small muted">
-                          📅 {dateStr} • <code style={{ fontSize: '0.75rem' }}>{c.certNumber}</code>
+                           {dateStr} • <code style={{ fontSize:'0.75rem'}}>{c.certNumber}</code>
                         </div>
                       </div>
                     </div>
@@ -537,7 +536,7 @@ export default function Quiz() {
                       onClick={() => setActiveCertificate(c)}
                       style={{ background: '#0b3c5d', borderColor: '#0b3c5d', color: '#fde047' }}
                     >
-                      📜 {tr(lang, 'عرض وتحميل الشهادة', 'View & Download', 'Voir & Télécharger', 'Ver y Descargar')}
+                       {tr(lang,'عرض وتحميل الشهادة','View & Download','Voir & Télécharger','Ver y Descargar')}
                     </button>
                   </div>
                 );
@@ -586,7 +585,7 @@ export default function Quiz() {
           }}
         >
           <div style={{ fontSize: '3.5rem', marginBottom: '8px' }}>
-            {pct === 100 ? '🏆' : passed ? '🎉' : '📚'}
+            {pct === 100 ?'': passed ?'':''}
           </div>
           <h2 style={{ margin: '0 0 8px', color: passed ? '#15803d' : '#92400e' }}>
             {passed
@@ -631,7 +630,7 @@ export default function Quiz() {
           {/* Saved indicator */}
           {saved && (
             <p style={{ fontSize: '0.8rem', color: '#0f766e', fontWeight: 600, margin: '4px 0 8px' }}>
-              ☁️{' '}
+               
               {tr(
                 lang,
                 'تم حفظ نتيجتك وشهادتك في السحابة للرجوع إليها في أي وقت',
@@ -658,7 +657,7 @@ export default function Quiz() {
                 boxShadow: '0 10px 25px rgba(11, 60, 93, 0.25)',
               }}
             >
-              <div style={{ fontSize: '2rem', marginBottom: '4px' }}>🏅</div>
+              <div style={{ fontSize:'2rem', marginBottom:'4px'}}></div>
               <h3 style={{ margin: '0 0 6px', color: '#fde047', fontSize: '1.08rem' }}>
                 {tr(lang, 'شهادة سفير الوعي بالمضادات الحيوية جاهزة!', 'Your Stewardship Ambassador Certificate is Ready!', 'Votre Certificat d’Ambassadeur est Prêt !', '¡Tu Certificado de Embajador está Listo!')}
               </h3>
@@ -683,7 +682,7 @@ export default function Quiz() {
                   width: '100%',
                 }}
               >
-                📜 {tr(lang, 'فتح وتحميل الشهادة الآن', 'Open & Download Certificate Now', 'Ouvrir & Télécharger le Certificat', 'Abrir y Descargar Certificado')}
+                 {tr(lang,'فتح وتحميل الشهادة الآن','Open & Download Certificate Now','Ouvrir & Télécharger le Certificat','Abrir y Descargar Certificado')}
               </button>
             </div>
           )}
@@ -695,7 +694,7 @@ export default function Quiz() {
               onClick={handleRestart}
               style={{ background: info.color, color: '#fff', border: 'none' }}
             >
-              🔄 {tr(lang, 'إعادة الاختبار', 'Retake Quiz', 'Recommencer', 'Repetir')}
+               {tr(lang,'إعادة الاختبار','Retake Quiz','Recommencer','Repetir')}
             </button>
             <button
               type="button"
@@ -703,7 +702,7 @@ export default function Quiz() {
               onClick={handleBackToPick}
               style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1' }}
             >
-              🏠 {tr(lang, 'قائمة المستويات وشهاداتي المحفوظة', 'Levels & My Saved Certificates', 'Niveaux & Mes Certificats', 'Niveles y Mis Certificados')}
+               {tr(lang,'قائمة المستويات وشهاداتي المحفوظة','Levels & My Saved Certificates','Niveaux & Mes Certificats','Niveles y Mis Certificados')}
             </button>
           </div>
 
@@ -748,14 +747,14 @@ export default function Quiz() {
                       }}
                     >
                       <p style={{ fontWeight: 700, margin: '0 0 8px', color: '#1e293b', fontSize: '0.95rem' }}>
-                        ❓ {pick(w.question.q, lang)}
+                         {pick(w.question.q, lang)}
                       </p>
                       <p style={{ margin: '0 0 4px', color: '#dc2626', fontSize: '0.88rem' }}>
-                        ✗ {tr(lang, 'إجابتك:', 'Your answer:', 'Votre réponse :', 'Tu respuesta:')}{' '}
+                         {tr(lang,'إجابتك:','Your answer:','Votre réponse :','Tu respuesta:')} 
                         {pick(w.question.options[w.chosen], lang)}
                       </p>
                       <p style={{ margin: '0 0 8px', color: '#16a34a', fontSize: '0.88rem' }}>
-                        ✓ {tr(lang, 'الصواب:', 'Correct:', 'Correct :', 'Correcto:')}{' '}
+                         {tr(lang,'الصواب:','Correct:','Correct :','Correcto:')} 
                         {pick(w.question.options[w.question.answer], lang)}
                       </p>
                       <div
@@ -767,7 +766,7 @@ export default function Quiz() {
                         }}
                       >
                         <b style={{ color: '#0369a1', fontSize: '0.82rem' }}>
-                          💡 {tr(lang, 'التوضيح الطبي:', 'Clinical Explanation:', 'Explication médicale :', 'Explicación clínica:')}
+                           {tr(lang,'التوضيح الطبي:','Clinical Explanation:','Explication médicale :','Explicación clínica:')}
                         </b>
                         <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#0c4a6e', lineHeight: 1.6 }}>
                           {pick(w.question.why, lang)}
@@ -864,7 +863,7 @@ export default function Quiz() {
             )}
           </span>
           <span className="small muted">
-            ✅ {tr(lang, `النتيجة: ${score}`, `Score: ${score}`, `Score : ${score}`, `Puntuación: ${score}`)}
+             {tr(lang,`النتيجة: ${score}`,`Score: ${score}`,`Score : ${score}`,`Puntuación: ${score}`)}
           </span>
         </div>
 
@@ -883,14 +882,14 @@ export default function Quiz() {
                   else setAddingNewQ(true);
                 }}
               >
-                ✏️ {tr(lang, 'تعديل السؤال', 'Edit')}
+                 {tr(lang,'تعديل السؤال','Edit')}
               </button>
               <button
                 type="button"
                 className="btn small"
                 onClick={() => setAddingNewQ(true)}
               >
-                ➕
+                
               </button>
             </div>
           )}
@@ -905,11 +904,11 @@ export default function Quiz() {
               if (optIdx === q.answer) {
                 bg = '#dcfce7';
                 borderColor = '#22c55e';
-                icon = '✓ ';
+                icon ='';
               } else if (optIdx === selectedOpt) {
                 bg = '#fee2e2';
                 borderColor = '#ef4444';
-                icon = '✗ ';
+                icon ='';
               }
             }
             return (
@@ -959,7 +958,7 @@ export default function Quiz() {
             }}
           >
             <b style={{ color: '#0369a1', display: 'block', marginBottom: '6px', fontSize: '0.9rem' }}>
-              💡 {tr(lang, 'التوضيح الطبي:', 'Clinical Explanation:', 'Explication médicale :', 'Explicación clínica:')}
+               {tr(lang,'التوضيح الطبي:','Clinical Explanation:','Explication médicale :','Explicación clínica:')}
             </b>
             <p style={{ margin: 0, fontSize: '0.9rem', color: '#0c4a6e', lineHeight: 1.65 }}>
               {pick(q.why, lang)}
@@ -977,7 +976,7 @@ export default function Quiz() {
             >
               {currentIdx + 1 < total
                 ? tr(lang, 'السؤال التالي ←', 'Next Question →', 'Question suivante →', 'Siguiente →')
-                : tr(lang, 'عرض النتيجة والشهادة 🏆', 'View Result & Certificate 🏆', 'Voir le résultat 🏆', 'Ver resultado 🏆')}
+                : tr(lang,'عرض النتيجة والشهادة','View Result & Certificate','Voir le résultat','Ver resultado')}
             </button>
           </div>
         )}

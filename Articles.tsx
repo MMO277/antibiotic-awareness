@@ -10,7 +10,7 @@ export default function Articles() {
 
   return (
     <main className="wrap narrow stack">
-      <h1>📰 {t('navArticles')}</h1>
+      <h1> {t('navArticles')}</h1>
       <p className="muted">
         {tr(
           lang,

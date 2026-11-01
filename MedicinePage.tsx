@@ -144,16 +144,16 @@ export default function MedicinePage() {
         <Link to="/medicines">← {t('navMedicines')}</Link>
         <div className="row wrapRow" style={{ gap: '8px' }}>
           <Link to={`/cost-saver?ing=${encodeURIComponent(m.id)}`} className="btn small" style={{ background: '#15803d' }}>
-            💰 {tr(lang, 'حاسبة البديل الأرخص', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos')}
+             {tr(lang,'حاسبة البديل الأرخص','Generic Cost Saver','Économiseur Générique','Ahorro en Genéricos')}
           </Link>
           <Link to={`/daily-schedule?med=${encodeURIComponent(name)}`} className="btn ghost small">
-            📅 {tr(lang, 'جدول مواعيد الجرعات', 'Dose Schedule', 'Horaires de Prise', 'Horario de Dosis')}
+             {tr(lang,'جدول مواعيد الجرعات','Dose Schedule','Horaires de Prise','Horario de Dosis')}
           </Link>
           <Link to="/prescription-radar" className="btn ghost small">
-            📡 {isAr ? 'فحص في رادار الروشتة' : 'Prescription Radar'}
+             {isAr ?'فحص في رادار الروشتة':'Prescription Radar'}
           </Link>
           <Link to="/allergy-checker" className="btn ghost small">
-            🛡️ {isAr ? 'فحص الحساسية' : 'Allergy Check'}
+             {isAr ?'فحص الحساسية':'Allergy Check'}
           </Link>
         </div>
       </div>
@@ -162,7 +162,7 @@ export default function MedicinePage() {
       <section className="pro-mode-toggle-banner">
         <div className="pro-mode-toggle-info">
           <span className="pro-mode-badge-icon" aria-hidden="true">
-            {isProMode ? '🩺' : '👤'}
+            {isProMode ?'':''}
           </span>
           <div>
             <b className="pro-mode-title">
@@ -209,8 +209,7 @@ export default function MedicinePage() {
             onClick={() => setProMode(false)}
             aria-pressed={!isProMode}
           >
-            <span aria-hidden="true">👤</span>
-            <span>{tr(lang, 'وضع المريض', 'Patient Mode', 'Mode Patient', 'Modo Paciente')}</span>
+                        <span>{tr(lang, 'وضع المريض', 'Patient Mode', 'Mode Patient', 'Modo Paciente')}</span>
           </button>
           <button
             type="button"
@@ -218,8 +217,7 @@ export default function MedicinePage() {
             onClick={() => setProMode(true)}
             aria-pressed={isProMode}
           >
-            <span aria-hidden="true">🩺</span>
-            <span>{tr(lang, 'الوضع الإكلينيكي للطبيب', 'Clinical Pro Mode', 'Mode Clinique Pro', 'Modo Clínico Pro')}</span>
+                        <span>{tr(lang, 'الوضع الإكلينيكي للطبيب', 'Clinical Pro Mode', 'Mode Clinique Pro', 'Modo Clínico Pro')}</span>
           </button>
         </div>
       </section>
@@ -270,7 +268,7 @@ export default function MedicinePage() {
           <div className="clinical-pro-header">
             <div>
               <span className="clinical-pro-kicker">
-                🩺 {tr(lang, 'مرجع الأطباء والصيادلة الإكلينيكي', 'Physician & Clinical Pharmacist Reference', 'Référence Médicale & Pharmaceutique', 'Referencia Médica y Farmacéutica')}
+                 {tr(lang,'مرجع الأطباء والصيادلة الإكلينيكي','Physician & Clinical Pharmacist Reference','Référence Médicale & Pharmaceutique','Referencia Médica y Farmacéutica')}
               </span>
               <h2 style={{ margin: '4px 0 0' }}>
                 {tr(
@@ -309,34 +307,34 @@ export default function MedicinePage() {
 
           {/* 2. Antimicrobial Spectrum Matrix */}
           <h3 className="clinical-subhead">
-            🔬 {tr(lang, 'طيف التغطية الميكروبية (Antimicrobial Spectrum)', 'Antimicrobial Coverage Spectrum', 'Spectre Antimicrobien', 'Espectro Antimicrobiano')}
+             {tr(lang,'طيف التغطية الميكروبية (Antimicrobial Spectrum)','Antimicrobial Coverage Spectrum','Spectre Antimicrobien','Espectro Antimicrobiano')}
           </h3>
           <div className="clinical-spectrum-grid">
             <div className="spectrum-box gram-pos">
-              <b>🟣 Gram-Positive (موجبات الجرام)</b>
+              <b> Gram-Positive (موجبات الجرام)</b>
               <p className="small">{pick(clinicalPro.spectrum.gramPositive, lang)}</p>
             </div>
             <div className="spectrum-box gram-neg">
-              <b>🔴 Gram-Negative (سالبات الجرام)</b>
+              <b> Gram-Negative (سالبات الجرام)</b>
               <p className="small">{pick(clinicalPro.spectrum.gramNegative, lang)}</p>
             </div>
             <div className="spectrum-box anaerobes">
-              <b>🟢 Anaerobes (البكتيريا اللاهوائية)</b>
+              <b> Anaerobes (البكتيريا اللاهوائية)</b>
               <p className="small">{pick(clinicalPro.spectrum.anaerobes, lang)}</p>
             </div>
             <div className="spectrum-box atypicals">
-              <b>🔵 Atypicals (البكتيريا غير النمطية)</b>
+              <b> Atypicals (البكتيريا غير النمطية)</b>
               <p className="small">{pick(clinicalPro.spectrum.atypicals, lang)}</p>
             </div>
           </div>
 
           <div className="clinical-pearl-box">
-            <strong>💡 {pick(clinicalPro.spectrum.clinicalPearl, lang)}</strong>
+            <strong> {pick(clinicalPro.spectrum.clinicalPearl, lang)}</strong>
           </div>
 
           {/* 3. Renal CrCl Dosing Cutoffs Table */}
           <h3 className="clinical-subhead">
-            🧪 {tr(lang, 'جدول تعديل الجرعات حسب تصفية الكرياتينين (CrCl Renal Dosing Cutoffs)', 'Renal Function (CrCl) Dosing Adjustment Table', 'Ajustement Posologique selon la Clairance de la Créatinine (CrCl)', 'Tabla de Ajuste de Dosis según Aclaramiento de Creatinina (CrCl)')}
+             {tr(lang,'جدول تعديل الجرعات حسب تصفية الكرياتينين (CrCl Renal Dosing Cutoffs)','Renal Function (CrCl) Dosing Adjustment Table','Ajustement Posologique selon la Clairance de la Créatinine (CrCl)','Tabla de Ajuste de Dosis según Aclaramiento de Creatinina (CrCl)')}
           </h3>
           <div className="tablewrap">
             <table className="tbl clinical-crcl-tbl">
@@ -369,7 +367,7 @@ export default function MedicinePage() {
 
           {/* 4. IV Compatibility & Reconstitution */}
           <div className="clinical-iv-box">
-            <b>💉 {tr(lang, 'توافق المحاليل الوريدية وإرشادات التحضير والثبات:', 'IV Compatibility, Reconstitution & Stability:', 'Compatibilité IV, Reconstitution & Stabilité :', 'Compatibilidad IV, Reconstitución y Estabilidad:')}</b>
+            <b> {tr(lang,'توافق المحاليل الوريدية وإرشادات التحضير والثبات:','IV Compatibility, Reconstitution & Stability:','Compatibilité IV, Reconstitution & Stabilité :','Compatibilidad IV, Reconstitución y Estabilidad:')}</b>
             <p className="small" style={{ margin: '4px 0 0' }}>
               {pick(clinicalPro.ivAndReconstitution, lang)}
             </p>
@@ -385,21 +383,20 @@ export default function MedicinePage() {
         <section className="card patient-friendly-summary-card">
           <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h2 style={{ margin: 0 }}>
-              👤 {tr(lang, 'ملخص سريع ومبسط للمريض حول استخدام الدواء', 'Quick Patient Guide for Safe Use', 'Guide Rapide pour le Patient', 'Guía Rápida para el Paciente')}
+               {tr(lang,'ملخص سريع ومبسط للمريض حول استخدام الدواء','Quick Patient Guide for Safe Use','Guide Rapide pour le Patient','Guía Rápida para el Paciente')}
             </h2>
             <button
               type="button"
               className="btn ghost small"
               onClick={() => setProMode(true)}
             >
-              🩺 {tr(lang, 'اعرض البيانات الإكلينيكية للطبيب ←', 'Switch to Doctor Pro View →', 'Vue Médecin Pro →', 'Vista Médico Pro →')}
+               {tr(lang,'اعرض البيانات الإكلينيكية للطبيب ←','Switch to Doctor Pro View →','Vue Médecin Pro →','Vista Médico Pro →')}
             </button>
           </div>
 
           <div className="patient-summary-grid">
             <div className="patient-summary-item">
-              <span className="patient-summary-icon" aria-hidden="true">🍽️</span>
-              <div>
+                            <div>
                 <b>{tr(lang, 'قبل الأكل أم بعده؟', 'With or Without Food?', 'Avec ou sans nourriture ?', '¿Con o sin alimentos?')}</b>
                 <p className="small">{pick(clinicalPro.patientSimpleSummary.foodRule, lang)}</p>
               </div>
@@ -412,8 +409,7 @@ export default function MedicinePage() {
               </div>
             </div>
             <div className="patient-summary-item warning">
-              <span className="patient-summary-icon" aria-hidden="true">⚠️</span>
-              <div>
+                            <div>
                 <b>{tr(lang, 'تنبيه أمان مهم', 'Key Safety Warning', 'Alerte de sécurité', 'Alerta de seguridad')}</b>
                 <p className="small">{pick(clinicalPro.patientSimpleSummary.keyWarning, lang)}</p>
               </div>
@@ -439,7 +435,7 @@ export default function MedicinePage() {
           <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
             <div>
               <strong>
-                🛡️{' '}
+                 
                 {isAr
                   ? 'تقييم محرك السلامة الدوائية مع ملفك الصحي:'
                   : 'Medication Safety Engine Check Against Your Profile:'}
@@ -450,10 +446,10 @@ export default function MedicinePage() {
             </div>
             <div className="row wrapRow" style={{ gap: '6px' }}>
               <Link to="/health-profile" className="btn-secondary small">
-                👤 {isAr ? 'ملفي الصحي' : 'My Profile'}
+                 {isAr ?'ملفي الصحي':'My Profile'}
               </Link>
               <Link to="/prescription-radar" className="btn small">
-                📡 {isAr ? 'فحص روشتة كاملة' : 'Full Rx Check'}
+                 {isAr ?'فحص روشتة كاملة':'Full Rx Check'}
               </Link>
             </div>
           </div>
@@ -484,7 +480,7 @@ export default function MedicinePage() {
 
           {safetyAssessment.completeness.missingProfileFields.length > 0 && (
             <p className="small muted" style={{ margin: '8px 0 0' }}>
-              ℹ️{' '}
+              ℹ 
               {isAr
                 ? 'ملاحظة اكتمال البيانات: يمكنك إضافة العمر وسجل الحساسية والأدوية الحالية في «ملف صحتي» لتخصيص فحص الأمان بدقة أكبر.'
                 : 'Data Completeness Note: Add your age, allergies, and active medications in "My Health Profile" for full personalized screening.'}
@@ -497,7 +493,7 @@ export default function MedicinePage() {
       <section className="card highlight-card qr-top-card">
         <div className="qr-top-flex">
           <div>
-            <h2>📱 {isAr ? 'رمز QR للمشاركة وباركود العلبة المعتمد' : 'Medicine QR & Official Barcode'}</h2>
+            <h2> {isAr ?'رمز QR للمشاركة وباركود العلبة المعتمد':'Medicine QR & Official Barcode'}</h2>
             <p className="small muted">
               {isAr
                 ? 'امسح رمز QR لفتح ومشاركة صفحة الدواء على هاتفك فوراً، أو استخدم صفحة «مسح QR والباركود» لمسح الباركود الخطي المطبوع على ظهر العلبة المصرية.'
@@ -539,13 +535,13 @@ export default function MedicinePage() {
             <section className="card highlight-card">
               <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                 <h2 style={{ margin: 0 }}>
-                  🇪🇬{' '}
+                   
                   {isAr
                     ? `جميع العبوات والمستحضرات والبدائل المسجلة في السوق المصري (${commercialPackages.length} عبوة)`
                     : `Registered Commercial Packages & Alternatives in Egypt (${commercialPackages.length})`}
                 </h2>
                 <Link to={`/cost-saver?ing=${encodeURIComponent(m.id)}`} className="btn small" style={{ background: '#0d9488' }}>
-                  💰 {tr(lang, 'احسب التوفير والبديل الأرخص ←', 'Calculate Cheapest Generic →', 'Calculer le Générique le Moins Cher →', 'Calcular el Genérico Más Barato →')}
+                   {tr(lang,'احسب التوفير والبديل الأرخص ←','Calculate Cheapest Generic →','Calculer le Générique le Moins Cher →','Calcular el Genérico Más Barato →')}
                 </Link>
               </div>
               <p className="small muted" style={{ marginTop: '6px' }}>
@@ -611,8 +607,7 @@ export default function MedicinePage() {
               </div>
               <p className="small muted" style={{ marginTop: '8px' }}>
                 {isAr
-                  ? '💡 يمكنك توجيه كاميرا الهاتف من صفحة «مسح QR والباركود» نحو الباركود الخطي (الخطوط الطولية على ظهر العلبة) لفتح هذه الصفحة وتفاصيل الدواء فوراً.'
-                  : '💡 You can scan the linear box barcode (stripes on the back) with your camera on the Scan page to open this record instantly.'}
+                  ?'يمكنك توجيه كاميرا الهاتف من صفحة «مسح QR والباركود» نحو الباركود الخطي (الخطوط الطولية على ظهر العلبة) لفتح هذه الصفحة وتفاصيل الدواء فوراً.'                  :'You can scan the linear box barcode (stripes on the back) with your camera on the Scan page to open this record instantly.'}
               </p>
             </section>
           )}
@@ -624,8 +619,6 @@ export default function MedicinePage() {
             return (
               <section key={f} className={`card ${isHighlight ? 'highlight-card' : ''}`}>
                 <h2>
-                  {f === 'priceEgypt' && <span>💰 </span>}
-                  {f === 'substitutes' && <span>🔄 </span>}
                   {pick(FIELD_LABELS[f], lang)}
                 </h2>
                 <p className="pre">{v}</p>

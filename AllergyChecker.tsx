@@ -84,7 +84,7 @@ export default function AllergyChecker() {
   return (
     <main className="wrap stack">
       <header className="page-head">
-        <h1>🛡️ {isAr ? 'فاحص الحساسية والأمان الدوائي الذكي' : 'Smart Allergy & Medication Safety Checker'}</h1>
+        <h1> {isAr ?'فاحص الحساسية والأمان الدوائي الذكي':'Smart Allergy & Medication Safety Checker'}</h1>
         <p className="muted">
           {isAr
             ? 'نظام أمان سريري يفحص المادة الفعالة للدواء (سواء بالاسم العلمي أو التجاري المصري أو المستحضرات المركبة) ويقارنها مع سجل حساسيتك الدوائية وأدويتك الحالية، ويكشف احتمالات الحساسية المتصالبة (Cross-Reactivity).'
@@ -96,7 +96,7 @@ export default function AllergyChecker() {
       <section className="card stack">
         <div className="card-head-row">
           <div>
-            <h2>👤 {isAr ? 'سجل الحساسية النشط للفحص:' : 'Active Patient Allergy Record:'}</h2>
+            <h2> {isAr ?'سجل الحساسية النشط للفحص:':'Active Patient Allergy Record:'}</h2>
             <p className="small muted">
               {activeAllergies.length > 0
                 ? isAr
@@ -108,7 +108,7 @@ export default function AllergyChecker() {
             </p>
           </div>
           <Link to="/health-profile" className="btn-secondary">
-            📋 {isAr ? 'فتح ملف صحتي وتعديل الحساسية' : 'Open My Health Profile'}
+             {isAr ?'فتح ملف صحتي وتعديل الحساسية':'Open My Health Profile'}
           </Link>
         </div>
 
@@ -123,14 +123,14 @@ export default function AllergyChecker() {
               className={`chip ${simulatedAllergy === 'penicillin' ? 'active-chip' : ''}`}
               onClick={() => setSimulatedAllergy('penicillin')}
             >
-              🧪 {isAr ? 'سيناريو: مريض لديه حساسية بنسلين' : 'Scenario: Penicillin Allergic Patient'}
+               {isAr ?'سيناريو: مريض لديه حساسية بنسلين':'Scenario: Penicillin Allergic Patient'}
             </button>
             <button
               type="button"
               className={`chip ${simulatedAllergy === 'sulfa' ? 'active-chip' : ''}`}
               onClick={() => setSimulatedAllergy('sulfa')}
             >
-              🧪 {isAr ? 'سيناريو: مريض لديه حساسية مركبات السلفا' : 'Scenario: Sulfa Allergic Patient'}
+               {isAr ?'سيناريو: مريض لديه حساسية مركبات السلفا':'Scenario: Sulfa Allergic Patient'}
             </button>
             {simulatedAllergy && (
               <button
@@ -147,7 +147,7 @@ export default function AllergyChecker() {
 
       {/* Drug Selection Input (Active Ingredient OR Brand/Free-Text) */}
       <section className="card stack">
-        <h2>💊 {isAr ? 'اختر المضاد الحيوي أو اكتب الاسم التجاري المراد فحص أمانه:' : 'Select Antibiotic or Type Commercial Brand Name to Test:'}</h2>
+        <h2> {isAr ?'اختر المضاد الحيوي أو اكتب الاسم التجاري المراد فحص أمانه:':'Select Antibiotic or Type Commercial Brand Name to Test:'}</h2>
         <div className="check-grid">
           <div className="field-group">
             <label>
@@ -196,7 +196,7 @@ export default function AllergyChecker() {
                   className="btn-secondary small"
                   onClick={() => setCustomDrugQuery('')}
                 >
-                  ✕
+                  
                 </button>
               )}
             </div>
@@ -218,7 +218,7 @@ export default function AllergyChecker() {
             primaryResolved.resolutionStatus === 'resolved_ingredient_only' ? (
               <div>
                 <strong>
-                  🧬 {isAr ? 'تحليل الهوية الدوائية والمواد الفعالة:' : 'Resolved Medication Identity & Components:'}{' '}
+                   {isAr ?'تحليل الهوية الدوائية والمواد الفعالة:':'Resolved Medication Identity & Components:'} 
                 </strong>
                 <span>
                   {pick(primaryResolved.displayName, lang)} —{' '}
@@ -234,7 +234,7 @@ export default function AllergyChecker() {
             ) : (
               <div>
                 <strong>
-                  ⚠️ {isAr ? 'حالة التحقق من الهوية الدوائية:' : 'Medication Identity Status:'}{' '}
+                   {isAr ?'حالة التحقق من الهوية الدوائية:':'Medication Identity Status:'} 
                 </strong>
                 <span>
                   {pick(primaryResolved.uncertaintyReasons[0], lang) ||
@@ -261,22 +261,22 @@ export default function AllergyChecker() {
         <div className="result-header">
           {result.matchLevel === 'exact_match' && (
             <span className="sev-badge severe">
-              🚨 {isAr ? 'خطر حاد! تطابق تام في مادة الحساسية' : 'Severe Warning: Exact Active Ingredient Match'}
+               {isAr ?'خطر حاد! تطابق تام في مادة الحساسية':'Severe Warning: Exact Active Ingredient Match'}
             </span>
           )}
           {result.matchLevel === 'cross_reactivity' && (
             <span className="sev-badge moderate">
-              🟠 {isAr ? 'تحذير سريري: احتمالية حساسية متصالبة (Cross-Reactivity)' : 'Clinical Concern: Cross-Reactivity Risk'}
+               {isAr ?'تحذير سريري: احتمالية حساسية متصالبة (Cross-Reactivity)':'Clinical Concern: Cross-Reactivity Risk'}
             </span>
           )}
           {result.matchLevel === 'no_match' && (
             <span className="sev-badge safe">
-              🟢 {isAr ? 'لم يُعثر على تطابق مع الحساسيات المسجلة حالياً' : 'No Match Found with Documented Allergies'}
+               {isAr ?'لم يُعثر على تطابق مع الحساسيات المسجلة حالياً':'No Match Found with Documented Allergies'}
             </span>
           )}
           {result.matchLevel === 'unverified' && (
             <span className="sev-badge moderate">
-              🟡 {isAr ? 'غير متحقق منه — لا يمكن تأكيد الأمان آلياً' : 'Unverified — Cannot Confirm Safety Automatically'}
+               {isAr ?'غير متحقق منه — لا يمكن تأكيد الأمان آلياً':'Unverified — Cannot Confirm Safety Automatically'}
             </span>
           )}
 
@@ -285,19 +285,19 @@ export default function AllergyChecker() {
 
         <div className="result-body stack">
           <div className="result-section">
-            <h4>🔬 {isAr ? 'التحليل السريري للمطابقة:' : 'Clinical Matching Analysis:'}</h4>
+            <h4> {isAr ?'التحليل السريري للمطابقة:':'Clinical Matching Analysis:'}</h4>
             <p>{pick(result.explanation, lang)}</p>
           </div>
 
           <div className="result-section action-highlight">
-            <h4>⚡ {isAr ? 'التصرف الطبي الموصى به:' : 'Recommended Clinical Action:'}</h4>
+            <h4> {isAr ?'التصرف الطبي الموصى به:':'Recommended Clinical Action:'}</h4>
             <p>
               <b>{pick(result.clinicalAction, lang)}</b>
             </p>
           </div>
 
           <div className="nursing-box">
-            <h4>🩺 {isAr ? 'توجيه وتمريض سريري (Nursing Safety Protocol):' : 'Nursing Safety Protocol:'}</h4>
+            <h4> {isAr ?'توجيه وتمريض سريري (Nursing Safety Protocol):':'Nursing Safety Protocol:'}</h4>
             <p>{pick(result.nursingWarning, lang)}</p>
           </div>
 
@@ -307,7 +307,7 @@ export default function AllergyChecker() {
             safetyAssessment.groupedFindings.interactions.length > 0) && (
             <div className="notice" style={{ marginTop: '8px' }}>
               <h4 style={{ margin: '0 0 8px' }}>
-                🛡️{' '}
+                 
                 {isAr
                   ? 'تنبيهات إضافية من محرك السلامة الدوائية (بناءً على أدويتك وملفك الصحي):'
                   : 'Additional Medication Safety Engine Findings (From Your Active Profile):'}
@@ -382,14 +382,14 @@ export default function AllergyChecker() {
           <div className="med-link-row row wrapRow" style={{ gap: '8px' }}>
             {currentMedObj && (
               <Link to={`/medicine/${currentMedObj.id}`} className="btn-secondary">
-                📖{' '}
+                 
                 {isAr
                   ? `فتح صفحة دواء ${pick(currentMedObj.genericName, lang)} وسعره وبدائله`
                   : `View ${pick(currentMedObj.genericName, lang)} Details`}
               </Link>
             )}
             <Link to="/prescription-radar" className="btn ghost">
-              📡 {isAr ? 'فحص الروشتة الكاملة في الرادار' : 'Check Full Prescription in Radar'}
+               {isAr ?'فحص الروشتة الكاملة في الرادار':'Check Full Prescription in Radar'}
             </Link>
           </div>
         </div>
@@ -397,7 +397,7 @@ export default function AllergyChecker() {
 
       {/* Clinical Disclaimer */}
       <section className="notice alert">
-        <strong>⚠️ {isAr ? 'إخلاء مسؤولية سريري:' : 'Clinical Disclaimer:'} </strong>
+        <strong> {isAr ?'إخلاء مسؤولية سريري:':'Clinical Disclaimer:'} </strong>
         {pick(safetyAssessment.safetyDisclaimer, lang)}
       </section>
     </main>

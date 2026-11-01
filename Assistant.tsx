@@ -88,7 +88,7 @@ function FormattedClinicalText({ text }: { text: string }) {
   return (
     <div style={{ display: 'grid', gap: '8px', lineHeight: 1.75, fontSize: '0.95rem', marginTop: '4px' }}>
       {blocks.map((block, bIdx) => {
-        const isWarnBlock = block.startsWith('⚠️') || block.startsWith('🚨');
+        const isWarnBlock = block.startsWith('') || block.startsWith('');
         const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
 
         if (isWarnBlock) {
@@ -279,7 +279,7 @@ export default function Assistant() {
     }
 
     stopListenRef.current?.stop();
-    setVoiceNote(isAr ? '🎙️ تحدث الآن... أنا أستمع إليك باللهجة المصرية أو العربية' : '🎙️ Speak now... Listening');
+    setVoiceNote(isAr ?'تحدث الآن... أنا أستمع إليك باللهجة المصرية أو العربية':'Speak now... Listening');
     setListening(true);
 
     stopListenRef.current = startVoiceRecognition(
@@ -315,7 +315,7 @@ export default function Assistant() {
       <div className="asst-header">
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div>
-            <h1>🎙️ {t('asstTitle')}</h1>
+            <h1> {t('asstTitle')}</h1>
             <p className="muted" style={{ margin: 0 }}>{t('asstIntro')}</p>
           </div>
           <div className="row" style={{ gap: '8px' }}>
@@ -327,7 +327,7 @@ export default function Assistant() {
                 setAutoSpeak((v) => !v);
               }}
             >
-              🔊 {isAr ? (autoSpeak ? 'النطق التلقائي: مفعّل' : 'تفعيل نطق الإجابات صوتياً') : autoSpeak ? 'Auto-Voice: ON' : 'Enable Voice Readout'}
+               {isAr ? (autoSpeak ?'النطق التلقائي: مفعّل':'تفعيل نطق الإجابات صوتياً') : autoSpeak ?'Auto-Voice: ON':'Enable Voice Readout'}
             </button>
           </div>
         </div>
@@ -349,7 +349,7 @@ export default function Assistant() {
       >
         <div>
           <b style={{ fontSize: '1.05rem', display: 'block', marginBottom: '4px' }}>
-            🗣️ {isAr ? 'ميزة التحدث الصوتي المباشر (اسأل بصوتك بالمايك)' : 'Live Voice-to-Voice Medical Assistant'}
+             {isAr ?'ميزة التحدث الصوتي المباشر (اسأل بصوتك بالمايك)':'Live Voice-to-Voice Medical Assistant'}
           </b>
           <span className="small" style={{ color: '#e0f2fe' }}>
             {isAr
@@ -371,11 +371,8 @@ export default function Assistant() {
         >
           {listening
             ? isAr
-              ? '⏹️ إيقاف الاستماع...'
-              : '⏹️ Stop Listening...'
-            : isAr
-              ? '🎤 اضغط وتحدث بالمايك الآن'
-              : '🎤 Tap & Speak Now'}
+              ?'⏹ إيقاف الاستماع...'              :'⏹ Stop Listening...'            : isAr
+              ?'اضغط وتحدث بالمايك الآن'              :'Tap & Speak Now'}
         </button>
       </div>
 
@@ -401,7 +398,7 @@ export default function Assistant() {
                       className="badge"
                       style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700, fontSize: '0.82rem' }}
                     >
-                      ✨ {isAr ? 'إجابة طبية منظمة وموثقة' : 'Structured Medical Answer'}
+                       {isAr ?'إجابة طبية منظمة وموثقة':'Structured Medical Answer'}
                     </span>
                     <button
                       type="button"
@@ -409,7 +406,7 @@ export default function Assistant() {
                       onClick={() => speakText(plainForSpeech, lang)}
                       title={isAr ? 'استمع للإجابة صوتياً' : 'Listen to answer'}
                     >
-                      🔊 {isAr ? 'اسمع الإجابة' : 'Listen'}
+                       {isAr ?'اسمع الإجابة':'Listen'}
                     </button>
                   </div>
                   <FormattedClinicalText text={m.text} />
@@ -430,7 +427,7 @@ export default function Assistant() {
                       className="chip"
                       onClick={() => speakText(plainForSpeech, lang)}
                     >
-                      🔊 {isAr ? 'اسمع الإجابة' : 'Listen'}
+                       {isAr ?'اسمع الإجابة':'Listen'}
                     </button>
                   </div>
                   {r.hits.map((p) => (
@@ -446,7 +443,7 @@ export default function Assistant() {
                     >
                       <FormattedClinicalText text={pick(p.text, lang)} />
                       <div className="src" style={{ marginTop: '8px', paddingTop: '6px', borderTop: '1px solid #eef6f8' }}>
-                        <Link to={p.link ?? '/'} style={{ fontWeight: 700 }}>🔗 {p.label}</Link>
+                        <Link to={p.link ??'/'} style={{ fontWeight: 700 }}> {p.label}</Link>
                         {p.unreviewed && <> · {t('unreviewed')}</>}
                         {p.refs.map((x) => (
                           <span key={x.url}>
@@ -473,14 +470,14 @@ export default function Assistant() {
                     className="badge"
                     style={{ background: '#dcfce7', color: '#166534', fontWeight: 700, fontSize: '0.82rem' }}
                   >
-                    ✅ {isAr ? 'دليل سريري معتمد من المنصة' : 'Verified Clinical Protocol'}
+                     {isAr ?'دليل سريري معتمد من المنصة':'Verified Clinical Protocol'}
                   </span>
                   <button
                     type="button"
                     className="chip"
                     onClick={() => speakText(plainForSpeech, lang)}
                   >
-                    🔊 {isAr ? 'اسمع الإجابة' : 'Listen'}
+                     {isAr ?'اسمع الإجابة':'Listen'}
                   </button>
                 </div>
                 <FormattedClinicalText text={pick(r.text, lang)} />
@@ -508,7 +505,7 @@ export default function Assistant() {
                           fontSize: '0.84rem',
                         }}
                       >
-                        💊 {pick(l.label, lang)}
+                         {pick(l.label, lang)}
                       </Link>
                     ))}
                   </div>
@@ -543,7 +540,7 @@ export default function Assistant() {
               color: listening ? '#dc2626' : undefined,
             }}
           >
-            {listening ? '⏹️' : '🎤'}
+            {listening ?'⏹':''}
           </button>
           <input
             value={q}

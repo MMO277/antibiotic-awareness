@@ -90,7 +90,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
     setMsg('');
     try {
       await setDoc(doc(db, 'roles', uid.trim()), { role });
-      setMsg(t('saved') || tr(lang, 'تم حفظ الصلاحية بنجاح ✓', 'Role saved successfully ✓'));
+      setMsg(t('saved') || tr(lang,'تم حفظ الصلاحية بنجاح','Role saved successfully'));
       await loadRoles();
       setNewUid('');
     } catch (e: unknown) {
@@ -133,7 +133,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
     <div className="card stack" style={{ marginTop: '0.5rem' }}>
       <div>
         <h2 style={{ margin: '0 0 4px' }}>
-          👥 {tr(lang, 'إدارة المستخدمين والصلاحيات (OWNER / ADMIN / EDITOR / VIEWER)', 'Team Roles & Permissions (OWNER / ADMIN / EDITOR / VIEWER)')}
+           {tr(lang,'إدارة المستخدمين والصلاحيات (OWNER / ADMIN / EDITOR / VIEWER)','Team Roles & Permissions (OWNER / ADMIN / EDITOR / VIEWER)')}
         </h2>
         <p className="small muted" style={{ margin: 0 }}>
           {t('usersHelp')}
@@ -142,7 +142,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
 
       <div className="subcard" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
         <div className="small">
-          <b>🔑 {tr(lang, 'معرّف حسابك الحالي (Your UID):', 'Your Account UID:')} </b>
+          <b> {tr(lang,'معرّف حسابك الحالي (Your UID):','Your Account UID:')} </b>
           <code dir="ltr" style={{ userSelect: 'all', padding: '2px 6px', borderRadius: 4, background: 'var(--card-bg)' }}>
             {myUid}
           </code>
@@ -156,7 +156,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
             }
           }}
         >
-          📋 {tr(lang, 'نسخ الـ UID', 'Copy UID')}
+           {tr(lang,'نسخ الـ UID','Copy UID')}
         </button>
       </div>
 
@@ -167,7 +167,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
       )}
 
       <div className="subcard stack">
-        <b>➕ {tr(lang, 'إضافة أو تعديل صلاحية مستخدم (OWNER / ADMIN / EDITOR / VIEWER):', 'Grant or Update User Role:')}</b>
+        <b> {tr(lang,'إضافة أو تعديل صلاحية مستخدم (OWNER / ADMIN / EDITOR / VIEWER):','Grant or Update User Role:')}</b>
         <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
             type="text"
@@ -195,7 +195,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
             disabled={!newUid.trim() || busy}
             onClick={() => handleSaveRole(newUid, newRole)}
           >
-            ✅ {t('grant')}
+             {t('grant')}
           </button>
         </div>
       </div>
@@ -249,7 +249,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
                         disabled={busy}
                         onClick={() => handleDeleteRole(u.uid)}
                       >
-                        🗑️ {t('remove')}
+                         {t('remove')}
                       </button>
                     )}
                   </td>

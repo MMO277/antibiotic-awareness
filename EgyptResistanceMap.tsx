@@ -926,8 +926,7 @@ export default function EgyptResistanceMap() {
       <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(34, 211, 238, 0.14)', border: '1px solid rgba(34, 211, 238, 0.35)', color: '#67e8f9', padding: '3px 10px', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '6px' }}>
-            <span>🛰️</span>
-            <span>
+                        <span>
               {tr(
                 lang,
                 'مرصد مقاومة المضادات الحيوية بجمهورية مصر العربية • WHO GLASS & NAP-AMR',
@@ -938,7 +937,7 @@ export default function EgyptResistanceMap() {
             </span>
           </div>
           <h2 style={{ margin: '0 0 4px', fontSize: 'clamp(1.15rem, 2.8vw, 1.55rem)', color: '#ffffff' }}>
-            🇪🇬{' '}
+             
             {tr(
               lang,
               'خريطة مقاومة المضادات الحيوية في مصر (الأطلس التفاعلي الحي)',
@@ -980,11 +979,11 @@ export default function EgyptResistanceMap() {
             transition: 'all 0.25s ease',
           }}
         >
-          <span>{stewardshipMode ? '🌿' : '⚡'}</span>
+          <span>{stewardshipMode ?'':''}</span>
           <span>
             {stewardshipMode
               ? tr(lang, 'محاكاة الروشتة الخضرا: مفعّلة (-24%)', 'Green Rx Sim: ON (-24%)', 'Sim. Verte : ACTIVE (-24%)', 'Sim. Verde: ACTIVA (-24%)')
-              : tr(lang, 'جرب محاكاة أثر «الروشتة الخضرا» 🌿', 'Simulate "Green Rx" Impact 🌿', 'Simuler l’Ordonnance Verte 🌿', 'Simular Receta Verde 🌿')}
+              : tr(lang,'جرب محاكاة أثر «الروشتة الخضرا»','Simulate"Green Rx"Impact','Simuler l’Ordonnance Verte','Simular Receta Verde')}
           </span>
         </button>
       </div>
@@ -1036,7 +1035,7 @@ export default function EgyptResistanceMap() {
         <div className="eg-glass-panel" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.78rem', color: '#7dd3fc', fontWeight: 600 }}>
-              🧭 {tr(lang, 'خريطة جمهورية مصر العربية الكاملة — اضغط على الإقليم', 'Complete Map of Egypt — Tap any Region', 'Carte Complète d’Égypte', 'Mapa Completo de Egipto')}
+               {tr(lang,'خريطة جمهورية مصر العربية الكاملة — اضغط على الإقليم','Complete Map of Egypt — Tap any Region','Carte Complète d’Égypte','Mapa Completo de Egipto')}
             </span>
             <span style={{ fontSize: '0.74rem', background: 'rgba(15, 23, 42, 0.85)', border: '1px solid rgba(56, 189, 248, 0.35)', color: '#38bdf8', padding: '2px 9px', borderRadius: '999px', fontWeight: 700 }}>
               {currentYear}
@@ -1429,10 +1428,10 @@ export default function EgyptResistanceMap() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap', borderBottom: '1px solid rgba(56, 189, 248, 0.18)', paddingBottom: '8px' }}>
             <div>
               <h3 style={{ margin: '0 0 2px', fontSize: '1.08rem', color: '#ffffff' }}>
-                📍 {pick(activeRegion.name, lang)}
+                 {pick(activeRegion.name, lang)}
               </h3>
               <div style={{ fontSize: '0.76rem', color: '#7dd3fc', fontWeight: 600 }}>
-                🏥 {pick(activeRegion.hospitals, lang)}
+                 {pick(activeRegion.hospitals, lang)}
               </div>
               <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
                 {pick(activeRegion.cities, lang)}
@@ -1451,7 +1450,7 @@ export default function EgyptResistanceMap() {
               }}
             >
               {stewardshipMode
-                ? tr(lang, '🌿 مع الروشتة الخضرا', '🌿 With Green Rx', '🌿 Avec Ordonnance Verte', '🌿 Con Receta Verde')
+                ? tr(lang,'مع الروشتة الخضرا','With Green Rx','Avec Ordonnance Verte','Con Receta Verde')
                 : pick(activeRegion.alertLabel, lang)}
             </span>
           </div>
@@ -1463,21 +1462,21 @@ export default function EgyptResistanceMap() {
               className={`eg-mobile-subtab-btn ${mobileTab === 'radar' ? 'on' : ''}`}
               onClick={() => setMobileTab('radar')}
             >
-              🕸️ {tr(lang, 'الرادار والمؤشر', 'Radar & Index', 'Radar & Indice', 'Radar e Índice')}
+               {tr(lang,'الرادار والمؤشر','Radar & Index','Radar & Indice','Radar e Índice')}
             </button>
             <button
               type="button"
               className={`eg-mobile-subtab-btn ${mobileTab === 'bacteria' ? 'on' : ''}`}
               onClick={() => setMobileTab('bacteria')}
             >
-              🦠 {tr(lang, 'السلالات (3)', 'Pathogens (3)', 'Bactéries (3)', 'Bacterias (3)')}
+               {tr(lang,'السلالات (3)','Pathogens (3)','Bactéries (3)','Bacterias (3)')}
             </button>
             <button
               type="button"
               className={`eg-mobile-subtab-btn ${mobileTab === 'guide' ? 'on' : ''}`}
               onClick={() => setMobileTab('guide')}
             >
-              🛡️ {tr(lang, 'السبب والحل', 'Cause & Action', 'Cause & Solution', 'Causa y Acción')}
+               {tr(lang,'السبب والحل','Cause & Action','Cause & Solution','Causa y Acción')}
             </button>
           </div>
 
@@ -1486,7 +1485,7 @@ export default function EgyptResistanceMap() {
             {/* 6-Axis Antibiogram Spider Radar Chart */}
             <div style={{ textAlign: 'center', minWidth: 0 }}>
               <div style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 700, marginBottom: '2px' }}>
-                🕸️ {tr(lang, 'رادار 6 عائلات مضادات', '6-Class Antibiogram Radar', 'Radar 6 Classes', 'Radar 6 Clases')}
+                 {tr(lang,'رادار 6 عائلات مضادات','6-Class Antibiogram Radar','Radar 6 Classes','Radar 6 Clases')}
               </div>
               <svg viewBox="0 0 260 232" style={{ width: '100%', maxWidth: '220px', height: 'auto', marginInline: 'auto', display: 'block' }}>
                 {[25, 50, 75, 100].map((lvl) => {
@@ -1580,7 +1579,7 @@ export default function EgyptResistanceMap() {
             {/* Semi-Circular Risk Speedometer Gauge + Summary */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '4px', minWidth: 0 }}>
               <div style={{ fontSize: '0.74rem', color: '#94a3b8', fontWeight: 700 }}>
-                🎯 {tr(lang, 'متوسط مؤشر المقاومة', 'Composite AMR Index', 'Indice Moyen', 'Índice Promedio')}
+                 {tr(lang,'متوسط مؤشر المقاومة','Composite AMR Index','Indice Moyen','Índice Promedio')}
               </div>
 
               <svg viewBox="0 0 180 105" style={{ width: '100%', maxWidth: '155px', height: 'auto' }}>
@@ -1629,7 +1628,7 @@ export default function EgyptResistanceMap() {
           {/* PANEL B: Microscopic Pathogen Cards with Segmented Glowing Bars */}
           <div className={mobileTab !== 'bacteria' ? 'eg-hide-on-mobile' : ''} style={{ display: 'grid', gap: '8px' }}>
             <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#7dd3fc' }}>
-              🦠 {tr(lang, 'أهم السلالات البكتيرية المرصودة ونسب مقاومتها:', 'Key Monitored Bacterial Pathogens & Resistance:', 'Principales Souches Bactériennes Surveillées :', 'Principales Cepas Bacterianas Monitoreadas:')}
+               {tr(lang,'أهم السلالات البكتيرية المرصودة ونسب مقاومتها:','Key Monitored Bacterial Pathogens & Resistance:','Principales Souches Bactériennes Surveillées :','Principales Cepas Bacterianas Monitoreadas:')}
             </div>
 
             {activeRegion.pathogens.map((p) => {
@@ -1739,7 +1738,7 @@ export default function EgyptResistanceMap() {
           >
             <div style={{ padding: '9px 11px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.35)' }}>
               <b style={{ display: 'block', fontSize: '0.76rem', color: '#fcd34d', marginBottom: '2px' }}>
-                ⚠️ {tr(lang, 'أهم مسبب سلوكي مرصود:', 'Primary Behavioral Driver:', 'Facteur Comportemental :', 'Factor Conductual:')}
+                 {tr(lang,'أهم مسبب سلوكي مرصود:','Primary Behavioral Driver:','Facteur Comportemental :','Factor Conductual:')}
               </b>
               <p style={{ margin: 0, fontSize: '0.76rem', color: '#fef3c7', lineHeight: 1.5 }}>
                 {pick(activeRegion.driver, lang)}
@@ -1748,7 +1747,7 @@ export default function EgyptResistanceMap() {
 
             <div style={{ padding: '9px 11px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.35)' }}>
               <b style={{ display: 'block', fontSize: '0.76rem', color: '#6ee7b7', marginBottom: '2px' }}>
-                🛡️ {tr(lang, 'الحل الإكلينيكي والتمريضي:', 'Clinical Stewardship Solution:', 'Solution Clinique :', 'Solución Clínica:')}
+                 {tr(lang,'الحل الإكلينيكي والتمريضي:','Clinical Stewardship Solution:','Solution Clinique :','Solución Clínica:')}
               </b>
               <p style={{ margin: 0, fontSize: '0.76rem', color: '#d1fae5', lineHeight: 1.5 }}>
                 {pick(activeRegion.stewardshipAction, lang)}
@@ -1759,14 +1758,14 @@ export default function EgyptResistanceMap() {
           {/* Footer Attribution & Quick Links */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', borderTop: '1px solid rgba(56, 189, 248, 0.16)', paddingTop: '8px', fontSize: '0.71rem', color: '#94a3b8' }}>
             <span>
-              📚 {tr(lang, 'المرجع: تقارير WHO GLASS • الخطة الوطنية المصرية NAP-AMR • دراسات الجامعات المصرية.', 'Refs: WHO GLASS • Egypt NAP-AMR • Egyptian University Hospital Studies.', 'Réf : OMS GLASS • Plan National Égyptien NAP-AMR.', 'Ref: OMS GLASS • Plan Nacional de Egipto NAP-AMR.')}
+               {tr(lang,'المرجع: تقارير WHO GLASS • الخطة الوطنية المصرية NAP-AMR • دراسات الجامعات المصرية.','Refs: WHO GLASS • Egypt NAP-AMR • Egyptian University Hospital Studies.','Réf : OMS GLASS • Plan National Égyptien NAP-AMR.','Ref: OMS GLASS • Plan Nacional de Egipto NAP-AMR.')}
             </span>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <Link to="/green-prescription" className="btn small" style={{ background: '#10b981', borderColor: '#10b981', color: '#041018', fontWeight: 800 }}>
-                🌿 {tr(lang, 'الروشتة الخضرا', 'Green Rx', 'Ordonnance Verte', 'Receta Verde')}
+                 {tr(lang,'الروشتة الخضرا','Green Rx','Ordonnance Verte','Receta Verde')}
               </Link>
               <Link to="/allergy-checker" className="btn small ghost" style={{ color: '#67e8f9', borderColor: 'rgba(103,232,249,0.4)' }}>
-                🛡️ {tr(lang, 'فاحص الحساسية', 'Allergy Checker', 'Allergies', 'Alergias')}
+                 {tr(lang,'فاحص الحساسية','Allergy Checker','Allergies','Alergias')}
               </Link>
             </div>
           </div>

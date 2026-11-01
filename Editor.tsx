@@ -73,7 +73,7 @@ export default function Editor() {
     <main className="wrap stack">
       <h1>{isNew ? t('newMed') : `${pick(m.genericName, lang)} (${m.id})`}</h1>
       <p className="notice" style={{ margin: 0 }}>
-        ⚡{' '}
+         
         {tr(
           lang,
           'أي تعديل تحفظه هنا بحالة «معتمد (Approved)» يتم نشره وتحديثه فورياً لجميع زوار ومستخدمي الموقع في نفس اللحظة.',
@@ -164,7 +164,7 @@ export default function Editor() {
       )}
       <div className="row stickybar">
         <button className="btn" onClick={save} disabled={saving}>
-          {saving ? tr(lang, 'جارٍ الحفظ والنشر الفوري...', 'Saving & Publishing Live...') : `💾 ${t('save')}`}
+          {saving ? tr(lang,'جارٍ الحفظ والنشر الفوري...','Saving & Publishing Live...') :`${t('save')}`}
         </button>
         <button className="btn ghost" onClick={() => nav('/admin')}>{t('cancel')}</button>
       </div>
