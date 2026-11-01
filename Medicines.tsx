@@ -9,6 +9,7 @@ import SkeletonCard from './SkeletonCard';
 import { useAuth } from './authContext';
 import { deleteCommercialProductLive, useLiveDrugCatalog } from './liveCatalogSync';
 import { QuickProductEditorModal } from './CommercialCatalogEditor';
+import FindMedicationPanel from './FindMedicationPanel';
 import { getClinicalProProfile, useClinicalProMode } from './clinicalProData';
 import {
   ACTIVE_INGREDIENTS,
@@ -296,6 +297,9 @@ export default function Medicines() {
         </Link>
         <Link to='/compare' className='btn ghost'>
           ⚖️ {isAr ? 'مقارنة دواءين جنباً إلى جنب' : 'Compare 2 Drugs'}
+        </Link>
+        <Link to='/partners' className='btn ghost' style={{ borderColor: '#0d9488', color: '#0f766e', fontWeight: 700 }}>
+          🏥 {isAr ? 'شبكة الصيدليات المعتمدة' : 'Pharmacy Network'}
         </Link>
       </div>
 
@@ -881,6 +885,9 @@ export default function Medicines() {
                 </div>
               </div>
             </div>
+
+            {/* Find This Medication in Participating Pharmacies */}
+            <FindMedicationPanel activeIngredientId={selectedProduct.activeIngredientId} initialProductId={selectedProduct.productId} />
 
             {/* 3-Tier Alternatives Classification */}
             <div className="stack">

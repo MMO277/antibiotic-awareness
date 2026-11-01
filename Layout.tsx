@@ -199,6 +199,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           icon: '⚖️',
           shortLabel: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar'),
         },
+        {
+          to: '/partners',
+          key: '',
+          icon: '🏥',
+          shortLabel: tr(lang, 'شبكة الصيدليات والشركاء', 'Pharmacies & Partners', 'Pharmacies & Partenaires', 'Farmacias y Socios', 'Apotheken & Partner'),
+        },
       ],
     },
     {

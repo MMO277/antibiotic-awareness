@@ -1,1 +1,39 @@
-{ "indexes": [], "fieldOverrides": [] }
+{
+  "indexes": [
+    {
+      "collectionGroup": "partners",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "partnershipStatus", "order": "ASCENDING" },
+        { "fieldPath": "publicationStatus", "order": "ASCENDING" },
+        { "fieldPath": "visibility.displayOrder", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "partnerBranches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "partnerId", "order": "ASCENDING" },
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "governorateId", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "partnerMedicationMappings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "activeIngredientId", "order": "ASCENDING" },
+        { "fieldPath": "published", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "adminAuditLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "partnerId", "order": "ASCENDING" },
+        { "fieldPath": "timestampIso", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

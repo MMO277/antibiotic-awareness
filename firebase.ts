@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
+import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 // Standard Firebase Web Client configuration (Public Web SDK credentials, NO server secrets)
 const apiKey = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_FIREBASE_API_KEY) || '';
@@ -18,10 +19,11 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase only when valid configuration is present.
-// When unconfigured, app, auth, and db are null without connecting to any dummy/fake project.
+// When unconfigured, app, auth, db, and storage are null without connecting to any dummy/fake project.
 export const app: FirebaseApp | null = configured
   ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
   : null;
 
 export const db: Firestore = (app ? getFirestore(app) : null) as unknown as Firestore;
 export const auth: Auth = (app ? getAuth(app) : null) as unknown as Auth;
+export const storage: FirebaseStorage | null = app && firebaseConfig.storageBucket.trim() ? getStorage(app) : null;

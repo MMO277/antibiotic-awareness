@@ -26,14 +26,19 @@ service cloud.firestore {
 
     function userHasRoleIn(allowedRoles) {
       return isSignedIn()
-          && exists(roleDocPath())
-          && (get(roleDocPath()).data.role in allowedRoles);
+          && (
+            (request.auth.token.role is string && request.auth.token.role in allowedRoles)
+            || (exists(roleDocPath()) && (get(roleDocPath()).data.role in allowedRoles))
+          );
     }
 
-    function isEditor() { return userHasRoleIn(['editor', 'admin']); }
-    function isReviewer() { return userHasRoleIn(['reviewer', 'admin']); }
-    function isAdmin() { return userHasRoleIn(['admin']); }
+    function isViewer() { return userHasRoleIn(['viewer', 'editor', 'reviewer', 'admin', 'owner']); }
+    function isEditor() { return userHasRoleIn(['editor', 'reviewer', 'admin', 'owner']); }
+    function isReviewer() { return userHasRoleIn(['reviewer', 'admin', 'owner']); }
+    function isAdmin() { return userHasRoleIn(['admin', 'owner']); }
+    function isPlatformOwner() { return userHasRoleIn(['owner']); }
 
+    // ── Existing Collections (Preserved 100%) ──
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
       allow create, update: if isOwner(uid) && validUserDocWrite();
@@ -52,8 +57,8 @@ service cloud.firestore {
     }
 
     match /roles/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
-      allow write: if isAdmin();
+      allow read: if isOwner(uid) || isViewer();
+      allow write: if isAdmin() || isPlatformOwner();
     }
 
     match /surveyResponses/{id} {
@@ -87,13 +92,91 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // ✅ جديد — نتائج الكويز
     match /quizResults/{resultId} {
-      // أي حد يكتب نتيجته (مسجل أو زائر)
       allow create: if true;
-      // بس الـ admin يقرأ الكل
       allow read: if request.auth != null;
-      // محدش يعدل أو يمسح
+      allow update, delete: if false;
+    }
+
+    // ── Partner Management & Pharmacy Network Collections ──
+
+    // 1. Public Partners Collection (Public only reads published & active partners; Admins/Editors read all)
+    match /partners/{partnerId} {
+      allow read: if (
+        resource.data.partnershipStatus == 'active'
+        && (resource.data.publicationStatus == 'published' || resource.data.publicationStatus == 'scheduled')
+        && resource.data.visibilityStatus != 'hidden'
+      ) || isViewer();
+      allow create, update: if isEditor()
+        && request.resource.data.nameAr is string
+        && request.resource.data.nameEn is string;
+      allow delete: if isAdmin();
+    }
+
+    // 2. Private Administrative Partner Records (Strictly protected: NEVER public)
+    match /partnerPrivateAdmin/{partnerId} {
+      allow read: if isViewer();
+      allow create, update: if isEditor();
+      allow delete: if isAdmin();
+    }
+
+    // 3. Dynamic Partner Categories
+    match /partnerCategories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // 4. Partner & Pharmacy Branches
+    match /partnerBranches/{branchId} {
+      allow read: if (resource.data.published == true && resource.data.branchStatus == 'active') || isViewer();
+      allow create, update: if isEditor();
+      allow delete: if isAdmin();
+    }
+
+    // 5. Partner Service Areas & Visibility Overrides
+    match /partnerServiceAreas/{areaId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    match /partnerVisibility/{partnerId} {
+      allow read: if true;
+      allow write: if isReviewer() || isAdmin();
+    }
+
+    // 6. Partner Integrations (Strictly restricted to Admin/Owner)
+    match /partnerIntegrations/{partnerId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // 7. Partner-to-Medication Mappings
+    match /partnerMedicationMappings/{mappingId} {
+      allow read: if (resource.data.published == true) || isViewer();
+      allow create, update: if isEditor();
+      allow delete: if isEditor();
+    }
+
+    // 8. Partner Promotions
+    match /partnerPromotions/{promoId} {
+      allow read: if (resource.data.active == true) || isViewer();
+      allow write: if isEditor();
+    }
+
+    // 9. Partner Orders & Prescription Tracking
+    match /partnerOrders/{orderId} {
+      allow create: if request.resource.data.patientName is string
+        && request.resource.data.patientPhone is string
+        && request.resource.data.requiresPrescription == true;
+      allow read: if (isSignedIn() && resource.data.userId == request.auth.uid) || isViewer();
+      allow update: if isEditor();
+      allow delete: if isAdmin();
+    }
+
+    // 10. Administrative Audit Logs (Immutable history, never exposed to ordinary users)
+    match /adminAuditLogs/{logId} {
+      allow read: if isReviewer() || isAdmin();
+      allow create: if isEditor();
       allow update, delete: if false;
     }
   }

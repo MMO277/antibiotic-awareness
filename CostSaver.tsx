@@ -13,6 +13,7 @@ import Disclaimer from './Disclaimer';
 import { useAuth } from './authContext';
 import { useLiveDrugCatalog } from './liveCatalogSync';
 import { QuickProductEditorModal } from './CommercialCatalogEditor';
+import FindMedicationPanel from './FindMedicationPanel';
 
 const POPULAR_BRAND_IDS = [
   'EG-ABX-001', // Augmentin 1g
@@ -502,6 +503,8 @@ export default function CostSaver() {
           </div>
         </section>
       )}
+
+      <FindMedicationPanel activeIngredientId={selectedProduct.activeIngredientId} initialProductId={selectedProduct.productId} />
 
       {/* Educational Card: Difference between Exact Generic vs Therapeutic Alternative */}
       <section className="card" style={{ borderInlineStart: '4px solid #0e9aa7' }}>

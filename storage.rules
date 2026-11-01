@@ -1,0 +1,32 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function hasAdminOrEditorRole() {
+      return isSignedIn() && (
+        request.auth.token.role in ['owner', 'admin', 'reviewer', 'editor']
+        || firestore.get(/databases/(default)/documents/roles/$(request.auth.uid)).data.role in ['owner', 'admin', 'reviewer', 'editor']
+      );
+    }
+
+    // Public Partner Assets (Logos & Cover Images): Public read, Admin/Editor write (images only, max 5MB)
+    match /partner_assets/{partnerId}/{fileName} {
+      allow read: if !(fileName.matches('prescription_.*')) || hasAdminOrEditorRole();
+      allow write: if (
+        // Prescription uploads by patients (max 8MB, image or PDF)
+        (fileName.matches('prescription_.*')
+          && request.resource.size < 8 * 1024 * 1024
+          && (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf'))
+        ||
+        // Logo and cover image uploads by Admin/Editor (max 5MB, image only)
+        (hasAdminOrEditorRole()
+          && request.resource.size < 5 * 1024 * 1024
+          && request.resource.contentType.matches('image/.*'))
+      );
+    }
+  }
+}

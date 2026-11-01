@@ -7,6 +7,7 @@ import Disclaimer from './Disclaimer';
 import DidYouKnow from './DidYouKnow';
 import ResistanceCounter from './ResistanceCounter';
 import EgyptResistanceMap from './EgyptResistanceMap';
+import { PublicPartnerPlacementSection } from './PartnersDirectory';
 import {
   ACTIVE_INGREDIENTS,
   EGYPTIAN_COMMERCIAL_PRODUCTS,
@@ -654,6 +655,8 @@ export default function Home() {
         </section>
 
         {/* Interactive Egypt Antibiotic Resistance Map Infographic */}
+        <PublicPartnerPlacementSection placement="homepage_featured" />
+
         <EgyptResistanceMap />
 
         {/* Quick Access to Most Prescribed Antibiotics in Egypt */}

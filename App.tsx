@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import PrescriptionRadar from './PrescriptionRadar';
 import AwarenessWeek from './AwarenessWeek';
 import GreenPrescription from './GreenPrescription';
@@ -37,6 +37,8 @@ import BacteriaHunter from './BacteriaHunter';
 import GameCenter from './GameCenter';
 import OpenWorldGame from './OpenWorldGame';
 import Editor from './Editor';
+import PartnersDirectoryPage, { PartnerPublicProfilePage } from './PartnersDirectory';
+import { startPartnerEcosystemSync } from './partnerService';
 
 // Direct imports for 3D WebGL games so GitHub Pages routes never fail on dynamic chunk/CSS preload
 import MedicalSimulator from './MedicalSimulator';
@@ -98,6 +100,10 @@ function NotFound() {
 }
 
 export default function App() {
+  useEffect(() => {
+    startPartnerEcosystemSync();
+  }, []);
+
   return (
     <AuthProvider>
       <EmergencyLocationProvider>
@@ -105,6 +111,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/medicines" element={<Medicines />} />
+          <Route path="/partners" element={<PartnersDirectoryPage />} />
+          <Route path="/pharmacies" element={<PartnersDirectoryPage />} />
+          <Route path="/partner/:id" element={<PartnerPublicProfilePage />} />
           <Route path="/cost-saver" element={<CostSaver />} />
           <Route path="/cold-shot-warning" element={<ColdShotWarning />} />
           <Route path="/daily-schedule" element={<DailyScheduleGenerator />} />

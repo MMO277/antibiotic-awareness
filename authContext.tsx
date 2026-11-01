@@ -23,8 +23,8 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db, configured } from './firebase';
 
 export type AuthMode = 'login' | 'register' | 'forgot';
-export type Role = 'editor' | 'reviewer' | 'admin';
-export const ROLES: Role[] = ['editor', 'reviewer', 'admin'];
+export type Role = 'owner' | 'admin' | 'reviewer' | 'editor' | 'viewer';
+export const ROLES: Role[] = ['owner', 'admin', 'reviewer', 'editor', 'viewer'];
 
 export const GUEST_MODE_KEY = 'aa_guest_mode';
 
@@ -166,6 +166,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setModalOpen(false);
         if (db) {
           try {
+            // Check custom claims first if present, then Firestore roles/{uid}
+            const tokenResult = await currentUser.getIdTokenResult().catch(() => null);
+            const claimRole = tokenResult?.claims?.role;
+            if (typeof claimRole === 'string' && ROLES.includes(claimRole.trim().toLowerCase() as Role)) {
+              if (!cancelled) {
+                setRole(claimRole.trim().toLowerCase() as Role);
+                setRoleStatus('ok');
+                setLoading(false);
+              }
+              return;
+            }
+
             const snap = await getDoc(doc(db, 'roles', currentUser.uid));
             if (cancelled) return;
             if (!snap.exists()) {
@@ -173,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setRoleStatus('missing');
             } else {
               const raw = snap.data().role;
-              const r = typeof raw === 'string' ? (raw.trim() as Role) : null;
+              const r = typeof raw === 'string' ? (raw.trim().toLowerCase() as Role) : null;
               if (r && ROLES.includes(r)) {
                 setRole(r);
                 setRoleStatus('ok');

@@ -11,26 +11,40 @@ interface UserRole {
 }
 
 const ROLE_LABELS: Record<Role, { ar: string; en: string; de: string; fr: string; es: string }> = {
+  owner: {
+    ar: 'OWNER — مالك المنصة (تحكم كامل في الشركاء والظهور والصلاحيات والربط البرمجي)',
+    en: 'OWNER — Platform Owner (Full Control Over Partners, Visibility, Roles & Integrations)',
+    de: 'OWNER — Plattform-Eigentümer (Vollständige Kontrolle)',
+    fr: 'OWNER — Propriétaire de la plateforme (Contrôle total)',
+    es: 'OWNER — Propietario de la plataforma (Control total)',
+  },
   admin: {
-    ar: 'admin — مدير كامل (كافة الصلاحيات)',
-    en: 'admin — Full Administrator',
-    de: 'admin — Vollständiger Administrator',
-    fr: 'admin — Administrateur complet',
-    es: 'admin — Administrador completo',
+    ar: 'ADMIN — مدير النظام (إدارة الشركاء والعمليات الإدارية الكاملة)',
+    en: 'ADMIN — Full Administrator (Manage Partners & Administrative Operations)',
+    de: 'ADMIN — Vollständiger Administrator',
+    fr: 'ADMIN — Administrateur complet',
+    es: 'ADMIN — Administrador completo',
   },
   reviewer: {
-    ar: 'reviewer — مراجع علمي (اعتماد الأدوية والتعديل)',
-    en: 'reviewer — Clinical Reviewer',
-    de: 'reviewer — Klinischer Prüfer',
-    fr: 'reviewer — Réviseur clinique',
-    es: 'reviewer — Revisor clínico',
+    ar: 'REVIEWER — مراجع علمي (اعتماد الأدوية ومراجعة الشركاء)',
+    en: 'REVIEWER — Clinical Reviewer',
+    de: 'REVIEWER — Klinischer Prüfer',
+    fr: 'REVIEWER — Réviseur clinique',
+    es: 'REVIEWER — Revisor clínico',
   },
   editor: {
-    ar: 'editor — محرر (إضافة وتعديل المسودات والكتالوج)',
-    en: 'editor — Catalog & Content Editor',
-    de: 'editor — Katalog- & Inhalts-Editor',
-    fr: 'editor — Éditeur de contenu',
-    es: 'editor — Editor de contenido',
+    ar: 'EDITOR — محرر محتوى (إضافة وتعديل مسودات الشركاء والكتالوج بدون تغيير إعدادات الأمان)',
+    en: 'EDITOR — Content Editor (Prepare Partner Drafts & Edit Catalog)',
+    de: 'EDITOR — Katalog- & Inhalts-Editor',
+    fr: 'EDITOR — Éditeur de contenu',
+    es: 'EDITOR — Editor de contenido',
+  },
+  viewer: {
+    ar: 'VIEWER — مشاهد فقط (صلاحية قراءة فقط للوحة الإدارة)',
+    en: 'VIEWER — Read-Only Administrative Access',
+    de: 'VIEWER — Schreibgeschützter Zugriff',
+    fr: 'VIEWER — Accès administratif en lecture seule',
+    es: 'VIEWER — Acceso administrativo de solo lectura',
   },
 };
 
@@ -119,7 +133,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
     <div className="card stack" style={{ marginTop: '0.5rem' }}>
       <div>
         <h2 style={{ margin: '0 0 4px' }}>
-          👥 {tr(lang, 'إدارة المستخدمين والصلاحيات (Admin / Reviewer / Editor)', 'Team Roles & Permissions (Admin / Reviewer / Editor)', 'Gestion des Rôles & Permissions', 'Gestión de Usuarios y Permisos', 'Benutzerrollen & Berechtigungen')}
+          👥 {tr(lang, 'إدارة المستخدمين والصلاحيات (OWNER / ADMIN / EDITOR / VIEWER)', 'Team Roles & Permissions (OWNER / ADMIN / EDITOR / VIEWER)')}
         </h2>
         <p className="small muted" style={{ margin: 0 }}>
           {t('usersHelp')}
@@ -153,7 +167,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
       )}
 
       <div className="subcard stack">
-        <b>➕ {tr(lang, 'إضافة أو تعديل صلاحية مستخدم (Admin / Reviewer / Editor):', 'Grant or Update User Role:')}</b>
+        <b>➕ {tr(lang, 'إضافة أو تعديل صلاحية مستخدم (OWNER / ADMIN / EDITOR / VIEWER):', 'Grant or Update User Role:')}</b>
         <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
             type="text"

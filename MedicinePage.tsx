@@ -10,6 +10,7 @@ import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS, EgyptianCommercialPro
 import { useAuth } from './authContext';
 import { useLiveDrugCatalog } from './liveCatalogSync';
 import { QuickProductEditorModal } from './CommercialCatalogEditor';
+import FindMedicationPanel from './FindMedicationPanel';
 import { useSyncedHealthProfile } from './allergyData';
 import { evaluateMedicationSafety } from './medicationSafetyEngine';
 import { getClinicalProProfile, useClinicalProMode } from './clinicalProData';
@@ -530,6 +531,9 @@ export default function MedicinePage() {
 
       <div className="med-grid">
         <div className="stack">
+          {/* Find This Medication (اعثر على دوائك) Dynamic Partner Network Section */}
+          <FindMedicationPanel activeIngredientId={m.id} />
+
           {/* Commercial Packages & Alternatives Table in Egyptian Market */}
           {commercialPackages.length > 0 && (
             <section className="card highlight-card">
