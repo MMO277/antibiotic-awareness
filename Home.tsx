@@ -515,6 +515,54 @@ export default function Home() {
             </div>
           </div>
 
+                    {/* Smart Global Search Bar (Ctrl + K) right above Hero CTA Pills */}
+          <div style={{ maxWidth: '780px', width: '100%', margin: '0 auto 14px' }}>
+            <button
+              type="button"
+              onClick={() => setSpotlightOpen(true)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '12px',
+                background: '#ffffff',
+                border: '2px solid #0d9488',
+                borderRadius: '16px',
+                padding: '14px 18px',
+                boxShadow: '0 10px 28px rgba(13, 148, 136, 0.16)',
+                cursor: 'pointer',
+                textAlign: isAr ? 'right' : 'left',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.2rem' }}>🔍</span>
+                <span style={{ color: '#334155', fontSize: '0.95rem', fontWeight: 700 }}>
+                  {tr(
+                    lang,
+                    'ابحث فوراً عن أي دواء، جرعة أطفال، تداخل، أو أداة إكلينيكية (Ctrl + K)...',
+                    'Search medications, pediatric dosages, interactions, or clinical tools (Ctrl + K)...'
+                  )}
+                </span>
+              </div>
+              <span
+                style={{
+                  background: '#f1f5f9',
+                  color: '#0f172a',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '4px 10px',
+                  fontSize: '0.76rem',
+                  fontWeight: 800,
+                  direction: 'ltr',
+                  flexShrink: 0,
+                }}
+              >
+                ⌘ Ctrl + K
+              </span>
+            </button>
+          </div>
+
           {/* Hero Quick CTA Pills */}
           <div className="pro-hero-actions">
             <Link to="/games" className="pro-cta-btn primary-cta" style={{ background: '#0e9aa7', color: '#ffffff' }}>
