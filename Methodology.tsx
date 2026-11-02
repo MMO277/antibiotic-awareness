@@ -365,9 +365,7 @@ export default function Methodology() {
   }, [selectedCat, searchQ]);
 
   const handleCopyAllApa = () => {
-    const text = ALL_WEBSITE_SOURCES.map((s, idx) => `[${idx + 1}] ${s.apaCitation}`).join('
-
-');
+    const text = ALL_WEBSITE_SOURCES.map((s, idx) => `[${idx + 1}] ${s.apaCitation}`).join('\n\n');
     navigator.clipboard?.writeText(text);
     setCopiedApa(true);
     setTimeout(() => setCopiedApa(false), 3000);
