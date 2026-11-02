@@ -1,5 +1,4 @@
 import { SmartPersonaSwitcher, GlobalSpotlightModal, PersonaType } from './SmartPersonaAndSpotlight';
-import SmartDoseAlarmCard from './SmartDoseAlarmCard';
 import { PublicPartnerPlacementSection } from './PartnersDirectory';
 import { CSSProperties, FormEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -560,25 +559,13 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Hero Quick CTA Pills */}
+          {/* Hero Quick CTA Pills — Clean 2 Primary Buttons */}
           <div className="pro-hero-actions">
-            <Link to="/games" className="pro-cta-btn primary-cta" style={{ background: '#0e9aa7', color: '#ffffff' }}>
-              🎮 {tr(lang, 'مركز الألعاب ومحاكي المستشفى 3D', 'Game Center & 3D Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D')}
+            <Link to="/complete-checkup" className="pro-cta-btn primary-cta" style={{ background: '#0e9aa7', color: '#ffffff' }}>
+              ⚡ {tr(lang, 'الفحص الشامل للروشتة (4×1)', '1-Click Prescription Checkup', 'Bilan Complet 4-en-1', 'Chequeo Completo 4 en 1')}
             </Link>
             <Link to="/green-prescription" className="pro-cta-btn primary-cta" style={{ background: '#10b981', color: '#052e16' }}>
-              🌿 {tr(lang, 'الروشتة الخضرا الذكية', 'Green Prescription', 'Ordonnance Verte', 'Receta Verde')}
-            </Link>
-            <Link to="/medicines" className="pro-cta-btn secondary-cta">
-              💊 {tr(lang, 'تصفح الـ 206 مستحضرات والبدائل', 'Browse 206 Egyptian Packages', 'Parcourir les 206 Médicaments', 'Explorar 206 Medicamentos')}
-            </Link>
-            <Link to="/allergy-checker" className="pro-cta-btn secondary-cta">
-              🛡️ {tr(lang, 'فاحص الحساسية الدوائية', 'Allergy Safety Checker', 'Vérificateur d’Allergies', 'Verificador de Alergias')}
-            </Link>
-            <Link to="/pediatric-helper" className="pro-cta-btn secondary-cta">
-              👶 {tr(lang, 'حاسبة جرعات الأطفال', 'Pediatric Dosing', 'Posologie Pédiatrique', 'Dosis Pediátrica')}
-            </Link>
-            <Link to="/methodology" className="pro-cta-btn secondary-cta" style={{ borderColor: '#14b8a6', fontWeight: 800 }}>
-              📚 {tr(lang, 'المصادر والمراجع العلمية للموقع', 'Scientific References & Sources', 'Sources Scientifiques', 'Referencias Científicas')}
+              🌿 {tr(lang, 'الروشتة الخضرا والرعاية التمريضية', 'Green Prescription & Nursing Care', 'Ordonnance Verte', 'Receta Verde')}
             </Link>
           </div>
 
@@ -632,10 +619,19 @@ export default function Home() {
           </div>
 
           <div className="pro-tools-grid">
-            {(showAllClinicalTools ? [...clinicalTools].sort((a, b) => {
-              const priority = ['/medicines', '/allergy-checker', '/prescription-radar', '/scan', '/compare', '/green-prescription'];
-              return (priority.indexOf(a.to) === -1 ? 999 : priority.indexOf(a.to)) - (priority.indexOf(b.to) === -1 ? 999 : priority.indexOf(b.to));
-            }) : ['/complete-checkup', '/cost-saver', '/cold-shot-warning', '/medicines', '/allergy-checker', '/prescription-radar'].map((path) => clinicalTools.find((tool) => tool.to === path)).filter((tool): tool is (typeof clinicalTools)[number] => Boolean(tool))).map((tool) => (
+            {(() => {
+              const personaPaths: Record<PersonaType, string[]> = {
+                all: ['/complete-checkup', '/cost-saver', '/cold-shot-warning', '/medicines', '/allergy-checker', '/prescription-radar'],
+                patient: ['/complete-checkup', '/cost-saver', '/green-prescription', '/cold-shot-warning', '/daily-schedule', '/tracker'],
+                mother: ['/pediatric-helper', '/allergy-checker', '/green-prescription', '/complete-checkup', '/daily-schedule', '/games'],
+                doctor: ['/medicines', '/prescription-radar', '/compare', '/allergy-checker', '/games', '/complete-checkup'],
+              };
+              const targetPaths = personaPaths[selectedPersona] || personaPaths.all;
+              const picked = targetPaths
+                .map((path) => clinicalTools.find((tool) => tool.to === path))
+                .filter((tool): tool is (typeof clinicalTools)[number] => Boolean(tool));
+              return showAllClinicalTools ? clinicalTools : picked;
+            })().map((tool) => (
               <Link
                 key={tool.to}
                 to={tool.to}
@@ -673,9 +669,6 @@ export default function Home() {
             </button>
           </div>
         </section>
-
-        {/* Idea 4: Live Smart Dose Alarm & Spoken Voice Reminder */}
-        <SmartDoseAlarmCard />
 
         {/* Dynamic Partner Placement on Homepage */}
         <PublicPartnerPlacementSection placement="homepage_featured" />
