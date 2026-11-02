@@ -61,7 +61,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
   const [items, setItems] = useState<Medicine[] | null>(null);
   const [filter, setFilter] = useState<Status | 'all'>('all');
   const [err, setErr] = useState('');
-  const reviewer = role === 'reviewer' || isFullAdmin || role === 'editor';
+  const reviewer = role === 'reviewer' || (role === 'owner' || role === 'admin') || role === 'editor';
   const [showUn, setShowUn] = useState(true);
   useEffect(() => {
     getDoc(doc(db, 'settings', 'public'))
@@ -125,7 +125,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
 
   return (
     <div className="stack">
-      {isFullAdmin && (
+      {(role === 'owner' || role === 'admin') && (
         <div className="card form">
           <label className="check">
             <input type="checkbox" checked={showUn} onChange={(e) => saveShowUn(e.target.checked)} />
@@ -157,7 +157,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
             {reviewer && m.status === 'pending_review' && <button className="btn small" onClick={() => act(m, 'approved')}>{t('approve')}</button>}
             {reviewer && m.status !== 'archived' && <button className="btn small ghost" onClick={() => act(m, 'archived')}>{t('archive')}</button>}
             {reviewer && m.status === 'archived' && <button className="btn small ghost" onClick={() => act(m, 'draft')}>{t('restore')}</button>}
-            {isFullAdmin && <button className="btn small danger" onClick={() => remove(m)}>{t('del')}</button>}
+            {(role === 'owner' || role === 'admin') && <button className="btn small danger" onClick={() => remove(m)}>{t('del')}</button>}
           </div>
         </div>
       ))}
@@ -170,7 +170,7 @@ type AdminTab = 'partners' | 'users' | 'catalog' | 'meds' | 'survey_bank' | 'res
 export default function Dashboard() {
   const { t, lang } = useLang();
   const { user, role, roleStatus, loading, logout } = useAuth();
-  const [tab, setTab] = useState<AdminTab>('users');
+  const [tab, setTab] = useState<AdminTab>('partners');
 
   if (loading) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (!user) return <Login />;
@@ -276,7 +276,7 @@ export default function Dashboard() {
           📋 {tr(lang, 'تعديل أسئلة الاستبيان والكويز', 'Edit Survey & Quiz Questions', 'Modifier Questions Quiz/Enquête', 'Editar Preguntas de Encuesta/Quiz', 'Umfrage- & Quizfragen bearbeiten')}
         </button>
 
-        {isFullAdmin && (
+        {(role === 'owner' || role === 'admin') && (
           <button
             className={tab === 'research' ? 'on' : ''}
             onClick={() => setTab('research')}
@@ -291,7 +291,7 @@ export default function Dashboard() {
           </button>
         )}
 
-        {isFullAdmin && (
+        {(role === 'owner' || role === 'admin') && (
           <button
             className={tab === 'impact' ? 'on' : ''}
             onClick={() => setTab('impact')}
@@ -306,7 +306,7 @@ export default function Dashboard() {
           </button>
         )}
 
-        {isFullAdmin && (
+        {(role === 'owner' || role === 'admin') && (
           <button
             className={tab === 'quiz' ? 'on' : ''}
             onClick={() => setTab('quiz')}
@@ -327,9 +327,9 @@ export default function Dashboard() {
       {tab === 'catalog' && <CommercialCatalogTab uid={user.uid} />}
       {tab === 'meds' && <MedsTab role={role} uid={user.uid} />}
       {tab === 'survey_bank' && <SurveyQuizManagerTab uid={user.uid} />}
-      {tab === 'research' && isFullAdmin && <ResearchTab />}
-      {tab === 'impact' && isFullAdmin && <LearningImpactDashboard />}
-      {tab === 'quiz' && isFullAdmin && <QuizResultsTab />}
+      {tab === 'research' && (role === 'owner' || role === 'admin') && <ResearchTab />}
+      {tab === 'impact' && (role === 'owner' || role === 'admin') && <LearningImpactDashboard />}
+      {tab === 'quiz' && (role === 'owner' || role === 'admin') && <QuizResultsTab />}
     </main>
   );
 }
