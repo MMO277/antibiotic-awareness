@@ -179,5 +179,24 @@ service cloud.firestore {
       allow create: if isEditor();
       allow update, delete: if false;
     }
+
+    // ── Smart Patient Passport ──────────────────────────────────────────────────
+
+    // passportShares: المريض يتحكم في مشاركة بطاقته
+    match /passportShares/{uid} {
+      // المريض نفسه يقرأ ويكتب
+      allow read, write: if isOwner(uid);
+      // أي زائر يقدر يقرأ (عشان يتحقق من الـ PIN والمدة)
+      // الحماية الحقيقية هي الـ PIN والمدة في الكود
+      allow read: if true;
+    }
+
+    // سجل الوصول — فرعي تحت passportShares
+    match /passportShares/{uid}/accessLogs/{logId} {
+      // أي حد يكتب (لما يفتح البطاقة)
+      allow create: if true;
+      // المريض نفسه يقرأ
+      allow read: if isOwner(uid);
+    }
   }
 }
