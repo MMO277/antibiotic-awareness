@@ -475,7 +475,52 @@ export default function Home() {
     <main style={{ paddingTop: 0 }}>
       {/* Executive Medical Hero Section */}
       <section className="pro-hero">
-        <div className="wrap pro-hero-inner">
+                <div className="wrap pro-hero-inner">
+          {/* Mobile-First Top Search Bar at the very top of the website */}
+          <div style={{ maxWidth: '780px', width: '100%', margin: '0 auto 16px' }}>
+            <button
+              type="button"
+              onClick={() => setSpotlightOpen(true)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '10px',
+                background: '#ffffff',
+                border: '2px solid #0d9488',
+                borderRadius: '16px',
+                padding: '12px 16px',
+                boxShadow: '0 10px 26px rgba(13, 148, 136, 0.16)',
+                cursor: 'pointer',
+                textAlign: isAr ? 'right' : 'left',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.2rem' }}>🔍</span>
+                <span style={{ color: '#334155', fontSize: '0.92rem', fontWeight: 700 }}>
+                  {tr(
+                    lang,
+                    'ابحث باسم الدواء، الباركود (622)، جرعة الأطفال، أو أي أداة...',
+                    'Search by drug name, barcode (622), pediatric dose, or tool...'
+                  )}
+                </span>
+              </div>
+              <span
+                style={{
+                  background: '#0d9488',
+                  color: '#ffffff',
+                  borderRadius: '10px',
+                  padding: '6px 12px',
+                  fontSize: '0.8rem',
+                  fontWeight: 800,
+                  flexShrink: 0,
+                }}
+              >
+                {tr(lang, 'بحث', 'Search')}
+              </span>
+            </button>
+          </div>
           <div className="pro-hero-badge">
             <span>💊</span>
             <span>
@@ -513,54 +558,6 @@ export default function Home() {
               <b>⌕</b>
               <span>{tr(lang, 'دليل الأدوية الموثق', 'Verified drug guide', 'Guide clinique vérifié', 'Guía clínica verificada')}</span>
             </div>
-          </div>
-
-                    {/* Smart Global Search Bar (Ctrl + K) right above Hero CTA Pills */}
-          <div style={{ maxWidth: '780px', width: '100%', margin: '0 auto 14px' }}>
-            <button
-              type="button"
-              onClick={() => setSpotlightOpen(true)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px',
-                background: '#ffffff',
-                border: '2px solid #0d9488',
-                borderRadius: '16px',
-                padding: '14px 18px',
-                boxShadow: '0 10px 28px rgba(13, 148, 136, 0.16)',
-                cursor: 'pointer',
-                textAlign: isAr ? 'right' : 'left',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '1.2rem' }}>🔍</span>
-                <span style={{ color: '#334155', fontSize: '0.95rem', fontWeight: 700 }}>
-                  {tr(
-                    lang,
-                    'ابحث فوراً عن أي دواء، جرعة أطفال، تداخل، أو أداة إكلينيكية (Ctrl + K)...',
-                    'Search medications, pediatric dosages, interactions, or clinical tools (Ctrl + K)...'
-                  )}
-                </span>
-              </div>
-              <span
-                style={{
-                  background: '#f1f5f9',
-                  color: '#0f172a',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '8px',
-                  padding: '4px 10px',
-                  fontSize: '0.76rem',
-                  fontWeight: 800,
-                  direction: 'ltr',
-                  flexShrink: 0,
-                }}
-              >
-                ⌘ Ctrl + K
-              </span>
-            </button>
           </div>
 
           {/* Hero Quick CTA Pills */}

@@ -834,19 +834,6 @@ export default function Layout({ children }: { children: ReactNode }) {
               </button>
             )}
 
-            {/* Spotlight Search Trigger (Ctrl+K) */}
-            <button
-              type="button"
-              className="dark-toggle"
-              onClick={() => setSpotlightOpen(true)}
-              title={tr(lang, 'بحث ذكي شامل (Ctrl + K)', 'Global Spotlight Search (Ctrl + K)')}
-              aria-label="Spotlight Search"
-              style={{ width: 'auto', padding: '0 10px', gap: '5px', display: 'inline-flex', alignItems: 'center', fontWeight: 800, fontSize: '0.8rem' }}
-            >
-              <span>🔍</span>
-              <span className="hide-sm">Ctrl+K</span>
-            </button>
-
             {/* Dark mode toggle */}
             <button
               type="button"
