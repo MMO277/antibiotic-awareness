@@ -566,7 +566,7 @@ export default function MedicinePage() {
           {/* Idea 3: Interactive 3D/Visual Mechanism of Action Viewer */}
           <Mechanism3DViewer
             medicineId={m.id}
-            medicineTitle={pick(m.name, lang)}
+            medicineTitle={pick(m.genericName, lang)}
             scientificName={pick(m.activeIngredients, 'en')}
           />
 
