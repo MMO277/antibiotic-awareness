@@ -577,6 +577,9 @@ export default function Home() {
             <Link to="/pediatric-helper" className="pro-cta-btn secondary-cta">
               👶 {tr(lang, 'حاسبة جرعات الأطفال', 'Pediatric Dosing', 'Posologie Pédiatrique', 'Dosis Pediátrica')}
             </Link>
+            <Link to="/methodology" className="pro-cta-btn secondary-cta" style={{ borderColor: '#14b8a6', fontWeight: 800 }}>
+              📚 {tr(lang, 'المصادر والمراجع العلمية للموقع', 'Scientific References & Sources', 'Sources Scientifiques', 'Referencias Científicas')}
+            </Link>
           </div>
 
           {/* Live Platform Metrics Strip */}

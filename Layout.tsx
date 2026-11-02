@@ -936,6 +936,17 @@ export default function Layout({ children }: { children: ReactNode }) {
                 </button>
               );
             })}
+
+            {/* Direct Top-Level Scientific Sources & References Tab */}
+            <NavLink
+              to="/methodology"
+              onClick={() => setOpenRibbonCatId(null)}
+              className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
+              style={{ border: '1px solid rgba(20, 184, 166, 0.45)', fontWeight: 800 }}
+            >
+              <span aria-hidden="true">📚</span>
+              <span>{tr(lang, 'المصادر والمراجع', 'References & Sources', 'Sources & Références', 'Fuentes y Referencias', 'Quellen & Referenzen')}</span>
+            </NavLink>
           </div>
 
           {/* Expandable Sub-Items Panel for Selected Ribbon Category */}
@@ -1046,6 +1057,20 @@ export default function Layout({ children }: { children: ReactNode }) {
               >
                 <span className="item-icon" aria-hidden="true">🏠</span>
                 <span className="item-title">{t('navHome')}</span>
+                <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
+              </NavLink>
+
+              {/* Direct Top-Level Scientific References & Sources Item in Drawer */}
+              <NavLink
+                to="/methodology"
+                onClick={() => closeDrawer(false)}
+                className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}
+                style={{ border: '1px solid rgba(20, 184, 166, 0.4)', background: 'rgba(20, 184, 166, 0.12)' }}
+              >
+                <span className="item-icon" aria-hidden="true">📚</span>
+                <span className="item-title">
+                  {tr(lang, 'موسوعة المصادر والمراجع العلمية للموقع', 'Complete Website Scientific References', 'Sources & Références Scientifiques', 'Fuentes y Referencias Científicas')}
+                </span>
                 <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
               </NavLink>
 

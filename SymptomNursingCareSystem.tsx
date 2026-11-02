@@ -930,6 +930,31 @@ export default function SymptomNursingCareSystem() {
           </article>
         ))}
       </section>
+      {/* Academic Nursing & Clinical References Box */}
+      <section
+        className="card"
+        style={{
+          borderRadius: '18px',
+          border: '1.5px solid #cbd5e1',
+          background: '#f8fafc',
+          padding: '18px 20px',
+        }}
+      >
+        <b style={{ fontSize: '1rem', color: '#0f172a', display: 'block', marginBottom: '8px' }}>
+          📚 {tr(lang, 'المراجع العلمية والتمريضية المعتمدة لهذا النظام (Evidence-Based Nursing References):', 'Evidence-Based Nursing & Clinical References:')}
+        </b>
+        <ul style={{ margin: 0, paddingInlineStart: '20px', fontSize: '0.85rem', color: '#334155', lineHeight: 1.7 }}>
+          <li>
+            <b>Perry, A. G., &amp; Potter, P. A.</b> — <i>Clinical Nursing Skills &amp; Techniques</i> (10th Ed., Elsevier): Heat &amp; Cold Applications, Tepid Sponge Bath, and Chest Physiotherapy (Postural Drainage, Percussion &amp; Huff Coughing).
+          </li>
+          <li>
+            <b>Hinkle, J. L., &amp; Cheever, K. H. (Brunner &amp; Suddarth)</b> — <i>Textbook of Medical-Surgical Nursing</i> (15th Ed., Wolters Kluwer): Non-Pharmacological Pain Management, Upper Respiratory Viral Care, and Airway Clearance.
+          </li>
+          <li>
+            <b>World Health Organization (WHO) &amp; NICE Guideline NG15</b> — <i>The WHO AWaRe Antibiotic Book &amp; Delayed/Non-Antibiotic Prescribing Protocols</i>.
+          </li>
+        </ul>
+      </section>
     </div>
   );
 }
