@@ -9,7 +9,6 @@ import SkeletonCard from './SkeletonCard';
 import { useAuth } from './authContext';
 import { deleteCommercialProductLive, useLiveDrugCatalog } from './liveCatalogSync';
 import { QuickProductEditorModal } from './CommercialCatalogEditor';
-import FindMedicationPanel from './FindMedicationPanel';
 import { getClinicalProProfile, useClinicalProMode } from './clinicalProData';
 import {
   ACTIVE_INGREDIENTS,
@@ -161,11 +160,15 @@ export default function Medicines() {
         setImportedProducts((prev) => [...prev, ...imported]);
         setImportMsg(
           isAr
-            ?`تم استيراد ودمج ${imported.length} مستحضر مضاد حيوي بنجاح من ملف (${file.name})، وتم استبعاد ${skippedCount} صنف غير مضاد للبكتيريا.`            :`Successfully imported ${imported.length} antibiotic products from ${file.name} (filtered out ${skippedCount} non-antibiotic records).`        );
+            ? `✅ تم استيراد ودمج ${imported.length} مستحضر مضاد حيوي بنجاح من ملف (${file.name})، وتم استبعاد ${skippedCount} صنف غير مضاد للبكتيريا.`
+            : `✅ Successfully imported ${imported.length} antibiotic products from ${file.name} (filtered out ${skippedCount} non-antibiotic records).`
+        );
       } else {
         setImportMsg(
           isAr
-            ?'لم يتم العثور على سجلات مضادات حيوية مطابقة في الملف المرفوع. تأكد من رفع ملف CSV أو JSON من قاعدة بيانات الأدوية المصرية.'            :'No matching antibiotic records found in the uploaded file.'        );
+            ? '⚠️ لم يتم العثور على سجلات مضادات حيوية مطابقة في الملف المرفوع. تأكد من رفع ملف CSV أو JSON من قاعدة بيانات الأدوية المصرية.'
+            : '⚠️ No matching antibiotic records found in the uploaded file.'
+        );
       }
     };
     reader.readAsText(file);
@@ -233,7 +236,7 @@ export default function Medicines() {
       <section className="pro-mode-toggle-banner">
         <div className="pro-mode-toggle-info">
           <span className="pro-mode-badge-icon" aria-hidden="true">
-            {isProMode ?'':''}
+            {isProMode ? '🩺' : '👤'}
           </span>
           <div>
             <b className="pro-mode-title">
@@ -254,14 +257,16 @@ export default function Medicines() {
             className={`pro-mode-switch-btn${!isProMode ? ' active-patient' : ''}`}
             onClick={() => setProMode(false)}
           >
-                        <span>{tr(lang, 'وضع المريض', 'Patient Mode')}</span>
+            <span aria-hidden="true">👤</span>
+            <span>{tr(lang, 'وضع المريض', 'Patient Mode')}</span>
           </button>
           <button
             type="button"
             className={`pro-mode-switch-btn${isProMode ? ' active-doctor' : ''}`}
             onClick={() => setProMode(true)}
           >
-                        <span>{tr(lang, 'الوضع الإكلينيكي للطبيب', 'Clinical Pro Mode')}</span>
+            <span aria-hidden="true">🩺</span>
+            <span>{tr(lang, 'الوضع الإكلينيكي للطبيب', 'Clinical Pro Mode')}</span>
           </button>
         </div>
       </section>
@@ -272,28 +277,25 @@ export default function Medicines() {
           className={`btn ${activeTab === 'commercial_registry' ? '' : 'ghost'}`}
           onClick={() => setActiveTab('commercial_registry')}
         >
-           {isAr ?`السجل التجاري للعبوات والبدائل (${allCommercialProducts.length})`:`Commercial Packages Registry (${allCommercialProducts.length})`}
+          📦 {isAr ? `السجل التجاري للعبوات والبدائل (${allCommercialProducts.length})` : `Commercial Packages Registry (${allCommercialProducts.length})`}
         </button>
         <button
           className={`btn ${activeTab === 'clinical_monographs' ? '' : 'ghost'}`}
           onClick={() => setActiveTab('clinical_monographs')}
         >
-           {isAr ?`الموسوعة السريرية للمواد الفعالة (${items?.length || 32})`:`Clinical Active Ingredients (${items?.length || 32})`}
+          📚 {isAr ? `الموسوعة السريرية للمواد الفعالة (${items?.length || 32})` : `Clinical Active Ingredients (${items?.length || 32})`}
         </button>
         <button
           className={`btn ${activeTab === 'audit_importer' ? '' : 'ghost'}`}
           onClick={() => setActiveTab('audit_importer')}
         >
-           {isAr ?'تقرير الجودة واستيراد البيانات':'Data Audit & CSV/JSON Importer'}
+          🛡️ {isAr ? 'تقرير الجودة واستيراد البيانات' : 'Data Audit & CSV/JSON Importer'}
         </button>
         <Link to="/cost-saver" className="btn ghost" style={{ borderColor: '#16a34a', color: '#15803d', fontWeight: 700 }}>
-           {isAr ?'حاسبة البديل الأرخص بنفس الكفاءة':'Generic Cost Saver'}
+          💰 {isAr ? 'حاسبة البديل الأرخص بنفس الكفاءة' : 'Generic Cost Saver'}
         </Link>
         <Link to='/compare' className='btn ghost'>
-           {isAr ?'مقارنة دواءين جنباً إلى جنب':'Compare 2 Drugs'}
-        </Link>
-        <Link to='/partners' className='btn ghost' style={{ borderColor: '#0d9488', color: '#0f766e', fontWeight: 700 }}>
-           {isAr ?'شبكة الصيدليات المعتمدة':'Pharmacy Network'}
+          ⚖️ {isAr ? 'مقارنة دواءين جنباً إلى جنب' : 'Compare 2 Drugs'}
         </Link>
       </div>
 
@@ -402,7 +404,7 @@ export default function Medicines() {
                 style={{ width: '100%', padding: '8px', borderRadius: '8px' }}
               >
                 <option value="all">{isAr ? 'الكل (موثق + قيد التحقق)' : 'All Packages'}</option>
-                <option value="verified">{isAr ?'باركود خطي موثق فقط (622)':'Verified Barcode Only'}</option>
+                <option value="verified">{isAr ? '✅ باركود خطي موثق فقط (622)' : '✅ Verified Barcode Only'}</option>
                 <option value="pending">{isAr ? '⏳ قيد التحقق الميداني (بدون باركود)' : '⏳ Pending Barcode Check'}</option>
               </select>
             </div>
@@ -484,7 +486,7 @@ export default function Medicines() {
                   setAddingCatalogProd(true);
                 }}
               >
-                 {tr(lang,'إضافة دواء تجاري جديد','Add Commercial Drug')}
+                ➕ {tr(lang, 'إضافة دواء تجاري جديد', 'Add Commercial Drug')}
               </button>
             )}
           </div>
@@ -575,14 +577,14 @@ export default function Medicines() {
                       style={{ flex: 1, padding: '7px 10px', fontSize: '0.88rem' }}
                       onClick={() => setSelectedProduct(p)}
                     >
-                       {isAr ?'البدائل والباركود والتفاصيل':'Alternatives & Details'}
+                      🔍 {isAr ? 'البدائل والباركود والتفاصيل' : 'Alternatives & Details'}
                     </button>
                     <Link
                       to={`/medicine/${p.activeIngredientId}`}
                       className="btn ghost"
                       style={{ padding: '7px 10px', fontSize: '0.88rem' }}
                     >
-                       {isAr ?'المرجع السريري':'Clinical Guide'}
+                      📖 {isAr ? 'المرجع السريري' : 'Clinical Guide'}
                     </Link>
                   </div>
                 </div>
@@ -660,18 +662,18 @@ export default function Medicines() {
                     return (
                       <div style={{ margin: '6px 0', padding: '8px 10px', borderRadius: '8px', background: 'rgba(14, 154, 167, 0.08)', border: '1px solid rgba(14, 154, 167, 0.28)', fontSize: '0.78rem' }}>
                         <div><b>🩺 PK/PD:</b> <span dir="ltr">{pro.pkpd.halfLife}</span> · <span dir="ltr">{pro.pkpd.bioavailability}</span></div>
-                        <div style={{ marginTop:'2px'}}><b> Driver:</b> {pick(pro.pkpd.pkpdDriver, lang)}</div>
+                        <div style={{ marginTop: '2px' }}><b>🎯 Driver:</b> {pick(pro.pkpd.pkpdDriver, lang)}</div>
                       </div>
                     );
                   })()}
                   {m.priceEgypt?.ar && (
                     <p className="small" style={{ color: '#15803d', fontWeight: 600, margin: '4px 0' }}>
-                       💰 {pick(m.priceEgypt, lang).split('\n')[0]}
+                      💰 {pick(m.priceEgypt, lang).split('\n')[0]}
                     </p>
                   )}
                   {m.brands.length > 0 && (
                     <p className="small muted" style={{ marginTop: '6px' }}>
-                       {m.brands.slice(0, 4).map((b) => b.name.split('(')[0]).join('·')}
+                      📦 {m.brands.slice(0, 4).map((b) => b.name.split(' (')[0]).join(' · ')}
                       {m.brands.length > 4 ? ` (+${m.brands.length - 4})` : ''}
                     </p>
                   )}
@@ -686,7 +688,7 @@ export default function Medicines() {
       {activeTab === 'audit_importer' && (
         <section className="stack">
           <div className="card highlight-card">
-            <h2> {isAr ?'مستورد قاعدة بيانات الأدوية المصرية المفتوحة (CSV / JSON)':'Egyptian Drug Database Importer (CSV / JSON)'}</h2>
+            <h2>📥 {isAr ? 'مستورد قاعدة بيانات الأدوية المصرية المفتوحة (CSV / JSON)' : 'Egyptian Drug Database Importer (CSV / JSON)'}</h2>
             <p className="small muted">
               {isAr
                 ? 'يمكنك استيراد ملفات CSV أو JSON مباشرة من السجل المفتوح (مثل karem505/egyptian-drug-database) ليقوم النظام بتصفية المضادات الحيوية آلياً، وفحص جودتها، ودمجها في محرك البحث فوراً دون اختلاق أي باركود وهمي.'
@@ -694,7 +696,7 @@ export default function Medicines() {
             </p>
             <div className="row wrapRow" style={{ gap: '12px', alignItems: 'center', marginTop: '10px' }}>
               <label className="btn" style={{ cursor: 'pointer' }}>
-                 {isAr ?'اختر ملف CSV أو JSON للاستيراد الفوري':'Upload CSV or JSON Dataset'}
+                📂 {isAr ? 'اختر ملف CSV أو JSON للاستيراد الفوري' : 'Upload CSV or JSON Dataset'}
                 <input
                   type="file"
                   accept=".csv,.json"
@@ -708,7 +710,7 @@ export default function Medicines() {
                 rel="noopener noreferrer"
                 className="btn ghost"
               >
-                 {isAr ?'فتح مستودع قاعدة بيانات الأدوية المصرية (GitHub)':'View Open Egyptian Drug Database on GitHub'}
+                🔗 {isAr ? 'فتح مستودع قاعدة بيانات الأدوية المصرية (GitHub)' : 'View Open Egyptian Drug Database on GitHub'}
               </a>
             </div>
             {importMsg && (
@@ -719,7 +721,7 @@ export default function Medicines() {
           </div>
 
           <div className="card">
-            <h2> {isAr ?'تقرير التحقق الآلي من جودة البيانات والتغطية (Data Quality Audit)':'Automated Data Quality & Coverage Report'}</h2>
+            <h2>🛡️ {isAr ? 'تقرير التحقق الآلي من جودة البيانات والتغطية (Data Quality Audit)' : 'Automated Data Quality & Coverage Report'}</h2>
             <p className="small muted">
               {isAr
                 ? 'تطبيقاً لمعايير الدقة العلمية: لا يتم ادعاء وجود باركود لأي عبوة ما لم يتم التحقق منه، وتُحفظ السجلات قيد المراجعة الميدانية بشفافية كاملة.'
@@ -738,17 +740,17 @@ export default function Medicines() {
                   <tr>
                     <td>{isAr ? 'إجمالي المواد الفعالة المضادة للعدوى' : 'Total Active Ingredients'}</td>
                     <td><b>{auditReport.totalActiveIngredients}</b></td>
-                    <td><span className="badge"style={{ background:'#dcfce7', color:'#166534'}}>مكتمل </span></td>
+                    <td><span className="badge" style={{ background: '#dcfce7', color: '#166534' }}>مكتمل ✓</span></td>
                   </tr>
                   <tr>
                     <td>{isAr ? 'إجمالي المستحضرات والعبوات التجارية المسجلة' : 'Total Commercial Preparations'}</td>
                     <td><b>{auditReport.totalCommercialProducts}</b></td>
-                    <td><span className="badge"style={{ background:'#dcfce7', color:'#166534'}}>مفحوص </span></td>
+                    <td><span className="badge" style={{ background: '#dcfce7', color: '#166534' }}>مفحوص ✓</span></td>
                   </tr>
                   <tr>
                     <td>{isAr ? 'العبوات ذات الباركود الخطي الموثق (EAN-13 / 622)' : 'Packages with Verified EAN-13 Barcode'}</td>
                     <td><b>{auditReport.verifiedBarcodesCount}</b> ({Math.round((auditReport.verifiedBarcodesCount / auditReport.totalCommercialProducts) * 100)}%)</td>
-                    <td><span className="badge"style={{ background:'#dcfce7', color:'#166534'}}>موثق </span></td>
+                    <td><span className="badge" style={{ background: '#dcfce7', color: '#166534' }}>موثق ✓</span></td>
                   </tr>
                   <tr>
                     <td>{isAr ? 'العبوات قيد التحقق الميداني للباركود (بدون باركود وهمي)' : 'Packages Pending Physical Barcode Check (null)'}</td>
@@ -764,7 +766,7 @@ export default function Medicines() {
                     </td>
                     <td>
                       <span className="badge" style={{ background: '#dcfce7', color: '#166534' }}>
-                        {auditReport.passedAllIntegrityChecks ?'اجتاز الفحص 100%':'تحتاج مراجعة'}
+                        {auditReport.passedAllIntegrityChecks ? 'اجتاز الفحص 100% ✓' : 'تحتاج مراجعة'}
                       </span>
                     </td>
                   </tr>
@@ -810,7 +812,7 @@ export default function Medicines() {
                   {isAr ? selectedProduct.tradeNameEn : selectedProduct.tradeNameAr} — {selectedProduct.scientificComposition}
                 </p>
               </div>
-              <button className="btn ghost"onClick={() => setSelectedProduct(null)}></button>
+              <button className="btn ghost" onClick={() => setSelectedProduct(null)}>✕</button>
             </div>
 
             {/* Package, Price & Barcode Verification Box */}
@@ -866,7 +868,7 @@ export default function Medicines() {
                         {selectedProduct.barcode}
                       </code>
                       <div style={{ fontSize: '0.72rem', color: '#16a34a' }}>
-                         ✓ {selectedProduct.barcodeVerifiedBy}
+                        ✓ {selectedProduct.barcodeVerifiedBy}
                       </div>
                     </div>
                   ) : (
@@ -880,13 +882,10 @@ export default function Medicines() {
               </div>
             </div>
 
-            {/* Find This Medication in Participating Pharmacies */}
-            <FindMedicationPanel activeIngredientId={selectedProduct.activeIngredientId} initialProductId={selectedProduct.productId} />
-
             {/* 3-Tier Alternatives Classification */}
             <div className="stack">
               <h3 style={{ margin: '4px 0 0' }}>
-                 {isAr ?'نظام البدائل الدوائية المقسم علمياً':'Scientifically Classified Alternatives'}
+                🔄 {isAr ? 'نظام البدائل الدوائية المقسم علمياً' : 'Scientifically Classified Alternatives'}
               </h3>
               <p className="small muted" style={{ margin: 0 }}>
                 {isAr
@@ -987,14 +986,14 @@ export default function Medicines() {
                 className="btn"
                 onClick={() => setSelectedProduct(null)}
               >
-                 {isAr ?'فتح المرجع السريري الكامل والجرعات والتحذيرات':'Open Full Clinical Monograph'}
+                📖 {isAr ? 'فتح المرجع السريري الكامل والجرعات والتحذيرات' : 'Open Full Clinical Monograph'}
               </Link>
               <Link
                 to="/allergy-checker"
                 className="btn ghost"
                 onClick={() => setSelectedProduct(null)}
               >
-                 {isAr ?'فحص الحساسية الدوائية لهذا المستحضر':'Check Drug Allergy Safety'}
+                🛡️ {isAr ? 'فحص الحساسية الدوائية لهذا المستحضر' : 'Check Drug Allergy Safety'}
               </Link>
             </div>
           </div>

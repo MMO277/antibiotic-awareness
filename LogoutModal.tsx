@@ -305,7 +305,7 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
               : 'Enable cartoon sound'
           }
         >
-          <span aria-hidden="true">{soundOn ?'':''}</span>
+          <span aria-hidden="true">{soundOn ? '🔊' : '🔇'}</span>
         </button>
         <button
           type="button"
@@ -661,7 +661,7 @@ export default function LogoutModal({ isOpen, onClose }: LogoutModalProps = {}) 
                 onClick={handleRetry}
                 disabled={busy}
               >
-                 {isAr ?'إعادة المحاولة':'Try Again'}
+                🔄 {isAr ? 'إعادة المحاولة' : 'Try Again'}
               </button>
               <button
                 type="button"

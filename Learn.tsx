@@ -202,7 +202,7 @@ export default function Learn() {
       <div className="chips" role="tablist">
         {STEPS.map((s, k) => (
           <button key={s.id} className={`chip ${k === idx ? 'on' : ''}`} onClick={() => setIdx(k)} aria-current={k === idx}>
-            {done.includes(s.id) ?'':''}{k + 1}
+            {done.includes(s.id) ? '✓ ' : ''}{k + 1}
           </button>
         ))}
       </div>

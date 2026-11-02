@@ -50,7 +50,7 @@ export default function PediatricHelper() {
   return (
     <main className="wrap stack">
       <header className="page-head">
-        <h1> {lang ==='ar'?'دليل ومساعد تمريض الأطفال للمضادات الحيوية':'Pediatric Antibiotic Reconstitution & Dosing Helper'}</h1>
+        <h1>👶 {lang === 'ar' ? 'دليل ومساعد تمريض الأطفال للمضادات الحيوية' : 'Pediatric Antibiotic Reconstitution & Dosing Helper'}</h1>
         <p className="muted">
           {lang === 'ar'
             ? 'أداة سريرية وتوعوية مخصصة للأمهات والتمريض لحساب الجرعات بدقة السيرنجة (مل)، إرشادات حل البودرة بالماء المقطر، ومتتبع صلاحية الزجاجة في الثلاجة.'
@@ -60,7 +60,7 @@ export default function PediatricHelper() {
 
       {/* Drug Selection Card */}
       <section className="card stack">
-        <h2> {lang ==='ar'?'اختر المضاد الحيوي الشراب المعلق:':'Select Pediatric Antibiotic Suspension:'}</h2>
+        <h2>💊 {lang === 'ar' ? 'اختر المضاد الحيوي الشراب المعلق:' : 'Select Pediatric Antibiotic Suspension:'}</h2>
         <div className="field-group">
           <select
             className="select-input"
@@ -81,7 +81,7 @@ export default function PediatricHelper() {
       <section className="card stack highlight-card">
         <div className="card-head-row">
           <div>
-            <h2> {lang ==='ar'?'حاسبة جرعة الطفل بالسيرنجة بالملليلتر (ml):':'Weight-Based Syringe Dosing Calculator:'}</h2>
+            <h2>⚖️ {lang === 'ar' ? 'حاسبة جرعة الطفل بالسيرنجة بالملليلتر (ml):' : 'Weight-Based Syringe Dosing Calculator:'}</h2>
             <p className="small muted">
               {lang === 'ar'
                 ? 'تحسب الجرعة الدقيقة لكل مرة بناءً على وزن الطفل بالكيلوجرام وتركيز الدواء المختار.'
@@ -161,7 +161,7 @@ export default function PediatricHelper() {
 
           {/* Interactive Syringe Visualizer */}
           <div className="syringe-visualizer stack">
-            <h4> {lang ==='ar'?'محاكي سرنجة القياس المعيارية (اسحبي حتى هذه العلامة):':'Oral Syringe Visualizer:'}</h4>
+            <h4>💉 {lang === 'ar' ? 'محاكي سرنجة القياس المعيارية (اسحبي حتى هذه العلامة):' : 'Oral Syringe Visualizer:'}</h4>
             <div className="syringe-graphic">
               <div className="syringe-barrel">
                 <div
@@ -188,7 +188,7 @@ export default function PediatricHelper() {
 
           {/* Crucial Spoon Warning */}
           <div className="spoon-warning-alert alert urgent">
-            <strong> {lang ==='ar'?'تحذير تمريضي صارم للأمهات:':'Strict Nursing Warning:'} </strong>
+            <strong>🚫 {lang === 'ar' ? 'تحذير تمريضي صارم للأمهات:' : 'Strict Nursing Warning:'} </strong>
             {lang === 'ar'
               ? 'ممنوع منعاً باتاً إعطاء المضاد الحيوي بملاعق الطعام أو الشاي المنزلية! سعة الملاعق تتفاوت عشوائياً بين 2.5 إلى 7 مل، مما يسبب جرعة ناقصة لا تشفي الطفل أو جرعة زائدة سامة. استخدمي دائماً سرنجة القياس المدرجة بالملليلتر.'
               : 'Never use household kitchen spoons or teaspoons! Household spoons vary widely from 2.5ml to 7ml, risking therapeutic failure or overdose. Always use a calibrated oral dosing syringe.'}
@@ -200,7 +200,7 @@ export default function PediatricHelper() {
       <section className="card stack">
         <div className="card-head-row">
           <div>
-            <h2> {lang ==='ar'?'متتبع ومؤقت صلاحية الزجاجة بعد الحل:':'Suspension Reconstitution & Shelf-Life Tracker:'}</h2>
+            <h2>🧊 {lang === 'ar' ? 'متتبع ومؤقت صلاحية الزجاجة بعد الحل:' : 'Suspension Reconstitution & Shelf-Life Tracker:'}</h2>
             <p className="small muted">
               {lang === 'ar'
                 ? 'المضادات الحيوية المعلقة تفسد بسرعة بعد حلها بالماء؛ تابعي تاريخ الانتهاء لضمان سلامة طفلك.'
@@ -209,8 +209,8 @@ export default function PediatricHelper() {
           </div>
           <span className={`status-pill ${isExpired ? 'severe' : 'taken'}`}>
             {isExpired
-              ? (lang ==='ar'?'منتهية الصلاحية':'Expired')
-              : (lang ==='ar'?`صالحة (${daysRemaining} أيام متبقية )`:`Safe (${daysRemaining} days left )`)}
+              ? (lang === 'ar' ? 'منتهية الصلاحية ⛔' : 'Expired ⛔')
+              : (lang === 'ar' ? `صالحة (${daysRemaining} أيام متبقية ✅)` : `Safe (${daysRemaining} days left ✅)`)}
           </span>
         </div>
 
@@ -230,11 +230,11 @@ export default function PediatricHelper() {
             <div className="storage-badge-box">
               {selectedMed.storageCondition === 'fridge' ? (
                 <span className="storage-badge fridge">
-                   {lang ==='ar'?'يجب حفظه في باب الثلاجة (2 - 8 درجات مئوية)':'Refrigerate (2-8°C)'}
+                  🧊 {lang === 'ar' ? 'يجب حفظه في باب الثلاجة (2 - 8 درجات مئوية)' : 'Refrigerate (2-8°C)'}
                 </span>
               ) : (
                 <span className="storage-badge room">
-                   {lang ==='ar'?'يحفظ في درجة حرارة الغرفة (لا يوضع في الثلاجة)':'Room Temperature (Do not refrigerate)'}
+                  🏠 {lang === 'ar' ? 'يحفظ في درجة حرارة الغرفة (لا يوضع في الثلاجة)' : 'Room Temperature (Do not refrigerate)'}
                 </span>
               )}
             </div>
@@ -247,7 +247,7 @@ export default function PediatricHelper() {
             <div>
               <h3>
                 {isExpired
-                  ? (lang ==='ar'?'انتهت صلاحية هذه الزجاجة!':'This Bottle Has Expired!')
+                  ? (lang === 'ar' ? '⛔ انتهت صلاحية هذه الزجاجة!' : '⛔ This Bottle Has Expired!')
                   : (lang === 'ar' ? `⏳ متبقي ${daysRemaining} يوم على انتهاء الصلاحية` : `⏳ ${daysRemaining} Days Remaining`)}
               </h3>
               <p className="small">
@@ -260,14 +260,14 @@ export default function PediatricHelper() {
 
           {isExpired ? (
             <div className="alert danger-alert" style={{ marginTop: '10px' }}>
-              <strong> تخلصي من الزجاجة فوراً: </strong>
+              <strong>⚠️ تخلصي من الزجاجة فوراً: </strong>
               {lang === 'ar'
                 ? 'لا تعطي الطفل من هذه الزجاجة نهائياً؛ فالمادة الفعالة تفككت وفقدت قدرتها على قتل البكتيريا، وتناولها قد يسبب اضطراباً معوياً وتسمماً وتكون بكتيريا مقاومة!'
                 : 'Discard this bottle immediately! The active antibiotic molecule has degraded and is ineffective and unsafe.'}
             </div>
           ) : (
             <p className="storage-instruction-text">
-               <b>{lang ==='ar'?'إرشاد التخزين:':'Storage Instruction:'}</b> {pick(selectedMed.storageNote, lang)}
+              💡 <b>{lang === 'ar' ? 'إرشاد التخزين:' : 'Storage Instruction:'}</b> {pick(selectedMed.storageNote, lang)}
             </p>
           )}
         </div>
@@ -275,7 +275,7 @@ export default function PediatricHelper() {
 
       {/* SECTION 3: Step-by-Step Reconstitution Protocol */}
       <section className="card stack">
-        <h2> {lang ==='ar'?'بروتوكول التمريض لحل البودرة بالماء المقطر (خطوة بخطوة):':'Step-by-Step Reconstitution Protocol:'}</h2>
+        <h2>💧 {lang === 'ar' ? 'بروتوكول التمريض لحل البودرة بالماء المقطر (خطوة بخطوة):' : 'Step-by-Step Reconstitution Protocol:'}</h2>
         <div className="steps-cards-grid">
           {RECONSTITUTION_STEPS.map((step) => (
             <div key={step.stepNumber} className="step-card">
@@ -286,7 +286,7 @@ export default function PediatricHelper() {
               <h3>{pick(step.title, lang)}</h3>
               <p className="step-inst">{pick(step.instruction, lang)}</p>
               <div className="step-warning">
-                <small> <b>{pick(step.nursingWarning, lang)}</b></small>
+                <small>⚠️ <b>{pick(step.nursingWarning, lang)}</b></small>
               </div>
             </div>
           ))}
@@ -295,7 +295,7 @@ export default function PediatricHelper() {
 
       {/* SECTION 4: Golden Pediatric Nursing Rules */}
       <section className="card stack allergy-module">
-        <h2> {lang ==='ar'?'القواعد الذهبية لتمريض الأطفال وإرشادات الأمهات:':'Golden Pediatric Nursing Rules for Mothers:'}</h2>
+        <h2>🛡️ {lang === 'ar' ? 'القواعد الذهبية لتمريض الأطفال وإرشادات الأمهات:' : 'Golden Pediatric Nursing Rules for Mothers:'}</h2>
         <div className="allergy-grid">
           <div className="allergy-col">
             <h3>{lang === 'ar' ? 'ماذا تفعلين إذا تقيأ الطفل الجرعة؟' : 'What if the Child Vomits the Dose?'}</h3>
@@ -317,7 +317,7 @@ export default function PediatricHelper() {
 
           <div className="allergy-col notice-col">
             <div className="notice-box">
-              <h4> {lang ==='ar'?'إذا كان الطفل يرفض طعم الدواء المر:':'If the Child Refuses the Bitter Taste:'}</h4>
+              <h4>🍼 {lang === 'ar' ? 'إذا كان الطفل يرفض طعم الدواء المر:' : 'If the Child Refuses the Bitter Taste:'}</h4>
               <p>
                 {lang === 'ar'
                   ? 'يمكنك خلط الجرعة المقاسة بالسيرنجة مع ملعقة واحدة فقط من الزبادي أو عصير الفاكهة مباشرة قبل إعطائها له، مع التأكد من تناولها كاملة. ممنوع خلط الدواء في زجاجة الحليب أو الببرونة كاملة حتى لا يرفض شربها وتضيع الجرعة.'

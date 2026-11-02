@@ -14,11 +14,11 @@ export default function SideEffectsGuide() {
   const renderBadge = (sev: SymptomSeverity) => {
     switch (sev) {
       case 'emergency':
-        return <span className="sev-badge severe"> {lang ==='ar'?'طوارئ فورية (إسعاف)':'Immediate Emergency (ER)'}</span>;
+        return <span className="sev-badge severe">🚨 {lang === 'ar' ? 'طوارئ فورية (إسعاف)' : 'Immediate Emergency (ER)'}</span>;
       case 'prompt':
-        return <span className="sev-badge moderate"> {lang ==='ar'?'استشارة طبية عاجلة خلال ساعات':'Prompt Medical Attention'}</span>;
+        return <span className="sev-badge moderate">⚠️ {lang === 'ar' ? 'استشارة طبية عاجلة خلال ساعات' : 'Prompt Medical Attention'}</span>;
       case 'mild':
-        return <span className="sev-badge safe"> {lang ==='ar'?'عرض خفيف — رعاية منزلية':'Common / Mild — Home Care'}</span>;
+        return <span className="sev-badge safe">🟢 {lang === 'ar' ? 'عرض خفيف — رعاية منزلية' : 'Common / Mild — Home Care'}</span>;
     }
   };
 
@@ -36,7 +36,8 @@ export default function SideEffectsGuide() {
       {/* Immediate Emergency Action Box - Category 3 (ALWAYS VISIBLE AT TOP) */}
       <section className="alert urgent emergency-top-box" role="alert">
         <div className="emerg-header">
-                    <div>
+          <span className="emerg-icon">🚨</span>
+          <div>
             <h2>{lang === 'ar' ? 'علامات الطوارئ الخطيرة (طلب الإسعاف فوراً):' : 'Emergency Warning Signs (Seek Help Immediately):'}</h2>
             <p className="emerg-text">{formatEmergencyText(pick(EMERGENCY_WARNINGS, lang), emergency, lang)}</p>
           </div>
@@ -47,7 +48,7 @@ export default function SideEffectsGuide() {
             className="emerg-call"
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
-             
+            📞{' '}
             <b>
               {tr(
                 lang,
@@ -74,7 +75,7 @@ export default function SideEffectsGuide() {
             }}
           >
             <option value="AUTO">
-               {tr(lang,`تحديد تلقائي (${countryName}: ${emergency.number})`,`Auto-detect (${countryName}: ${emergency.number})`,`Auto-détection (${countryName} : ${emergency.number})`,`Detección automática (${countryName}: ${emergency.number})`)}
+              📍 {tr(lang, `تحديد تلقائي (${countryName}: ${emergency.number})`, `Auto-detect (${countryName}: ${emergency.number})`, `Auto-détection (${countryName} : ${emergency.number})`, `Detección automática (${countryName}: ${emergency.number})`)}
             </option>
             {countriesList.map((c) => (
               <option key={c.code} value={c.code}>
@@ -92,12 +93,12 @@ export default function SideEffectsGuide() {
 
       {/* The 3 Core Categories Overview */}
       <section className="card stack">
-        <h2> {lang ==='ar'?'فئات الأعراض الثلاث وكيفية التصرف:':'The 3 Side Effect Categories & What To Do:'}</h2>
+        <h2>📑 {lang === 'ar' ? 'فئات الأعراض الثلاث وكيفية التصرف:' : 'The 3 Side Effect Categories & What To Do:'}</h2>
         <div className="categories-grid">
           {/* Category 1 */}
           <div className="cat-card mild-card">
             <div className="cat-header">
-              <span className="cat-pill safe"> {lang ==='ar'?'الفئة 1: شائعة وخفيفة عادة':'Category 1: Common / Mild'}</span>
+              <span className="cat-pill safe">🟢 {lang === 'ar' ? 'الفئة 1: شائعة وخفيفة عادة' : 'Category 1: Common / Mild'}</span>
             </div>
             <h3>{lang === 'ar' ? 'أعراض هضمية خفيفة' : 'Mild Digestive Symptoms'}</h3>
             <p className="small">
@@ -113,7 +114,7 @@ export default function SideEffectsGuide() {
           {/* Category 2 */}
           <div className="cat-card prompt-card">
             <div className="cat-header">
-              <span className="cat-pill moderate"> {lang ==='ar'?'الفئة 2: تستدعي استشارة عاجلة':'Category 2: Prompt Medical Advice'}</span>
+              <span className="cat-pill moderate">🟡 {lang === 'ar' ? 'الفئة 2: تستدعي استشارة عاجلة' : 'Category 2: Prompt Medical Advice'}</span>
             </div>
             <h3>{lang === 'ar' ? 'أعراض حادة تتطلب التقييم' : 'Symptoms Needing Prompt Assessment'}</h3>
             <p className="small">
@@ -129,7 +130,7 @@ export default function SideEffectsGuide() {
           {/* Category 3 */}
           <div className="cat-card severe-card">
             <div className="cat-header">
-              <span className="cat-pill severe"> {lang ==='ar'?'الفئة 3: علامات طوارئ قاتلة':'Category 3: Emergency Signs'}</span>
+              <span className="cat-pill severe">🔴 {lang === 'ar' ? 'الفئة 3: علامات طوارئ قاتلة' : 'Category 3: Emergency Signs'}</span>
             </div>
             <h3>{lang === 'ar' ? 'صدمة تحسسية وانسداد تنفس' : 'Severe Anaphylaxis & Airway'}</h3>
             <p className="small">
@@ -153,7 +154,7 @@ export default function SideEffectsGuide() {
 
       {/* Interactive Symptom Explorer */}
       <section className="card stack">
-        <h2> {lang ==='ar'?'المستكشف التفاعلي للأعراض الجانبية:':'Interactive Symptom Explorer:'}</h2>
+        <h2>🔍 {lang === 'ar' ? 'المستكشف التفاعلي للأعراض الجانبية:' : 'Interactive Symptom Explorer:'}</h2>
         <p className="muted small">
           {lang === 'ar'
             ? 'اختر العرض الذي تشعر به للاطلاع على التقييم السريري والتصرف الفوري ونصيحة التمريض المعتمدة.'
@@ -170,7 +171,7 @@ export default function SideEffectsGuide() {
           >
             {SYMPTOMS_LIST.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.severity ==='emergency'?'': s.severity ==='prompt'?'':''} {pick(s.name, lang)}
+                {s.severity === 'emergency' ? '🔴' : s.severity === 'prompt' ? '🟡' : '🟢'} {pick(s.name, lang)}
               </option>
             ))}
           </select>
@@ -186,22 +187,22 @@ export default function SideEffectsGuide() {
 
             <div className="sym-content stack">
               <div className="sym-section">
-                <h4> {lang ==='ar'?'التفسير السريري للعرض:':'Clinical Explanation:'}</h4>
+                <h4>🔬 {lang === 'ar' ? 'التفسير السريري للعرض:' : 'Clinical Explanation:'}</h4>
                 <p>{pick(selectedSymptom.description, lang)}</p>
               </div>
 
               <div className="sym-section action-highlight">
-                <h4> {lang ==='ar'?'ما يجب عليك فعله الآن (الإجراء الفوري):':'What You Should Do Now:'}</h4>
+                <h4>⚡ {lang === 'ar' ? 'ما يجب عليك فعله الآن (الإجراء الفوري):' : 'What You Should Do Now:'}</h4>
                 <p><b>{formatEmergencyText(pick(selectedSymptom.immediateAction, lang), emergency, lang)}</b></p>
               </div>
 
               <div className="sym-section offending-drugs">
-                <h4> {lang ==='ar'?'أشهر الأدوية المرتبطة بهذا العرض:':'Common Culprit Medications:'}</h4>
+                <h4>💊 {lang === 'ar' ? 'أشهر الأدوية المرتبطة بهذا العرض:' : 'Common Culprit Medications:'}</h4>
                 <p><i>{pick(selectedSymptom.commonOffenders, lang)}</i></p>
               </div>
 
               <div className="nursing-box">
-                <h4> {lang ==='ar'?'توجيه وتمريض سريري (Nursing Assessment & Care):':'Nursing Clinical Guidance:'}</h4>
+                <h4>🩺 {lang === 'ar' ? 'توجيه وتمريض سريري (Nursing Assessment & Care):' : 'Nursing Clinical Guidance:'}</h4>
                 <p>{pick(selectedSymptom.nursingAdvice, lang)}</p>
               </div>
             </div>
@@ -211,7 +212,7 @@ export default function SideEffectsGuide() {
 
       {/* Allergy Awareness Module */}
       <section className="card stack allergy-module">
-        <h2> {lang ==='ar'?'التوعية بالحساسية الدوائية (Allergy Awareness):':'Allergy Awareness Guide:'}</h2>
+        <h2>🛡️ {lang === 'ar' ? 'التوعية بالحساسية الدوائية (Allergy Awareness):' : 'Allergy Awareness Guide:'}</h2>
         <div className="allergy-grid">
           <div className="allergy-col">
             <h3>{lang === 'ar' ? 'الفرق بين الحساسية والأثر الجانبي العادي:' : 'Allergy vs Typical Side Effect:'}</h3>
@@ -232,7 +233,7 @@ export default function SideEffectsGuide() {
           </div>
           <div className="allergy-col notice-col">
             <div className="notice-box">
-              <h4> {lang ==='ar'?'قاعدة السلامة الذهبية للتمريض:':'Golden Nursing Safety Rule:'}</h4>
+              <h4>⚠️ {lang === 'ar' ? 'قاعدة السلامة الذهبية للتمريض:' : 'Golden Nursing Safety Rule:'}</h4>
               <p>
                 {lang === 'ar'
                   ? 'أبلغ الطبيب والممرض دائماً وقبل أخذ أي دواء إذا كنت قد تعرضت سابقاً لأي حساسية أو طفح جلدي من أي مضاد حيوي. اسأل دائماً عن اختبار حساسية البنسلين قبل أخذ الحقن الوريدية أو العضلية.'
@@ -245,7 +246,7 @@ export default function SideEffectsGuide() {
 
       {/* References & Documented Sources */}
       <section className="card">
-        <h3> {lang ==='ar'?'المراجع والمصادر السريرية المعتمدة:':'Clinical Sources & Guidelines:'}</h3>
+        <h3>📚 {lang === 'ar' ? 'المراجع والمصادر السريرية المعتمدة:' : 'Clinical Sources & Guidelines:'}</h3>
         <ul className="srclist">
           <li>
             <a href="https://www.cdc.gov/antibiotic-use/safety/side-effects.html" target="_blank" rel="noopener noreferrer">

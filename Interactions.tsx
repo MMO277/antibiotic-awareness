@@ -37,19 +37,19 @@ export default function Interactions() {
       case 'severe':
         return (
           <span className="sev-badge severe">
-             {isAr ?'تعارض خطير / يتطلب مراجعة طبية عاجلة':'Severe / Prompt Clinical Review Required'}
+            🔴 {isAr ? 'تعارض خطير / يتطلب مراجعة طبية عاجلة' : 'Severe / Prompt Clinical Review Required'}
           </span>
         );
       case 'moderate':
         return (
           <span className="sev-badge moderate">
-             {isAr ?'تفاعل متوسط — يلزم الفصل الزمني أو المراقبة':'Moderate — Timing Separation / Monitoring Required'}
+            🟡 {isAr ? 'تفاعل متوسط — يلزم الفصل الزمني أو المراقبة' : 'Moderate — Timing Separation / Monitoring Required'}
           </span>
         );
       case 'safe':
         return (
           <span className="sev-badge safe">
-             {isAr ?'إرشاد آمن وموصى به وفق المراجع':'Safe & Recommended per Reference'}
+            🟢 {isAr ? 'إرشاد آمن وموصى به وفق المراجع' : 'Safe & Recommended per Reference'}
           </span>
         );
     }
@@ -68,7 +68,7 @@ export default function Interactions() {
 
       {/* Quick check chips */}
       <section className="card stack">
-        <h2> {isAr ?'فحص سريع لأشهر التداخلات الشائعة:':'Common Quick Checks:'}</h2>
+        <h2>⚡ {isAr ? 'فحص سريع لأشهر التداخلات الشائعة:' : 'Common Quick Checks:'}</h2>
         <div className="chips">
           {COMMON_QUICK_CHECKS.map((c, i) => (
             <button
@@ -85,7 +85,7 @@ export default function Interactions() {
 
       {/* Selection card */}
       <section className="card stack">
-        <h2> {isAr ?'اختر العناصر للفحص السريري:':'Select Items to Check:'}</h2>
+        <h2>🔍 {isAr ? 'اختر العناصر للفحص السريري:' : 'Select Items to Check:'}</h2>
         <div className="check-grid">
           <div className="field-group">
             <label>
@@ -151,19 +151,19 @@ export default function Interactions() {
 
           <div className="result-body stack">
             <div className="result-section">
-              <h4> {isAr ?'الآلية والتأثير العلمي:':'Mechanism of Interaction:'}</h4>
+              <h4>🔬 {isAr ? 'الآلية والتأثير العلمي:' : 'Mechanism of Interaction:'}</h4>
               <p>{pick(matchedRule.mechanism, lang)}</p>
             </div>
 
             <div className="result-section">
-              <h4>⏱ {isAr ?'التصرف الطبي الموصى به وكيفية الفصل:':'Clinical Management & Spacing:'}</h4>
+              <h4>⏱️ {isAr ? 'التصرف الطبي الموصى به وكيفية الفصل:' : 'Clinical Management & Spacing:'}</h4>
               <p>
                 <b>{pick(matchedRule.management, lang)}</b>
               </p>
             </div>
 
             <div className="nursing-box">
-              <h4> {isAr ?'توجيه وتمريض سريري (Nursing Stewardship Note):':'Nursing Clinical Stewardship Note:'}</h4>
+              <h4>🩺 {isAr ? 'توجيه وتمريض سريري (Nursing Stewardship Note):' : 'Nursing Clinical Stewardship Note:'}</h4>
               <p>{pick(matchedRule.nursingTip, lang)}</p>
             </div>
 
@@ -180,11 +180,11 @@ export default function Interactions() {
             <div className="med-link-row row wrapRow" style={{ gap: '8px' }}>
               {currentMedObj && (
                 <Link to={`/medicine/${currentMedObj.id}`} className="btn-secondary">
-                   {isAr ?`فتح صفحة دواء ${pick(currentMedObj.genericName, lang)} وسعره وبدائله`:`View ${pick(currentMedObj.genericName, lang)} details`}
+                  📖 {isAr ? `فتح صفحة دواء ${pick(currentMedObj.genericName, lang)} وسعره وبدائله` : `View ${pick(currentMedObj.genericName, lang)} details`}
                 </Link>
               )}
               <Link to="/prescription-radar" className="btn ghost">
-                 {isAr ?'فحص الروشتة الكاملة في الرادار':'Check Full Prescription in Radar'}
+                📡 {isAr ? 'فحص الروشتة الكاملة في الرادار' : 'Check Full Prescription in Radar'}
               </Link>
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function Interactions() {
         <section className="card result-card moderate">
           <div className="result-header">
             <span className="sev-badge moderate">
-              ℹ {isAr ?'لا يوجد تداخل مباشر مسجل في قاعدة البيانات لهذه الثنائية':'No Direct Interaction Rule Recorded for This Pair'}
+              ℹ️ {isAr ? 'لا يوجد تداخل مباشر مسجل في قاعدة البيانات لهذه الثنائية' : 'No Direct Interaction Rule Recorded for This Pair'}
             </span>
             <h3>
               {isAr
@@ -208,7 +208,7 @@ export default function Interactions() {
                 : 'Transparency Note: Absence of a recorded rule in this dataset does not guarantee complete safety for every patient context. Always review the full drug monograph and consult your doctor or pharmacist.'}
             </p>
             <div className="nursing-box">
-              <h4> {isAr ?'توجيه تمريضي عام:':'General Nursing Tip:'}</h4>
+              <h4>🩺 {isAr ? 'توجيه تمريضي عام:' : 'General Nursing Tip:'}</h4>
               <p>
                 {isAr
                   ? 'احرص على تثقيف المريض بالالتزام بمواعيد الجرعات الدقيقة مع كوب ماء كامل، وعدم تناول أي أدوية جديدة أو مكملات دون إبلاغ الطبيب أو الصيدلي.'

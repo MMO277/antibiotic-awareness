@@ -150,7 +150,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [openRibbonCatId, setOpenRibbonCatId] = useState<string | null>(null);
-  const [openDrawerGroups, setOpenDrawerGroups] = useState<Record<string, boolean>>({});
+  const [openDrawerGroups, setOpenDrawerGroups] = useState<Record<string, boolean>>({ 'drug-directory': true, 'clinical-safety': true, 'treatment-care': true, 'interactive-sim': true, 'awareness-research': true });
   const authCtx = useAuth();
   const user = authCtx.user;
   const openAuthModal = authCtx.openAuthModal;
@@ -196,16 +196,16 @@ export default function Layout({ children }: { children: ReactNode }) {
           shortLabel: tr(lang, 'حاسبة البديل الأرخص بنفس الكفاءة', 'Generic Cost Saver', 'Économiseur Générique', 'Ahorro en Genéricos', 'Generika-Kostenrechner'),
         },
         {
+          to: '/partners',
+          key: '',
+          icon: '🏥',
+          shortLabel: tr(lang, 'شبكة الصيدليات والشركاء', 'Pharmacies & Partners', 'Pharmacies & Partenaires', 'Farmacias y Socios', 'Apotheken & Partner'),
+        },
+        {
           to: '/compare',
           key: 'navCompare',
           icon: '⚖️',
           shortLabel: tr(lang, 'مقارنة دواءين', 'Compare Drugs', 'Comparer', 'Comparar'),
-        },
-        {
-          to: '/partners',
-          key: '',
-          icon: '💊',
-          shortLabel: tr(lang, 'شبكة الصيدليات والشركاء', 'Pharmacies & Partners', 'Pharmacies & Partenaires', 'Farmacias y Socios', 'Apotheken & Partner'),
         },
       ],
     },
@@ -403,9 +403,15 @@ export default function Layout({ children }: { children: ReactNode }) {
     },
   ];
 
-  // Keep all drawer categories collapsed by default so the user explicitly opens whichever section they want
+  // Auto-expand the drawer category that contains the current route
   useEffect(() => {
-    setOpenDrawerGroups({});
+    const activeCat = navCategories.find((cat) =>
+      cat.items.some((item) => isRouteMatchingItem(item.to, pathname))
+    );
+    if (activeCat) {
+      setOpenDrawerGroups((prev) => ({ ...prev, [activeCat.id]: true }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const toggleDrawerGroup = (catId: string) => {
@@ -783,7 +789,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                     'Actualmente navegas como invitado'
                   )}
                 >
-                                    <span>{tr(lang, 'وضع الزائر', 'Guest', 'Invité', 'Invitado')}</span>
+                  <span aria-hidden="true">👀</span>
+                  <span>{tr(lang, 'وضع الزائر', 'Guest', 'Invité', 'Invitado')}</span>
                 </span>
                 <button
                   type="button"
@@ -797,7 +804,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                     'Salir del modo invitado e iniciar sesión'
                   )}
                 >
-                                    <span>{tr(lang, 'تسجيل الدخول', 'Sign In', 'Connexion', 'Acceder')}</span>
+                  <span aria-hidden="true">👤</span>
+                  <span>{tr(lang, 'تسجيل الدخول', 'Sign In', 'Connexion', 'Acceder')}</span>
                 </button>
               </div>
             ) : (
@@ -807,7 +815,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                   className="chip header-user-chip"
                   title={user.email || ''}
                 >
-                                    <span className="header-username">{user.displayName || user.email?.split('@')[0]}</span>
+                  <span aria-hidden="true">👤</span>
+                  <span className="header-username">{user.displayName || user.email?.split('@')[0]}</span>
                 </Link>
               </div>
             )}
@@ -820,7 +829,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                 title={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
                 aria-label={tr(lang, 'تسجيل الخروج', 'Log out', 'Déconnexion', 'Cerrar sesión')}
               >
-                                <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir')}</span>
+                <span aria-hidden="true">🚪</span>
+                <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir')}</span>
               </button>
             )}
 
@@ -910,7 +920,8 @@ export default function Layout({ children }: { children: ReactNode }) {
               aria-label={tr(lang, 'فتح القائمة', 'Open menu', 'Ouvrir le menu', 'Abrir menú')}
               title={tr(lang, 'أقسام الموقع الكاملة', 'All Site Sections', 'Toutes les rubriques', 'Todas las secciones')}
             >
-                            <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú', 'Menü')}</span>
+              <span className="hamburger-icon" aria-hidden="true">☰</span>
+              <span className="hamburger-text">{tr(lang, 'كل الأقسام', 'Menu', 'Menu', 'Menú', 'Menü')}</span>
             </button>
           </div>
         </div>
@@ -924,7 +935,8 @@ export default function Layout({ children }: { children: ReactNode }) {
               onClick={() => setOpenRibbonCatId(null)}
               className={({ isActive }) => `quick-ribbon-link ${isActive ? 'active' : ''}`}
             >
-                            <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio', 'Startseite')}</span>
+              <span aria-hidden="true">🏠</span>
+              <span>{tr(lang, 'الرئيسية', 'Home', 'Accueil', 'Inicio', 'Startseite')}</span>
             </NavLink>
 
             {navCategories.map((cat) => {
@@ -965,8 +977,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     onClick={() => setOpenRibbonCatId(null)}
                     aria-label={tr(lang, 'إغلاق القسم', 'Close category', 'Fermer', 'Cerrar')}
                   >
-                    
-✕
+                    ✕
                   </button>
                 </div>
 
@@ -1011,7 +1022,8 @@ export default function Layout({ children }: { children: ReactNode }) {
           >
             <div className="drawer-header">
               <div className="drawer-brand">
-                                <div className="drawer-brand-text">
+                <span className="drawer-logo" aria-hidden="true">💊</span>
+                <div className="drawer-brand-text">
                   <b>{tr(lang, 'أقسام المنصة السريرية', 'Clinical Portal Menu', 'Menu du Portail Clinique', 'Menú del Portal Clínico')}</b>
                   <small className="drawer-subtitle">
                     {tr(lang, 'مجمعة حسب التخصص لسهولة الوصول', 'Grouped by category for quick access', 'Regroupés par catégorie', 'Agrupados por categoría')}
@@ -1026,8 +1038,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 aria-label={tr(lang, 'إغلاق القائمة', 'Close menu', 'Fermer le menu', 'Cerrar menú')}
                 title={tr(lang, 'إغلاق (Esc)', 'Close (Esc)', 'Fermer (Esc)', 'Cerrar (Esc)')}
               >
-                
-✕
+                ✕
               </button>
             </div>
 
@@ -1054,7 +1065,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onClick={() => closeDrawer(false)}
                 className={({ isActive }) => `drawer-item ${isActive ? 'active' : ''}`}
               >
-                                <span className="item-title">{t('navHome')}</span>
+                <span className="item-icon" aria-hidden="true">🏠</span>
+                <span className="item-title">{t('navHome')}</span>
                 <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
               </NavLink>
 
@@ -1127,7 +1139,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                 onClick={() => closeDrawer(false)}
                 className={({ isActive }) => `drawer-item admin ${isActive ? 'active' : ''}`}
               >
-                                <span className="item-title">{t('navAdmin')}</span>
+                <span className="item-icon" aria-hidden="true">⚙️</span>
+                <span className="item-title">{t('navAdmin')}</span>
                 <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
               </NavLink>
 
@@ -1142,7 +1155,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                       handleExitGuestMode();
                     }}
                   >
-                                        <span className="item-title">
+                    <span className="item-icon" aria-hidden="true">👤</span>
+                    <span className="item-title">
                       {tr(lang, 'تسجيل الدخول (الخروج من وضع الزائر)', 'Sign In (Exit Guest Mode)', 'Connexion (Quitter le mode invité)', 'Iniciar sesión (Salir de invitado)')}
                     </span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
@@ -1161,7 +1175,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                       setShowLogoutModal(true);
                     }}
                   >
-                                        <span className="item-title">{tr(lang, 'تسجيل الخروج', 'Logout', 'Déconnexion', 'Cerrar sesión')}</span>
+                    <span className="item-icon" aria-hidden="true">🚪</span>
+                    <span className="item-title">{tr(lang, 'تسجيل الخروج', 'Logout', 'Déconnexion', 'Cerrar sesión')}</span>
                     <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
                   </button>
                 </>
@@ -1195,7 +1210,8 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="wrap pro-footer-grid">
           <div>
             <div className="row" style={{ gap: '10px', marginBottom: '8px' }}>
-                            <div>
+              <span style={{ fontSize: '1.6rem' }}>💊</span>
+              <div>
                 <b style={{ fontSize: '1.05rem', color: '#fff' }}>{t('appName')}</b>
               </div>
             </div>
@@ -1249,7 +1265,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   href={`tel:${emergency.number}`}
                   style={{ color: '#fca5a5', fontWeight: 700, textDecoration: 'none' }}
                 >
-                   
+                  🚑{' '}
                   {tr(
                     lang,
                     `طوارئ الإسعاف (${emergency.flag} ${countryName}): ${emergency.number}`,

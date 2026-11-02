@@ -104,8 +104,11 @@ export default function AwarenessWeek() {
         >
           {simulateNovemberLive
             ? isAr
-              ?'وضع شهر نوفمبر النشط مفعّل (إيقاف المعاينة)'              :'November Live Mode Active (Exit Preview)'            : isAr
-            ?'معاينة شكل القسم أثناء التفعيل السنوي في نوفمبر'            :'Preview November Annual Live Activation'}
+              ? '🔵 وضع شهر نوفمبر النشط مفعّل (إيقاف المعاينة)'
+              : '🔵 November Live Mode Active (Exit Preview)'
+            : isAr
+            ? '👁️ معاينة شكل القسم أثناء التفعيل السنوي في نوفمبر'
+            : '👁️ Preview November Annual Live Activation'}
         </button>
       </div>
 
@@ -136,8 +139,11 @@ export default function AwarenessWeek() {
               >
                 {isCampaignLive
                   ? isAr
-                    ?'الحملة السنوية مفعّلة الآن — شهر نوفمبر (WAAW LIVE)'                    :'ANNUAL NOVEMBER CAMPAIGN LIVE NOW'                  : isAr
-                  ?'فعالية سنوية: 18 – 24 نوفمبر من كل عام'                  :'Annual Event: 18 – 24 November'}
+                    ? '🔴 الحملة السنوية مفعّلة الآن — شهر نوفمبر (WAAW LIVE)'
+                    : '🔴 ANNUAL NOVEMBER CAMPAIGN LIVE NOW'
+                  : isAr
+                  ? '📅 فعالية سنوية: 18 – 24 نوفمبر من كل عام'
+                  : '📅 Annual Event: 18 – 24 November'}
               </span>
               <span
                 className="badge"
@@ -148,12 +154,12 @@ export default function AwarenessWeek() {
                   padding: '4px 12px',
                 }}
               >
-                 #GoBlueForAMR
+                💙 #GoBlueForAMR
               </span>
             </div>
 
             <h1 style={{ color: '#fff', margin: '0 0 8px', fontSize: 'clamp(1.5rem, 4vw, 2.15rem)' }}>
-               {isAr ?'الأسبوع العالمي للتوعية بالمضادات الحيوية (WAAW)':'World AMR Awareness Week (WAAW) Hub'}
+              🌍 {isAr ? 'الأسبوع العالمي للتوعية بالمضادات الحيوية (WAAW)' : 'World AMR Awareness Week (WAAW) Hub'}
             </h1>
             <p style={{ color: '#e0f2fe', margin: 0, lineHeight: 1.7 }}>
               {isAr
@@ -176,7 +182,7 @@ export default function AwarenessWeek() {
           >
             {isCampaignLive ? (
               <div>
-                <div style={{ fontSize:'2rem'}}></div>
+                <div style={{ fontSize: '2rem' }}>💙</div>
                 <b style={{ color: '#38bdf8', display: 'block', fontSize: '1.05rem' }}>
                   {isAr ? 'حملة نوفمبر الزرقاء نشطة الآن!' : 'November Blue Campaign Active!'}
                 </b>
@@ -218,28 +224,28 @@ export default function AwarenessWeek() {
           className={`btn ${activeTab === 'videos' ? '' : 'ghost'}`}
           onClick={() => setActiveTab('videos')}
         >
-           {isAr ?`الفيديوهات التوعوية والريلز (${SHORT_VIDEO_REELS.length})`:`Educational Videos & Reels (${SHORT_VIDEO_REELS.length})`}
+          🎬 {isAr ? `الفيديوهات التوعوية والريلز (${SHORT_VIDEO_REELS.length})` : `Educational Videos & Reels (${SHORT_VIDEO_REELS.length})`}
         </button>
         <button
           type="button"
           className={`btn ${activeTab === 'posters' ? '' : 'ghost'}`}
           onClick={() => setActiveTab('posters')}
         >
-           {isAr ?`بوسترات وصور الإنفوجرافيك (${CAMPAIGN_POSTERS.length})`:`Infographic Posters (${CAMPAIGN_POSTERS.length})`}
+          🖼️ {isAr ? `بوسترات وصور الإنفوجرافيك (${CAMPAIGN_POSTERS.length})` : `Infographic Posters (${CAMPAIGN_POSTERS.length})`}
         </button>
         <button
           type="button"
           className={`btn ${activeTab === 'social_kit' ? '' : 'ghost'}`}
           onClick={() => setActiveTab('social_kit')}
         >
-           {isAr ?`حملات ومنشورات جاهزة للنسخ (${SOCIAL_CAMPAIGN_POSTS.length})`:`Ready-to-Share Posts (${SOCIAL_CAMPAIGN_POSTS.length})`}
+          📲 {isAr ? `حملات ومنشورات جاهزة للنسخ (${SOCIAL_CAMPAIGN_POSTS.length})` : `Ready-to-Share Posts (${SOCIAL_CAMPAIGN_POSTS.length})`}
         </button>
         <button
           type="button"
           className={`btn ${activeTab === 'pledge' ? '' : 'ghost'}`}
           onClick={() => setActiveTab('pledge')}
         >
-           {isAr ?'تعهد سفير الوعي':'Ambassador Pledge'}
+          💙 {isAr ? 'تعهد سفير الوعي' : 'Ambassador Pledge'}
         </button>
       </div>
 
@@ -247,10 +253,11 @@ export default function AwarenessWeek() {
       {activeTab === 'videos' && (
         <section className="stack">
           <div>
-            <h2> {isAr ?'مكتبة الفيديوهات التوعوية والعروض المرئية الناطقة':'Playable Educational Videos & Animated Motion Reels'}</h2>
+            <h2>🎬 {isAr ? 'مكتبة الفيديوهات التوعوية والعروض المرئية الناطقة' : 'Playable Educational Videos & Animated Motion Reels'}</h2>
             <p className="small muted" style={{ margin: 0 }}>
               {isAr
-                ?'اضغط على زر التشغيل ▶ داخل مشغل الفيديو لمشاهدة الفيديوهات التوعوية مباشرة، أو اضغط على «تشغيل العرض المتحرك الناطق» لمشاهدة الشرائح التفاعلية بالصوت:'                :'Press Play ▶ inside the embedded video player to watch directly, or launch the interactive animated voiceover reel:'}
+                ? 'اضغط على زر التشغيل ▶️ داخل مشغل الفيديو لمشاهدة الفيديوهات التوعوية مباشرة، أو اضغط على «تشغيل العرض المتحرك الناطق» لمشاهدة الشرائح التفاعلية بالصوت:'
+                : 'Press Play ▶️ inside the embedded video player to watch directly, or launch the interactive animated voiceover reel:'}
             </p>
           </div>
 
@@ -277,7 +284,7 @@ export default function AwarenessWeek() {
                       </div>
                     </div>
                     <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}>
-                      ⏱ {reel.duration}
+                      ⏱️ {reel.duration}
                     </span>
                   </div>
 
@@ -341,8 +348,11 @@ export default function AwarenessWeek() {
                         >
                           {isPlaying
                             ? isAr
-                              ?`يعمل الآن — مشهد ${sceneIndex + 1} من ${reel.scenes.length}`                              :`PLAYING — Scene ${sceneIndex + 1}/${reel.scenes.length}`                            : isAr
-                            ?'عرض موشن جرافيك ناطق مدمج'                            :'Built-in Animated Motion Reel'}
+                              ? `🔴 يعمل الآن — مشهد ${sceneIndex + 1} من ${reel.scenes.length}`
+                              : `🔴 PLAYING — Scene ${sceneIndex + 1}/${reel.scenes.length}`
+                            : isAr
+                            ? '🎞️ عرض موشن جرافيك ناطق مدمج'
+                            : '🎞️ Built-in Animated Motion Reel'}
                         </span>
                         <div className="row" style={{ gap: '4px' }}>
                           {reel.scenes.map((_, idx) => (
@@ -424,8 +434,11 @@ export default function AwarenessWeek() {
                         >
                           {isPlaying
                             ? isAr
-                              ?'⏹ إيقاف العرض المتحرك الناطق'                              :'⏹ Stop Animated Reel'                            : isAr
-                            ?'▶ تشغيل العرض المتحرك بالصوت والشرائح'                            :'▶ Play Animated Voiceover Reel'}
+                              ? '⏹️ إيقاف العرض المتحرك الناطق'
+                              : '⏹️ Stop Animated Reel'
+                            : isAr
+                            ? '▶️ تشغيل العرض المتحرك بالصوت والشرائح'
+                            : '▶️ Play Animated Voiceover Reel'}
                         </button>
                       </div>
                     </div>
@@ -441,7 +454,7 @@ export default function AwarenessWeek() {
                     }}
                   >
                     <div className="small muted" style={{ marginBottom: '4px', fontWeight: 700 }}>
-                       {isAr ?'ملخص وسيناريو الفيديو (للنشر كـ Reel أو قراءته):':'Video Script & Summary:'}
+                      🎙️ {isAr ? 'ملخص وسيناريو الفيديو (للنشر كـ Reel أو قراءته):' : 'Video Script & Summary:'}
                     </div>
                     <p className="small" style={{ margin: 0, lineHeight: 1.75 }}>
                       «{pick(reel.narrationScript, lang)}»
@@ -455,7 +468,7 @@ export default function AwarenessWeek() {
                       rel="noopener noreferrer"
                       className="btn small"
                     >
-                       {isAr ?'فتح الفيديو على تطبيق يوتيوب مباشرة ↗':'Watch on YouTube App ↗'}
+                      📺 {isAr ? 'فتح الفيديو على تطبيق يوتيوب مباشرة ↗' : 'Watch on YouTube App ↗'}
                     </a>
 
                     <button
@@ -463,7 +476,7 @@ export default function AwarenessWeek() {
                       className="btn ghost small"
                       onClick={() => handleShareWhatsApp(`${pick(reel.title, lang)}\n${reel.youtubeUrl}\n\n${pick(reel.narrationScript, lang)}`)}
                     >
-                       {isAr ?'مشاركة الفيديو عبر واتساب':'Share Video on WhatsApp'}
+                      📲 {isAr ? 'مشاركة الفيديو عبر واتساب' : 'Share Video on WhatsApp'}
                     </button>
 
                     <button
@@ -473,8 +486,11 @@ export default function AwarenessWeek() {
                     >
                       {copiedId === reel.id
                         ? isAr
-                          ?'تم نسخ الرابط والسيناريو'                          :'Copied'                        : isAr
-                        ?'نسخ رابط ونص الفيديو'                        :'Copy Video Link & Text'}
+                          ? '✅ تم نسخ الرابط والسيناريو'
+                          : '✅ Copied'
+                        : isAr
+                        ? '📋 نسخ رابط ونص الفيديو'
+                        : '📋 Copy Video Link & Text'}
                     </button>
                   </div>
                 </article>
@@ -489,7 +505,7 @@ export default function AwarenessWeek() {
         <section className="stack">
           <div className="head">
             <div>
-              <h2> {isAr ?'بطاقات وبوسترات الإنفوجرافيك الجاهزة للمشاركة والطباعة':'Visual Infographic Posters Ready to Share & Print'}</h2>
+              <h2>🖼️ {isAr ? 'بطاقات وبوسترات الإنفوجرافيك الجاهزة للمشاركة والطباعة' : 'Visual Infographic Posters Ready to Share & Print'}</h2>
               <p className="small muted" style={{ margin: 0 }}>
                 {isAr
                   ? 'بوسترات بصرية مصممة لتصحيح المفاهيم الشائعة؛ يمكنك نسخ محتواها أو إرسالها مباشرة عبر واتساب أو طباعتها كملصقات توعوية:'
@@ -497,7 +513,7 @@ export default function AwarenessWeek() {
               </p>
             </div>
             <button type="button" className="btn ghost small no-print" onClick={() => window.print()}>
-               {isAr ?'طباعة جميع البوسترات PDF':'Print All Posters PDF'}
+              🖨️ {isAr ? 'طباعة جميع البوسترات PDF' : 'Print All Posters PDF'}
             </button>
           </div>
 
@@ -597,7 +613,7 @@ export default function AwarenessWeek() {
                       style={{ flex: 1, background: poster.accentColor, borderColor: poster.accentColor }}
                       onClick={() => handleShareWhatsApp(shareText)}
                     >
-                       {isAr ?'نشر على واتساب':'Share on WhatsApp'}
+                      📲 {isAr ? 'نشر على واتساب' : 'Share on WhatsApp'}
                     </button>
                     <button
                       type="button"
@@ -606,8 +622,11 @@ export default function AwarenessWeek() {
                     >
                       {copiedId === poster.id
                         ? isAr
-                          ?'تم النسخ'                          :'Copied'                        : isAr
-                        ?'نسخ البوستر'                        :'Copy Text'}
+                          ? '✅ تم النسخ'
+                          : '✅ Copied'
+                        : isAr
+                        ? '📋 نسخ البوستر'
+                        : '📋 Copy Text'}
                     </button>
                   </div>
                 </article>
@@ -620,7 +639,7 @@ export default function AwarenessWeek() {
       {/* TAB 3: READY-TO-SHARE SOCIAL MEDIA & WHATSAPP CAMPAIGN KIT */}
       {activeTab === 'social_kit' && (
         <section className="stack">
-          <h2> {isAr ?'حملات ومنشورات جاهزة للنسخ والنشر الفوري':'Ready-to-Copy Social Media & WhatsApp Campaigns'}</h2>
+          <h2>📲 {isAr ? 'حملات ومنشورات جاهزة للنسخ والنشر الفوري' : 'Ready-to-Copy Social Media & WhatsApp Campaigns'}</h2>
           <p className="small muted">
             {isAr
               ? 'منشورات معدة مسبقاً بالهاشتاجات الرسمية للأسبوع العالمي للوعي بالمضادات الحيوية، جاهزة للنسخ أو الإرسال المباشر بضغطة واحدة:'
@@ -662,7 +681,7 @@ export default function AwarenessWeek() {
                       style={{ flex: 1 }}
                       onClick={() => handleShareWhatsApp(fullPost)}
                     >
-                       {isAr ?'إرسال عبر واتساب':'Send via WhatsApp'}
+                      📲 {isAr ? 'إرسال عبر واتساب' : 'Send via WhatsApp'}
                     </button>
                     <button
                       type="button"
@@ -671,8 +690,11 @@ export default function AwarenessWeek() {
                     >
                       {copiedId === post.id
                         ? isAr
-                          ?'تم النسخ!'                          :'Copied!'                        : isAr
-                        ?'نسخ المنشور'                        :'Copy Post'}
+                          ? '✅ تم النسخ!'
+                          : '✅ Copied!'
+                        : isAr
+                        ? '📋 نسخ المنشور'
+                        : '📋 Copy Post'}
                     </button>
                   </div>
                 </div>
@@ -685,7 +707,7 @@ export default function AwarenessWeek() {
       {/* TAB 4: DIGITAL STEWARDSHIP AMBASSADOR PLEDGE */}
       {activeTab === 'pledge' && (
         <section className="card highlight-card stack" style={{ textAlign: 'center', padding: '32px 20px' }}>
-          <div style={{ fontSize:'3rem'}}></div>
+          <div style={{ fontSize: '3rem' }}>💙</div>
           <h2 style={{ fontSize: '1.5rem', margin: 0 }}>
             {isAr ? 'ميثاق وتعهد الأسبوع العالمي للوعي بالمضادات الحيوية' : 'World AMR Awareness Week Stewardship Pledge'}
           </h2>
@@ -706,7 +728,7 @@ export default function AwarenessWeek() {
             }}
           >
             <h3 style={{ color: '#0284c7', margin: '0 0 10px' }}>
-               {isAr ?'بنود التعهد الصحي الأربع:':'The 4 Stewardship Commitments:'}
+              📜 {isAr ? 'بنود التعهد الصحي الأربع:' : 'The 4 Stewardship Commitments:'}
             </h3>
             <ul style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.9 }}>
               <li>{isAr ? 'أتعهد بعدم تناول أو شراء أي مضاد حيوي دون وصفة طبية معتمدة.' : 'I will never take antibiotics without a medical prescription.'}</li>
@@ -727,12 +749,12 @@ export default function AwarenessWeek() {
                   setPledgeCount((c) => c + 1);
                 }}
               >
-                 {isAr ?'أعلن تعهدي الآن وأشارك في الحملة':'Take the Stewardship Pledge Now'}
+                ✋ {isAr ? 'أعلن تعهدي الآن وأشارك في الحملة' : 'Take the Stewardship Pledge Now'}
               </button>
             ) : (
               <div className="stack" style={{ alignItems: 'center' }}>
                 <div className="badge approved" style={{ fontSize: '1rem', padding: '8px 18px' }}>
-                   {isAr ?'شكراً لك! أنت الآن سفير للوعي بالمضادات الحيوية':'Thank You! You Are Now an Antibiotic Stewardship Ambassador'}
+                  🎉 {isAr ? 'شكراً لك! أنت الآن سفير للوعي بالمضادات الحيوية' : 'Thank You! You Are Now an Antibiotic Stewardship Ambassador'}
                 </div>
                 <button
                   type="button"
@@ -740,15 +762,17 @@ export default function AwarenessWeek() {
                   onClick={() =>
                     handleShareWhatsApp(
                       isAr
-                        ?'لقد شاركت في تعهد الأسبوع العالمي للوعي بالمضادات الحيوية لحماية صحتنا من السلالات البكتيرية المقاومة! شارك معنا عبر المنصة:'                        :'I just took the World AMR Awareness Week Pledge! Join us on the platform:'                    )
+                        ? '💙 لقد شاركت في تعهد الأسبوع العالمي للوعي بالمضادات الحيوية لحماية صحتنا من السلالات البكتيرية المقاومة! شارك معنا عبر المنصة:'
+                        : '💙 I just took the World AMR Awareness Week Pledge! Join us on the platform:'
+                    )
                   }
                 >
-                   {isAr ?'شارك تعهدك مع أصدقائك على واتساب':'Share Your Pledge on WhatsApp'}
+                  📲 {isAr ? 'شارك تعهدك مع أصدقائك على واتساب' : 'Share Your Pledge on WhatsApp'}
                 </button>
               </div>
             )}
             <div className="small muted" style={{ marginTop: '10px' }}>
-               {isAr ?`إجمالي المشاركين في التعهد التوعوي: ${pledgeCount.toLocaleString()} مشارك`:`Total community pledges: ${pledgeCount.toLocaleString()}`}
+              👥 {isAr ? `إجمالي المشاركين في التعهد التوعوي: ${pledgeCount.toLocaleString()} مشارك` : `Total community pledges: ${pledgeCount.toLocaleString()}`}
             </div>
           </div>
         </section>

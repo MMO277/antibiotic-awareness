@@ -23,7 +23,8 @@ export default function SafeDisposal() {
 
       <header className="page-head">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div>
+          <span style={{ fontSize: '2.5rem' }}>♻️</span>
+          <div>
             <h1>
               {isAr
                 ? 'دليل التخلص الآمن من بقايا الأدوية والرعاية الصحية الخضراء'
@@ -41,7 +42,7 @@ export default function SafeDisposal() {
       {/* Primary Alert Banner */}
       <section className="notice urgent" style={{ borderLeft: '5px solid #ef4444', padding: '16px' }}>
         <h3 style={{ color: '#b91c1c', margin: '0 0 8px' }}>
-           {isAr ?'لماذا يُمنع سكب المضاد الحيوي في الحوض أو المرحاض؟':'Why Never Flush Antibiotics Down the Drain?'}
+          ⚠️ {isAr ? 'لماذا يُمنع سكب المضاد الحيوي في الحوض أو المرحاض؟' : 'Why Never Flush Antibiotics Down the Drain?'}
         </h3>
         <p style={{ margin: 0, lineHeight: 1.6 }}>
           {isAr
@@ -52,7 +53,7 @@ export default function SafeDisposal() {
 
       {/* Interactive Disposal Navigator */}
       <section className="card highlight-card">
-        <h2> {isAr ?'فاحص الطريقة الصحيحة للتخلص من دوائك':'Interactive Medicine Disposal Guide'}</h2>
+        <h2>🛠️ {isAr ? 'فاحص الطريقة الصحيحة للتخلص من دوائك' : 'Interactive Medicine Disposal Guide'}</h2>
         <p className="small muted">
           {isAr
             ? 'اختر شكل ونوع الدواء المتبقي لديك لمعرفة الخطوات التمريضية الدقيقة للتخلص منه دون تلويث البيئة:'
@@ -65,25 +66,25 @@ export default function SafeDisposal() {
             className={`btn ${selectedForm === 'suspension' ? '' : 'ghost'}`}
             onClick={() => setSelectedForm('suspension')}
           >
-             {isAr ?'شراب الأطفال المعلق':'Pediatric Suspensions'}
+            🍼 {isAr ? 'شراب الأطفال المعلق' : 'Pediatric Suspensions'}
           </button>
           <button
             className={`btn ${selectedForm === 'tablets' ? '' : 'ghost'}`}
             onClick={() => setSelectedForm('tablets')}
           >
-             {isAr ?'أقراص وكبسولات صلبة':'Tablets & Capsules'}
+            💊 {isAr ? 'أقراص وكبسولات صلبة' : 'Tablets & Capsules'}
           </button>
           <button
             className={`btn ${selectedForm === 'injections' ? '' : 'ghost'}`}
             onClick={() => setSelectedForm('injections')}
           >
-             {isAr ?'حقن وأمبولات وسرنجات':'Injections & Sharps'}
+            💉 {isAr ? 'حقن وأمبولات وسرنجات' : 'Injections & Sharps'}
           </button>
           <button
             className={`btn ${selectedForm === 'topicals' ? '' : 'ghost'}`}
             onClick={() => setSelectedForm('topicals')}
           >
-             {isAr ?'مراهم وقطرات عيون':'Ointments & Eye Drops'}
+            🧴 {isAr ? 'مراهم وقطرات عيون' : 'Ointments & Eye Drops'}
           </button>
         </div>
 
@@ -91,7 +92,7 @@ export default function SafeDisposal() {
         {selectedForm === 'suspension' && (
           <div className="card" style={{ background: 'var(--bg-subtle, #f8fafc)', border: '1px solid #cbd5e1' }}>
             <h3 style={{ color: '#0369a1' }}>
-               {isAr ?'البروتوكول السريري لشراب الأطفال (أوجمنتين، كلافيموكس، فلاجيل شراب):':'Protocol for Pediatric Suspensions:'}
+              🍼 {isAr ? 'البروتوكول السريري لشراب الأطفال (أوجمنتين، كلافيموكس، فلاجيل شراب):' : 'Protocol for Pediatric Suspensions:'}
             </h3>
             <ul style={{ paddingRight: isAr ? '20px' : '0', paddingLeft: isAr ? '0' : '20px', lineHeight: 1.8 }}>
               <li>
@@ -125,7 +126,7 @@ export default function SafeDisposal() {
         {selectedForm === 'tablets' && (
           <div className="card" style={{ background: 'var(--bg-subtle, #f8fafc)', border: '1px solid #cbd5e1' }}>
             <h3 style={{ color: '#0369a1' }}>
-               {isAr ?'البروتوكول السريري للأقراص والكبسولات (سيبروفار، كلاسيد، زيثروماكس):':'Protocol for Solid Tablets & Capsules:'}
+              💊 {isAr ? 'البروتوكول السريري للأقراص والكبسولات (سيبروفار، كلاسيد، زيثروماكس):' : 'Protocol for Solid Tablets & Capsules:'}
             </h3>
             <ul style={{ paddingRight: isAr ? '20px' : '0', paddingLeft: isAr ? '0' : '20px', lineHeight: 1.8 }}>
               <li>
@@ -153,7 +154,7 @@ export default function SafeDisposal() {
         {selectedForm === 'injections' && (
           <div className="card" style={{ background: 'var(--bg-subtle, #f8fafc)', border: '1px solid #cbd5e1' }}>
             <h3 style={{ color: '#0369a1' }}>
-               {isAr ?'البروتوكول السريري للأمبولات وسرنجات الحقن (سيفوتاكس، سيفترياكسون، جاراميسين):':'Protocol for Sharps, Vials & Injections:'}
+              💉 {isAr ? 'البروتوكول السريري للأمبولات وسرنجات الحقن (سيفوتاكس، سيفترياكسون، جاراميسين):' : 'Protocol for Sharps, Vials & Injections:'}
             </h3>
             <ul style={{ paddingRight: isAr ? '20px' : '0', paddingLeft: isAr ? '0' : '20px', lineHeight: 1.8 }}>
               <li>
@@ -181,7 +182,7 @@ export default function SafeDisposal() {
         {selectedForm === 'topicals' && (
           <div className="card" style={{ background: 'var(--bg-subtle, #f8fafc)', border: '1px solid #cbd5e1' }}>
             <h3 style={{ color: '#0369a1' }}>
-               {isAr ?'البروتوكول السريري لقطرات العيون والأذن والمراهم الحيوية:':'Protocol for Eye Drops & Topical Ointments:'}
+              🧴 {isAr ? 'البروتوكول السريري لقطرات العيون والأذن والمراهم الحيوية:' : 'Protocol for Eye Drops & Topical Ointments:'}
             </h3>
             <ul style={{ paddingRight: isAr ? '20px' : '0', paddingLeft: isAr ? '0' : '20px', lineHeight: 1.8 }}>
               <li>
@@ -203,10 +204,10 @@ export default function SafeDisposal() {
 
       {/* 4 Cardinal Sins to Avoid */}
       <section className="card">
-        <h2> {isAr ?'المحظورات الأربعة الشائعة في المنازل المصرية':'The 4 Dangerous Practices to Avoid'}</h2>
+        <h2>🚫 {isAr ? 'المحظورات الأربعة الشائعة في المنازل المصرية' : 'The 4 Dangerous Practices to Avoid'}</h2>
         <div className="grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '16px', marginTop: '12px' }}>
           <div className="card" style={{ borderTop: '4px solid #ef4444' }}>
-            <h4> {isAr ?'«سيب الباقي في التلاجة للمرة الجاية»':'Saving Leftovers for Next Sickness'}</h4>
+            <h4>❌ {isAr ? '«سيب الباقي في التلاجة للمرة الجاية»' : 'Saving Leftovers for Next Sickness'}</h4>
             <p className="small muted">
               {isAr
                 ? 'إعطاء بواقي الشراب القديم لطفلك عند تكرار الكحة أو الحرارة بعد شهر يجعله يتناول جرعة غير فعالة أو دواء فاسداً، ويؤخر تشخيص المرض الحقيقي.'
@@ -214,7 +215,7 @@ export default function SafeDisposal() {
             </p>
           </div>
           <div className="card" style={{ borderTop: '4px solid #ef4444' }}>
-            <h4> {isAr ?'«إدي باقي المضاد لأخوه أو جارك»':'Sharing Prescriptions with Family/Neighbors'}</h4>
+            <h4>❌ {isAr ? '«إدي باقي المضاد لأخوه أو جارك»' : 'Sharing Prescriptions with Family/Neighbors'}</h4>
             <p className="small muted">
               {isAr
                 ? 'كل مريض يختلف وزنه ووظائف كلاه وحساسيته الدوائية؛ مشاركة المضاد الحيوي قد تسبب صدمة حساسية أو فشلاً كلوياً لقريبك!'
@@ -222,7 +223,7 @@ export default function SafeDisposal() {
             </p>
           </div>
           <div className="card" style={{ borderTop: '4px solid #ef4444' }}>
-            <h4> {isAr ?'سكب الدواء في مجرى الصرف والمرحاض':'Flushing Liquid Down the Toilet'}</h4>
+            <h4>❌ {isAr ? 'سكب الدواء في مجرى الصرف والمرحاض' : 'Flushing Liquid Down the Toilet'}</h4>
             <p className="small muted">
               {isAr
                 ? 'محطات تنقية مياه الصرف الصحي لا تستطيع إزالة جزيئات المضادات الحيوية، فتعود للمصارف والترع ملوثة للثروة السمكية والزراعية.'
@@ -230,7 +231,7 @@ export default function SafeDisposal() {
             </p>
           </div>
           <div className="card" style={{ borderTop: '4px solid #ef4444' }}>
-            <h4> {isAr ?'رمي الحقن مكشوفة السن':'Discarding Uncapped Sharps'}</h4>
+            <h4>❌ {isAr ? 'رمي الحقن مكشوفة السن' : 'Discarding Uncapped Sharps'}</h4>
             <p className="small muted">
               {isAr
                 ? 'وخز عمال النظافة بالإبر المكشوفة يمثل كارثة مهنية وإنسانية؛ دائماً استخدم علبة بلاستيكية صلبة مغلقة.'
@@ -243,7 +244,8 @@ export default function SafeDisposal() {
       {/* Interactive Eco Impact Calculator */}
       <section className="card highlight-card" style={{ background: '#f0fdf4', borderColor: '#86efac' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div>
+          <span style={{ fontSize: '2rem' }}>🌿</span>
+          <div>
             <h3 style={{ color: '#166534', margin: 0 }}>
               {isAr ? 'حاسبة أثرك البيئي كصديق للصحة والطبيعة' : 'Your Eco-Health Impact Calculator'}
             </h3>
@@ -287,7 +289,7 @@ export default function SafeDisposal() {
 
         <div style={{ padding: '14px', background: '#fff', borderRadius: '8px', border: '1px solid #bbf7d0' }}>
           <p style={{ margin: 0, fontSize: '1.05rem', color: '#15803d', fontWeight: 600 }}>
-             {isAr
+            💧 {isAr
               ? `بفضل وعيك اليوم، حميت ما يُقدّر بـ ${estimatedWaterSaved.toLocaleString()} لتر من المياه والبيئة من التلوث الدوائي وبكتيريا السوبر!`
               : `Through your conscious disposal, you saved an estimated ${estimatedWaterSaved.toLocaleString()} Liters of freshwater ecosystems from superbug proliferation!`}
           </p>
@@ -296,7 +298,7 @@ export default function SafeDisposal() {
 
       {/* Community Take-back Pharmacy Guidance */}
       <section className="card">
-        <h3> {isAr ?'مبادرة صيدليات الاسترداد الآمن (Take-Back Programs)':'Pharmacy Medicine Take-Back Programs'}</h3>
+        <h3>🏥 {isAr ? 'مبادرة صيدليات الاسترداد الآمن (Take-Back Programs)' : 'Pharmacy Medicine Take-Back Programs'}</h3>
         <p style={{ lineHeight: 1.6 }}>
           {isAr
             ? 'تتعاون نقابة الصيادلة وهيئة الدواء المصرية مع مستشفيات وزارة الصحة والجامعات لإطلاق صناديق خاصة لاستلام الأدوية منتهية الصلاحية والتالفة من المنازل وإعدامها بالمحارق الطبية الرسمية بدرجات حرارة عالية تكسر المادة الفعالة دون تلويث الهواء أو الماء.'
@@ -304,7 +306,8 @@ export default function SafeDisposal() {
         </p>
         <p className="small muted">
           {isAr
-            ?'اسأل صيدليتك المحلية أو المستشفيات الجامعية عن توفر صندوق استرجاع الأدوية المنتهية قبل التخلص المنزلي منها.'            :'Ask your local pharmacy or university hospital about active disposal drop-boxes before disposing at home.'}
+            ? '💡 اسأل صيدليتك المحلية أو المستشفيات الجامعية عن توفر صندوق استرجاع الأدوية المنتهية قبل التخلص المنزلي منها.'
+            : '💡 Ask your local pharmacy or university hospital about active disposal drop-boxes before disposing at home.'}
         </p>
       </section>
     </main>

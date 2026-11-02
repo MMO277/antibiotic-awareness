@@ -1,3 +1,4 @@
+import PartnerManagementCenter from './PartnerManagementCenter';
 import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -13,7 +14,6 @@ import { LearningImpactDashboard } from './LearningImpactDashboard';
 import QuizResultsTab from './QuizResultsTab';
 import CommercialCatalogTab from './CommercialCatalogEditor';
 import SurveyQuizManagerTab from './SurveyQuizEditor';
-import PartnerManagementCenter from './PartnerManagementCenter';
 
 function diagText(status: string, t: (k: string) => string): string {
   if (status === 'missing') return t('diagMissing');
@@ -61,8 +61,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
   const [items, setItems] = useState<Medicine[] | null>(null);
   const [filter, setFilter] = useState<Status | 'all'>('all');
   const [err, setErr] = useState('');
-  const reviewer = role === 'owner' || role === 'reviewer' || role === 'admin' || role === 'editor';
-  const isFullAdmin = role === 'owner' || role === 'admin';
+  const reviewer = role === 'reviewer' || isFullAdmin || role === 'editor';
   const [showUn, setShowUn] = useState(true);
   useEffect(() => {
     getDoc(doc(db, 'settings', 'public'))
@@ -153,7 +152,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
           </div>
           <div className="row wrapRow">
             <Link className="btn small" to={`/admin/medicine/${m.id}`}>{t('edit')}</Link>
-            <Link className="btn small ghost"to={`/medicine/${m.id}`}></Link>
+            <Link className="btn small ghost" to={`/medicine/${m.id}`}>👁️</Link>
             {m.status === 'draft' && <button className="btn small ghost" onClick={() => act(m, 'pending_review')}>{t('submitReview')}</button>}
             {reviewer && m.status === 'pending_review' && <button className="btn small" onClick={() => act(m, 'approved')}>{t('approve')}</button>}
             {reviewer && m.status !== 'archived' && <button className="btn small ghost" onClick={() => act(m, 'archived')}>{t('archive')}</button>}
@@ -171,8 +170,7 @@ type AdminTab = 'partners' | 'users' | 'catalog' | 'meds' | 'survey_bank' | 'res
 export default function Dashboard() {
   const { t, lang } = useLang();
   const { user, role, roleStatus, loading, logout } = useAuth();
-  const [tab, setTab] = useState<AdminTab>('partners');
-  const isFullAdmin = role === 'owner' || role === 'admin';
+  const [tab, setTab] = useState<AdminTab>('users');
 
   if (loading) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (!user) return <Login />;
@@ -213,6 +211,19 @@ export default function Dashboard() {
         }}
       >
         <button
+          className={tab === 'users' ? 'on' : ''}
+          onClick={() => setTab('users')}
+          style={{
+            borderRadius: '10px',
+            border: tab === 'users' ? '2px solid var(--teal)' : '1px solid var(--line)',
+            background: tab === 'users' ? 'var(--tint)' : 'var(--card-bg)',
+            padding: '8px 12px',
+          }}
+        >
+          👥 {tr(lang, 'المستخدمون والصلاحيات (Admin / Editor)', 'Users & Roles (Admin / Editor)', 'Utilisateurs & Rôles', 'Usuarios y Roles', 'Benutzer & Rollen')}
+        </button>
+
+        <button
           className={tab === 'partners' ? 'on' : ''}
           onClick={() => setTab('partners')}
           style={{
@@ -223,20 +234,7 @@ export default function Dashboard() {
             fontWeight: 700,
           }}
         >
-           {tr(lang,'إدارة الشركاء (Partner Management)','Partner Management','Gestion des Partenaires','Gestión de Socios','Partnerverwaltung')}
-        </button>
-
-        <button
-          className={tab === 'users' ? 'on' : ''}
-          onClick={() => setTab('users')}
-          style={{
-            borderRadius: '10px',
-            border: tab === 'users' ? '2px solid var(--teal)' : '1px solid var(--line)',
-            background: tab === 'users' ? 'var(--tint)' : 'var(--card-bg)',
-            padding: '8px 12px',
-          }}
-        >
-           {tr(lang,'المستخدمون والصلاحيات (OWNER / ADMIN)','Users & Roles (OWNER / ADMIN)','Utilisateurs & Rôles','Usuarios y Roles','Benutzer & Rollen')}
+          🤝 {tr(lang, 'إدارة الشركاء (Partner Management)', 'Partner Management', 'Gestion des Partenaires', 'Gestión de Socios', 'Partnerverwaltung')}
         </button>
 
         <button
@@ -249,7 +247,7 @@ export default function Dashboard() {
             padding: '8px 12px',
           }}
         >
-           {tr(lang,'الأدوية التجارية والأسعار (206+)','Commercial Drugs & Prices (206+)','Médicaments Commerciaux','Medicamentos Comerciales','Handelspräparate (206+)')}
+          💊 {tr(lang, 'الأدوية التجارية والأسعار (206+)', 'Commercial Drugs & Prices (206+)', 'Médicaments Commerciaux', 'Medicamentos Comerciales', 'Handelspräparate (206+)')}
         </button>
 
         <button
@@ -262,7 +260,7 @@ export default function Dashboard() {
             padding: '8px 12px',
           }}
         >
-           {tr(lang,'المواد الفعالة (32)','Active Ingredients (32)','Principes Actifs (32)','Principios Activos (32)','Wirkstoffe (32)')}
+          📚 {tr(lang, 'المواد الفعالة (32)', 'Active Ingredients (32)', 'Principes Actifs (32)', 'Principios Activos (32)', 'Wirkstoffe (32)')}
         </button>
 
         <button
@@ -275,7 +273,7 @@ export default function Dashboard() {
             padding: '8px 12px',
           }}
         >
-           {tr(lang,'تعديل أسئلة الاستبيان والكويز','Edit Survey & Quiz Questions','Modifier Questions Quiz/Enquête','Editar Preguntas de Encuesta/Quiz','Umfrage- & Quizfragen bearbeiten')}
+          📋 {tr(lang, 'تعديل أسئلة الاستبيان والكويز', 'Edit Survey & Quiz Questions', 'Modifier Questions Quiz/Enquête', 'Editar Preguntas de Encuesta/Quiz', 'Umfrage- & Quizfragen bearbeiten')}
         </button>
 
         {isFullAdmin && (
@@ -289,7 +287,7 @@ export default function Dashboard() {
               padding: '8px 12px',
             }}
           >
-             📊 {t('tabResearch')}
+            📊 {t('tabResearch')}
           </button>
         )}
 
@@ -304,7 +302,7 @@ export default function Dashboard() {
               padding: '8px 12px',
             }}
           >
-             {tr(lang,'قياس الأثر والتعلم','Learning Impact','Impact d’Apprentissage','Impacto de Aprendizaje','Lernwirkung')}
+            📈 {tr(lang, 'قياس الأثر والتعلم', 'Learning Impact', 'Impact d’Apprentissage', 'Impacto de Aprendizaje', 'Lernwirkung')}
           </button>
         )}
 
@@ -319,7 +317,7 @@ export default function Dashboard() {
               padding: '8px 12px',
             }}
           >
-             {tr(lang,'نتائج الكويز','Quiz Results','Résultats du Quiz','Resultados del Quiz','Quiz-Ergebnisse')}
+            📝 {tr(lang, 'نتائج الكويز', 'Quiz Results', 'Résultats du Quiz', 'Resultados del Quiz', 'Quiz-Ergebnisse')}
           </button>
         )}
       </div>

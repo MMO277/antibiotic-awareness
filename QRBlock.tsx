@@ -22,7 +22,7 @@ export default function QRBlock({ id, name }: { id: string; name: string }) {
       }}
     >
       <h4 style={{ margin: '0 0 8px', fontSize: '0.9rem', color: '#0b3c5d' }}>
-         {isAr ?'امسح لفتح النشرة على الموبايل':'Scan to open on mobile'}
+        📱 {isAr ? 'امسح لفتح النشرة على الموبايل' : 'Scan to open on mobile'}
       </h4>
       <img
         src={qrImageUrl}

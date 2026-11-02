@@ -89,7 +89,8 @@ export function PrePostAssessmentModal({ mode, topicTitle, questions, onComplete
             }}
           >
             {mode === 'pre'
-              ? isAr ?'التقييم القبلي الأولي':'Initial Pre-Assessment'              : isAr ?'التقييم البعدي النهائي':'Final Post-Assessment'}
+              ? isAr ? '📝 التقييم القبلي الأولي' : '📝 Initial Pre-Assessment'
+              : isAr ? '🎯 التقييم البعدي النهائي' : '🎯 Final Post-Assessment'}
           </span>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-muted, #777)' }}>
             {currentIdx + 1} / {questions.length}
@@ -163,7 +164,8 @@ export function PrePostAssessmentModal({ mode, topicTitle, questions, onComplete
           >
             <strong>
               {selectedOpt === q.correctAnswer
-                ? isAr ?'إجابة صحيحة:':'Correct:'                : isAr ?'التوضيح السريري السليم:':'Clinical Explanation:'}
+                ? isAr ? '✓ إجابة صحيحة:' : '✓ Correct:'
+                : isAr ? '✗ التوضيح السريري السليم:' : '✗ Clinical Explanation:'}
             </strong>{' '}
             {isAr ? q.explanation.ar : q.explanation.en}
           </div>

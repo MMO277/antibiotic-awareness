@@ -169,7 +169,7 @@ export default function Research() {
   if ((cfg === null || !cfg.enabled) && !canEditLive) {
     return (
       <main className="wrap narrow stack">
-        <h1> {t('resTitle')}</h1>
+        <h1>📊 {t('resTitle')}</h1>
         <div className="card notice">
           <p style={{ margin: 0 }}>{t('resClosed')}</p>
         </div>
@@ -181,7 +181,7 @@ export default function Research() {
     return (
       <main className="wrap narrow stack">
         <div className="card center stack" style={{ padding: '32px 20px', border: '2px solid var(--ok)' }}>
-          <div style={{ fontSize:'3rem'}}></div>
+          <div style={{ fontSize: '3rem' }}>✅</div>
           <h2 style={{ color: 'var(--ok)', margin: 0 }}>{t('resThanks')}</h2>
         </div>
       </main>
@@ -190,7 +190,7 @@ export default function Research() {
 
   return (
     <main className="wrap narrow stack" style={{ paddingBottom: '120px' }}>
-      <h1> {t('resTitle')}</h1>
+      <h1>📊 {t('resTitle')}</h1>
 
       {/* LIVE SURVEY EDITOR BAR (Visible to editor, reviewer, or admin) */}
       {canEditLive && (
@@ -206,11 +206,12 @@ export default function Research() {
             <div>
               <div className="row wrapRow" style={{ gap: '8px', alignItems: 'center' }}>
                 <span className="badge" style={{ background: '#0284c7', color: '#fff', fontWeight: 800 }}>
-                   {isAr ?'محرر الاستبيان المباشر (Live Survey Editor)':'Live Survey Editor'}
+                  ⚡ {isAr ? 'محرر الاستبيان المباشر (Live Survey Editor)' : 'Live Survey Editor'}
                 </span>
                 <span className="badge" style={{ background: cfg?.enabled ? '#dcfce7' : '#fee2e2', color: cfg?.enabled ? '#166534' : '#991b1b', fontWeight: 700 }}>
                   {cfg?.enabled
-                    ? isAr ?'مفتوح للجمهور':'Open to Public'                    : isAr ?'مغلق حالياً للجمهور':'Closed to Public'}
+                    ? isAr ? '🟢 مفتوح للجمهور' : '🟢 Open to Public'
+                    : isAr ? '🔴 مغلق حالياً للجمهور' : '🔴 Closed to Public'}
                 </span>
               </div>
               <p className="small" style={{ margin: '6px 0 0' }}>
@@ -230,7 +231,7 @@ export default function Research() {
                   setAddingNewQ(true);
                 }}
               >
-                 {isAr ?'إضافة سؤال جديد للاستبيان':'Add Survey Question'}
+                ➕ {isAr ? 'إضافة سؤال جديد للاستبيان' : 'Add Survey Question'}
               </button>
               <button
                 type="button"
@@ -238,10 +239,11 @@ export default function Research() {
                 onClick={handleToggleSurveyOpen}
               >
                 {cfg?.enabled
-                  ? isAr ?'إغلاق الاستبيان مؤقتاً':'Close Survey'                  : isAr ?'فتح الاستبيان للجمهور':'Open Survey'}
+                  ? isAr ? '🔒 إغلاق الاستبيان مؤقتاً' : '🔒 Close Survey'
+                  : isAr ? '🔓 فتح الاستبيان للجمهور' : '🔓 Open Survey'}
               </button>
               <Link to="/admin" className="btn ghost small">
-                 {isAr ?'لوحة إدارة الاستبيان والنتائج':'Admin Survey Manager'}
+                ⚙️ {isAr ? 'لوحة إدارة الاستبيان والنتائج' : 'Admin Survey Manager'}
               </Link>
             </div>
           </div>
@@ -250,9 +252,9 @@ export default function Research() {
 
       {/* بطاقة الموافقة المستنيرة */}
       <div className="card stack">
-        <h2 style={{ margin: 0 }}> {t('resConsentTitle')}</h2>
+        <h2 style={{ margin: 0 }}>📋 {t('resConsentTitle')}</h2>
         <p style={{ margin: 0 }}>{t('resConsentText')}</p>
-        <p className="small muted"style={{ margin: 0 }}> {t('resMinor')}</p>
+        <p className="small muted" style={{ margin: 0 }}>⚠️ {t('resMinor')}</p>
 
         {cfg?.ethicsApprovalRef && (
           <div className="notice compact">
@@ -370,7 +372,7 @@ export default function Research() {
                         onClick={() => handleMoveQuestionInline(qIdx, -1)}
                         title={isAr ? 'تحريك لأعلى' : 'Move Up'}
                       >
-                        ⬆
+                        ⬆️
                       </button>
                       <button
                         type="button"
@@ -380,7 +382,7 @@ export default function Research() {
                         onClick={() => handleMoveQuestionInline(qIdx, 1)}
                         title={isAr ? 'تحريك لأسفل' : 'Move Down'}
                       >
-                        ⬇
+                        ⬇️
                       </button>
                       <button
                         type="button"
@@ -391,7 +393,7 @@ export default function Research() {
                           setAddingNewQ(false);
                         }}
                       >
-                         {isAr ?'تعديل السؤال':'Edit Question'}
+                        ✏️ {isAr ? 'تعديل السؤال' : 'Edit Question'}
                       </button>
                       {questions.length > 1 && (
                         <button
@@ -400,7 +402,7 @@ export default function Research() {
                           style={{ padding: '4px 10px', fontSize: '0.78rem' }}
                           onClick={() => handleDeleteQuestionInline(qIdx)}
                         >
-                           {isAr ?'حذف':'Delete'}
+                          🗑️ {isAr ? 'حذف' : 'Delete'}
                         </button>
                       )}
                     </div>
@@ -464,7 +466,7 @@ export default function Research() {
             className="btn"
             style={{ width: '100%', padding: '14px', fontSize: '1.05rem' }}
           >
-            {busy ? t('loading') :`${t('resSubmit')} (${answeredCount}/${questions.length})`}
+            {busy ? t('loading') : `📨 ${t('resSubmit')} (${answeredCount}/${questions.length})`}
           </button>
         </form>
       )}

@@ -76,7 +76,7 @@ export default function InstallPrompt() {
           {ar ? 'تثبيت' : 'Install'}
         </button>
       )}
-      <button onClick={dismiss} aria-label={ar ?'إغلاق':'Close'} style={{ background:'transparent', color:'#fff', border: 0, fontSize:'1.2rem', cursor:'pointer'}}></button>
+      <button onClick={dismiss} aria-label={ar ? 'إغلاق' : 'Close'} style={{ background: 'transparent', color: '#fff', border: 0, fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
     </div>
   );
 }

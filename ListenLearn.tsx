@@ -111,7 +111,7 @@ export default function ListenLearn() {
   return (
     <main className="wrap stack">
       <header className="page-head">
-        <h1> {lang ==='ar'?'استمع وتعلّم: التثقيف الصحي الصوتي':'Listen & Learn: Audio Patient Education'}</h1>
+        <h1>🎧 {lang === 'ar' ? 'استمع وتعلّم: التثقيف الصحي الصوتي' : 'Listen & Learn: Audio Patient Education'}</h1>
         <p className="muted">
           {lang === 'ar'
             ? 'ميزة تمريضية مخصصة للاستماع إلى المحتوى التوعوي بصوت واضح باللغة العربية والإنجليزية، لخدمة كبار السن وجميع فئات المجتمع بسهولة.'
@@ -122,12 +122,14 @@ export default function ListenLearn() {
       {/* Browser Support / Voice Fallback Warning */}
       {!supported ? (
         <section className="notice alert">
-           {lang ==='ar'            ? 'ملاحظة: متصفحك الحالي لا يدعم محرك قراءة الصوت التلقائي (Web Speech API). يمكنك قراءة كافة النصوص المكتوبة بالكامل بالأسفل.'
+          ⚠️ {lang === 'ar'
+            ? 'ملاحظة: متصفحك الحالي لا يدعم محرك قراءة الصوت التلقائي (Web Speech API). يمكنك قراءة كافة النصوص المكتوبة بالكامل بالأسفل.'
             : 'Notice: Your browser does not support the Web Speech API. All written content remains fully available below.'}
         </section>
       ) : !hasVoice ? (
         <section className="notice quick">
-          ℹ {lang ==='ar'            ? `تنبيه: جهازك لا يحتوي حالياً على حزمة صوت ناطق باللغة (${lang === 'ar' ? 'العربية' : 'الإنجليزية'}). يمكنك قراءة النص المكتوب أو تجربة متصفح آخر كـ Chrome.`
+          ℹ️ {lang === 'ar'
+            ? `تنبيه: جهازك لا يحتوي حالياً على حزمة صوت ناطق باللغة (${lang === 'ar' ? 'العربية' : 'الإنجليزية'}). يمكنك قراءة النص المكتوب أو تجربة متصفح آخر كـ Chrome.`
             : 'Notice: Your device currently lacks a voice for this language. You can read the full text below or try Google Chrome.'}
         </section>
       ) : null}
@@ -227,11 +229,12 @@ export default function ListenLearn() {
       {/* Paragraph-by-Paragraph Interactive Reader Card */}
       <section className="card stack">
         <h3 style={{ margin: '0 0 4px' }}>
-           {lang ==='ar'?'النص التوعوي المقروء مع زر نطق لكل فقرة:':'Written script with individual paragraph playback:'}
+          📖 {lang === 'ar' ? 'النص التوعوي المقروء مع زر نطق لكل فقرة:' : 'Written script with individual paragraph playback:'}
         </h3>
         <p className="small muted" style={{ margin: '0 0 12px' }}>
           {lang === 'ar'
-            ?'يمكنك الضغط على زر بجوار أي فقرة للاستماع إليها بمفردها أو تكرارها:'            : 'Click the speaker icon next to any paragraph to listen to it individually:'}
+            ? 'يمكنك الضغط على زر 🔊 بجوار أي فقرة للاستماع إليها بمفردها أو تكرارها:'
+            : 'Click the speaker icon next to any paragraph to listen to it individually:'}
         </p>
 
         <div className="stack" style={{ gap: '12px' }}>
@@ -266,7 +269,7 @@ export default function ListenLearn() {
                     onClick={() => playParagraph(idx)}
                     title={lang === 'ar' ? 'استمع لهذه الفقرة' : 'Listen to this paragraph'}
                   >
-                     {isCurrent ? (lang ==='ar'?'جارٍ النطق...':'Playing...') : (lang ==='ar'?'استمع':'Listen')}
+                    🔊 {isCurrent ? (lang === 'ar' ? 'جارٍ النطق...' : 'Playing...') : (lang === 'ar' ? 'استمع' : 'Listen')}
                   </button>
                 </div>
               </div>

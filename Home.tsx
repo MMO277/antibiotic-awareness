@@ -1,5 +1,6 @@
 import { SmartPersonaSwitcher, GlobalSpotlightModal, PersonaType } from './SmartPersonaAndSpotlight';
 import SmartDoseAlarmCard from './SmartDoseAlarmCard';
+import { PublicPartnerPlacementSection } from './PartnersDirectory';
 import { CSSProperties, FormEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -9,7 +10,6 @@ import Disclaimer from './Disclaimer';
 import DidYouKnow from './DidYouKnow';
 import ResistanceCounter from './ResistanceCounter';
 import EgyptResistanceMap from './EgyptResistanceMap';
-import { PublicPartnerPlacementSection } from './PartnersDirectory';
 import {
   ACTIVE_INGREDIENTS,
   EGYPTIAN_COMMERCIAL_PRODUCTS,
@@ -477,7 +477,8 @@ export default function Home() {
       <section className="pro-hero">
         <div className="wrap pro-hero-inner">
           <div className="pro-hero-badge">
-                        <span>
+            <span>💊</span>
+            <span>
               {tr(
                 lang,
                 'منصة الوعي بالمضادات الحيوية',
@@ -502,7 +503,7 @@ export default function Home() {
             <div className="pro-art-orbit pro-art-orbit-one" />
             <div className="pro-art-orbit pro-art-orbit-two" />
             <div className="pro-art-cross">＋</div>
-            <div className="pro-art-shield"><i /></div>
+            <div className="pro-art-shield"><span>✚</span><i /></div>
             <div className="pro-art-pill"><span /><span /></div>
             <div className="pro-art-mini-card pro-art-card-top">
               <b>✓</b>
@@ -514,80 +515,22 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Search Bar with Instant Live Autocomplete Dropdown */}
-          <div className="pro-search-wrap" style={{ position: 'relative', maxWidth: '850px', marginInline: 'auto', width: '100%' }}>
-            <form className="pro-search-box" onSubmit={go} role="search">
-                            <input
-                value={q}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setTimeout(() => setFocused(false), 200)}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder={tr(
-                  lang,
-                  'ابحث باسم الدواء (أوجمنتين، فلاجيل، زيثروماكس...) أو المادة الفعالة أو الباركود (622...)...',
-                  'Search by drug name (Augmentin, Flagyl...), active ingredient, or barcode (622...)...',
-                  'Rechercher par médicament (Augmentin, Flagyl…), principe actif (Amoxicillin…) ou code-barres (622…)…',
-                  'Buscar por medicamento (Augmentin, Flagyl…), principio activo (Amoxicillin…) o código de barras (622…)…'
-                )}
-                aria-label={t('search')}
-              />
-              <button type="submit" className="btn pro-search-btn">
-                {t('search')}
-              </button>
-            </form>
-
-            {focused && quickMatches.length > 0 && (
-              <div className="pro-autocomplete-dropdown">
-                <div className="small muted" style={{ padding: '6px 12px', borderBottom: '1px solid var(--line)' }}>
-                  {tr(
-                    lang,
-                    'نتائج فورية من السجل الدوائي المصري:',
-                    'Instant matches from Egyptian Registry:',
-                    'Résultats immédiats du registre pharmaceutique :',
-                    'Resultados instantáneos del registro farmacéutico:'
-                  )}
-                </div>
-                {quickMatches.map((item) => (
-                  <Link
-                    key={item.productId}
-                    to={`/medicine/${item.activeIngredientId}`}
-                    className="pro-autocomplete-item"
-                  >
-                    <div>
-                      <b>{isAr ? item.tradeNameAr : item.tradeNameEn}</b>{' '}
-                      <span className="small muted">({item.strength} - {pick(item.dosageFormLabel, lang)})</span>
-                      <div className="small muted">{item.scientificComposition} · {item.manufacturer}</div>
-                    </div>
-                    <div style={{ textAlign: 'end' }}>
-                      {item.priceEgp && (
-                        <span className="badge approved" style={{ display: 'block', marginBottom: '2px' }}>
-                          {item.priceEgp.toFixed(2)} {isAr ? 'ج.م' : 'EGP'}
-                        </span>
-                      )}
-                      {item.barcode && <code style={{ fontSize: '0.75rem' }}>{item.barcode}</code>}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Hero Quick CTA Pills */}
           <div className="pro-hero-actions">
             <Link to="/games" className="pro-cta-btn primary-cta" style={{ background: '#0e9aa7', color: '#ffffff' }}>
-               {tr(lang,'مركز الألعاب ومحاكي المستشفى 3D','Game Center & 3D Simulator','Centre de Jeux & Simulateur 3D','Centro de Juegos y Simulador 3D')}
+              🎮 {tr(lang, 'مركز الألعاب ومحاكي المستشفى 3D', 'Game Center & 3D Simulator', 'Centre de Jeux & Simulateur 3D', 'Centro de Juegos y Simulador 3D')}
             </Link>
             <Link to="/green-prescription" className="pro-cta-btn primary-cta" style={{ background: '#10b981', color: '#052e16' }}>
-               {tr(lang,'الروشتة الخضرا الذكية','Green Prescription','Ordonnance Verte','Receta Verde')}
+              🌿 {tr(lang, 'الروشتة الخضرا الذكية', 'Green Prescription', 'Ordonnance Verte', 'Receta Verde')}
             </Link>
             <Link to="/medicines" className="pro-cta-btn secondary-cta">
-               {tr(lang,'تصفح الـ 206 مستحضرات والبدائل','Browse 206 Egyptian Packages','Parcourir les 206 Médicaments','Explorar 206 Medicamentos')}
+              💊 {tr(lang, 'تصفح الـ 206 مستحضرات والبدائل', 'Browse 206 Egyptian Packages', 'Parcourir les 206 Médicaments', 'Explorar 206 Medicamentos')}
             </Link>
             <Link to="/allergy-checker" className="pro-cta-btn secondary-cta">
-               {tr(lang,'فاحص الحساسية الدوائية','Allergy Safety Checker','Vérificateur d’Allergies','Verificador de Alergias')}
+              🛡️ {tr(lang, 'فاحص الحساسية الدوائية', 'Allergy Safety Checker', 'Vérificateur d’Allergies', 'Verificador de Alergias')}
             </Link>
             <Link to="/pediatric-helper" className="pro-cta-btn secondary-cta">
-               {tr(lang,'حاسبة جرعات الأطفال','Pediatric Dosing','Posologie Pédiatrique','Dosis Pediátrica')}
+              👶 {tr(lang, 'حاسبة جرعات الأطفال', 'Pediatric Dosing', 'Posologie Pédiatrique', 'Dosis Pediátrica')}
             </Link>
           </div>
 
@@ -626,7 +569,7 @@ export default function Home() {
           <div className="head pro-section-heading" style={{ marginBottom: '14px' }}>
             <div>
               <h2 style={{ fontSize: '1.45rem', marginBottom: '4px' }}>
-                 {tr(lang,'منظومة الأدوات السريرية والتمريضية الذكية','Smart Clinical & Nursing Stewardship Suite','Suite Clinique & Outils de Bon Usage des Antibiotiques','Suite Clínica de Uso Prudente y Seguridad del Paciente')}
+                🏥 {tr(lang, 'منظومة الأدوات السريرية والتمريضية الذكية', 'Smart Clinical & Nursing Stewardship Suite', 'Suite Clinique & Outils de Bon Usage des Antibiotiques', 'Suite Clínica de Uso Prudente y Seguridad del Paciente')}
               </h2>
               <p className="muted small" style={{ margin: 0 }}>
                 {tr(
@@ -683,9 +626,13 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Interactive Egypt Antibiotic Resistance Map Infographic */}
+        {/* Idea 4: Live Smart Dose Alarm & Spoken Voice Reminder */}
+        <SmartDoseAlarmCard />
+
+        {/* Dynamic Partner Placement on Homepage */}
         <PublicPartnerPlacementSection placement="homepage_featured" />
 
+        {/* Interactive Egypt Antibiotic Resistance Map Infographic */}
         <EgyptResistanceMap />
 
         {/* Quick Access to Most Prescribed Antibiotics in Egypt */}
@@ -693,7 +640,7 @@ export default function Home() {
           <div className="head" style={{ marginBottom: '12px' }}>
             <div>
               <h2 style={{ margin: 0 }}>
-                 {tr(lang,'أشهر المضادات الحيوية تداولاً في الصيدليات المصرية','Most Prescribed Antibiotics in Egyptian Pharmacies','Antibiotiques les Plus Prescrits (Référentiel Officiel)','Antibióticos Más Recetados (Referencia Oficial)')}
+                🇪🇬 {tr(lang, 'أشهر المضادات الحيوية تداولاً في الصيدليات المصرية', 'Most Prescribed Antibiotics in Egyptian Pharmacies', 'Antibiotiques les Plus Prescrits (Référentiel Officiel)', 'Antibióticos Más Recetados (Referencia Oficial)')}
               </h2>
               <p className="small muted" style={{ margin: '4px 0 0' }}>
                 {tr(
@@ -728,13 +675,10 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Idea 4: Live Smart Dose Alarm & Spoken Voice Reminder */}
-        <SmartDoseAlarmCard />
-
         {/* WHO AWaRe Classification Banner */}
         <section className="card">
           <h2>
-             
+            🌍{' '}
             {tr(
               lang,
               'تصنيف منظمة الصحة العالمية للمضادات الحيوية (WHO AWaRe Classification)',
@@ -755,7 +699,7 @@ export default function Home() {
           <div className="grid" style={{ marginTop: '12px' }}>
             <div className="card" style={{ borderTop: '4px solid #16a34a', background: 'var(--bg-subtle, #f0fdf4)' }}>
               <h3 style={{ color: '#15803d', margin: '0 0 6px' }}>
-                 Access ({tr(lang,'فئة الإتاحة الأساسية','First/Second Line','Accès prioritaire / 1re intention','Acceso / Primera línea')})
+                🟢 Access ({tr(lang, 'فئة الإتاحة الأساسية', 'First/Second Line', 'Accès prioritaire / 1re intention', 'Acceso / Primera línea')})
               </h3>
               <p className="small" style={{ margin: 0 }}>
                 {tr(
@@ -769,7 +713,7 @@ export default function Home() {
             </div>
             <div className="card" style={{ borderTop: '4px solid #d97706', background: 'var(--bg-subtle, #fffbeb)' }}>
               <h3 style={{ color: '#b45309', margin: '0 0 6px' }}>
-                 Watch ({tr(lang,'فئة المراقبة والحذر','Stewardship Watch','Surveillance / Vigilance','Vigilancia / Uso controlado')})
+                🟡 Watch ({tr(lang, 'فئة المراقبة والحذر', 'Stewardship Watch', 'Surveillance / Vigilance', 'Vigilancia / Uso controlado')})
               </h3>
               <p className="small" style={{ margin: 0 }}>
                 {tr(
@@ -783,7 +727,7 @@ export default function Home() {
             </div>
             <div className="card" style={{ borderTop: '4px solid #dc2626', background: 'var(--bg-subtle, #fef2f2)' }}>
               <h3 style={{ color: '#b91c1c', margin: '0 0 6px' }}>
-                 Reserve ({tr(lang,'فئة الملاذ الأخير المقيدة','Last-Resort Reserve','Réserve / Dernier recours','Reserva / Último recurso')})
+                🔴 Reserve ({tr(lang, 'فئة الملاذ الأخير المقيدة', 'Last-Resort Reserve', 'Réserve / Dernier recours', 'Reserva / Último recurso')})
               </h3>
               <p className="small" style={{ margin: 0 }}>
                 {tr(
@@ -836,7 +780,7 @@ export default function Home() {
           <section className="card quizcta">
             <div>
               <h2>
-                 
+                🎧{' '}
                 {tr(
                   lang,
                   'استمع وتعلّم (التثقيف الصوتي)',

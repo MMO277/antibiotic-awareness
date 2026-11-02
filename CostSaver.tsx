@@ -13,7 +13,6 @@ import Disclaimer from './Disclaimer';
 import { useAuth } from './authContext';
 import { useLiveDrugCatalog } from './liveCatalogSync';
 import { QuickProductEditorModal } from './CommercialCatalogEditor';
-import FindMedicationPanel from './FindMedicationPanel';
 
 const POPULAR_BRAND_IDS = [
   'EG-ABX-001', // Augmentin 1g
@@ -113,7 +112,7 @@ export default function CostSaver() {
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '14px' }}>
           <div>
             <span className="badge" style={{ background: '#dcfce7', color: '#166534', fontWeight: 700, marginBottom: '8px' }}>
-               {tr(lang,'مبادرة التوفير الدوائي وتجاوز النواقص • مرخصة من هيئة الدواء المصرية','Smart Generic Cost Saver & Shortage Solver • EDA Licensed')}
+              💰 {tr(lang, 'مبادرة التوفير الدوائي وتجاوز النواقص • مرخصة من هيئة الدواء المصرية', 'Smart Generic Cost Saver & Shortage Solver • EDA Licensed')}
             </span>
             <h1 style={{ margin: '4px 0 8px' }}>
               {tr(
@@ -136,10 +135,10 @@ export default function CostSaver() {
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <Link to="/medicines" className="btn ghost small">
-               {tr(lang,'السجل الدوائي الكامل','Full Drug Registry')}
+              💊 {tr(lang, 'السجل الدوائي الكامل', 'Full Drug Registry')}
             </Link>
             <Link to="/compare" className="btn ghost small">
-               {tr(lang,'مقارنة دواءين','Compare 2 Drugs')}
+              ⚖️ {tr(lang, 'مقارنة دواءين', 'Compare 2 Drugs')}
             </Link>
           </div>
         </div>
@@ -148,7 +147,7 @@ export default function CostSaver() {
         <div className="cost-saver-controls">
           <div className="cost-search-col" style={{ position: 'relative' }}>
             <label htmlFor="cost-saver-search-input" className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-               {tr(lang,'ابحث بالاسم التجاري أو المادة الفعالة أو الباركود:','Search by trade name, active ingredient, or barcode:')}
+              🔍 {tr(lang, 'ابحث بالاسم التجاري أو المادة الفعالة أو الباركود:', 'Search by trade name, active ingredient, or barcode:')}
             </label>
             <input
               id="cost-saver-search-input"
@@ -192,7 +191,7 @@ export default function CostSaver() {
 
           <div className="cost-pack-col">
             <label htmlFor="cost-pack-select" className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-               {tr(lang,'عدد العبوات المطلوبة للكورس:','Number of packs needed:')}
+              📦 {tr(lang, 'عدد العبوات المطلوبة للكورس:', 'Number of packs needed:')}
             </label>
             <select
               id="cost-pack-select"
@@ -211,7 +210,7 @@ export default function CostSaver() {
         {/* Quick Picks Bar */}
         <div style={{ marginTop: '12px' }}>
           <span className="small muted" style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-             {tr(lang,'اختر سريعاً من أشهر الأدوية المرتفعة السعر لمقارنة بدائلها:','Quick-pick popular high-cost brand medications:')}
+            ⚡ {tr(lang, 'اختر سريعاً من أشهر الأدوية المرتفعة السعر لمقارنة بدائلها:', 'Quick-pick popular high-cost brand medications:')}
           </span>
           <div className="row wrapRow" style={{ gap: '6px' }}>
             {popularShortcuts.map((item) => {
@@ -223,7 +222,7 @@ export default function CostSaver() {
                   onClick={() => setSelectedProduct(item)}
                   className={`chip cost-quick-chip${active ? ' active' : ''}`}
                 >
-                  <span> {isAr ? item.tradeNameAr : item.tradeNameEn}</span>
+                  <span>💊 {isAr ? item.tradeNameAr : item.tradeNameEn}</span>
                   {item.priceEgp && (
                     <small style={{ opacity: 0.85 }}>({item.priceEgp} {isAr ? 'ج.م' : 'EGP'})</small>
                   )}
@@ -240,7 +239,7 @@ export default function CostSaver() {
         <section className="card cost-card-prescribed">
           <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
             <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}>
-               {tr(lang,'الدواء المختار / الموصوف','Selected / Prescribed Brand')}
+              📋 {tr(lang, 'الدواء المختار / الموصوف', 'Selected / Prescribed Brand')}
             </span>
             <span className="small muted">{selectedProduct.manufacturer} ({selectedProduct.countryOfOrigin})</span>
           </div>
@@ -268,7 +267,7 @@ export default function CostSaver() {
             )}
           </div>
           <div className="small muted" style={{ marginTop: '8px' }}>
-             {pick(selectedProduct.packDetails, lang)} · {pick(selectedProduct.unitPriceNote, lang)}
+            📦 {pick(selectedProduct.packDetails, lang)} · {pick(selectedProduct.unitPriceNote, lang)}
           </div>
         </section>
 
@@ -278,7 +277,7 @@ export default function CostSaver() {
             <>
               <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                 <span className="badge" style={{ background: '#dcfce7', color: '#15803d', fontWeight: 800 }}>
-                   {tr(lang,`المثيل المتطابق الأوفر (توفير ${savingPercent}%)`,`Cheapest Exact Equivalent (Save ${savingPercent}%)`)}
+                  ✅ {tr(lang, `المثيل المتطابق الأوفر (توفير ${savingPercent}%)`, `Cheapest Exact Equivalent (Save ${savingPercent}%)`)}
                 </span>
                 <span className="small muted">{cheapestIdentical.manufacturer} ({cheapestIdentical.countryOfOrigin})</span>
               </div>
@@ -297,20 +296,20 @@ export default function CostSaver() {
                   </strong>
                 </div>
                 <div className="cost-saving-pill">
-                  <span> {tr(lang,'إجمالي التوفير المباشر:','Total Direct Savings:')}</span>
+                  <span>🎉 {tr(lang, 'إجمالي التوفير المباشر:', 'Total Direct Savings:')}</span>
                   <strong>
                     {totalSavings.toFixed(2)} {isAr ? 'ج.م' : 'EGP'} ({savingPercent}%)
                   </strong>
                 </div>
               </div>
               <div className="small muted" style={{ marginTop: '8px' }}>
-                 {pick(cheapestIdentical.packDetails, lang)} · {pick(cheapestIdentical.unitPriceNote, lang)}
+                📦 {pick(cheapestIdentical.packDetails, lang)} · {pick(cheapestIdentical.unitPriceNote, lang)}
               </div>
             </>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', height: '100%', gap: '8px' }}>
               <span className="badge" style={{ background: '#dcfce7', color: '#15803d', fontWeight: 800, alignSelf: 'flex-start' }}>
-                 {tr(lang,'أنت بالفعل على الاختيار الأوفر سعراً!','Already the Most Cost-Effective Option!')}
+                🏆 {tr(lang, 'أنت بالفعل على الاختيار الأوفر سعراً!', 'Already the Most Cost-Effective Option!')}
               </span>
               <h3 style={{ margin: '4px 0', color: '#15803d' }}>
                 {tr(
@@ -336,7 +335,7 @@ export default function CostSaver() {
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
           <div>
             <h2 style={{ margin: 0 }}>
-               
+              🎯{' '}
               {tr(
                 lang,
                 `جميع المثائل المتطابقة 100% في المادة الفعالة والتركيز (${equivalenceGroupAll.length} مستحضرات)`,
@@ -353,7 +352,7 @@ export default function CostSaver() {
           </div>
           {currentIng && (
             <Link to={`/medicine/${currentIng.id}`} className="btn ghost small">
-               {tr(lang,'النشرة السريرية الكاملة للمادة ←','Full Clinical Monograph →')}
+              📖 {tr(lang, 'النشرة السريرية الكاملة للمادة ←', 'Full Clinical Monograph →')}
             </Link>
           )}
         </div>
@@ -386,7 +385,7 @@ export default function CostSaver() {
                     <td>
                       {idx === 0 ? (
                         <span className="badge" style={{ background: '#dcfce7', color: '#166534', fontWeight: 800 }}>
-                           {tr(lang,'الأوفر سعراً','Cheapest')}
+                          🥇 {tr(lang, 'الأوفر سعراً', 'Cheapest')}
                         </span>
                       ) : (
                         <span className="small muted">#{idx + 1}</span>
@@ -442,7 +441,7 @@ export default function CostSaver() {
       {alternatives.sameIngredientDifferentFormOrStrength.length > 0 && (
         <section className="card">
           <h2 style={{ margin: '0 0 6px' }}>
-             
+            🔄{' '}
             {tr(
               lang,
               `نفس المادة الفعالة بتركيزات أو أشكال صيدلانية أخرى (${alternatives.sameIngredientDifferentFormOrStrength.length} عبوة - لحل مشكلة النواقص)`,
@@ -452,8 +451,9 @@ export default function CostSaver() {
           <p className="small muted" style={{ margin: '0 0 10px' }}>
             {tr(
               lang,
-              'تنبيه صيدلاني: هذه العبوات تحتوي على نفس المادة الفعالة ولكن بتركيز أو شكل دوائي مختلف؛ استشر الطبيب أو الصيدلي لضبط الجرعة قبل الاستبدال:',
-              'Pharmacist Note: These packages contain the exact same active ingredient but differ in strength or dosage form; verify dose conversion with your pharmacist:'            )}
+              '⚠️ تنبيه صيدلاني: هذه العبوات تحتوي على نفس المادة الفعالة ولكن بتركيز أو شكل دوائي مختلف؛ استشر الطبيب أو الصيدلي لضبط الجرعة قبل الاستبدال:',
+              '⚠️ Pharmacist Note: These packages contain the exact same active ingredient but differ in strength or dosage form; verify dose conversion with your pharmacist:'
+            )}
           </p>
           <div className="tablewrap">
             <table className="tbl">
@@ -503,16 +503,14 @@ export default function CostSaver() {
         </section>
       )}
 
-      <FindMedicationPanel activeIngredientId={selectedProduct.activeIngredientId} initialProductId={selectedProduct.productId} />
-
       {/* Educational Card: Difference between Exact Generic vs Therapeutic Alternative */}
       <section className="card" style={{ borderInlineStart: '4px solid #0e9aa7' }}>
         <h3 style={{ margin: '0 0 8px' }}>
-           {tr(lang,'كيف تفرق بين «المثيل المتطابق» و«البديل العلاجي» في الصيدلية المصرية؟','Understanding Exact Generics vs. Therapeutic Alternatives')}
+          💡 {tr(lang, 'كيف تفرق بين «المثيل المتطابق» و«البديل العلاجي» في الصيدلية المصرية؟', 'Understanding Exact Generics vs. Therapeutic Alternatives')}
         </h3>
         <div className="grid" style={{ gap: '12px' }}>
           <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--tint)' }}>
-            <b> {tr(lang,'1. المثيل الدوائي المتطابق (Generic Equivalent):','1. Exact Generic Equivalent:')}</b>
+            <b>✅ {tr(lang, '1. المثيل الدوائي المتطابق (Generic Equivalent):', '1. Exact Generic Equivalent:')}</b>
             <p className="small" style={{ margin: '6px 0 0' }}>
               {tr(
                 lang,
@@ -522,7 +520,7 @@ export default function CostSaver() {
             </p>
           </div>
           <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--tint)' }}>
-            <b> {tr(lang,'2. البديل العلاجي (Therapeutic Alternative):','2. Therapeutic Alternative:')}</b>
+            <b>⚠️ {tr(lang, '2. البديل العلاجي (Therapeutic Alternative):', '2. Therapeutic Alternative:')}</b>
             <p className="small" style={{ margin: '6px 0 0' }}>
               {tr(
                 lang,
@@ -537,9 +535,9 @@ export default function CostSaver() {
       {canEditLive && (
         <div className="card" style={{ border: '2px dashed #0284c7', background: 'var(--tint)' }}>
           <div className="head" style={{ flexWrap: 'wrap', gap: '8px' }}>
-            <b> {tr(lang,'وضع المحرر/الأدمن: تعديل بيانات وسعر الدواء المختار حالياً','Editor Mode: Edit Selected Commercial Product')}</b>
+            <b>🛠️ {tr(lang, 'وضع المحرر/الأدمن: تعديل بيانات وسعر الدواء المختار حالياً', 'Editor Mode: Edit Selected Commercial Product')}</b>
             <button type="button" className="btn small" onClick={() => setEditingProd(selectedProduct)}>
-               {tr(lang,`تعديل ${selectedProduct.tradeNameAr}`,`Edit ${selectedProduct.tradeNameEn}`)}
+              ✏️ {tr(lang, `تعديل ${selectedProduct.tradeNameAr}`, `Edit ${selectedProduct.tradeNameEn}`)}
             </button>
           </div>
         </div>

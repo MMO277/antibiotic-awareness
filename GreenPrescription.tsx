@@ -95,7 +95,9 @@ export default function GreenPrescription() {
     if (!triageState.redFlagsAnswered || !triageState.highRiskAnswered || !triageState.progression) {
       setValidationMsg(
         isAr
-          ?'لضمان سلامتك، يرجى الإجابة عن جميع أسئلة الفرز الثلاثة قبل عرض التوجيه الصحي (لا يفترض النظام الأمان عند نقص الإجابات).'          :'For your safety, please complete all 3 safety screening questions before viewing guidance.'      );
+          ? '⚠️ لضمان سلامتك، يرجى الإجابة عن جميع أسئلة الفرز الثلاثة قبل عرض التوجيه الصحي (لا يفترض النظام الأمان عند نقص الإجابات).'
+          : '⚠️ For your safety, please complete all 3 safety screening questions before viewing guidance.'
+      );
       return;
     }
     setValidationMsg('');
@@ -131,7 +133,7 @@ export default function GreenPrescription() {
             style={section === 'wizard' ? { background: '#15803d', borderColor: '#15803d' } : {}}
             onClick={() => setSection('wizard')}
           >
-             {isAr ?'الروشتة الخضرا (التقييم الذاتي)':'Green Prescription Tool'}
+            🌿 {isAr ? 'الروشتة الخضرا (التقييم الذاتي)' : 'Green Prescription Tool'}
           </button>
           <button
             type="button"
@@ -139,7 +141,7 @@ export default function GreenPrescription() {
             style={section === 'qr_share' ? { background: '#15803d', borderColor: '#15803d' } : {}}
             onClick={() => setSection('qr_share')}
           >
-             {isAr ?'رمز QR العام للمنصة':'Public QR Code'}
+            📱 {isAr ? 'رمز QR العام للمنصة' : 'Public QR Code'}
           </button>
           <button
             type="button"
@@ -147,7 +149,7 @@ export default function GreenPrescription() {
             style={section === 'privacy_governance' ? { background: '#15803d', borderColor: '#15803d' } : {}}
             onClick={() => setSection('privacy_governance')}
           >
-             {isAr ?'الخصوصية والمصادر':'Privacy & Sources'}
+            🔒 {isAr ? 'الخصوصية والمصادر' : 'Privacy & Sources'}
           </button>
         </div>
       </div>
@@ -163,7 +165,8 @@ export default function GreenPrescription() {
         }}
       >
         <div className="row wrapRow" style={{ gap: '12px', alignItems: 'center' }}>
-                    <div>
+          <span style={{ fontSize: '2.4rem' }}>🌿</span>
+          <div>
             <h1 style={{ color: '#fff', margin: 0, fontSize: '1.65rem' }}>
               {isAr ? 'الروشتة الخضرا الذكية | Green Prescription' : 'Green Prescription | Digital Self-Care Guide'}
             </h1>
@@ -187,7 +190,7 @@ export default function GreenPrescription() {
             lineHeight: 1.65,
           }}
         >
-          <strong>ℹ {isAr ?'تعريف وحدود الخدمة:':'Service Scope & Boundaries:'} </strong>
+          <strong>ℹ️ {isAr ? 'تعريف وحدود الخدمة:' : 'Service Scope & Boundaries:'} </strong>
           {isAr
             ? '«الروشتة الخضرا» هي خطة إرشادية عامة للرعاية الذاتية غير الدوائية وليست وصفة طبية أو أداة تشخيص. لا تصف هذه الأداة أي أدوية، ولا تحدد ما إذا كانت العدوى بكتيرية أو فيروسية، ولا تغني عن استشارة الطبيب أو الصيدلي. لا يتم طلب أو حفظ أي بيانات شخصية أو صحية.'
             : 'The Green Prescription is a general non-pharmacological self-care guide, NOT a medical prescription or diagnostic tool. It does not prescribe medicines or replace a doctor or pharmacist. No personal data is collected or stored.'}
@@ -240,7 +243,7 @@ export default function GreenPrescription() {
           {step === 1 && (
             <section className="card stack" aria-labelledby="step1-heading">
               <h2 id="step1-heading" style={{ color: '#166534' }}>
-                1⃣ {isAr ?'اختر نوع الشكوى أو العرض الحالي:':'Step 1: Select the Current Symptom:'}
+                1️⃣ {isAr ? 'اختر نوع الشكوى أو العرض الحالي:' : 'Step 1: Select the Current Symptom:'}
               </h2>
               <p className="muted small">
                 {isAr
@@ -294,7 +297,7 @@ export default function GreenPrescription() {
                     {currentPlan.icon} {pick(currentPlan.title, lang)}
                   </span>
                   <h2 id="step2-heading" style={{ margin: 0, color: '#166534' }}>
-                    2⃣ {isAr ?'أسئلة فرز السلامة وعلامات الخطر (إلزامية قبل عرض الخطة)':'Step 2: Mandatory Safety & Red-Flag Screening'}
+                    2️⃣ {isAr ? 'أسئلة فرز السلامة وعلامات الخطر (إلزامية قبل عرض الخطة)' : 'Step 2: Mandatory Safety & Red-Flag Screening'}
                   </h2>
                 </div>
                 <button type="button" className="btn ghost small" onClick={() => setStep(1)}>
@@ -305,7 +308,7 @@ export default function GreenPrescription() {
               {/* Question Block A: Red Flags */}
               <fieldset className="card" style={{ border: '2px solid #fecaca', background: 'var(--bg-subtle, #fff)' }}>
                 <legend style={{ color: '#b91c1c', fontWeight: 700 }}>
-                   {isAr ?'أولاً: هل توجد أي علامة من علامات الخطر التالية؟':'A. Are any of the following danger signs (Red Flags) present?'}
+                  🚨 {isAr ? 'أولاً: هل توجد أي علامة من علامات الخطر التالية؟' : 'A. Are any of the following danger signs (Red Flags) present?'}
                 </legend>
                 <div className="stack" style={{ gap: '10px', marginTop: '8px' }}>
                   {RED_FLAG_ITEMS.map((rf) => (
@@ -346,7 +349,7 @@ export default function GreenPrescription() {
                       onChange={handleSelectNoRedFlags}
                     />
                     <span style={{ color: '#15803d' }}>
-                       {isAr ?'لا، لا توجد أي علامة من علامات الخطر السابقة':'No, none of the above danger signs are present'}
+                      ✅ {isAr ? 'لا، لا توجد أي علامة من علامات الخطر السابقة' : 'No, none of the above danger signs are present'}
                     </span>
                   </label>
                 </div>
@@ -355,7 +358,7 @@ export default function GreenPrescription() {
               {/* Question Block B: High-Risk / Special Groups */}
               <fieldset className="card" style={{ border: '1px solid var(--line)' }}>
                 <legend style={{ fontWeight: 700, color: '#0f172a' }}>
-                   {isAr ?'ثانياً: هل ينتمي المريض لأي من الفئات التي تتطلب حذراً طبياً خاصاً؟':'B. Does the patient belong to any high-risk or special care group?'}
+                  👶🤰 {isAr ? 'ثانياً: هل ينتمي المريض لأي من الفئات التي تتطلب حذراً طبياً خاصاً؟' : 'B. Does the patient belong to any high-risk or special care group?'}
                 </legend>
                 <div className="stack" style={{ gap: '10px', marginTop: '8px' }}>
                   {HIGH_RISK_GROUP_ITEMS.map((hr) => (
@@ -396,7 +399,7 @@ export default function GreenPrescription() {
                       onChange={handleSelectNoHighRisks}
                     />
                     <span style={{ color: '#15803d' }}>
-                       {isAr ?'لا، المريض بالغ سليم ولا ينتمي لأي من الفئات السابقة':'No, the user is a healthy adult not in any of the above groups'}
+                      ✅ {isAr ? 'لا، المريض بالغ سليم ولا ينتمي لأي من الفئات السابقة' : 'No, the user is a healthy adult not in any of the above groups'}
                     </span>
                   </label>
                 </div>
@@ -405,7 +408,7 @@ export default function GreenPrescription() {
               {/* Question Block C: Symptom Progression */}
               <fieldset className="card" style={{ border: '1px solid var(--line)' }}>
                 <legend style={{ fontWeight: 700 }}>
-                   {isAr ?'ثالثاً: كيف تصف شدة ومسار الأعراض حالياً؟':'C. How would you describe the severity and progression of symptoms?'}
+                  📈 {isAr ? 'ثالثاً: كيف تصف شدة ومسار الأعراض حالياً؟' : 'C. How would you describe the severity and progression of symptoms?'}
                 </legend>
                 <div className="options">
                   <button
@@ -416,7 +419,7 @@ export default function GreenPrescription() {
                       setValidationMsg('');
                     }}
                   >
-                     {isAr ?'أعراض بسيطة ومستقرة وفي بدايتها':'Mild and stable symptoms'}
+                    🟢 {isAr ? 'أعراض بسيطة ومستقرة وفي بدايتها' : 'Mild and stable symptoms'}
                   </button>
                   <button
                     type="button"
@@ -426,7 +429,7 @@ export default function GreenPrescription() {
                       setValidationMsg('');
                     }}
                   >
-                     {isAr ?'أعراض شديدة، أو تزداد سوءاً، أو مستمرة منذ عدة أيام دون تحسن':'Worsening symptoms or persistent without improvement'}
+                    🟡 {isAr ? 'أعراض شديدة، أو تزداد سوءاً، أو مستمرة منذ عدة أيام دون تحسن' : 'Worsening symptoms or persistent without improvement'}
                   </button>
                   <button
                     type="button"
@@ -436,7 +439,7 @@ export default function GreenPrescription() {
                       setValidationMsg('');
                     }}
                   >
-                     {isAr ?'لست متأكداً من شدة الحالة':'Not sure about symptom severity'}
+                    ❓ {isAr ? 'لست متأكداً من شدة الحالة' : 'Not sure about symptom severity'}
                   </button>
                 </div>
               </fieldset>
@@ -449,7 +452,7 @@ export default function GreenPrescription() {
 
               <div className="row wrapRow" style={{ justifyContent: 'space-between', marginTop: '8px' }}>
                 <button type="button" className="btn ghost" onClick={resetAll}>
-                   {isAr ?'إلغاء والبدء من جديد':'Start Over'}
+                  🔄 {isAr ? 'إلغاء والبدء من جديد' : 'Start Over'}
                 </button>
                 <button
                   type="button"
@@ -470,10 +473,10 @@ export default function GreenPrescription() {
               <div className="row wrapRow no-print" style={{ justifyContent: 'space-between' }}>
                 <div className="row wrapRow" style={{ gap: '8px' }}>
                   <button type="button" className="btn ghost small" onClick={() => setStep(2)}>
-                     {isAr ?'العودة وتعديل الإجابات':'Edit Answers'}
+                    ✏️ {isAr ? 'العودة وتعديل الإجابات' : 'Edit Answers'}
                   </button>
                   <button type="button" className="btn ghost small" onClick={resetAll}>
-                     {isAr ?'ابدأ تقييماً جديداً':'Start New Assessment'}
+                    🔄 {isAr ? 'ابدأ تقييماً جديداً' : 'Start New Assessment'}
                   </button>
                 </div>
                 {triageLevel === 'green_care' && (
@@ -483,7 +486,7 @@ export default function GreenPrescription() {
                     style={{ background: '#15803d', borderColor: '#15803d' }}
                     onClick={() => window.print()}
                   >
-                     {isAr ?'طباعة / حفظ كملف PDF':'Print / Save as PDF'}
+                    🖨️ {isAr ? 'طباعة / حفظ كملف PDF' : 'Print / Save as PDF'}
                   </button>
                 )}
               </div>
@@ -500,7 +503,8 @@ export default function GreenPrescription() {
                   }}
                 >
                   <div className="row" style={{ gap: '12px', alignItems: 'center' }}>
-                                        <div>
+                    <span style={{ fontSize: '2.5rem' }}>🚨</span>
+                    <div>
                       <span className="badge" style={{ background: '#dc2626', color: '#fff', fontWeight: 700 }}>
                         Red Flag — {isAr ? 'توجيه عاجل وطارئ' : 'Urgent Medical Alert'}
                       </span>
@@ -547,7 +551,7 @@ export default function GreenPrescription() {
 
                   <div className="row wrapRow no-print" style={{ gap: '10px' }}>
                     <a href={`tel:${emergency.number}`} className="btn danger" style={{ fontSize: '1.05rem', padding: '12px 24px' }}>
-                       
+                      📞{' '}
                       {tr(
                         lang,
                         `اتصال بخدمات الطوارئ (${countryName}: ${emergency.number})`,
@@ -557,7 +561,7 @@ export default function GreenPrescription() {
                       )}
                     </a>
                     <button type="button" className="btn ghost" onClick={resetAll}>
-                       {isAr ?'ابدأ من جديد':'Start Over'}
+                      🔄 {isAr ? 'ابدأ من جديد' : 'Start Over'}
                     </button>
                   </div>
                 </div>
@@ -576,7 +580,8 @@ export default function GreenPrescription() {
                   }}
                 >
                   <div className="row" style={{ gap: '12px', alignItems: 'center' }}>
-                                        <div>
+                    <span style={{ fontSize: '2.4rem' }}>⚠️</span>
+                    <div>
                       <span className="badge" style={{ background: '#d97706', color: '#fff', fontWeight: 700 }}>
                         Amber Alert — {isAr ? 'توصية بتقييم طبي أو صيدلي' : 'Professional Evaluation Recommended'}
                       </span>
@@ -619,10 +624,10 @@ export default function GreenPrescription() {
 
                   <div className="row wrapRow no-print" style={{ gap: '10px' }}>
                     <button type="button" className="btn ghost" onClick={() => setStep(2)}>
-                       {isAr ?'مراجعة الإجابات':'Review Answers'}
+                      ✏️ {isAr ? 'مراجعة الإجابات' : 'Review Answers'}
                     </button>
                     <button type="button" className="btn" onClick={resetAll}>
-                       {isAr ?'ابدأ من جديد':'Start Over'}
+                      🔄 {isAr ? 'ابدأ من جديد' : 'Start Over'}
                     </button>
                   </div>
                 </div>
@@ -650,7 +655,8 @@ export default function GreenPrescription() {
                     }}
                   >
                     <div className="row" style={{ gap: '12px', alignItems: 'center' }}>
-                                            <div>
+                      <span style={{ fontSize: '2.5rem' }}>🌿</span>
+                      <div>
                         <span
                           className="badge"
                           style={{
@@ -689,7 +695,7 @@ export default function GreenPrescription() {
                       borderInlineStart: '5px solid #15803d',
                     }}
                   >
-                    <strong> {isAr ?'لماذا لا تتضمن هذه الخطة مضاداً حيوياً؟':'Why Does This Plan Not Include an Antibiotic?'} </strong>
+                    <strong>💡 {isAr ? 'لماذا لا تتضمن هذه الخطة مضاداً حيوياً؟' : 'Why Does This Plan Not Include an Antibiotic?'} </strong>
                     {isAr
                       ? 'الأعراض البسيطة كالرشح ونزلات البرد واحتقان الحلق البسيط غالباً ما تتحسن بالرعاية الذاتية الداعمة، وتناول المضادات الحيوية دون وصفة طبية لا يفيد فيها بل يعرضك لآثار جانبية ويزيد من مقاومة البكتيريا للمضادات الحيوية.'
                       : 'Mild symptoms often improve with supportive self-care. Taking unprescribed antibiotics does not help viral illnesses and increases antimicrobial resistance and side effects.'}
@@ -700,7 +706,7 @@ export default function GreenPrescription() {
                     {/* 1. What you can do now */}
                     <div className="card" style={{ borderTop: '4px solid #16a34a', background: '#f8fafc' }}>
                       <h3 style={{ color: '#15803d', margin: '0 0 10px' }}>
-                         {isAr ?'ما الذي يمكنك فعله الآن؟ (رعاية ذاتية آمنة)':'What You Can Do Now (Safe Self-Care)'}
+                        ✅ {isAr ? 'ما الذي يمكنك فعله الآن؟ (رعاية ذاتية آمنة)' : 'What You Can Do Now (Safe Self-Care)'}
                       </h3>
                       <ul style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.8 }}>
                         {currentPlan.whatToDoNow.map((item, idx) => (
@@ -712,7 +718,7 @@ export default function GreenPrescription() {
                     {/* 2. What to avoid */}
                     <div className="card" style={{ borderTop: '4px solid #dc2626', background: '#f8fafc' }}>
                       <h3 style={{ color: '#b91c1c', margin: '0 0 10px' }}>
-                         {isAr ?'ما الذي ينبغي تجنبه؟':'What You Should Avoid'}
+                        🚫 {isAr ? 'ما الذي ينبغي تجنبه؟' : 'What You Should Avoid'}
                       </h3>
                       <ul style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.8 }}>
                         {currentPlan.whatToAvoid.map((item, idx) => (
@@ -725,7 +731,7 @@ export default function GreenPrescription() {
                   {/* 3. When to seek medical help */}
                   <div className="card" style={{ borderLeft: '4px solid #d97706', background: '#fffbeb' }}>
                     <h3 style={{ color: '#92400e', margin: '0 0 8px' }}>
-                       {isAr ?'متى يجب عليك طلب المساعدة الطبية فوراً؟':'When to Seek Medical Attention'}
+                      🏥 {isAr ? 'متى يجب عليك طلب المساعدة الطبية فوراً؟' : 'When to Seek Medical Attention'}
                     </h3>
                     <ul style={{ margin: 0, paddingInlineStart: '20px', lineHeight: 1.8, color: '#78350f' }}>
                       {currentPlan.whenToSeekHelp.map((item, idx) => (
@@ -737,7 +743,7 @@ export default function GreenPrescription() {
                   {/* 4. If symptoms worsen */}
                   <div className="card" style={{ background: '#f1f5f9' }}>
                     <h4 style={{ margin: '0 0 4px' }}>
-                       {isAr ?'إذا ساءت الأعراض أو لم تتحسن:':'If Symptoms Worsen or Do Not Improve:'}
+                      🔄 {isAr ? 'إذا ساءت الأعراض أو لم تتحسن:' : 'If Symptoms Worsen or Do Not Improve:'}
                     </h4>
                     <p style={{ margin: 0 }}>{pick(currentPlan.ifSymptomsWorsen, lang)}</p>
                   </div>
@@ -752,7 +758,7 @@ export default function GreenPrescription() {
                     }}
                   >
                     <div>
-                      <b> {isAr ?'إخلاء مسؤولية طبي:':'Medical Disclaimer:'} </b>
+                      <b>⚠️ {isAr ? 'إخلاء مسؤولية طبي:' : 'Medical Disclaimer:'} </b>
                       {isAr
                         ? 'هذه المعلومات إرشادية وتثقيفية عامة فقط، ولا تمثل تشخيصاً طبياً أو وصفة علاجية، ولا تغني عن تقييم الطبيب أو الصيدلي.'
                         : 'This information is for general educational purposes only and does not constitute a medical diagnosis or prescription.'}
@@ -774,7 +780,7 @@ export default function GreenPrescription() {
       {/* SECTION 2: STATIC PUBLIC QR CODE & SHARING */}
       {section === 'qr_share' && (
         <section className="card stack">
-          <h2> {isAr ?'رمز QR العام والثابت لميزة «الروشتة الخضرا الذكية»':'Static Public QR Code for Green Prescription'}</h2>
+          <h2>📱 {isAr ? 'رمز QR العام والثابت لميزة «الروشتة الخضرا الذكية»' : 'Static Public QR Code for Green Prescription'}</h2>
           <p className="muted small">
             {isAr
               ? 'يشير رمز QR التالي إلى الرابط العام الثابت للميزة ولا يتضمن أي بيانات مريض أو أعراض شخصية على الإطلاق. يمكن طباعته في العيادات أو الصيدليات ليمسحه المستخدم بهاتفه.'
@@ -838,17 +844,20 @@ export default function GreenPrescription() {
               >
                 {copiedLink
                   ? isAr
-                    ?'تم نسخ الرابط بنجاح!'                    :'Link Copied!'                  : isAr
-                  ?'نسخ رابط الميزة'                  :'Copy Feature Link'}
+                    ? '✅ تم نسخ الرابط بنجاح!'
+                    : '✅ Link Copied!'
+                  : isAr
+                  ? '📋 نسخ رابط الميزة'
+                  : '📋 Copy Feature Link'}
               </button>
               <button type="button" className="btn ghost" onClick={() => window.print()}>
-                 {isAr ?'طباعة ملصق QR':'Print QR Poster'}
+                🖨️ {isAr ? 'طباعة ملصق QR' : 'Print QR Poster'}
               </button>
             </div>
           </div>
 
           <div className="notice">
-            <strong> {isAr ?'ملاحظة تقنية هامة:':'Technical Note:'} </strong>
+            <strong>📌 {isAr ? 'ملاحظة تقنية هامة:' : 'Technical Note:'} </strong>
             {isAr
               ? 'يعمل رمز QR على الهواتف والأجهزة الأخرى فور نشر الموقع على الرابط العام (GitHub Pages: https://mmo277.github.io/antibiotic-awareness/#/green-prescription). إذا كنت تشغل الموقع محلياً على جهازك فقط (localhost)، فلن يفتح الرمز على أجهزة خارجية إلا بعد رفعه على الرابط العام.'
               : 'The QR code works across external mobile devices once deployed to your public GitHub Pages URL.'}
@@ -859,7 +868,7 @@ export default function GreenPrescription() {
       {/* SECTION 3: PRIVACY & CLINICAL GOVERNANCE */}
       {section === 'privacy_governance' && (
         <section className="card stack">
-          <h2> {isAr ?'سياسة الخصوصية وحوكمة المراجعة الطبية':'Privacy Policy & Clinical Content Governance'}</h2>
+          <h2>🔒 {isAr ? 'سياسة الخصوصية وحوكمة المراجعة الطبية' : 'Privacy Policy & Clinical Content Governance'}</h2>
 
           <div className="card" style={{ borderLeft: '4px solid #15803d' }}>
             <h3 style={{ margin: '0 0 6px' }}>

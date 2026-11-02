@@ -202,7 +202,8 @@ export default function ChatWidget() {
               `Emergencias SOS (${countryName}: ${emergency.number})`
             )}
           >
-                        <span className="fab-label">
+            <span className="fab-icon">🚨</span>
+            <span className="fab-label">
               {tr(
                 lang,
                 `طوارئ ${emergency.number}`,
@@ -219,7 +220,8 @@ export default function ChatWidget() {
             className="scan-fab"
             aria-label={isAr ? 'مسح باركود العلبة بالكاميرا' : 'Scan Box Barcode'}
           >
-                        <span className="fab-label">{isAr ? 'مسح باركود العلبة بالكاميرا' : 'Scan Box Barcode'}</span>
+            <span className="fab-icon">📷</span>
+            <span className="fab-label">{isAr ? 'مسح باركود العلبة بالكاميرا' : 'Scan Box Barcode'}</span>
           </Link>
 
           <button
@@ -231,7 +233,8 @@ export default function ChatWidget() {
             }}
             aria-label={isAr ? 'افتح المساعد الذكي' : 'Open Smart Assistant'}
           >
-                        <span className="fab-label">{isAr ? 'المساعد الذكي' : 'AI Assistant'}</span>
+            <span className="fab-icon">🤖</span>
+            <span className="fab-label">{isAr ? 'المساعد الذكي' : 'AI Assistant'}</span>
             <span className="fab-badge"></span>
           </button>
         </div>
@@ -241,7 +244,8 @@ export default function ChatWidget() {
         <div className="chat-popup sos-popup" role="dialog" aria-modal="true">
           <div className="popup-head sos-head">
             <div className="popup-title">
-                            <div>
+              <span className="head-avatar">🚨</span>
+              <div>
                 <b>{isAr ? 'طوارئ الحساسية الدوائية والإسعاف' : 'Drug Allergy & Emergency SOS'}</b>
                 <div className="online-status">
                   <small>{isAr ? 'توجيهات الإسعاف العاجل' : 'Urgent Emergency Protocol'}</small>
@@ -254,13 +258,13 @@ export default function ChatWidget() {
               onClick={() => setSosOpen(false)}
               aria-label="Close SOS"
             >
-              
+              ✕
             </button>
           </div>
 
           <div className="popup-body stack" style={{ padding: '16px' }}>
             <div className="alert urgent" style={{ margin: 0 }}>
-              <strong> {isAr ?'أعراض الصدمة التحسسية الطارئة (Anaphylaxis):':'Emergency Anaphylaxis Signs:'}</strong>
+              <strong>⚠️ {isAr ? 'أعراض الصدمة التحسسية الطارئة (Anaphylaxis):' : 'Emergency Anaphylaxis Signs:'}</strong>
               <ul style={{ margin: '6px 0 0', paddingInlineStart: '18px', fontSize: '0.9rem' }}>
                 <li>{isAr ? 'تورم مفاجئ في الوجه أو الشفتين أو اللسان أو الحلق.' : 'Sudden swelling of face, lips, tongue, or throat.'}</li>
                 <li>{isAr ? 'ضيق شديد في التنفس أو صفير بالصدر أو صعوبة البلع.' : 'Difficulty breathing, wheezing, or trouble swallowing.'}</li>
@@ -311,7 +315,7 @@ export default function ChatWidget() {
                 }}
               >
                 <option value="AUTO">
-                   {tr(lang,'تحديد تلقائي للموقع','Auto-detect location','Détection auto','Detección automática')}
+                  📍 {tr(lang, 'تحديد تلقائي للموقع', 'Auto-detect location', 'Détection auto', 'Detección automática')}
                 </option>
                 {countriesList.map((c) => (
                   <option key={c.code} value={c.code}>
@@ -333,7 +337,7 @@ export default function ChatWidget() {
                 padding: '12px',
               }}
             >
-               
+              📞{' '}
               {tr(
                 lang,
                 `اتصال فوري بالطوارئ — ${countryName} (${emergency.number})`,
@@ -349,7 +353,7 @@ export default function ChatWidget() {
               onClick={() => setSosOpen(false)}
               style={{ textAlign: 'center' }}
             >
-               {isAr ?'فتح دليل الآثار الجانبية وخطوات الإسعاف الكاملة':'Open Full Side Effects & First-Aid Guide'}
+              📋 {isAr ? 'فتح دليل الآثار الجانبية وخطوات الإسعاف الكاملة' : 'Open Full Side Effects & First-Aid Guide'}
             </Link>
           </div>
         </div>
@@ -359,11 +363,12 @@ export default function ChatWidget() {
         <div className="chat-popup" role="dialog" aria-modal="true">
           <div className="popup-head">
             <div className="popup-title">
-                            <div>
+              <span className="head-avatar">🤖</span>
+              <div>
                 <b>{isAr ? 'المساعد الصوتي والذكي' : 'Voice & AI Assistant'}</b>
                 <div className="online-status">
                   <span className="status-dot"></span>
-                  <small>{isAr ?'يدعم التحدث بالمايك':'Supports Voice Mic'}</small>
+                  <small>{isAr ? 'يدعم التحدث بالمايك 🎤' : 'Supports Voice Mic 🎤'}</small>
                 </div>
               </div>
             </div>
@@ -383,7 +388,7 @@ export default function ChatWidget() {
                 }}
                 aria-label="Close chat"
               >
-                
+                ✕
               </button>
             </div>
           </div>
@@ -392,7 +397,8 @@ export default function ChatWidget() {
             {msgs.length === 0 && (
               <div className="msg bot">
                 {isAr
-                  ?'أهلاً بك! اضغط على للتحدث بصوتك مباشرة، أو اكتب سؤالك عن أي مضاد حيوي أو أسعاره أو بدائله.'                  :'Hello! Tap to speak your question out loud, or type your question about any antibiotic.'}
+                  ? 'أهلاً بك! اضغط على 🎤 للتحدث بصوتك مباشرة، أو اكتب سؤالك عن أي مضاد حيوي أو أسعاره أو بدائله.'
+                  : 'Hello! Tap 🎤 to speak your question out loud, or type your question about any antibiotic.'}
               </div>
             )}
             {msgs.map((m, i) => {
@@ -404,9 +410,9 @@ export default function ChatWidget() {
                 return (
                   <div key={i} className="msg bot ai-reply">
                     <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                      <div className="ai-badge"> {isAr ?'إجابة طبية منظمة':'Structured Answer'}</div>
+                      <div className="ai-badge">✨ {isAr ? 'إجابة طبية منظمة' : 'Structured Answer'}</div>
                       <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
-                        
+                        🔊
                       </button>
                     </div>
                     <div className="ai-text" style={{ whiteSpace: 'pre-line', lineHeight: 1.7 }}>
@@ -425,7 +431,7 @@ export default function ChatWidget() {
                     <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                       <strong className="small" style={{ color: '#0b3c5d' }}>{pick(r.lead, lang)}</strong>
                       <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
-                        
+                        🔊
                       </button>
                     </div>
                     {r.hits.map((p) => (
@@ -434,7 +440,7 @@ export default function ChatWidget() {
                           {cleanAssistantMarkdown(pick(p.text, lang))}
                         </p>
                         <div className="src">
-                          <Link to={p.link ??'/'} onClick={() => setIsOpen(false)}> {p.label}</Link>
+                          <Link to={p.link ?? '/'} onClick={() => setIsOpen(false)}>🔗 {p.label}</Link>
                         </div>
                       </div>
                     ))}
@@ -453,7 +459,7 @@ export default function ChatWidget() {
                       {cleanAssistantMarkdown(pick(r.text, lang))}
                     </p>
                     <button type="button" className="chip" onClick={() => speakText(plainText, lang)}>
-                      
+                      🔊
                     </button>
                   </div>
                   {r.links && r.links.length > 0 && (
@@ -461,7 +467,7 @@ export default function ChatWidget() {
                       {r.links.map((l, k) => (
                         <span key={l.to + k}>
                           {k > 0 && ' · '}
-                          <Link to={l.to} onClick={() => setIsOpen(false)}> {pick(l.label, lang)}</Link>
+                          <Link to={l.to} onClick={() => setIsOpen(false)}>💊 {pick(l.label, lang)}</Link>
                         </span>
                       ))}
                     </div>
@@ -497,13 +503,13 @@ export default function ChatWidget() {
                 color: listening ? '#dc2626' : undefined,
               }}
             >
-              {listening ?'⏹':''}
+              {listening ? '⏹️' : '🎤'}
             </button>
             <input
               value={q}
               maxLength={300}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={listening ? (isAr ?'تحدث الآن...':'Listening...') : isAr ?'اكتب أو اضغط للتحدث...':'Type or tap to speak...'}
+              placeholder={listening ? (isAr ? 'تحدث الآن...' : 'Listening...') : isAr ? 'اكتب أو اضغط 🎤 للتحدث...' : 'Type or tap 🎤 to speak...'}
               aria-label="Ask assistant"
               disabled={loading}
             />
