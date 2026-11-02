@@ -150,7 +150,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [openRibbonCatId, setOpenRibbonCatId] = useState<string | null>(null);
-  const [openDrawerGroups, setOpenDrawerGroups] = useState<Record<string, boolean>>({ 'drug-directory': true, 'clinical-safety': true, 'treatment-care': true, 'interactive-sim': true, 'awareness-research': true });
+  const [openDrawerGroups, setOpenDrawerGroups] = useState<Record<string, boolean>>({});
   const authCtx = useAuth();
   const user = authCtx.user;
   const openAuthModal = authCtx.openAuthModal;
@@ -403,16 +403,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     },
   ];
 
-  // Auto-expand the drawer category that contains the current route
-  useEffect(() => {
-    const activeCat = navCategories.find((cat) =>
-      cat.items.some((item) => isRouteMatchingItem(item.to, pathname))
-    );
-    if (activeCat) {
-      setOpenDrawerGroups((prev) => ({ ...prev, [activeCat.id]: true }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  // Keep drawer categories collapsed by default until the user explicitly opens one
 
   const toggleDrawerGroup = (catId: string) => {
     setOpenDrawerGroups((prev) => ({
@@ -441,6 +432,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       closeTimerRef.current = null;
     }
     setOpenRibbonCatId(null);
+    setOpenDrawerGroups({});
     setDrawerClosing(false);
     setDrawerOpen(true);
   };

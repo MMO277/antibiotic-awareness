@@ -1,3 +1,4 @@
+import SymptomNursingCareSystem from './SymptomNursingCareSystem';
 import { pick, tr } from './types';
 import { useEmergencyLocation } from './emergencyLocation';
 import { useMemo, useState } from 'react';
@@ -12,14 +13,14 @@ import {
   TriageInputState,
 } from './greenPrescriptionData';
 
-type ActiveSection = 'wizard' | 'qr_share' | 'privacy_governance';
+type ActiveSection = 'nursing_care' | 'wizard' | 'qr_share' | 'privacy_governance';
 
 export default function GreenPrescription() {
   const { lang } = useLang();
   const isAr = lang === 'ar';
   const { emergency, countryName } = useEmergencyLocation();
 
-  const [section, setSection] = useState<ActiveSection>('wizard');
+  const [section, setSection] = useState<ActiveSection>('nursing_care');
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Zero-PII ephemeral state (kept strictly in memory, never saved to localStorage or sent anywhere)
@@ -129,6 +130,14 @@ export default function GreenPrescription() {
         <div className="row wrapRow" style={{ gap: '8px' }}>
           <button
             type="button"
+            className={`btn small ${section === 'nursing_care' ? '' : 'ghost'}`}
+            style={section === 'nursing_care' ? { background: '#059669', borderColor: '#059669', color: '#fff' } : {}}
+            onClick={() => setSection('nursing_care')}
+          >
+            🩺 {isAr ? 'نظام الرعاية غير الدوائية والإجراءات التمريضية' : 'Symptom-Based Nursing Care'}
+          </button>
+          <button
+            type="button"
             className={`btn small ${section === 'wizard' ? '' : 'ghost'}`}
             style={section === 'wizard' ? { background: '#15803d', borderColor: '#15803d' } : {}}
             onClick={() => setSection('wizard')}
@@ -196,6 +205,9 @@ export default function GreenPrescription() {
             : 'The Green Prescription is a general non-pharmacological self-care guide, NOT a medical prescription or diagnostic tool. It does not prescribe medicines or replace a doctor or pharmacist. No personal data is collected or stored.'}
         </div>
       </header>
+
+      {/* SECTION 0: SYMPTOM-BASED NON-PHARMACOLOGICAL CARE & NURSING PROCEDURES SYSTEM */}
+      {section === 'nursing_care' && <SymptomNursingCareSystem />}
 
       {/* SECTION 1: INTERACTIVE GREEN PRESCRIPTION WIZARD */}
       {section === 'wizard' && (
