@@ -181,7 +181,7 @@ export function PartnerMedicationOrderModal({
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <span className="badge" style={{ background: '#dcfce7', color: '#166534', fontWeight: 700 }}>
-              🩺 {isAr ? 'نموذج طلب صرف بوصفة طبية معتمدة' : 'Authorized Prescription Order Request'}
+               {isAr ?'نموذج طلب صرف بوصفة طبية معتمدة':'Authorized Prescription Order Request'}
             </span>
             <h2 style={{ margin: '4px 0 0', fontSize: '1.2rem' }}>
               {isAr ? product.tradeNameAr : product.tradeNameEn} ({product.strength}) —{' '}
@@ -189,13 +189,13 @@ export function PartnerMedicationOrderModal({
             </h2>
           </div>
           <button type="button" className="btn ghost small" onClick={onClose}>
-            ✕
+            
           </button>
         </div>
 
         {submittedOrderNum ? (
           <div className="stack center" style={{ padding: '20px', alignItems: 'center' }}>
-            <div style={{ fontSize: '2.8rem' }}>✅</div>
+            <div style={{ fontSize:'2.8rem'}}></div>
             <h3 style={{ margin: 0, color: '#15803d' }}>
               {isAr
                 ? `تم تسجيل طلب المراجعة الصيدلانية بنجاح (${submittedOrderNum})`
@@ -215,11 +215,11 @@ export function PartnerMedicationOrderModal({
                   className="btn"
                   style={{ background: '#0d9488' }}
                 >
-                  🛒 {isAr ? 'المتابعة لبوابة الصيدلية الخارجية المعتمدة ↗' : 'Proceed to Partner Checkout ↗'}
+                   {isAr ?'المتابعة لبوابة الصيدلية الخارجية المعتمدة ↗':'Proceed to Partner Checkout ↗'}
                 </a>
               )}
               <Link to="/partners?tab=orders" className="btn ghost" onClick={onClose}>
-                📦 {isAr ? 'متابعة حالة الطلب' : 'Track Order Status'}
+                 {isAr ?'متابعة حالة الطلب':'Track Order Status'}
               </Link>
               <button type="button" className="btn ghost" onClick={onClose}>
                 {isAr ? 'إغلاق' : 'Close'}
@@ -229,7 +229,7 @@ export function PartnerMedicationOrderModal({
         ) : (
           <form className="stack" onSubmit={handleSubmitOrder} style={{ gap: '12px' }}>
             <div className="notice small">
-              ⚠️{' '}
+               
               {isAr
                 ? 'ضمان الأمان الطبي والقانوني: لا يتم تحصيل أي مدفوعات بنكية داخل الموقع، ولا يتم استبدال الدواء الموصوف تلقائياً. يخضع صرف المضادات الحيوية لمراجعة الصيدلي المرخص للروشتة الطبية.'
                 : 'Clinical & Legal Safeguard: No card payments are collected here, and prescribed medications are never auto-substituted. Requires licensed pharmacist review.'}
@@ -240,7 +240,7 @@ export function PartnerMedicationOrderModal({
             {publishedBranches.length > 0 && (
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🏪 {isAr ? 'اختر الفرع الأقرب إليك:' : 'Select Branch:'}
+                   {isAr ?'اختر الفرع الأقرب إليك:':'Select Branch:'}
                 </label>
                 <select
                   className="input"
@@ -265,7 +265,7 @@ export function PartnerMedicationOrderModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  👤 {isAr ? 'اسم المريض الكامل *' : 'Patient Name *'}
+                   {isAr ?'اسم المريض الكامل *':'Patient Name *'}
                 </label>
                 <input
                   type="text"
@@ -278,7 +278,7 @@ export function PartnerMedicationOrderModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📞 {isAr ? 'رقم الهاتف للتأكيد *' : 'Phone Number *'}
+                   {isAr ?'رقم الهاتف للتأكيد *':'Phone Number *'}
                 </label>
                 <input
                   type="tel"
@@ -293,7 +293,7 @@ export function PartnerMedicationOrderModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📦 {isAr ? 'الكمية وفق الروشتة' : 'Pack Quantity'}
+                   {isAr ?'الكمية وفق الروشتة':'Pack Quantity'}
                 </label>
                 <select
                   className="input"
@@ -316,7 +316,7 @@ export function PartnerMedicationOrderModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🇪🇬 {isAr ? 'المحافظة' : 'Governorate'}
+                   {isAr ?'المحافظة':'Governorate'}
                 </label>
                 <select
                   className="input"
@@ -333,7 +333,7 @@ export function PartnerMedicationOrderModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🏙️ {isAr ? 'المدينة / الحي' : 'City / District'}
+                   {isAr ?'المدينة / الحي':'City / District'}
                 </label>
                 <input
                   type="text"
@@ -347,7 +347,7 @@ export function PartnerMedicationOrderModal({
 
             <div>
               <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                📍 {isAr ? 'عنوان التوصيل التفصيلي' : 'Delivery Address'}
+                 {isAr ?'عنوان التوصيل التفصيلي':'Delivery Address'}
               </label>
               <input
                 type="text"
@@ -359,7 +359,7 @@ export function PartnerMedicationOrderModal({
 
             {/* Prescription Compliance Box */}
             <div className="subcard stack" style={{ borderColor: '#0284c7' }}>
-              <b>📋 {isAr ? 'بيانات الوصفة الطبية (الروشتة) — إجباري للمضادات الحيوية:' : 'Prescription Verification (Mandatory for Antibiotics):'}</b>
+              <b> {isAr ?'بيانات الوصفة الطبية (الروشتة) — إجباري للمضادات الحيوية:':'Prescription Verification (Mandatory for Antibiotics):'}</b>
               <div
                 style={{
                   display: 'grid',
@@ -397,8 +397,7 @@ export function PartnerMedicationOrderModal({
                   {uploadingRx
                     ? '⏳...'
                     : isAr
-                    ? '📷 إرفاق صورة الروشتة الطبية'
-                    : '📷 Upload Prescription Image'}
+                    ?'إرفاق صورة الروشتة الطبية'                    :'Upload Prescription Image'}
                   <input
                     type="file"
                     accept="image/*,.pdf"
@@ -408,7 +407,7 @@ export function PartnerMedicationOrderModal({
                 </label>
                 {prescriptionFileUrl && (
                   <span className="small" style={{ color: '#16a34a', fontWeight: 700 }}>
-                    ✓ {isAr ? 'تم إرفاق الوصفة الطبية' : 'Prescription attached'}
+                     {isAr ?'تم إرفاق الوصفة الطبية':'Prescription attached'}
                   </span>
                 )}
               </div>
@@ -424,8 +423,7 @@ export function PartnerMedicationOrderModal({
                     ? 'جارٍ الإرسال...'
                     : 'Submitting...'
                   : isAr
-                  ? '✅ إرسال طلب الصرف للمراجعة الصيدلانية'
-                  : '✅ Submit for Pharmacist Review'}
+                  ?'إرسال طلب الصرف للمراجعة الصيدلانية'                  :'Submit for Pharmacist Review'}
               </button>
             </div>
           </form>
@@ -512,7 +510,7 @@ export default function FindMedicationPanel({
             className="badge"
             style={{ background: '#ccfbf1', color: '#0f766e', fontWeight: 800, marginBottom: '6px' }}
           >
-            🔎 {tr(lang, 'اعثر على دوائك في الصيدليات المعتمدة', 'Find This Medication at Participating Pharmacies')}
+             {tr(lang,'اعثر على دوائك في الصيدليات المعتمدة','Find This Medication at Participating Pharmacies')}
           </span>
           <h2 style={{ margin: 0 }}>
             {isAr ? 'اعثر على دوائك (Find This Medication)' : 'Find This Medication'}
@@ -525,7 +523,7 @@ export default function FindMedicationPanel({
         </div>
 
         <Link to="/partners" className="btn ghost small">
-          🏥 {isAr ? 'دليل الشركاء والصيدليات الكامل ←' : 'Full Pharmacy Network →'}
+           {isAr ?'دليل الشركاء والصيدليات الكامل ←':'Full Pharmacy Network →'}
         </Link>
       </div>
 
@@ -541,7 +539,7 @@ export default function FindMedicationPanel({
       >
         <div>
           <label className="small muted" style={{ display: 'block', marginBottom: '4px' }}>
-            1️⃣ {isAr ? 'اختر العبوة التجارية والتركيز:' : '1. Select Medication Package:'}
+            1⃣ {isAr ?'اختر العبوة التجارية والتركيز:':'1. Select Medication Package:'}
           </label>
           <select
             className="input"
@@ -559,7 +557,7 @@ export default function FindMedicationPanel({
 
         <div className="small" style={{ lineHeight: 1.7 }}>
           <div>
-            <b>2️⃣ {isAr ? 'المادة الفعالة:' : 'Active Ingredient:'} </b>
+            <b>2⃣ {isAr ?'المادة الفعالة:':'Active Ingredient:'} </b>
             <span>
               {ingredientInfo
                 ? isAr
@@ -569,13 +567,13 @@ export default function FindMedicationPanel({
             </span>
           </div>
           <div>
-            <b>3️⃣ {isAr ? 'التركيز الدقيق:' : 'Strength:'} </b>
+            <b>3⃣ {isAr ?'التركيز الدقيق:':'Strength:'} </b>
             <span dir="ltr" style={{ fontWeight: 700, color: '#0369a1' }}>
               {selectedProduct.strength}
             </span>
           </div>
           <div>
-            <b>4️⃣ {isAr ? 'الشكل الصيدلاني:' : 'Dosage Form:'} </b>
+            <b>4⃣ {isAr ?'الشكل الصيدلاني:':'Dosage Form:'} </b>
             <span>
               {pick(
                 selectedProduct.dosageFormLabel || DOSAGE_FORM_LABELS[selectedProduct.dosageForm],
@@ -588,7 +586,7 @@ export default function FindMedicationPanel({
         {/* Geographic Filter (Governorate) */}
         <div>
           <label className="small muted" style={{ display: 'block', marginBottom: '4px' }}>
-            5️⃣ {isAr ? 'حدد محافظتك لعرض الصيدليات المتاحة:' : '5. Filter by Your Governorate:'}
+            5⃣ {isAr ?'حدد محافظتك لعرض الصيدليات المتاحة:':'5. Filter by Your Governorate:'}
           </label>
           <select
             className="input"
@@ -631,14 +629,14 @@ export default function FindMedicationPanel({
               </button>
             )}
             <Link to="/partners" className="btn ghost small">
-              🏥 {isAr ? 'تصفح دليل الشركاء العام' : 'Browse Partner Directory'}
+               {isAr ?'تصفح دليل الشركاء العام':'Browse Partner Directory'}
             </Link>
           </div>
         </div>
       ) : (
         <div className="stack" style={{ gap: '10px' }}>
           <div className="small" style={{ fontWeight: 700 }}>
-            🏥{' '}
+             
             {isAr
               ? `الصيدليات والشركاء المعتمدون المتاحون (${participatingPartners.length}):`
               : `Participating Pharmacies (${participatingPartners.length}):`}
@@ -731,7 +729,7 @@ export default function FindMedicationPanel({
                           marginTop: '4px',
                         }}
                       >
-                        📢 {isAr ? 'رعاية تجارية (Sponsored)' : 'Sponsored'}
+                         {isAr ?'رعاية تجارية (Sponsored)':'Sponsored'}
                       </span>
                     )}
 
@@ -788,7 +786,7 @@ export default function FindMedicationPanel({
 
                       {partnerBranches.length > 0 && (
                         <div style={{ marginTop: '4px' }}>
-                          🏪 {partnerBranches.length}{' '}
+                           {partnerBranches.length} 
                           {isAr ? 'فرع متاح في نطاقك' : 'branches in selected area'}
                         </div>
                       )}
@@ -806,7 +804,7 @@ export default function FindMedicationPanel({
                           className="btn small"
                           style={{ flex: 1, textAlign: 'center', background: '#0d9488' }}
                         >
-                          🛒 {isAr ? 'اطلب من موقع الصيدلية ↗' : 'Order via Partner ↗'}
+                           {isAr ?'اطلب من موقع الصيدلية ↗':'Order via Partner ↗'}
                         </a>
                       )}
 
@@ -817,13 +815,13 @@ export default function FindMedicationPanel({
                         style={{ flex: 1 }}
                         onClick={() => setOrderModalPartner(partner)}
                       >
-                        🩺 {isAr ? 'طلب صرف بالروشتة' : 'Rx Order Request'}
+                         {isAr ?'طلب صرف بالروشتة':'Rx Order Request'}
                       </button>
                     )}
 
                     {partner.visibility.publishPartnerProfile && (
                       <Link to={`/partner/${partner.id}`} className="btn ghost small">
-                        📍 {isAr ? 'الفروع' : 'Branches'}
+                         {isAr ?'الفروع':'Branches'}
                       </Link>
                     )}
 
@@ -832,7 +830,7 @@ export default function FindMedicationPanel({
                         href={`tel:${(partner.hotline || partner.phone).replace(/\s+/g, '')}`}
                         className="btn ghost small"
                       >
-                        📞 {partner.hotline || partner.phone}
+                         {partner.hotline || partner.phone}
                       </a>
                     )}
                   </div>
@@ -858,7 +856,7 @@ export default function FindMedicationPanel({
       >
         <div>
           <strong>
-            🛡️{' '}
+             
             {isAr
               ? 'قاعدة السلامة الإكلينيكية وعدم الاستبدال التلقائي:'
               : 'Clinical Safety & Zero Auto-Substitution Guarantee:'}
@@ -876,7 +874,7 @@ export default function FindMedicationPanel({
             className="btn ghost small"
             onClick={() => setShowAlternativesReview((v) => !v)}
           >
-            🔄{' '}
+             
             {showAlternativesReview
               ? isAr
                 ? 'إخفاء المثائل المرخصة ↑'
@@ -892,7 +890,7 @@ export default function FindMedicationPanel({
       {showAlternativesReview && classifiedAlts && classifiedAlts.exactEquivalents.length > 0 && (
         <div className="subcard stack" style={{ borderInlineStart: '4px solid #d97706' }}>
           <div className="small" style={{ color: '#92400e', fontWeight: 700 }}>
-            ⚠️{' '}
+             
             {isAr
               ? 'مثائل مرخصة من هيئة الدواء المصرية تحتوي على نفس المادة الفعالة والتركيز والشكل الصيدلاني (تتطلب موافقة الطبيب أو الصيدلي قبل الصرف):'
               : 'EDA-licensed generic equivalents with the exact same active ingredient, strength, and dosage form (Requires pharmacist or prescriber review):'}
@@ -905,7 +903,7 @@ export default function FindMedicationPanel({
                 className="btn ghost small"
                 onClick={() => setSelectedProdId(alt.productId)}
               >
-                💊 {isAr ? alt.tradeNameAr : alt.tradeNameEn} ({alt.strength}) —{' '}
+                 {isAr ? alt.tradeNameAr : alt.tradeNameEn} ({alt.strength}) — 
                 {alt.priceEgp ? `${alt.priceEgp} ${isAr ? 'ج.م' : 'EGP'}` : ''}
               </button>
             ))}

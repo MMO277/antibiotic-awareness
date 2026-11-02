@@ -195,7 +195,7 @@ export function PartnerBranchManagerModal({
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <span className="badge" style={{ background: '#ccfbf1', color: '#0f766e', fontWeight: 700 }}>
-              🏪 {isAr ? 'إدارة الفروع والتغطية الجغرافية' : 'Branch & Geographic Coverage Manager'}
+               {isAr ?'إدارة الفروع والتغطية الجغرافية':'Branch & Geographic Coverage Manager'}
             </span>
             <h2 style={{ margin: '4px 0 0' }}>
               {isAr ? partner.nameAr : partner.nameEn} ({partnerBranches.length}{' '}
@@ -204,10 +204,10 @@ export function PartnerBranchManagerModal({
           </div>
           <div className="row" style={{ gap: '8px' }}>
             <button type="button" className="btn small" onClick={startNew}>
-              ➕ {isAr ? 'إضافة فرع جديد' : 'Add Branch'}
+               {isAr ?'إضافة فرع جديد':'Add Branch'}
             </button>
             <button type="button" className="btn ghost small" onClick={onClose}>
-              ✕
+              
             </button>
           </div>
         </div>
@@ -219,11 +219,8 @@ export function PartnerBranchManagerModal({
               <b>
                 {isNewBranch
                   ? isAr
-                    ? '➕ بيانات الفرع الجديد:'
-                    : '➕ New Branch Details:'
-                  : isAr
-                  ? `✏️ تعديل الفرع (${editingBranch.nameAr}):`
-                  : `✏️ Edit Branch (${editingBranch.nameEn}):`}
+                    ?'بيانات الفرع الجديد:'                    :'New Branch Details:'                  : isAr
+                  ?`تعديل الفرع (${editingBranch.nameAr}):`                  :`Edit Branch (${editingBranch.nameEn}):`}
               </b>
               <button type="button" className="btn ghost small" onClick={() => setEditingBranch(null)}>
                 {isAr ? 'إلغاء' : 'Cancel'}
@@ -334,7 +331,7 @@ export function PartnerBranchManagerModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📍 {isAr ? 'العنوان التفصيلي (عربي)' : 'Detailed Address (Arabic)'}
+                   {isAr ?'العنوان التفصيلي (عربي)':'Detailed Address (Arabic)'}
                 </label>
                 <input
                   type="text"
@@ -346,7 +343,7 @@ export function PartnerBranchManagerModal({
               </div>
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📍 {isAr ? 'العنوان التفصيلي (إنجليزي)' : 'Detailed Address (English)'}
+                   {isAr ?'العنوان التفصيلي (إنجليزي)':'Detailed Address (English)'}
                 </label>
                 <input
                   type="text"
@@ -367,7 +364,7 @@ export function PartnerBranchManagerModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🌐 Latitude (خط العرض - اختياري)
+                   Latitude (خط العرض - اختياري)
                 </label>
                 <input
                   type="text"
@@ -380,7 +377,7 @@ export function PartnerBranchManagerModal({
               </div>
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🌐 Longitude (خط الطول - اختياري)
+                   Longitude (خط الطول - اختياري)
                 </label>
                 <input
                   type="text"
@@ -413,7 +410,7 @@ export function PartnerBranchManagerModal({
               </div>
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🛒 {isAr ? 'رابط طلب خاص بالفرع (اختياري)' : 'Branch Ordering URL'}
+                   {isAr ?'رابط طلب خاص بالفرع (اختياري)':'Branch Ordering URL'}
                 </label>
                 <input
                   type="url"
@@ -430,7 +427,7 @@ export function PartnerBranchManagerModal({
 
             <div>
               <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                🚚 {isAr ? 'نطاق التوصيل الإضافي للفرع (مدن/أحياء يخدمها هذا الفرع - مفصولة بفاصلة)' : 'Additional Cities/Districts Served by this Branch'}
+                 {isAr ?'نطاق التوصيل الإضافي للفرع (مدن/أحياء يخدمها هذا الفرع - مفصولة بفاصلة)':'Additional Cities/Districts Served by this Branch'}
               </label>
               <input
                 type="text"
@@ -450,7 +447,7 @@ export function PartnerBranchManagerModal({
                     setEditingBranch({ ...editingBranch, published: e.target.checked })
                   }
                 />
-                👁️ {isAr ? 'نشر هذا الفرع للجمهور على الموقع العام' : 'Publish this branch publicly'}
+                 {isAr ?'نشر هذا الفرع للجمهور على الموقع العام':'Publish this branch publicly'}
               </label>
 
               <label className="check">
@@ -461,7 +458,7 @@ export function PartnerBranchManagerModal({
                     setEditingBranch({ ...editingBranch, deliveryAvailable: e.target.checked })
                   }
                 />
-                🚚 {isAr ? 'يوفر توصيل للمنازل' : 'Delivery Available'}
+                 {isAr ?'يوفر توصيل للمنازل':'Delivery Available'}
               </label>
 
               <label className="check">
@@ -472,13 +469,13 @@ export function PartnerBranchManagerModal({
                     setEditingBranch({ ...editingBranch, is24Hours: e.target.checked })
                   }
                 />
-                🕒 {isAr ? 'يعمل 24 ساعة' : 'Open 24 Hours'}
+                 {isAr ?'يعمل 24 ساعة':'Open 24 Hours'}
               </label>
             </div>
 
             <div className="row" style={{ justifyContent: 'flex-end', gap: '8px' }}>
               <button type="submit" className="btn small" disabled={busy}>
-                💾 {isAr ? 'حفظ بيانات الفرع' : 'Save Branch'}
+                 {isAr ?'حفظ بيانات الفرع':'Save Branch'}
               </button>
             </div>
           </form>
@@ -519,9 +516,7 @@ export function PartnerBranchManagerModal({
                       >
                         {b.published
                           ? isAr
-                            ? 'منشور للجمهور ✓'
-                            : 'Published ✓'
-                          : isAr
+                            ?'منشور للجمهور'                            :'Published'                          : isAr
                           ? 'مخفي / مسودة'
                           : 'Unpublished'}
                       </span>
@@ -532,12 +527,12 @@ export function PartnerBranchManagerModal({
                       )}
                     </div>
                     <div className="small muted">
-                      📍 {govInfo ? (isAr ? govInfo.nameAr : govInfo.nameEn) : b.governorateId} —{' '}
+                       {govInfo ? (isAr ? govInfo.nameAr : govInfo.nameEn) : b.governorateId} — 
                       {b.city} {b.district ? `(${b.district})` : ''} · {isAr ? b.addressAr : b.addressEn}
                     </div>
                     {b.phone && (
                       <div className="small" dir="ltr">
-                        📞 {b.phone}
+                         {b.phone}
                       </div>
                     )}
                   </div>
@@ -551,17 +546,15 @@ export function PartnerBranchManagerModal({
                     >
                       {b.published
                         ? isAr
-                          ? '🙈 إخفاء الفرع'
-                          : 'Hide'
+                          ?'إخفاء الفرع'                          : 'Hide'
                         : isAr
-                        ? '📢 نشر الفرع'
-                        : 'Publish'}
+                        ?'نشر الفرع'                        : 'Publish'}
                     </button>
                     <button type="button" className="btn small ghost" onClick={() => startEdit(b)}>
-                      ✏️ {isAr ? 'تعديل' : 'Edit'}
+                       {isAr ?'تعديل':'Edit'}
                     </button>
                     <button type="button" className="btn small danger" onClick={() => handleDelete(b)}>
-                      🗑️
+                      
                     </button>
                   </div>
                 </div>
@@ -694,7 +687,7 @@ export function PartnerCategoryManagerModal({
       >
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2>🗂️ {isAr ? 'إدارة فئات الشركاء الديناميكية (Partner Categories)' : 'Dynamic Partner Categories Manager'}</h2>
+            <h2> {isAr ?'إدارة فئات الشركاء الديناميكية (Partner Categories)':'Dynamic Partner Categories Manager'}</h2>
             <p className="small muted" style={{ margin: 0 }}>
               {isAr
                 ? 'أضف أو عدّل أو أعد ترتيب أو فعّل أي فئة شركاء صحية جديدة (صيدليات، معامل، مراكز أشعة، مستشفيات، إلخ) بدون تعديل الكود.'
@@ -710,10 +703,10 @@ export function PartnerCategoryManagerModal({
                 setIsNew(true);
               }}
             >
-              ➕ {isAr ? 'إضافة فئة جديدة' : 'New Category'}
+               {isAr ?'إضافة فئة جديدة':'New Category'}
             </button>
             <button type="button" className="btn ghost small" onClick={onClose}>
-              ✕
+              
             </button>
           </div>
         </div>
@@ -814,7 +807,7 @@ export function PartnerCategoryManagerModal({
                 {isAr ? 'إلغاء' : 'Cancel'}
               </button>
               <button type="submit" className="btn small" disabled={busy}>
-                💾 {isAr ? 'حفظ الفئة' : 'Save Category'}
+                 {isAr ?'حفظ الفئة':'Save Category'}
               </button>
             </div>
           </form>
@@ -879,7 +872,7 @@ export function PartnerCategoryManagerModal({
                     setIsNew(false);
                   }}
                 >
-                  ✏️ {isAr ? 'تعديل' : 'Edit'}
+                   {isAr ?'تعديل':'Edit'}
                 </button>
               </div>
             </div>
@@ -1006,26 +999,26 @@ export function PartnerMedicationMappingModal({
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}>
-              💊 {isAr ? 'ربط الأدوية بالشريك («اعثر على دوائك»)' : 'Medication-to-Partner Mapping'}
+               {isAr ?'ربط الأدوية بالشريك («اعثر على دوائك»)':'Medication-to-Partner Mapping'}
             </span>
             <h2 style={{ margin: '4px 0 0' }}>
               {isAr ? partner.nameAr : partner.nameEn}
             </h2>
           </div>
           <button type="button" className="btn ghost small" onClick={onClose}>
-            ✕
+            
           </button>
         </div>
 
         <div className="notice small">
-          🛡️{' '}
+           
           {isAr
             ? 'الالتزام الطبي الصارم: يتم الربط بناءً على (المادة الفعالة + التركيز + الشكل الصيدلاني). لا يتم اختلاق أسعار أو كميات مخزون غير مؤكدة؛ عند عدم توفر مزامنة لحظية، يظهر للزائر بوضوح «التوفر يتطلب تأكيد الصيدلية».'
             : 'Strict Clinical Matching: Matches by Active Ingredient + Strength + Dosage Form. Never fabricates stock or pricing.'}
         </div>
 
         <form className="subcard stack" onSubmit={handleAddMapping}>
-          <b>➕ {isAr ? 'ربط مستحضر دوائي بهذا الشريك:' : 'Map a Medication Package to this Partner:'}</b>
+          <b> {isAr ?'ربط مستحضر دوائي بهذا الشريك:':'Map a Medication Package to this Partner:'}</b>
           <div
             style={{
               display: 'grid',
@@ -1116,7 +1109,7 @@ export function PartnerMedicationMappingModal({
 
           <div className="row" style={{ justifyContent: 'flex-end' }}>
             <button type="submit" className="btn small" disabled={busy}>
-              💾 {isAr ? 'حفظ ربط الدواء بالشريك' : 'Save Medication Mapping'}
+               {isAr ?'حفظ ربط الدواء بالشريك':'Save Medication Mapping'}
             </button>
           </div>
         </form>
@@ -1174,7 +1167,7 @@ export function PartnerMedicationMappingModal({
                           )
                         }
                       >
-                        🗑️
+                        
                       </button>
                     </td>
                   </tr>

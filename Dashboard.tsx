@@ -289,7 +289,7 @@ export default function Dashboard() {
               padding: '8px 12px',
             }}
           >
-             {t('tabResearch')}
+             📊 {t('tabResearch')}
           </button>
         )}
 

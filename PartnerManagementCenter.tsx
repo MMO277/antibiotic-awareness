@@ -217,9 +217,7 @@ export default function PartnerManagementCenter({
       );
       showToast(
         isAr
-          ? `✅ تم نشر (${p.nameAr}) وأصبح مرئياً للجمهور فوراً.`
-          : `✅ Published (${p.nameEn}) live.`
-      );
+          ?`تم نشر (${p.nameAr}) وأصبح مرئياً للجمهور فوراً.`          :`Published (${p.nameEn}) live.`      );
     } else {
       // Hide from Public Website
       await updatePartnerQuickState(
@@ -239,9 +237,7 @@ export default function PartnerManagementCenter({
       );
       showToast(
         isAr
-          ? `🙈 تم إخفاء (${p.nameAr}) من الموقع العام مع الاحتفاظ ببياناته.`
-          : `🙈 Hidden (${p.nameEn}) from public view.`
-      );
+          ?`تم إخفاء (${p.nameAr}) من الموقع العام مع الاحتفاظ ببياناته.`          :`Hidden (${p.nameEn}) from public view.`      );
     }
     await loadAll();
   };
@@ -296,12 +292,8 @@ export default function PartnerManagementCenter({
     showToast(
       nextVal
         ? isAr
-          ? `💊 يظهر (${p.nameAr}) الآن في نتائج بحث الأدوية.`
-          : `💊 Shown in medication search.`
-        : isAr
-        ? `💊 تم إخفاء (${p.nameAr}) من بحث الأدوية مع الحفاظ على ملفه العام.`
-        : `💊 Hidden from medication search.`
-    );
+          ?`يظهر (${p.nameAr}) الآن في نتائج بحث الأدوية.`          :`Shown in medication search.`        : isAr
+        ?`تم إخفاء (${p.nameAr}) من بحث الأدوية مع الحفاظ على ملفه العام.`        :`Hidden from medication search.`    );
     await loadAll();
   };
 
@@ -350,7 +342,7 @@ export default function PartnerManagementCenter({
       `تمت أرشفة الشريك (${p.nameAr})`,
       `Archived partner (${p.nameEn})`
     );
-    showToast(isAr ? `📦 تمت أرشفة (${p.nameAr}).` : `📦 Archived (${p.nameEn}).`);
+    showToast(isAr ?`تمت أرشفة (${p.nameAr}).`:`Archived (${p.nameEn}).`);
     await loadAll();
   };
 
@@ -380,7 +372,7 @@ export default function PartnerManagementCenter({
                 fontWeight: 700,
               }}
             >
-              🏥 {tr(lang, 'مركز إدارة الشركاء وشبكة الصيدليات الموحد', 'Partner Management & Pharmacy Network Center')}
+               {tr(lang,'مركز إدارة الشركاء وشبكة الصيدليات الموحد','Partner Management & Pharmacy Network Center')}
             </span>
             <h2 style={{ margin: '6px 0 4px', color: '#ffffff', fontSize: '1.4rem' }}>
               {tr(lang, 'إدارة الشركاء (Partner Management)', 'Partner Management')}
@@ -403,7 +395,7 @@ export default function PartnerManagementCenter({
                   setIsCreatingNew(true);
                 }}
               >
-                ➕ {isAr ? 'إضافة شريك / صيدلية جديدة' : 'Add New Partner'}
+                 {isAr ?'إضافة شريك / صيدلية جديدة':'Add New Partner'}
               </button>
             )}
 
@@ -414,7 +406,7 @@ export default function PartnerManagementCenter({
                 style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.35)' }}
                 onClick={() => setShowCategoryManager(true)}
               >
-                🗂️ {isAr ? `فئات الشركاء (${categories.length})` : `Categories (${categories.length})`}
+                 {isAr ?`فئات الشركاء (${categories.length})`:`Categories (${categories.length})`}
               </button>
             )}
 
@@ -423,7 +415,7 @@ export default function PartnerManagementCenter({
               className="btn ghost"
               style={{ color: '#5eead4', borderColor: 'rgba(94, 234, 212, 0.4)' }}
             >
-              🌐 {isAr ? 'فتح دليل الشركاء العام ↗' : 'Public Directory ↗'}
+               {isAr ?'فتح دليل الشركاء العام ↗':'Public Directory ↗'}
             </Link>
           </div>
         </div>
@@ -481,7 +473,7 @@ export default function PartnerManagementCenter({
             icon: '📝',
           },
           {
-            labelAr: 'شركاء موثقون ✓',
+            labelAr:'شركاء موثقون',
             labelEn: 'Verified Partners',
             val: kpis.verified,
             color: '#0d9488',
@@ -535,7 +527,7 @@ export default function PartnerManagementCenter({
           className={`btn small ${subTab === 'partners_list' ? '' : 'ghost'}`}
           onClick={() => setSubTab('partners_list')}
         >
-          🏥 {isAr ? `قائمة الشركاء والتحكم السريع (${adminPartners.length})` : `Partners & Quick Controls (${adminPartners.length})`}
+           {isAr ?`قائمة الشركاء والتحكم السريع (${adminPartners.length})`:`Partners & Quick Controls (${adminPartners.length})`}
         </button>
 
         <button
@@ -543,7 +535,7 @@ export default function PartnerManagementCenter({
           className={`btn small ${subTab === 'orders_queue' ? '' : 'ghost'}`}
           onClick={() => setSubTab('orders_queue')}
         >
-          📦 {isAr ? `طلبات الصرف والمتابعة (${orders.length})` : `Orders & Tracking (${orders.length})`}
+           {isAr ?`طلبات الصرف والمتابعة (${orders.length})`:`Orders & Tracking (${orders.length})`}
         </button>
 
         {permissions.canViewAuditLogs && (
@@ -552,7 +544,7 @@ export default function PartnerManagementCenter({
             className={`btn small ${subTab === 'audit_history' ? '' : 'ghost'}`}
             onClick={() => setSubTab('audit_history')}
           >
-            📜 {isAr ? `سجل التدقيق والتغييرات (${auditLogs.length})` : `Audit Log (${auditLogs.length})`}
+             {isAr ?`سجل التدقيق والتغييرات (${auditLogs.length})`:`Audit Log (${auditLogs.length})`}
           </button>
         )}
       </div>
@@ -582,9 +574,7 @@ export default function PartnerManagementCenter({
                   }}
                   placeholder={
                     isAr
-                      ? '🔍 ابحث باسم الشريك (عربي/إنجليزي)، الهاتف، الخط الساخن، أو مسؤول التواصل...'
-                      : '🔍 Search by partner name, phone, hotline, or contact person...'
-                  }
+                      ?'ابحث باسم الشريك (عربي/إنجليزي)، الهاتف، الخط الساخن، أو مسؤول التواصل...'                      :'Search by partner name, phone, hotline, or contact person...'                  }
                 />
               </div>
 
@@ -696,7 +686,7 @@ export default function PartnerManagementCenter({
             </div>
           ) : paginatedPartners.length === 0 ? (
             <div className="card center stack" style={{ padding: '32px 20px', alignItems: 'center' }}>
-              <div style={{ fontSize: '2.4rem' }}>🏥</div>
+              <div style={{ fontSize:'2.4rem'}}></div>
               <h3 style={{ margin: 0 }}>
                 {isAr
                   ? 'لا يوجد شركاء مسجلون يطابقون البحث الحالي'
@@ -717,7 +707,7 @@ export default function PartnerManagementCenter({
                     setIsCreatingNew(true);
                   }}
                 >
-                  ➕ {isAr ? 'إضافة أول شريك / صيدلية الآن' : 'Add Your First Partner Now'}
+                   {isAr ?'إضافة أول شريك / صيدلية الآن':'Add Your First Partner Now'}
                 </button>
               )}
             </div>
@@ -798,11 +788,8 @@ export default function PartnerManagementCenter({
                             >
                               {isLiveVisible
                                 ? isAr
-                                  ? '🟢 ظاهر للجمهور الآن'
-                                  : '🟢 Live on Website'
-                                : isAr
-                                ? '🔒 مخفي / مسودة غير منشورة'
-                                : '🔒 Hidden / Draft'}
+                                  ?'ظاهر للجمهور الآن'                                  :'Live on Website'                                : isAr
+                                ?'مخفي / مسودة غير منشورة'                                :'Hidden / Draft'}
                             </span>
                           </div>
                           <div className="small muted">
@@ -859,7 +846,7 @@ export default function PartnerManagementCenter({
                       }}
                     >
                       <div>
-                        <b>📍 {isAr ? 'التغطية الجغرافية:' : 'Coverage:'} </b>
+                        <b> {isAr ?'التغطية الجغرافية:':'Coverage:'} </b>
                         <span>
                           {p.supportedGovernorates.length > 0
                             ? `${p.supportedGovernorates.length} ${isAr ? 'محافظات' : 'governorates'}`
@@ -870,7 +857,7 @@ export default function PartnerManagementCenter({
                       </div>
 
                       <div>
-                        <b>🏪 {isAr ? 'الفروع:' : 'Branches:'} </b>
+                        <b> {isAr ?'الفروع:':'Branches:'} </b>
                         <span>
                           {pubBranchesCount} {isAr ? 'منشور من إجمالي' : 'published of'}{' '}
                           {pBranches.length}
@@ -878,7 +865,7 @@ export default function PartnerManagementCenter({
                       </div>
 
                       <div>
-                        <b>💊 {isAr ? 'بحث الأدوية:' : 'Med Search:'} </b>
+                        <b> {isAr ?'بحث الأدوية:':'Med Search:'} </b>
                         <span
                           style={{
                             color: p.visibility.showInMedicationSearch ? '#15803d' : '#b45309',
@@ -896,7 +883,7 @@ export default function PartnerManagementCenter({
                       </div>
 
                       <div className="row" style={{ gap: '6px', alignItems: 'center' }}>
-                        <b>🔢 {isAr ? 'الأولوية:' : 'Priority:'}</b>
+                        <b> {isAr ?'الأولوية:':'Priority:'}</b>
                         <input
                           type="number"
                           dir="ltr"
@@ -933,11 +920,8 @@ export default function PartnerManagementCenter({
                           >
                             {isLiveVisible
                               ? isAr
-                                ? '🙈 إخفاء من الموقع العام'
-                                : '🙈 Hide from Public'
-                              : isAr
-                              ? '📢 نشر وإظهار للجمهور الآن'
-                              : '📢 Publish Live Now'}
+                                ?'إخفاء من الموقع العام'                                :'Hide from Public'                              : isAr
+                              ?'نشر وإظهار للجمهور الآن'                              :'Publish Live Now'}
                           </button>
                         )}
 
@@ -949,11 +933,8 @@ export default function PartnerManagementCenter({
                           >
                             {p.visibility.showInMedicationSearch
                               ? isAr
-                                ? '💊 إخفاء من بحث الأدوية فقط'
-                                : '💊 Hide from Med Search'
-                              : isAr
-                              ? '💊 إظهار في بحث الأدوية'
-                              : '💊 Show in Med Search'}
+                                ?'إخفاء من بحث الأدوية فقط'                                :'Hide from Med Search'                              : isAr
+                              ?'إظهار في بحث الأدوية'                              :'Show in Med Search'}
                           </button>
                         )}
 
@@ -965,11 +946,8 @@ export default function PartnerManagementCenter({
                           >
                             {p.partnershipStatus === 'active'
                               ? isAr
-                                ? '⏸️ تعطيل مؤقت'
-                                : '⏸️ Deactivate'
-                              : isAr
-                              ? '▶️ تنشيط الشراكة'
-                              : '▶️ Activate'}
+                                ?'⏸ تعطيل مؤقت'                                :'⏸ Deactivate'                              : isAr
+                              ?'▶ تنشيط الشراكة'                              :'▶ Activate'}
                           </button>
                         )}
                       </div>
@@ -980,7 +958,7 @@ export default function PartnerManagementCenter({
                           className="btn ghost small"
                           onClick={() => setBranchModalPartner(p)}
                         >
-                          🏪 {isAr ? `الفروع (${pBranches.length})` : `Branches (${pBranches.length})`}
+                           {isAr ?`الفروع (${pBranches.length})`:`Branches (${pBranches.length})`}
                         </button>
 
                         <button
@@ -988,7 +966,7 @@ export default function PartnerManagementCenter({
                           className="btn ghost small"
                           onClick={() => setMappingModalPartner(p)}
                         >
-                          💊 {isAr ? `ربط الأدوية (${pMappings.length})` : `Medications (${pMappings.length})`}
+                           {isAr ?`ربط الأدوية (${pMappings.length})`:`Medications (${pMappings.length})`}
                         </button>
 
                         {permissions.canEditContent && (
@@ -1001,7 +979,7 @@ export default function PartnerManagementCenter({
                               setIsCreatingNew(false);
                             }}
                           >
-                            ✏️ {isAr ? 'تعديل شامل والظهور' : 'Edit & Visibility'}
+                             {isAr ?'تعديل شامل والظهور':'Edit & Visibility'}
                           </button>
                         )}
 
@@ -1011,7 +989,7 @@ export default function PartnerManagementCenter({
                             className="btn small danger"
                             onClick={() => handleArchivePartner(p)}
                           >
-                            📦 {isAr ? 'أرشفة' : 'Archive'}
+                             {isAr ?'أرشفة':'Archive'}
                           </button>
                         )}
                       </div>
@@ -1054,7 +1032,7 @@ export default function PartnerManagementCenter({
       {/* ==================================================================== */}
       {subTab === 'orders_queue' && (
         <div className="card stack">
-          <h3>📦 {isAr ? 'متابعة طلبات الصرف ومراجعة الوصفات الطبية' : 'Partner Orders & Prescription Tracking'}</h3>
+          <h3> {isAr ?'متابعة طلبات الصرف ومراجعة الوصفات الطبية':'Partner Orders & Prescription Tracking'}</h3>
           {orders.length === 0 ? (
             <p className="muted">
               {isAr
@@ -1099,7 +1077,7 @@ export default function PartnerManagementCenter({
                         </div>
                         {ord.prescriptionReferenceNumber && (
                           <div className="small" style={{ color: '#0369a1' }}>
-                            🩺 Rx: {ord.prescriptionReferenceNumber}
+                             Rx: {ord.prescriptionReferenceNumber}
                           </div>
                         )}
                       </td>
@@ -1147,7 +1125,7 @@ export default function PartnerManagementCenter({
       {/* ==================================================================== */}
       {subTab === 'audit_history' && permissions.canViewAuditLogs && (
         <div className="card stack">
-          <h3>📜 {isAr ? 'سجل التدقيق الإداري وتاريخ التعديلات (Audit Log)' : 'Administrative Audit Log & Change History'}</h3>
+          <h3> {isAr ?'سجل التدقيق الإداري وتاريخ التعديلات (Audit Log)':'Administrative Audit Log & Change History'}</h3>
           <p className="small muted" style={{ margin: 0 }}>
             {isAr
               ? 'يُسجل هذا الجدول كافة العمليات الإدارية (إضافة شريك، تعديل، نشر، إخفاء، تغيير الظهور، إضافة فروع) مع معرف المسؤول والتوقيت الزمني. هذا السجل محمي ولا يظهر للمستخدمين العاديين.'
@@ -1208,9 +1186,7 @@ export default function PartnerManagementCenter({
             await loadAll();
             showToast(
               isAr
-                ? `✅ تم حفظ بيانات الشريك (${saved.nameAr}) بنجاح في Firestore.`
-                : `✅ Saved partner (${saved.nameEn}) to Firestore.`
-            );
+                ?`تم حفظ بيانات الشريك (${saved.nameAr}) بنجاح في Firestore.`                :`Saved partner (${saved.nameEn}) to Firestore.`            );
           }}
         />
       )}

@@ -143,15 +143,11 @@ export function PartnerFormModal({
       }));
       setUploadMsg(
         isAr
-          ? '✅ تم رفع الصورة بنجاح إلى Firebase Storage وحفظ الرابط.'
-          : '✅ Image uploaded to Firebase Storage successfully.'
-      );
+          ?'تم رفع الصورة بنجاح إلى Firebase Storage وحفظ الرابط.'          :'Image uploaded to Firebase Storage successfully.'      );
     } catch {
       setUploadMsg(
         isAr
-          ? 'ℹ️ خدمة Firebase Storage غير مفعلة حالياً أو تتطلب إعداد Bucket. يمكنك لصق رابط مباشر للصورة (HTTPS URL) في الحقل أدناه.'
-          : 'ℹ️ Firebase Storage bucket is not active; please paste a direct HTTPS image URL in the field below.'
-      );
+          ?'ℹ خدمة Firebase Storage غير مفعلة حالياً أو تتطلب إعداد Bucket. يمكنك لصق رابط مباشر للصورة (HTTPS URL) في الحقل أدناه.'          :'ℹ Firebase Storage bucket is not active; please paste a direct HTTPS image URL in the field below.'      );
     } finally {
       setUploadingLogo(false);
       setUploadingCover(false);
@@ -279,9 +275,7 @@ export function PartnerFormModal({
             <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}>
               {isNew
                 ? isAr
-                  ? '➕ إضافة شريك جديد (يُحفظ افتراضياً كمسودة مخفية)'
-                  : '➕ Add New Partner (Defaults to Hidden Draft)'
-                : `✏️ ${draft.id}`}
+                  ?'إضافة شريك جديد (يُحفظ افتراضياً كمسودة مخفية)'                  :'Add New Partner (Defaults to Hidden Draft)'                :`${draft.id}`}
             </span>
             <h2 style={{ margin: '6px 0 0', fontSize: '1.25rem' }}>
               {isNew
@@ -292,7 +286,7 @@ export function PartnerFormModal({
             </h2>
           </div>
           <button type="button" className="btn ghost small" onClick={onClose}>
-            ✕ {tr(lang, 'إغلاق', 'Close')}
+             {tr(lang,'إغلاق','Close')}
           </button>
         </div>
 
@@ -449,7 +443,7 @@ export function PartnerFormModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🖼️ {isAr ? 'شعار الشريك (Partner Logo URL / Upload)' : 'Partner Logo (URL or Firebase Storage Upload)'}
+                   {isAr ?'شعار الشريك (Partner Logo URL / Upload)':'Partner Logo (URL or Firebase Storage Upload)'}
                 </label>
                 <div className="row" style={{ gap: '8px' }}>
                   <input
@@ -462,7 +456,7 @@ export function PartnerFormModal({
                     placeholder="https://example.com/logo.png"
                   />
                   <label className="btn ghost small" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    {uploadingLogo ? '⏳...' : isAr ? '📤 رفع شعار' : '📤 Upload'}
+                    {uploadingLogo ?'⏳...': isAr ?'رفع شعار':'Upload'}
                     <input
                       type="file"
                       accept="image/*"
@@ -475,7 +469,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🏞️ {isAr ? 'صورة الغلاف (Cover Image URL / Upload)' : 'Cover Image (URL or Upload)'}
+                   {isAr ?'صورة الغلاف (Cover Image URL / Upload)':'Cover Image (URL or Upload)'}
                 </label>
                 <div className="row" style={{ gap: '8px' }}>
                   <input
@@ -488,7 +482,7 @@ export function PartnerFormModal({
                     placeholder="https://example.com/cover.jpg"
                   />
                   <label className="btn ghost small" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                    {uploadingCover ? '⏳...' : isAr ? '📤 رفع غلاف' : '📤 Upload'}
+                    {uploadingCover ?'⏳...': isAr ?'رفع غلاف':'Upload'}
                     <input
                       type="file"
                       accept="image/*"
@@ -510,7 +504,7 @@ export function PartnerFormModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📞 {isAr ? 'رقم الهاتف العام' : 'Public Phone Number'}
+                   {isAr ?'رقم الهاتف العام':'Public Phone Number'}
                 </label>
                 <input
                   type="tel"
@@ -524,7 +518,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  ☎️ {isAr ? 'الخط الساخن المختصر (Hotline)' : 'Hotline Number'}
+                   {isAr ?'الخط الساخن المختصر (Hotline)':'Hotline Number'}
                 </label>
                 <input
                   type="tel"
@@ -538,7 +532,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  ✉️ {isAr ? 'البريد الإلكتروني العام' : 'Public Email'}
+                   {isAr ?'البريد الإلكتروني العام':'Public Email'}
                 </label>
                 <input
                   type="email"
@@ -552,7 +546,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🌐 {isAr ? 'الموقع الرسمي (Website)' : 'Official Website URL'}
+                   {isAr ?'الموقع الرسمي (Website)':'Official Website URL'}
                 </label>
                 <input
                   type="url"
@@ -566,7 +560,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  💬 {isAr ? 'رقم أو رابط واتساب' : 'WhatsApp Number / Link'}
+                   {isAr ?'رقم أو رابط واتساب':'WhatsApp Number / Link'}
                 </label>
                 <input
                   type="text"
@@ -585,7 +579,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📘 {isAr ? 'صفحة فيسبوك (Facebook)' : 'Facebook URL'}
+                   {isAr ?'صفحة فيسبوك (Facebook)':'Facebook URL'}
                 </label>
                 <input
                   type="url"
@@ -653,7 +647,7 @@ export function PartnerFormModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🕒 {isAr ? 'مواعيد العمل (عربي)' : 'Working Hours (Arabic)'}
+                   {isAr ?'مواعيد العمل (عربي)':'Working Hours (Arabic)'}
                 </label>
                 <input
                   type="text"
@@ -665,7 +659,7 @@ export function PartnerFormModal({
               </div>
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🕒 {isAr ? 'مواعيد العمل (إنجليزي)' : 'Working Hours (English)'}
+                   {isAr ?'مواعيد العمل (إنجليزي)':'Working Hours (English)'}
                 </label>
                 <input
                   type="text"
@@ -685,7 +679,7 @@ export function PartnerFormModal({
                   checked={draft.deliveryAvailable}
                   onChange={(e) => setDraft({ ...draft, deliveryAvailable: e.target.checked })}
                 />
-                🚚 {isAr ? 'يوفر خدمة التوصيل للمنازل (Home Delivery)' : 'Provides Home Delivery'}
+                 {isAr ?'يوفر خدمة التوصيل للمنازل (Home Delivery)':'Provides Home Delivery'}
               </label>
 
               <label className="check">
@@ -694,7 +688,7 @@ export function PartnerFormModal({
                   checked={draft.is24Hours}
                   onChange={(e) => setDraft({ ...draft, is24Hours: e.target.checked })}
                 />
-                🕒 {isAr ? 'يعمل على مدار 24 ساعة (24/7)' : 'Operates 24/7'}
+                 {isAr ?'يعمل على مدار 24 ساعة (24/7)':'Operates 24/7'}
               </label>
 
               <label className="check">
@@ -705,7 +699,7 @@ export function PartnerFormModal({
                     setDraft({ ...draft, requiresPrescriptionForAntibiotics: e.target.checked })
                   }
                 />
-                🩺 {isAr ? 'يشترط روشتة طبية لصرف المضادات الحيوية' : 'Requires Valid Prescription for Antibiotics'}
+                 {isAr ?'يشترط روشتة طبية لصرف المضادات الحيوية':'Requires Valid Prescription for Antibiotics'}
               </label>
             </div>
 
@@ -744,7 +738,7 @@ export function PartnerFormModal({
             {/* Supported Governorates Multi-Select */}
             <div className="subcard stack">
               <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                <b>🇪🇬 {isAr ? 'المحافظات المدعومة (Supported Governorates):' : 'Supported Governorates:'}</b>
+                <b> {isAr ?'المحافظات المدعومة (Supported Governorates):':'Supported Governorates:'}</b>
                 <div className="row" style={{ gap: '6px' }}>
                   <button
                     type="button"
@@ -813,7 +807,7 @@ export function PartnerFormModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🏙️ {isAr ? 'المدن المدعومة (اختياري - مفصولة بفاصلة)' : 'Supported Cities (comma-separated)'}
+                   {isAr ?'المدن المدعومة (اختياري - مفصولة بفاصلة)':'Supported Cities (comma-separated)'}
                 </label>
                 <input
                   type="text"
@@ -825,7 +819,7 @@ export function PartnerFormModal({
               </div>
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🏘️ {isAr ? 'الأحياء / المراكز المدعومة (اختياري)' : 'Supported Districts (comma-separated)'}
+                   {isAr ?'الأحياء / المراكز المدعومة (اختياري)':'Supported Districts (comma-separated)'}
                 </label>
                 <input
                   type="text"
@@ -845,7 +839,7 @@ export function PartnerFormModal({
         {activeTab === 'partnership' && (
           <div className="stack" style={{ gap: '14px' }}>
             <div className="notice">
-              🔒{' '}
+               
               {isAr
                 ? 'تنبيه الأمان والخصوصية: بيانات التواصل الإداري والملاحظات الداخلية تُحفظ في مجموعة إدارية محمية ومنفصلة (partnerPrivateAdmin) ولا تظهر أبداً لزوار الموقع العام.'
                 : 'Security Notice: Administrative contacts and internal notes are stored in a restricted private collection (partnerPrivateAdmin) and are never exposed publicly.'}
@@ -900,7 +894,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📅 {isAr ? 'تاريخ بدء الشراكة' : 'Partnership Start Date'}
+                   {isAr ?'تاريخ بدء الشراكة':'Partnership Start Date'}
                 </label>
                 <input
                   type="date"
@@ -918,7 +912,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📅 {isAr ? 'تاريخ انتهاء الشراكة (اختياري)' : 'Expiration Date (Optional)'}
+                   {isAr ?'تاريخ انتهاء الشراكة (اختياري)':'Expiration Date (Optional)'}
                 </label>
                 <input
                   type="date"
@@ -947,7 +941,7 @@ export function PartnerFormModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  👤 {isAr ? 'اسم مسؤول التواصل (Contact Person)' : 'Contact Person Name'}
+                   {isAr ?'اسم مسؤول التواصل (Contact Person)':'Contact Person Name'}
                 </label>
                 <input
                   type="text"
@@ -965,7 +959,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📱 {isAr ? 'هاتف التواصل الإداري السري' : 'Administrative Phone'}
+                   {isAr ?'هاتف التواصل الإداري السري':'Administrative Phone'}
                 </label>
                 <input
                   type="tel"
@@ -983,7 +977,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  ✉️ {isAr ? 'البريد الإداري السري' : 'Administrative Email'}
+                   {isAr ?'البريد الإداري السري':'Administrative Email'}
                 </label>
                 <input
                   type="email"
@@ -1002,7 +996,7 @@ export function PartnerFormModal({
 
             <div>
               <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                📝 {isAr ? 'ملاحظات إدارية داخلية (لا تظهر للجمهور أبداً)' : 'Internal Administrative Notes (Private)'}
+                 {isAr ?'ملاحظات إدارية داخلية (لا تظهر للجمهور أبداً)':'Internal Administrative Notes (Private)'}
               </label>
               <textarea
                 rows={3}
@@ -1030,7 +1024,7 @@ export function PartnerFormModal({
         {activeTab === 'visibility' && (
           <div className="stack" style={{ gap: '14px' }}>
             <div className="subcard" style={{ background: 'rgba(13, 148, 136, 0.06)', borderColor: '#0d9488' }}>
-              <b>🎛️ {isAr ? 'لوحة التحكم الكاملة للمالك في النشر والظهور (Owner Visibility Control)' : 'Owner-Controlled Publication & Visibility Panel'}</b>
+              <b> {isAr ?'لوحة التحكم الكاملة للمالك في النشر والظهور (Owner Visibility Control)':'Owner-Controlled Publication & Visibility Panel'}</b>
               <p className="small muted" style={{ margin: '4px 0 0' }}>
                 {isAr
                   ? 'تحكم بدقة في مكان وتوقيت ونطاق ظهور هذا الشريك على الموقع العام. لن يظهر الشريك للجمهور إلا إذا كانت حالة الشراكة (Active) وحالة النشر (Published) ومفتاح الظهور العام مفعلاً.'
@@ -1048,7 +1042,7 @@ export function PartnerFormModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  📢 {isAr ? 'حالة النشر (Publication Status)' : 'Publication Status'}
+                   {isAr ?'حالة النشر (Publication Status)':'Publication Status'}
                 </label>
                 <select
                   className="input"
@@ -1073,7 +1067,7 @@ export function PartnerFormModal({
 
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  👁️ {isAr ? 'حالة الظهور (Visibility Status)' : 'Visibility Status'}
+                   {isAr ?'حالة الظهور (Visibility Status)':'Visibility Status'}
                 </label>
                 <select
                   className="input"
@@ -1377,7 +1371,7 @@ export function PartnerFormModal({
                       })
                     }
                   />
-                  📢 {isAr ? 'تصنيف كإعلان/رعاية مدفوعة (Sponsored Disclosure)' : 'Mark as Paid / Sponsored Placement'}
+                   {isAr ?'تصنيف كإعلان/رعاية مدفوعة (Sponsored Disclosure)':'Mark as Paid / Sponsored Placement'}
                 </label>
               </div>
             </div>
@@ -1394,7 +1388,7 @@ export function PartnerFormModal({
               >
                 <div>
                   <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                    🕒 {isAr ? 'تاريخ ووقت النشر المجدول (اختياري)' : 'Scheduled Publish Time (Optional)'}
+                     {isAr ?'تاريخ ووقت النشر المجدول (اختياري)':'Scheduled Publish Time (Optional)'}
                   </label>
                   <input
                     type="datetime-local"
@@ -1419,7 +1413,7 @@ export function PartnerFormModal({
 
                 <div>
                   <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                    🕒 {isAr ? 'تاريخ ووقت الإخفاء التلقائي (اختياري)' : 'Scheduled Auto-Deactivate Time'}
+                     {isAr ?'تاريخ ووقت الإخفاء التلقائي (اختياري)':'Scheduled Auto-Deactivate Time'}
                   </label>
                   <input
                     type="datetime-local"
@@ -1456,7 +1450,7 @@ export function PartnerFormModal({
                     })
                   }
                 />
-                ⏸️ {isAr ? 'إيقاف ظهور الشريك مؤقتاً مع الاحتفاظ بكامل سجلاته وفروعه (Temporary Suspension)' : 'Temporarily Suspend Public Visibility (Keep All Records)'}
+                ⏸ {isAr ?'إيقاف ظهور الشريك مؤقتاً مع الاحتفاظ بكامل سجلاته وفروعه (Temporary Suspension)':'Temporarily Suspend Public Visibility (Keep All Records)'}
               </label>
             </div>
           </div>
@@ -1476,7 +1470,7 @@ export function PartnerFormModal({
             >
               <div>
                 <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                  🎨 {isAr ? 'تصميم بطاقة الشريك (Card Theme)' : 'Partner Card Theme'}
+                   {isAr ?'تصميم بطاقة الشريك (Card Theme)':'Partner Card Theme'}
                 </label>
                 <select
                   className="input"
@@ -1624,7 +1618,7 @@ export function PartnerFormModal({
         {activeTab === 'integration' && (
           <div className="stack" style={{ gap: '14px' }}>
             <div className="notice">
-              🔌{' '}
+               
               {isAr
                 ? 'بنية الربط القياسية: يدعم النظام الروابط الخارجية المعتمدة، الإدارة اليدوية للتوفر والأسعار، أو الربط عبر API/Webhook مستقبلي دون الحاجة لتعديل الكود أو ادعاء توفر غير حقيقي.'
                 : 'Modular Integration Architecture: Supports external ordering links, manual verified availability, or future authorized API/webhook providers without faking stock or prices.'}
@@ -1685,7 +1679,7 @@ export function PartnerFormModal({
 
             <div>
               <label className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '4px' }}>
-                🛒 {isAr ? 'رابط الطلب الخارجي المعتمد (External Ordering URL)' : 'Authorized External Ordering URL'}
+                 {isAr ?'رابط الطلب الخارجي المعتمد (External Ordering URL)':'Authorized External Ordering URL'}
               </label>
               <input
                 type="url"
@@ -1709,7 +1703,7 @@ export function PartnerFormModal({
                   checked={draft.supportsOnlineOrdering}
                   onChange={(e) => setDraft({ ...draft, supportsOnlineOrdering: e.target.checked })}
                 />
-                🛒 {isAr ? 'تفعيل إمكانية الطلب الإلكتروني لهذا الشريك' : 'Enable Online Ordering for this Partner'}
+                 {isAr ?'تفعيل إمكانية الطلب الإلكتروني لهذا الشريك':'Enable Online Ordering for this Partner'}
               </label>
 
               <label className="check">
@@ -1720,7 +1714,7 @@ export function PartnerFormModal({
                     setDraft({ ...draft, availabilitySyncEnabled: e.target.checked })
                   }
                 />
-                🔄 {isAr ? 'تفعيل مزامنة التوفر (Availability Sync)' : 'Availability Synchronization Enabled'}
+                 {isAr ?'تفعيل مزامنة التوفر (Availability Sync)':'Availability Synchronization Enabled'}
               </label>
 
               <label className="check">
@@ -1729,12 +1723,12 @@ export function PartnerFormModal({
                   checked={draft.priceSyncEnabled}
                   onChange={(e) => setDraft({ ...draft, priceSyncEnabled: e.target.checked })}
                 />
-                💰 {isAr ? 'تفعيل مزامنة الأسعار الموثقة (Price Sync)' : 'Price Synchronization Enabled'}
+                 {isAr ?'تفعيل مزامنة الأسعار الموثقة (Price Sync)':'Price Synchronization Enabled'}
               </label>
             </div>
 
             <div className="subcard stack">
-              <b>🧩 {isAr ? 'قوالب المحولات البرمجية الجاهزة (Modular Provider Blueprints):' : 'Modular Provider Adapter Blueprints:'}</b>
+              <b> {isAr ?'قوالب المحولات البرمجية الجاهزة (Modular Provider Blueprints):':'Modular Provider Adapter Blueprints:'}</b>
               <select
                 className="input"
                 value={draft.privateAdmin.providerAdapterId}
@@ -1761,7 +1755,7 @@ export function PartnerFormModal({
         {activeTab === 'preview' && (
           <div className="stack" style={{ gap: '14px' }}>
             <div className="notice">
-              🔍{' '}
+               
               {isAr
                 ? 'معاينة حية (Live Preview): هكذا ستظهر بطاقة الشريك للزوار على الموقع العام بناءً على إعدادات التخصيص الحالية.'
                 : 'Live Preview: This is how the partner card will appear to public visitors once approved and published.'}
@@ -1809,9 +1803,7 @@ export function PartnerFormModal({
                   draft.visibility.showOnWebsite &&
                   !draft.visibility.temporarilySuspended
                     ? isAr
-                      ? 'نعم — منشور ومرئي للجمهور ✓'
-                      : 'YES — Live & Publicly Visible ✓'
-                    : isAr
+                      ?'نعم — منشور ومرئي للجمهور'                      :'YES — Live & Publicly Visible'                    : isAr
                     ? 'لا — محفوظ كمسودة أو مخفي عن الجمهور (آمن قبل النشر)'
                     : 'NO — Draft / Hidden from Public'}
                 </strong>
@@ -1843,7 +1835,7 @@ export function PartnerFormModal({
               disabled={saving}
               onClick={(e) => handleSubmit(e as unknown as FormEvent, true)}
             >
-              📝 {isAr ? 'حفظ كمسودة مخفية (Save as Draft)' : 'Save as Hidden Draft'}
+               {isAr ?'حفظ كمسودة مخفية (Save as Draft)':'Save as Hidden Draft'}
             </button>
 
             <button type="submit" className="btn" disabled={saving} style={{ background: '#0d9488' }}>
@@ -1852,8 +1844,7 @@ export function PartnerFormModal({
                   ? 'جارٍ الحفظ في Firestore...'
                   : 'Saving to Firestore...'
                 : isAr
-                ? '💾 حفظ التعديلات والإعدادات الحالية'
-                : '💾 Save Partner Settings'}
+                ?'حفظ التعديلات والإعدادات الحالية'                :'Save Partner Settings'}
             </button>
           </div>
         </div>

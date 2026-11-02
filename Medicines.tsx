@@ -558,7 +558,7 @@ export default function Medicines() {
                               fontWeight: 700,
                             }}
                           >
-                            {p.barcode} 
+                            {p.barcode} ✓
                           </code>
                         ) : (
                           <span className="small muted">
@@ -659,14 +659,14 @@ export default function Medicines() {
                     const pro = getClinicalProProfile(m.id, ingMeta?.whoAccessGroup || 'Access', m.drugClass.ar, m.drugClass.en);
                     return (
                       <div style={{ margin: '6px 0', padding: '8px 10px', borderRadius: '8px', background: 'rgba(14, 154, 167, 0.08)', border: '1px solid rgba(14, 154, 167, 0.28)', fontSize: '0.78rem' }}>
-                        <div><b> PK/PD:</b> <span dir="ltr">{pro.pkpd.halfLife}</span> · <span dir="ltr">{pro.pkpd.bioavailability}</span></div>
+                        <div><b>🩺 PK/PD:</b> <span dir="ltr">{pro.pkpd.halfLife}</span> · <span dir="ltr">{pro.pkpd.bioavailability}</span></div>
                         <div style={{ marginTop:'2px'}}><b> Driver:</b> {pick(pro.pkpd.pkpdDriver, lang)}</div>
                       </div>
                     );
                   })()}
                   {m.priceEgypt?.ar && (
                     <p className="small" style={{ color: '#15803d', fontWeight: 600, margin: '4px 0' }}>
-                       {pick(m.priceEgypt, lang).split('\n')[0]}
+                       💰 {pick(m.priceEgypt, lang).split('\n')[0]}
                     </p>
                   )}
                   {m.brands.length > 0 && (
@@ -866,7 +866,7 @@ export default function Medicines() {
                         {selectedProduct.barcode}
                       </code>
                       <div style={{ fontSize: '0.72rem', color: '#16a34a' }}>
-                         {selectedProduct.barcodeVerifiedBy}
+                         ✓ {selectedProduct.barcodeVerifiedBy}
                       </div>
                     </div>
                   ) : (
@@ -897,7 +897,7 @@ export default function Medicines() {
               {/* Tier 1: Exact Equivalents */}
               <div className="card" style={{ borderLeft: '4px solid #16a34a' }}>
                 <h4 style={{ margin: '0 0 8px', color: '#15803d' }}>
-                  1⃣ {isAr
+                  1️⃣ {isAr
                     ? `المثائل المتطابقة تماماً (نفس المادة الفعالة والتركيز والشكل الصيدلاني) (${selectedAlternatives.exactEquivalents.length})`
                     : `Exact Generic Equivalents (Same Ingredient, Strength & Dosage Form) (${selectedAlternatives.exactEquivalents.length})`}
                 </h4>
@@ -956,7 +956,7 @@ export default function Medicines() {
               {/* Tier 2: Same Ingredient, Different Strength or Form */}
               <div className="card" style={{ borderLeft: '4px solid #0284c7' }}>
                 <h4 style={{ margin: '0 0 8px', color: '#0369a1' }}>
-                  2⃣ {isAr
+                  2️⃣ {isAr
                     ? `مستحضرات بنفس المادة الفعالة ولكن بتركيز أو شكل دوائي مختلف (${selectedAlternatives.sameIngredientDifferentFormOrStrength.length})`
                     : `Same Active Ingredient, Different Strength or Dosage Form (${selectedAlternatives.sameIngredientDifferentFormOrStrength.length})`}
                 </h4>

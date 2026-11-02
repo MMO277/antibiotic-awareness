@@ -1,3 +1,4 @@
+import { GlobalSpotlightModal } from './SmartPersonaAndSpotlight';
 import { ReactNode, useRef, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useLang, SUPPORTED_LANGS } from './i18n';
@@ -146,6 +147,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerClosing, setDrawerClosing] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
   const [openRibbonCatId, setOpenRibbonCatId] = useState<string | null>(null);
   const [openDrawerGroups, setOpenDrawerGroups] = useState<Record<string, boolean>>({});
@@ -202,7 +204,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         {
           to: '/partners',
           key: '',
-          icon: '🏥',
+          icon: '💊',
           shortLabel: tr(lang, 'شبكة الصيدليات والشركاء', 'Pharmacies & Partners', 'Pharmacies & Partenaires', 'Farmacias y Socios', 'Apotheken & Partner'),
         },
       ],
@@ -231,6 +233,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           key: 'navInteractions',
           icon: '⚡',
           shortLabel: tr(lang, 'فاحص التداخلات', 'Interactions', 'Interactions', 'Interacciones'),
+        },
+        {
+          to: '/complete-checkup',
+          key: 'navOneClickCheckup',
+          icon: '⚡',
+          shortLabel: tr(lang, 'الفحص الشامل 1-Click', '1-Click Checkup', 'Bilan 1-Clic', 'Chequeo 1-Clic'),
         },
         {
           to: '/prescription-radar',
@@ -689,6 +697,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         setOpenRibbonCatId(null);
         setLangMenuOpen(false);
       }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSpotlightOpen((prev) => !prev);
+      }
     };
     document.addEventListener('mousedown', onDocClick);
     window.addEventListener('keydown', onKeyDown);
@@ -811,6 +823,19 @@ export default function Layout({ children }: { children: ReactNode }) {
                                 <span className="header-logout-text">{tr(lang, 'خروج', 'Logout', 'Sortir', 'Salir')}</span>
               </button>
             )}
+
+            {/* Spotlight Search Trigger (Ctrl+K) */}
+            <button
+              type="button"
+              className="dark-toggle"
+              onClick={() => setSpotlightOpen(true)}
+              title={tr(lang, 'بحث ذكي شامل (Ctrl + K)', 'Global Spotlight Search (Ctrl + K)')}
+              aria-label="Spotlight Search"
+              style={{ width: 'auto', padding: '0 10px', gap: '5px', display: 'inline-flex', alignItems: 'center', fontWeight: 800, fontSize: '0.8rem' }}
+            >
+              <span>🔍</span>
+              <span className="hide-sm">Ctrl+K</span>
+            </button>
 
             {/* Dark mode toggle */}
             <button
@@ -941,6 +966,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     aria-label={tr(lang, 'إغلاق القسم', 'Close category', 'Fermer', 'Cerrar')}
                   >
                     
+✕
                   </button>
                 </div>
 
@@ -1001,6 +1027,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 title={tr(lang, 'إغلاق (Esc)', 'Close (Esc)', 'Fermer (Esc)', 'Cerrar (Esc)')}
               >
                 
+✕
               </button>
             </div>
 
@@ -1148,6 +1175,8 @@ export default function Layout({ children }: { children: ReactNode }) {
       <div ref={pageRef} className="page-enter">
         {children}
       </div>
+
+      <GlobalSpotlightModal isOpen={spotlightOpen} onClose={() => setSpotlightOpen(false)} />
 
       {/* Always-on Floating AI Assistant Bubble */}
       <ChatWidget />

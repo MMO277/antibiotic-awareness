@@ -146,16 +146,12 @@ export default function PartnersDirectoryPage() {
         setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
         setGeoStatus(
           isAr
-            ? '✅ تم تحديد موقعك وترتيب الفروع الأقرب إليك جغرافياً.'
-            : '✅ Location detected. Branches are now sorted by proximity.'
-        );
+            ?'تم تحديد موقعك وترتيب الفروع الأقرب إليك جغرافياً.'            :'Location detected. Branches are now sorted by proximity.'        );
       },
       () => {
         setGeoStatus(
           isAr
-            ? 'ℹ️ لم يتم منح إذن الموقع الجغرافي. يمكنك اختيار المحافظة والمدينة يدوياً بكل سهولة.'
-            : 'ℹ️ Location permission declined. You can select your governorate and city manually.'
-        );
+            ?'ℹ لم يتم منح إذن الموقع الجغرافي. يمكنك اختيار المحافظة والمدينة يدوياً بكل سهولة.'            :'ℹ Location permission declined. You can select your governorate and city manually.'        );
       },
       { enableHighAccuracy: false, timeout: 8000 }
     );
@@ -186,7 +182,7 @@ export default function PartnersDirectoryPage() {
                 fontWeight: 700,
               }}
             >
-              🇪🇬 {tr(lang, 'دليل الشركاء وشبكة الصيدليات ومقدمي الرعاية الصحية', 'Healthcare Partners & Pharmacy Network')}
+               {tr(lang,'دليل الشركاء وشبكة الصيدليات ومقدمي الرعاية الصحية','Healthcare Partners & Pharmacy Network')}
             </span>
             <h1 style={{ margin: '8px 0 6px', color: '#ffffff' }}>
               {tr(
@@ -204,7 +200,7 @@ export default function PartnersDirectoryPage() {
 
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <Link to="/medicines" className="btn" style={{ background: '#14b8a6', color: '#042f2e', fontWeight: 800 }}>
-              💊 {isAr ? 'ابحث عن دواء (206+)' : 'Find Medication (206+)'}
+               {isAr ?'ابحث عن دواء (206+)':'Find Medication (206+)'}
             </Link>
           </div>
         </div>
@@ -221,7 +217,7 @@ export default function PartnersDirectoryPage() {
             }}
             onClick={() => setSp({ tab: 'directory' })}
           >
-            🏥 {isAr ? 'دليل الشركاء والصيدليات' : 'Partner Directory'}
+             {isAr ?'دليل الشركاء والصيدليات':'Partner Directory'}
           </button>
 
           <button
@@ -234,7 +230,7 @@ export default function PartnersDirectoryPage() {
             }}
             onClick={() => setSp({ tab: 'nearby' })}
           >
-            📍 {isAr ? 'أقرب صيدلية / فرع في منطقتك' : 'Nearby Pharmacies & Branches'}
+             {isAr ?'أقرب صيدلية / فرع في منطقتك':'Nearby Pharmacies & Branches'}
           </button>
 
           <button
@@ -247,7 +243,7 @@ export default function PartnersDirectoryPage() {
             }}
             onClick={() => setSp({ tab: 'orders' })}
           >
-            📦 {isAr ? `متابعة طلباتي (${orders.length})` : `My Orders (${orders.length})`}
+             {isAr ?`متابعة طلباتي (${orders.length})`:`My Orders (${orders.length})`}
           </button>
         </div>
       </header>
@@ -264,7 +260,7 @@ export default function PartnersDirectoryPage() {
           >
             <div>
               <label className="small muted" style={{ display: 'block', marginBottom: '4px' }}>
-                🔍 {isAr ? 'بحث بالاسم أو الخدمة:' : 'Search Partner or Service:'}
+                 {isAr ?'بحث بالاسم أو الخدمة:':'Search Partner or Service:'}
               </label>
               <input
                 type="search"
@@ -277,7 +273,7 @@ export default function PartnersDirectoryPage() {
 
             <div>
               <label className="small muted" style={{ display: 'block', marginBottom: '4px' }}>
-                🗂️ {isAr ? 'فئة الشريك الصحي:' : 'Partner Category:'}
+                 {isAr ?'فئة الشريك الصحي:':'Partner Category:'}
               </label>
               <select
                 className="input"
@@ -295,7 +291,7 @@ export default function PartnersDirectoryPage() {
 
             <div>
               <label className="small muted" style={{ display: 'block', marginBottom: '4px' }}>
-                🇪🇬 {isAr ? 'المحافظة:' : 'Governorate:'}
+                 {isAr ?'المحافظة:':'Governorate:'}
               </label>
               <select
                 className="input"
@@ -317,7 +313,7 @@ export default function PartnersDirectoryPage() {
             {selectedGovMeta && (
               <div>
                 <label className="small muted" style={{ display: 'block', marginBottom: '4px' }}>
-                  🏙️ {isAr ? 'المدينة / المنطقة:' : 'City / Area:'}
+                   {isAr ?'المدينة / المنطقة:':'City / Area:'}
                 </label>
                 <select
                   className="input"
@@ -346,7 +342,7 @@ export default function PartnersDirectoryPage() {
                   checked={onlyDelivery}
                   onChange={(e) => setOnlyDelivery(e.target.checked)}
                 />
-                🚚 {isAr ? 'يوفر توصيل للمنازل فقط' : 'Home Delivery Only'}
+                 {isAr ?'يوفر توصيل للمنازل فقط':'Home Delivery Only'}
               </label>
               <label className="check small">
                 <input
@@ -354,7 +350,7 @@ export default function PartnersDirectoryPage() {
                   checked={only24h}
                   onChange={(e) => setOnly24h(e.target.checked)}
                 />
-                🕒 {isAr ? 'خدمة 24 ساعة فقط' : '24/7 Service Only'}
+                 {isAr ?'خدمة 24 ساعة فقط':'24/7 Service Only'}
               </label>
             </div>
 
@@ -363,7 +359,7 @@ export default function PartnersDirectoryPage() {
               className="btn ghost small"
               onClick={handleRequestGeolocation}
             >
-              📍 {isAr ? 'استخدم موقعي الحالي لعرض الأقرب (بإذنك)' : 'Use My Location (With Permission)'}
+               {isAr ?'استخدم موقعي الحالي لعرض الأقرب (بإذنك)':'Use My Location (With Permission)'}
             </button>
           </div>
 
@@ -376,7 +372,7 @@ export default function PartnersDirectoryPage() {
         <section className="stack">
           {visiblePartners.length === 0 ? (
             <div className="card center stack" style={{ padding: '32px 20px', alignItems: 'center' }}>
-              <div style={{ fontSize: '2.4rem' }}>🏥</div>
+              <div style={{ fontSize:'2.4rem'}}></div>
               <h3 style={{ margin: 0 }}>
                 {isAr
                   ? 'لا يوجد شركاء منشورون يطابقون معايير التصفية الحالية'
@@ -417,7 +413,7 @@ export default function PartnersDirectoryPage() {
         <section className="stack">
           <div className="card">
             <h2 style={{ margin: '0 0 6px' }}>
-              📍 {isAr ? 'الفروع المعتمدة والمنشورة حسب النطاق الجغرافي' : 'Published Partner Branches by Area'}
+               {isAr ?'الفروع المعتمدة والمنشورة حسب النطاق الجغرافي':'Published Partner Branches by Area'}
             </h2>
             <p className="small muted" style={{ margin: 0 }}>
               {isAr
@@ -453,7 +449,7 @@ export default function PartnersDirectoryPage() {
                         </span>
                         {distKm !== null && (
                           <span className="badge" style={{ background: '#dcfce7', color: '#166534', fontWeight: 700 }}>
-                            📍 {distKm.toFixed(1)} km
+                             {distKm.toFixed(1)} km
                           </span>
                         )}
                       </div>
@@ -468,11 +464,11 @@ export default function PartnersDirectoryPage() {
                       )}
 
                       <div className="small muted" style={{ marginTop: '6px', lineHeight: 1.7 }}>
-                        <div>📍 {isAr ? b.addressAr : b.addressEn}</div>
-                        <div>🕒 {isAr ? b.workingHoursAr : b.workingHoursEn}</div>
+                        <div> {isAr ? b.addressAr : b.addressEn}</div>
+                        <div> {isAr ? b.workingHoursAr : b.workingHoursEn}</div>
                         {b.deliveryAvailable && (
                           <div style={{ color: '#15803d', fontWeight: 600 }}>
-                            🚚 {isAr ? b.deliveryCoverageAr || 'متاح التوصيل للمنازل' : b.deliveryCoverageEn || 'Home delivery available'}
+                             {isAr ? b.deliveryCoverageAr ||'متاح التوصيل للمنازل': b.deliveryCoverageEn ||'Home delivery available'}
                           </div>
                         )}
                       </div>
@@ -481,7 +477,7 @@ export default function PartnersDirectoryPage() {
                     <div className="row wrapRow" style={{ gap: '8px', paddingTop: '8px', borderTop: '1px solid var(--line)' }}>
                       {b.phone && (
                         <a href={`tel:${b.phone.replace(/\s+/g, '')}`} className="btn small" style={{ flex: 1, textAlign: 'center' }}>
-                          📞 {b.phone}
+                           {b.phone}
                         </a>
                       )}
                       {b.branchOrderingUrl && b.branchOrderingUrl.startsWith('http') && (
@@ -491,12 +487,12 @@ export default function PartnersDirectoryPage() {
                           rel="noopener noreferrer"
                           className="btn ghost small"
                         >
-                          🛒 {isAr ? 'طلب أونلاين ↗' : 'Order ↗'}
+                           {isAr ?'طلب أونلاين ↗':'Order ↗'}
                         </a>
                       )}
                       {parentPartner && (
                         <Link to={`/partner/${parentPartner.id}`} className="btn ghost small">
-                          🏥 {isAr ? 'ملف الصيدلية' : 'Profile'}
+                           {isAr ?'ملف الصيدلية':'Profile'}
                         </Link>
                       )}
                     </div>
@@ -511,7 +507,7 @@ export default function PartnersDirectoryPage() {
       {/* TAB 3: PATIENT ORDER TRACKING & HISTORY */}
       {activeTab === 'orders' && (
         <section className="card stack">
-          <h2>📦 {isAr ? 'متابعة حالة طلبات الصرف والروشتات' : 'Order Status & Prescription Review Tracking'}</h2>
+          <h2> {isAr ?'متابعة حالة طلبات الصرف والروشتات':'Order Status & Prescription Review Tracking'}</h2>
           {orders.length === 0 ? (
             <p className="muted">
               {isAr
@@ -530,8 +526,8 @@ export default function PartnersDirectoryPage() {
                     <span className="badge approved">{ord.status}</span>
                   </div>
                   <div className="small muted">
-                    🏥 {isAr ? ord.partnerNameAr : ord.partnerNameEn}{' '}
-                    {ord.branchNameAr ? `(${isAr ? ord.branchNameAr : ord.branchNameEn})` : ''} · 📅{' '}
+                     {isAr ? ord.partnerNameAr : ord.partnerNameEn} 
+                    {ord.branchNameAr ?`(${isAr ? ord.branchNameAr : ord.branchNameEn})`:''} · 
                     {ord.createdAtIso.slice(0, 10)}
                   </div>
                   <div className="small">
@@ -590,7 +586,7 @@ export function PartnerPublicProfilePage() {
     return (
       <main className="wrap narrow stack" dir={isAr ? 'rtl' : 'ltr'}>
         <div className="card center stack" style={{ padding: '32px 20px', alignItems: 'center' }}>
-          <div style={{ fontSize: '2.5rem' }}>🔒</div>
+          <div style={{ fontSize:'2.5rem'}}></div>
           <h2>
             {isAr
               ? 'ملف الشريك غير متاح أو غير منشور حالياً'
@@ -696,7 +692,7 @@ export function PartnerPublicProfilePage() {
                 )}
                 {partner.visibility.isSponsoredPlacement && (
                   <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>
-                    📢 {isAr ? 'رعاية تجارية (Sponsored)' : 'Sponsored'}
+                     {isAr ?'رعاية تجارية (Sponsored)':'Sponsored'}
                   </span>
                 )}
               </div>
@@ -719,7 +715,7 @@ export function PartnerPublicProfilePage() {
                   className="btn"
                   style={{ background: '#0d9488' }}
                 >
-                  🛒{' '}
+                   
                   {isAr
                     ? partner.display.customCtaTextAr || 'اطلب الآن'
                     : partner.display.customCtaTextEn || 'Order Now'}{' '}
@@ -736,7 +732,7 @@ export function PartnerPublicProfilePage() {
                   rel="noopener noreferrer"
                   className="btn ghost"
                 >
-                  🌐 {isAr ? 'الموقع الرسمي' : 'Official Website'} ↗
+                   {isAr ?'الموقع الرسمي':'Official Website'} ↗
                 </a>
               )}
 
@@ -745,7 +741,7 @@ export function PartnerPublicProfilePage() {
                 href={`tel:${(partner.hotline || partner.phone).replace(/\s+/g, '')}`}
                 className="btn ghost"
               >
-                📞 {partner.hotline || partner.phone}
+                 {partner.hotline || partner.phone}
               </a>
             )}
           </div>
@@ -767,7 +763,7 @@ export function PartnerPublicProfilePage() {
           }}
         >
           <div>
-            <b>🩺 {isAr ? 'الخدمات المقدمة:' : 'Services Offered:'}</b>
+            <b> {isAr ?'الخدمات المقدمة:':'Services Offered:'}</b>
             <div className="row wrapRow" style={{ gap: '6px', marginTop: '6px' }}>
               {(isAr ? partner.servicesOfferedAr : partner.servicesOfferedEn).map((srv, i) => (
                 <span key={i} className="badge">
@@ -778,24 +774,21 @@ export function PartnerPublicProfilePage() {
           </div>
 
           <div>
-            <b>🇪🇬 {isAr ? 'المحافظات المدعومة:' : 'Supported Governorates:'}</b>
+            <b> {isAr ?'المحافظات المدعومة:':'Supported Governorates:'}</b>
             <p className="small" style={{ margin: '4px 0 0' }}>
               {govNames.join(' ، ')}
             </p>
           </div>
 
           <div>
-            <b>🕒 {isAr ? 'مواعيد العمل والتوصيل:' : 'Working Hours & Delivery:'}</b>
+            <b> {isAr ?'مواعيد العمل والتوصيل:':'Working Hours & Delivery:'}</b>
             <p className="small" style={{ margin: '4px 0 0' }}>
               {isAr ? partner.workingHoursAr : partner.workingHoursEn}
               <br />
               {partner.deliveryAvailable
                 ? isAr
-                  ? `🚚 ${partner.deliveryCoverageAr}`
-                  : `🚚 ${partner.deliveryCoverageEn}`
-                : isAr
-                ? '🏪 استلام من الفرع'
-                : '🏪 Branch Pickup'}
+                  ?`${partner.deliveryCoverageAr}`                  :`${partner.deliveryCoverageEn}`                : isAr
+                ?'استلام من الفرع'                :'Branch Pickup'}
             </p>
           </div>
         </div>
@@ -805,7 +798,7 @@ export function PartnerPublicProfilePage() {
       {partner.display.showBranchInfo && publishedBranches.length > 0 && (
         <section className="card stack">
           <h2>
-            🏪 {isAr ? `الفروع المعتمدة والمنشورة (${publishedBranches.length})` : `Published Branches (${publishedBranches.length})`}
+             {isAr ?`الفروع المعتمدة والمنشورة (${publishedBranches.length})`:`Published Branches (${publishedBranches.length})`}
           </h2>
           <div className="grid">
             {publishedBranches.map((b) => {
@@ -815,20 +808,20 @@ export function PartnerPublicProfilePage() {
                   <div>
                     <b>{isAr ? b.nameAr : b.nameEn}</b>
                     <div className="small muted">
-                      📍 {g ? (isAr ? g.nameAr : g.nameEn) : b.governorateId} — {b.city}{' '}
+                       {g ? (isAr ? g.nameAr : g.nameEn) : b.governorateId} — {b.city} 
                       {b.district ? `(${b.district})` : ''}
                     </div>
                     <div className="small" style={{ marginTop: '4px' }}>
                       {isAr ? b.addressAr : b.addressEn}
                     </div>
                     <div className="small muted" style={{ marginTop: '4px' }}>
-                      🕒 {isAr ? b.workingHoursAr : b.workingHoursEn}
+                       {isAr ? b.workingHoursAr : b.workingHoursEn}
                     </div>
                   </div>
                   {b.phone && (
                     <div style={{ marginTop: '8px' }}>
                       <a href={`tel:${b.phone.replace(/\s+/g, '')}`} className="btn ghost small">
-                        📞 {b.phone}
+                         {b.phone}
                       </a>
                     </div>
                   )}
@@ -843,7 +836,7 @@ export function PartnerPublicProfilePage() {
       {publishedMappings.length > 0 && (
         <section className="card stack">
           <h2>
-            💊 {isAr ? 'الأدوية المربوطة وحالة التوفر الموثقة' : 'Mapped Medications & Verified Availability'}
+             {isAr ?'الأدوية المربوطة وحالة التوفر الموثقة':'Mapped Medications & Verified Availability'}
           </h2>
           <p className="small muted" style={{ margin: 0 }}>
             {isAr
@@ -898,7 +891,7 @@ export function PartnerPublicProfilePage() {
                             className="btn small"
                             onClick={() => setOrderModalProduct(prod)}
                           >
-                            🩺 {isAr ? 'طلب بالروشتة' : 'Rx Order'}
+                             {isAr ?'طلب بالروشتة':'Rx Order'}
                           </button>
                         )}
                       </td>
@@ -955,7 +948,7 @@ export function PublicPartnerPlacementSection({
         >
           <div>
             <span className="badge" style={{ background: '#ccfbf1', color: '#0f766e', fontWeight: 700 }}>
-              🏥 {tr(lang, 'شبكة الصيدليات والشركاء الصحيين', 'Pharmacy & Healthcare Partner Network')}
+               {tr(lang,'شبكة الصيدليات والشركاء الصحيين','Pharmacy & Healthcare Partner Network')}
             </span>
             <h2 style={{ margin: '6px 0 4px' }}>
               {tr(
@@ -971,7 +964,7 @@ export function PublicPartnerPlacementSection({
             </p>
           </div>
           <Link to="/partners" className="btn" style={{ background: '#0d9488' }}>
-            🏥 {tr(lang, 'افتح دليل الشركاء والصيدليات ←', 'Open Partner Directory →')}
+             {tr(lang,'افتح دليل الشركاء والصيدليات ←','Open Partner Directory →')}
           </Link>
         </div>
       </section>
@@ -983,7 +976,7 @@ export function PublicPartnerPlacementSection({
       <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
         <div>
           <span className="badge" style={{ background: '#ccfbf1', color: '#0f766e', fontWeight: 700 }}>
-            🤝 {tr(lang, 'الشركاء الصحيون وشبكة الصيدليات المعتمدة', 'Approved Healthcare Partners & Pharmacies')}
+             {tr(lang,'الشركاء الصحيون وشبكة الصيدليات المعتمدة','Approved Healthcare Partners & Pharmacies')}
           </span>
           <h2 style={{ margin: '4px 0 0' }}>
             {tr(

@@ -195,7 +195,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
             disabled={!newUid.trim() || busy}
             onClick={() => handleSaveRole(newUid, newRole)}
           >
-             {t('grant')}
+             ✅ {t('grant')}
           </button>
         </div>
       </div>
@@ -249,7 +249,7 @@ export default function UsersTab({ myUid }: { myUid: string }) {
                         disabled={busy}
                         onClick={() => handleDeleteRole(u.uid)}
                       >
-                         {t('remove')}
+                         🗑️ {t('remove')}
                       </button>
                     )}
                   </td>

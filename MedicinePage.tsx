@@ -1,3 +1,4 @@
+import Mechanism3DViewer from './Mechanism3DViewer';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -311,25 +312,25 @@ export default function MedicinePage() {
           </h3>
           <div className="clinical-spectrum-grid">
             <div className="spectrum-box gram-pos">
-              <b> Gram-Positive (موجبات الجرام)</b>
+              <b>🟣 Gram-Positive (موجبات الجرام)</b>
               <p className="small">{pick(clinicalPro.spectrum.gramPositive, lang)}</p>
             </div>
             <div className="spectrum-box gram-neg">
-              <b> Gram-Negative (سالبات الجرام)</b>
+              <b>🔴 Gram-Negative (سالبات الجرام)</b>
               <p className="small">{pick(clinicalPro.spectrum.gramNegative, lang)}</p>
             </div>
             <div className="spectrum-box anaerobes">
-              <b> Anaerobes (البكتيريا اللاهوائية)</b>
+              <b>🟢 Anaerobes (البكتيريا اللاهوائية)</b>
               <p className="small">{pick(clinicalPro.spectrum.anaerobes, lang)}</p>
             </div>
             <div className="spectrum-box atypicals">
-              <b> Atypicals (البكتيريا غير النمطية)</b>
+              <b>🔵 Atypicals (البكتيريا غير النمطية)</b>
               <p className="small">{pick(clinicalPro.spectrum.atypicals, lang)}</p>
             </div>
           </div>
 
           <div className="clinical-pearl-box">
-            <strong> {pick(clinicalPro.spectrum.clinicalPearl, lang)}</strong>
+            <strong>💡 {pick(clinicalPro.spectrum.clinicalPearl, lang)}</strong>
           </div>
 
           {/* 3. Renal CrCl Dosing Cutoffs Table */}
@@ -528,6 +529,47 @@ export default function MedicinePage() {
       <div className="med-grid">
         <div className="stack">
           {/* Find This Medication (اعثر على دوائك) Dynamic Partner Network Section */}
+          {/* One-Click Complete Checkup CTA Banner */}
+          <div
+            className="card"
+            style={{
+              background: 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)',
+              color: '#fff',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '12px',
+              borderRadius: '16px',
+              border: '1.5px solid #14b8a6',
+            }}
+          >
+            <div>
+              <b style={{ fontSize: '1.05rem', color: '#5eead4' }}>
+                ⚡ {isAr ? 'افحص هذا الدواء في شاشة الفحص الشامل (4×1)' : 'Run 1-Click Complete Prescription Checkup (4-in-1)'}
+              </b>
+              <div className="small" style={{ color: '#cbd5e1', marginTop: '2px' }}>
+                {isAr
+                  ? 'مؤشر التداخلات + المثيل الأرخص + ساعة الجرعات الـ 24 ساعة + منبه الجرعات الصوتي في شاشة واحدة.'
+                  : 'Interaction safety gauge + bioequivalent generic saver + 24h clock schedule + voice alarm on one screen.'}
+              </div>
+            </div>
+            <Link
+              to={`/complete-checkup?med=${encodeURIComponent(m.id)}`}
+              className="btn"
+              style={{ background: '#14b8a6', color: '#0f172a', fontWeight: 900, borderRadius: '12px' }}
+            >
+              ⚡ {isAr ? 'فتح الفحص الشامل الآن ←' : 'Open 1-Click Checkup →'}
+            </Link>
+          </div>
+
+          {/* Idea 3: Interactive 3D/Visual Mechanism of Action Viewer */}
+          <Mechanism3DViewer
+            medicineId={m.id}
+            medicineTitle={pick(m.name, lang)}
+            scientificName={pick(m.activeIngredients, 'en')}
+          />
+
           <FindMedicationPanel activeIngredientId={m.id} />
 
           {/* Commercial Packages & Alternatives Table in Egyptian Market */}

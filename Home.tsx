@@ -1,3 +1,5 @@
+import { SmartPersonaSwitcher, GlobalSpotlightModal, PersonaType } from './SmartPersonaAndSpotlight';
+import SmartDoseAlarmCard from './SmartDoseAlarmCard';
 import { CSSProperties, FormEvent, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -21,6 +23,8 @@ export default function Home() {
   const [q, setQ] = useState('');
   const [focused, setFocused] = useState(false);
   const [showAllClinicalTools, setShowAllClinicalTools] = useState(false);
+  const [selectedPersona, setSelectedPersona] = useState<PersonaType>('all');
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
 
   const go = (e: FormEvent) => {
     e.preventDefault();
@@ -50,6 +54,26 @@ export default function Home() {
   }, []);
 
   const clinicalTools = [
+    {
+      to: '/complete-checkup',
+      icon: '⚡',
+      badge: tr(lang, 'جديد • 4×1 شامل', 'NEW • All-in-One', 'NOUVEAU • Bilan 4-en-1', 'NUEVO • Chequeo 4 en 1'),
+      title: tr(
+        lang,
+        'الفحص الشامل للروشتة في خطوة واحدة (One-Click Checkup)',
+        'One-Click Complete Prescription Checkup Dashboard',
+        'Bilan Complet de l’Ordonnance en Un Clic',
+        'Chequeo Completo de la Receta en Un Solo Clic'
+      ),
+      desc: tr(
+        lang,
+        'افحص أمان التداخلات، قارن المثيل الأرخص (توفير 60%)، اضبط ساعة الجرعات الـ 24 ساعة، واعرف الصيدليات المتوفر بها الدواء في شاشة واحدة.',
+        'All-in-one Bento dashboard combining interaction gauge, generic cost saver, 24h clock schedule, and verified pharmacy stock.',
+        'Tableau de bord tout-en-un combinant interactions, économies génériques, horloge 24h et pharmacies vérifiées.',
+        'Panel todo en uno con interacciones, ahorro en genéricos, reloj de 24h y farmacias verificadas.'
+      ),
+      color: '#0d9488',
+    },
     {
       to: '/cost-saver',
       icon: '💰',
@@ -481,7 +505,7 @@ export default function Home() {
             <div className="pro-art-shield"><i /></div>
             <div className="pro-art-pill"><span /><span /></div>
             <div className="pro-art-mini-card pro-art-card-top">
-              <b></b>
+              <b>✓</b>
               <span>{tr(lang, 'أمان الدواء', 'Medication safety', 'Sécurité des médicaments', 'Seguridad medicamentosa')}</span>
             </div>
             <div className="pro-art-mini-card pro-art-card-bottom">
@@ -590,6 +614,13 @@ export default function Home() {
       </section>
 
       <div className="wrap stack" style={{ marginTop: '28px' }}>
+        {/* Idea 1: Smart Persona Switcher & Global Spotlight Search (Ctrl+K) */}
+        <SmartPersonaSwitcher
+          selectedPersona={selectedPersona}
+          onSelectPersona={setSelectedPersona}
+          onOpenSpotlight={() => setSpotlightOpen(true)}
+        />
+
         {/* Clinical Command Center: Interactive Modules */}
         <section className="pro-tools-section">
           <div className="head pro-section-heading" style={{ marginBottom: '14px' }}>
@@ -613,7 +644,7 @@ export default function Home() {
             {(showAllClinicalTools ? [...clinicalTools].sort((a, b) => {
               const priority = ['/medicines', '/allergy-checker', '/prescription-radar', '/scan', '/compare', '/green-prescription'];
               return (priority.indexOf(a.to) === -1 ? 999 : priority.indexOf(a.to)) - (priority.indexOf(b.to) === -1 ? 999 : priority.indexOf(b.to));
-            }) : ['/cost-saver', '/cold-shot-warning', '/daily-schedule', '/medicines', '/allergy-checker', '/prescription-radar'].map((path) => clinicalTools.find((tool) => tool.to === path)).filter((tool): tool is (typeof clinicalTools)[number] => Boolean(tool))).map((tool) => (
+            }) : ['/complete-checkup', '/cost-saver', '/cold-shot-warning', '/medicines', '/allergy-checker', '/prescription-radar'].map((path) => clinicalTools.find((tool) => tool.to === path)).filter((tool): tool is (typeof clinicalTools)[number] => Boolean(tool))).map((tool) => (
               <Link
                 key={tool.to}
                 to={tool.to}
@@ -697,6 +728,9 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Idea 4: Live Smart Dose Alarm & Spoken Voice Reminder */}
+        <SmartDoseAlarmCard />
+
         {/* WHO AWaRe Classification Banner */}
         <section className="card">
           <h2>
@@ -773,7 +807,7 @@ export default function Home() {
         {/* Articles Section */}
         <section>
           <div className="head">
-            <h2> {t('articlesTitle')}</h2>
+            <h2>📰 {t('articlesTitle')}</h2>
             <Link to="/articles" className="btn ghost small">{t('seeAll')} {isAr ? '←' : '→'}</Link>
           </div>
           <div className="grid">
@@ -791,7 +825,7 @@ export default function Home() {
         <div className="grid">
           <section className="card quizcta">
             <div>
-              <h2> {t('quizTitle')}</h2>
+              <h2>📝 {t('quizTitle')}</h2>
               <p className="small muted">{t('quizIntro')}</p>
             </div>
             <Link to="/quiz" className="btn">
@@ -829,6 +863,7 @@ export default function Home() {
 
         <Disclaimer />
       </div>
+      <GlobalSpotlightModal isOpen={spotlightOpen} onClose={() => setSpotlightOpen(false)} />
     </main>
   );
 }

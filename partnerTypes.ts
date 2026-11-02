@@ -988,7 +988,7 @@ export const PARTNERSHIP_STATUS_LABELS: Record<PartnershipStatus, Bi & { color: 
 export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, Bi & { color: string; bg: string }> = {
   unverified: { ar: 'غير موثق بعد', en: 'Unverified', color: '#64748b', bg: '#f1f5f9' },
   pending_verification: { ar: 'قيد التحقق من التراخيص', en: 'Pending Verification', color: '#b45309', bg: '#fef3c7' },
-  verified: { ar: 'جهة مرخصة وموثقة ✓', en: 'Verified Organization ✓', color: '#0369a1', bg: '#e0f2fe' },
+  verified: { ar:'جهة مرخصة وموثقة', en:'Verified Organization', color:'#0369a1', bg:'#e0f2fe'},
   revoked: { ar: 'تم إلغاء التوثيق', en: 'Verification Revoked', color: '#991b1b', bg: '#fee2e2' },
 };
 

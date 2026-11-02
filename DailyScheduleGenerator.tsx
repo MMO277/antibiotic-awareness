@@ -1,3 +1,4 @@
+import SmartDoseAlarmCard from './SmartDoseAlarmCard';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useLang } from './i18n';
@@ -26,24 +27,24 @@ const ROW_COLORS = ['#0e9aa7', '#15803d', '#4f46e5', '#d97706', '#be123c'];
 
 const MEAL_RULE_LABELS: Record<MealInstructionKey, Bi> = {
   after_meal: {
-    ar:'بعد الأكل مباشرة (لتقليل اضطرابات المعدة)',
-    en:'Immediately after a meal (reduces stomach upset)',
+    ar: '🍽️ بعد الأكل مباشرة (لتقليل اضطرابات المعدة)',
+    en: '🍽️ Immediately after a meal (reduces stomach upset)',
   },
   empty_stomach: {
     ar: '⏳ على معدة فارغة (قبل الأكل بساعة أو بعده بساعتين)',
     en: '⏳ Empty stomach (1h before or 2h after food)',
   },
   with_water_upright: {
-    ar:'مع كوب ماء كامل وعدم الاستلقاء لمدة 30 دقيقة',
-    en:'With a full glass of water; stay upright 30 min',
+    ar: '💧 مع كوب ماء كامل وعدم الاستلقاء لمدة 30 دقيقة',
+    en: '💧 With a full glass of water; stay upright 30 min',
   },
   no_dairy_iron: {
-    ar:'افصل ساعتين عن الحليب والجبن والحديد والكالسيوم',
-    en:'Separate by 2h from dairy, iron, calcium & antacids',
+    ar: '🥛🚫 افصل ساعتين عن الحليب والجبن والحديد والكالسيوم',
+    en: '🥛🚫 Separate by 2h from dairy, iron, calcium & antacids',
   },
   anytime: {
-    ar:'في الموعد المحدد (مع الطعام أو بدونه)',
-    en:'At scheduled time (with or without food)',
+    ar: '🕒 في الموعد المحدد (مع الطعام أو بدونه)',
+    en: '🕒 At scheduled time (with or without food)',
   },
 };
 
@@ -197,7 +198,8 @@ export default function DailyScheduleGenerator() {
   // Build WhatsApp share text
   const whatsappShareText = useMemo(() => {
     const header = isAr
-      ?`*جدول مواعيد الجرعات اليومي*${patientName.trim() ?`— ${patientName.trim()}`:''}\n━━━━━━━━━━━━━━`      :`*Daily Medication Schedule*${patientName.trim() ?`— ${patientName.trim()}`:''}\n━━━━━━━━━━━━━━`;
+      ? `📅 *جدول مواعيد الجرعات اليومي*${patientName.trim() ? ` — ${patientName.trim()}` : ''}\n━━━━━━━━━━━━━━`
+      : `📅 *Daily Medication Schedule*${patientName.trim() ? ` — ${patientName.trim()}` : ''}\n━━━━━━━━━━━━━━`;
 
     const lines = validRows.map((r, idx) => {
       const hours = computeDoseHours(wakeHour, r.intervalHours)
@@ -205,11 +207,13 @@ export default function DailyScheduleGenerator() {
         .join('  |  ');
       const mealText = pick(MEAL_RULE_LABELS[r.mealRule], lang);
       return isAr
-        ?`${idx + 1}. *${r.name}* (${r.doseText} — كل ${r.intervalHours} ساعة لمدة ${r.durationDays} أيام)\n ⏰ المواعيد: ${hours}\n التعليمات: ${mealText}`        :`${idx + 1}. *${r.name}* (${r.doseText} — q${r.intervalHours}h for ${r.durationDays} days)\n ⏰ Times: ${hours}\n Note: ${mealText}`;
+        ? `${idx + 1}. 💊 *${r.name}* (${r.doseText} — كل ${r.intervalHours} ساعة لمدة ${r.durationDays} أيام)\n   ⏰ المواعيد: ${hours}\n   📌 التعليمات: ${mealText}`
+        : `${idx + 1}. 💊 *${r.name}* (${r.doseText} — q${r.intervalHours}h for ${r.durationDays} days)\n   ⏰ Times: ${hours}\n   📌 Note: ${mealText}`;
     });
 
     const footer = isAr
-      ?`\n تذكير: التزم بإكمال الكورس العلاجي بالكامل في مواعيده حتى لو اختفت الأعراض.\n منصة الوعي بالمضادات الحيوية`      :`\n Reminder: Complete your full prescribed course on time even if symptoms improve.\n Antibiotic Awareness Portal`;
+      ? `\n✅ تذكير: التزم بإكمال الكورس العلاجي بالكامل في مواعيده حتى لو اختفت الأعراض.\n🔗 منصة الوعي بالمضادات الحيوية`
+      : `\n✅ Reminder: Complete your full prescribed course on time even if symptoms improve.\n🔗 Antibiotic Awareness Portal`;
 
     return [header, ...lines, footer].join('\n\n');
   }, [validRows, patientName, wakeHour, isAr, lang]);
@@ -222,7 +226,7 @@ export default function DailyScheduleGenerator() {
   const handleCopyText = async () => {
     try {
       await navigator.clipboard.writeText(whatsappShareText);
-      setCopiedMsg(tr(lang,'تم نسخ الجدول بنجاح!','Schedule copied!'));
+      setCopiedMsg(tr(lang, 'تم نسخ الجدول بنجاح! ✓', 'Schedule copied! ✓'));
       window.setTimeout(() => setCopiedMsg(''), 3000);
     } catch {
       setCopiedMsg(tr(lang, 'اضغط مشاركة واتساب للإرسال مباشرة', 'Use WhatsApp button to share'));
@@ -260,7 +264,8 @@ export default function DailyScheduleGenerator() {
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 34px system-ui, -apple-system, sans-serif';
     const titleStr = isAr
-      ?`جدول مواعيد الأدوية اليومي${patientName.trim() ?`— ${patientName.trim()}`:''}`      :`Daily Medication Schedule${patientName.trim() ?`— ${patientName.trim()}`:''}`;
+      ? `📅 جدول مواعيد الأدوية اليومي${patientName.trim() ? ` — ${patientName.trim()}` : ''}`
+      : `📅 Daily Medication Schedule${patientName.trim() ? ` — ${patientName.trim()}` : ''}`;
     ctx.fillText(titleStr, width / 2, 68);
 
     ctx.fillStyle = '#cffafe';
@@ -301,7 +306,8 @@ export default function DailyScheduleGenerator() {
       ctx.fillStyle = '#0f172a';
       ctx.font = 'bold 25px system-ui, -apple-system, sans-serif';
       const medHeading = isAr
-        ?`${r.name} (${r.doseText} — كل ${r.intervalHours} ساعة لمدة ${r.durationDays} أيام)`        :`${r.name} (${r.doseText} — every ${r.intervalHours}h for ${r.durationDays} days)`;
+        ? `💊 ${r.name}  (${r.doseText} — كل ${r.intervalHours} ساعة لمدة ${r.durationDays} أيام)`
+        : `💊 ${r.name}  (${r.doseText} — every ${r.intervalHours}h for ${r.durationDays} days)`;
       ctx.fillText(medHeading, textX, y + 42);
 
       // Clock times
@@ -324,7 +330,8 @@ export default function DailyScheduleGenerator() {
     ctx.font = 'bold 19px system-ui, -apple-system, sans-serif';
     ctx.fillText(
       isAr
-        ?'لا توقف المضاد الحيوي عند تحسن الأعراض — أكمل الكورس الموصوف بالكامل | منصة الوعي بالمضادات الحيوية'        :'Never stop your antibiotic early when symptoms improve — complete the full course | Antibiotic Awareness',
+        ? '✅ لا توقف المضاد الحيوي عند تحسن الأعراض — أكمل الكورس الموصوف بالكامل | منصة الوعي بالمضادات الحيوية'
+        : '✅ Never stop your antibiotic early when symptoms improve — complete the full course | Antibiotic Awareness',
       width / 2,
       height - 38
     );
@@ -337,12 +344,14 @@ export default function DailyScheduleGenerator() {
 
   return (
     <main className="wrap stack">
+      {/* Live Smart Dose Alarm & Voice Reminder */}
+      <SmartDoseAlarmCard />
       {/* Hero & Builder Controls (Hidden when printing) */}
       <section className="card no-print schedule-gen-hero">
         <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div>
             <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700, marginBottom: '8px' }}>
-               {tr(lang,'أداة تنظيم مواعيد الأدوية للمنزل والواتساب والطباعة','Printable & WhatsApp Daily Schedule Generator')}
+              📅 {tr(lang, 'أداة تنظيم مواعيد الأدوية للمنزل والواتساب والطباعة', 'Printable & WhatsApp Daily Schedule Generator')}
             </span>
             <h1 style={{ margin: '4px 0 8px' }}>
               {tr(
@@ -365,10 +374,10 @@ export default function DailyScheduleGenerator() {
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
             <Link to="/prescription-radar" className="btn ghost small">
-               {tr(lang,'رادار الروشتة 24س','Rx Radar 24h')}
+              📡 {tr(lang, 'رادار الروشتة 24س', 'Rx Radar 24h')}
             </Link>
             <Link to="/tracker" className="btn ghost small">
-              ⏱ {tr(lang,'متابع الجرعات التفاعلي','Dose Tracker')}
+              ⏱️ {tr(lang, 'متابع الجرعات التفاعلي', 'Dose Tracker')}
             </Link>
           </div>
         </div>
@@ -377,7 +386,7 @@ export default function DailyScheduleGenerator() {
         <div className="schedule-routine-bar">
           <div style={{ flex: '1 1 240px' }}>
             <label htmlFor="sched-patient-name" className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '5px' }}>
-               {tr(lang,'اسم المريض (اختياري لطباعته على الجدول):','Patient Name (optional for header):')}
+              👤 {tr(lang, 'اسم المريض (اختياري لطباعته على الجدول):', 'Patient Name (optional for header):')}
             </label>
             <input
               id="sched-patient-name"
@@ -391,7 +400,7 @@ export default function DailyScheduleGenerator() {
 
           <div style={{ flex: '1 1 220px' }}>
             <label htmlFor="sched-wake-hour" className="small" style={{ fontWeight: 700, display: 'block', marginBottom: '5px' }}>
-               {tr(lang,'موعد الاستيقاظ وأول جرعة صباحية:','Wake-up & First Morning Dose Time:')}
+              🌅 {tr(lang, 'موعد الاستيقاظ وأول جرعة صباحية:', 'Wake-up & First Morning Dose Time:')}
             </label>
             <select
               id="sched-wake-hour"
@@ -411,7 +420,7 @@ export default function DailyScheduleGenerator() {
         {/* Quick-Add Presets */}
         <div style={{ marginTop: '12px' }}>
           <span className="small muted" style={{ fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-             {tr(lang,'إضافة سريعة لأشهر المضادات الحيوية (مع ضبط تلقائي لتعليمات الطعام):','Quick-add common antibiotics (auto-fills food rules & interval):')}
+            ⚡ {tr(lang, 'إضافة سريعة لأشهر المضادات الحيوية (مع ضبط تلقائي لتعليمات الطعام):', 'Quick-add common antibiotics (auto-fills food rules & interval):')}
           </span>
           <div className="row wrapRow" style={{ gap: '6px' }}>
             {PRESET_TEMPLATES.map((preset, idx) => (
@@ -508,7 +517,7 @@ export default function DailyScheduleGenerator() {
                   onClick={() => removeRow(row.id)}
                   title={tr(lang, 'حذف هذا الدواء', 'Remove medication')}
                 >
-                  
+                  ✕
                 </button>
               )}
             </div>
@@ -521,7 +530,7 @@ export default function DailyScheduleGenerator() {
             className="btn ghost small"
             onClick={() => addMedicationRow()}
           >
-             {tr(lang,'إضافة دواء آخر للجدول','Add Another Medication')}
+            ➕ {tr(lang, 'إضافة دواء آخر للجدول', 'Add Another Medication')}
           </button>
 
           {/* 3 Export Actions */}
@@ -532,7 +541,7 @@ export default function DailyScheduleGenerator() {
               style={{ background: '#0e9aa7' }}
               onClick={handleDownloadPngImage}
             >
-               {tr(lang,'تحميل الجدول كصورة (PNG)','Download Image (PNG)')}
+              📥 {tr(lang, 'تحميل الجدول كصورة (PNG)', 'Download Image (PNG)')}
             </button>
             <button
               type="button"
@@ -540,14 +549,14 @@ export default function DailyScheduleGenerator() {
               style={{ background: '#16a34a' }}
               onClick={handleShareWhatsApp}
             >
-               {tr(lang,'مشاركة عبر واتساب','Share on WhatsApp')}
+              📲 {tr(lang, 'مشاركة عبر واتساب', 'Share on WhatsApp')}
             </button>
             <button
               type="button"
               className="btn ghost small"
               onClick={handleCopyText}
             >
-               {tr(lang,'نسخ نص الجدول','Copy Text')}
+              📋 {tr(lang, 'نسخ نص الجدول', 'Copy Text')}
             </button>
             <button
               type="button"
@@ -555,7 +564,7 @@ export default function DailyScheduleGenerator() {
               style={{ background: '#1e293b' }}
               onClick={() => window.print()}
             >
-               {tr(lang,'طباعة الجدول (A4)','Print Schedule')}
+              🖨️ {tr(lang, 'طباعة الجدول (A4)', 'Print Schedule')}
             </button>
           </div>
         </div>
@@ -571,13 +580,13 @@ export default function DailyScheduleGenerator() {
         <div className="schedule-poster-header">
           <div>
             <h2 style={{ margin: 0 }}>
-               {tr(lang,'جدول مواعيد الأدوية اليومي المنسق','Personalized Daily Medication Schedule')}
+              📅 {tr(lang, 'جدول مواعيد الأدوية اليومي المنسق', 'Personalized Daily Medication Schedule')}
               {patientName.trim() ? ` — ${patientName.trim()}` : ''}
             </h2>
             <p className="small muted" style={{ margin: '4px 0 0' }}>
               {tr(
                 lang,
-                'علّق هذا الجدول في مكان واضح بالمنزل أو احفظه على هاتفك وضع علامة () أمام كل يوم بعد إتمام الجرعات:',
+                'علّق هذا الجدول في مكان واضح بالمنزل أو احفظه على هاتفك وضع علامة (✓) أمام كل يوم بعد إتمام الجرعات:',
                 'Keep this chart visible on your phone or fridge and check off each completed day:'
               )}
             </p>
@@ -599,7 +608,7 @@ export default function DailyScheduleGenerator() {
                 <div className="row wrapRow" style={{ justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                   <div>
                     <h3 style={{ margin: 0, color: row.color }}>
-                       {row.name}
+                      💊 {row.name}
                     </h3>
                     <span className="small muted">
                       {row.doseText} · {tr(lang, `كل ${row.intervalHours} ساعة`, `Every ${row.intervalHours} hours`)} ·{' '}
@@ -630,12 +639,12 @@ export default function DailyScheduleGenerator() {
                 {/* Check-off Days Strip for Print & Fridge Tracking */}
                 <div className="schedule-days-checkstrip">
                   <span className="small muted" style={{ fontWeight: 700 }}>
-                     {tr(lang,'متابعة أيام الكورس:','Course Day Check-off:')}
+                    ☑️ {tr(lang, 'متابعة أيام الكورس:', 'Course Day Check-off:')}
                   </span>
                   <div className="row wrapRow" style={{ gap: '6px' }}>
                     {Array.from({ length: row.durationDays }).map((_, dIdx) => (
                       <span key={dIdx} className="schedule-day-box">
-                         {tr(lang,`يوم ${dIdx + 1}`,`Day ${dIdx + 1}`)}
+                        ☐ {tr(lang, `يوم ${dIdx + 1}`, `Day ${dIdx + 1}`)}
                       </span>
                     ))}
                   </div>
@@ -647,7 +656,7 @@ export default function DailyScheduleGenerator() {
 
         <div className="report-disclaimer-box" style={{ marginTop: '14px' }}>
           <strong>
-             {tr(lang,'قاعدة ذهبية للأمان الدوائي:','Golden Rule of Antibiotic Stewardship:')}
+            ⚠️ {tr(lang, 'قاعدة ذهبية للأمان الدوائي:', 'Golden Rule of Antibiotic Stewardship:')}
           </strong>{' '}
           {tr(
             lang,

@@ -176,7 +176,7 @@ export function PublicPartnerCard({
                   'Sponsored commercial placement distinct from clinical guidance'
                 )}
               >
-                📢 {isAr ? 'رعاية تجارية (Sponsored)' : 'Sponsored Placement'}
+                 {isAr ?'رعاية تجارية (Sponsored)':'Sponsored Placement'}
               </span>
             )}
             {!isSponsored && isFeatured && (
@@ -257,7 +257,7 @@ export function PublicPartnerCard({
               fontSize: '0.82rem',
             }}
           >
-            <strong style={{ color: '#047857' }}>🎁 {offerTitle}</strong>
+            <strong style={{ color:'#047857'}}> {offerTitle}</strong>
             {disp.specialOfferCode && (
               <code
                 dir="ltr"
@@ -289,15 +289,12 @@ export function PublicPartnerCard({
               >
                 {partner.deliveryAvailable
                   ? isAr
-                    ? '🚚 متاح توصيل للمنازل'
-                    : '🚚 Home Delivery Available'
-                  : isAr
-                  ? '🏪 استلام من الفرع'
-                  : '🏪 In-Branch Pickup'}
+                    ?'متاح توصيل للمنازل'                    :'Home Delivery Available'                  : isAr
+                  ?'استلام من الفرع'                  :'In-Branch Pickup'}
               </span>
               {partner.is24Hours && (
                 <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 700 }}>
-                  🕒 24/7
+                   24/7
                 </span>
               )}
             </div>
@@ -358,7 +355,7 @@ export function PublicPartnerCard({
             className="btn ghost small"
             style={{ flex: '1 1 auto', textAlign: 'center' }}
           >
-            🏥 {isAr ? 'ملف الشريك والفروع' : 'Profile & Branches'}
+             {isAr ?'ملف الشريك والفروع':'Profile & Branches'}
           </Link>
         )}
 
@@ -371,7 +368,7 @@ export function PublicPartnerCard({
             className="btn small"
             style={{ flex: '1 1 auto', textAlign: 'center', background: '#0d9488' }}
           >
-            🛒 {ctaText} ↗
+             {ctaText} ↗
           </a>
         )}
 
@@ -382,7 +379,7 @@ export function PublicPartnerCard({
             style={{ flex: '1 1 auto', background: '#0d9488' }}
             onClick={() => onOrderOrInquire(partner)}
           >
-            📋 {ctaText}
+             {ctaText}
           </button>
         )}
 
@@ -393,7 +390,7 @@ export function PublicPartnerCard({
             rel="noopener noreferrer"
             className="btn ghost small"
           >
-            🌐 {isAr ? 'الموقع الرسمي' : 'Website'} ↗
+             {isAr ?'الموقع الرسمي':'Website'} ↗
           </a>
         )}
 
@@ -402,7 +399,7 @@ export function PublicPartnerCard({
             href={`tel:${(partner.hotline || partner.phone).replace(/\s+/g, '')}`}
             className="btn ghost small"
           >
-            📞 {isAr ? 'اتصال' : 'Call'}
+             {isAr ?'اتصال':'Call'}
           </a>
         )}
       </div>
