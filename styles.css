@@ -2875,11 +2875,13 @@ label,
     font-size: 1.25rem;
   }
   .chatform {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    gap: 5px;
   }
   .chatform button {
-    flex: 1 1 auto;
-    min-height: 42px;
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 6px 9px;
   }
 }
 
@@ -6089,4 +6091,146 @@ html.bh-gaming .ms-wrapper.ms-immersive .ms-action-zone { position: absolute !im
   border: 1px solid var(--line);
   font-size: 0.78rem;
   font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UPDATE 54 — RESPONSIVE COMPACT MOBILE VIEW ENGINE
+   Ensures fields, vitals, cards, and chats render in compact 2-column grids
+   on mobile devices instead of each item stretching into an oversized row.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  /* 1. Form Grids & Details Grids become compact 2 columns */
+  .form-row,
+  .profile-details-grid,
+  .vitals-grid,
+  .form-grid-2,
+  .action-fields-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px 10px !important;
+  }
+
+  .form-group-full,
+  .profile-detail-full,
+  .field-col-full,
+  .form-row > .form-group:only-child {
+    grid-column: 1 / -1 !important;
+  }
+
+  /* 2. Compact inputs, labels, and form controls */
+  .form-group {
+    margin-bottom: 2px !important;
+  }
+  .form-group label {
+    font-size: 0.78rem !important;
+    margin-bottom: 3px !important;
+    display: block !important;
+    color: var(--teal-dark, #0b3c5d) !important;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="tel"],
+  select {
+    font-size: 0.86rem !important;
+    padding: 7px 10px !important;
+    min-height: 38px !important;
+    border-radius: 8px !important;
+  }
+
+  /* 3. Cards & Grids on mobile (2 columns for compact cards and tiles) */
+  .med-cards-stack,
+  .grid,
+  .rc-grid,
+  .categories-grid,
+  .steps-cards-grid,
+  .clinical-spectrum-grid,
+  .patient-summary-grid,
+  .cold-shot-tabs,
+  .cold-myth-vs-reality {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .card {
+    padding: 12px 10px !important;
+    border-radius: 12px !important;
+    margin-bottom: 10px !important;
+  }
+  .card h2 {
+    font-size: 1.05rem !important;
+  }
+  .card h3, .card h4 {
+    font-size: 0.92rem !important;
+  }
+  .card p, .card .small {
+    font-size: 0.82rem !important;
+  }
+
+  /* 4. Compact button sizing */
+  .btn,
+  .btn-secondary,
+  button.btn {
+    padding: 7px 12px !important;
+    font-size: 0.85rem !important;
+    min-height: 36px !important;
+    border-radius: 8px !important;
+  }
+
+  /* 5. Chat Input Bar: Sleek, non-wrapping single line */
+  .chatform,
+  .popup-form {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 6px 8px !important;
+  }
+  .chatform input,
+  .popup-form input {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    font-size: 0.88rem !important;
+    padding: 7px 10px !important;
+    min-height: 38px !important;
+  }
+  .chatform button,
+  .popup-form button {
+    flex: 0 0 auto !important;
+    padding: 6px 10px !important;
+    min-height: 38px !important;
+    font-size: 0.84rem !important;
+  }
+
+  /* 6. Compact Chips */
+  .chips,
+  .popup-chips {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+    margin-bottom: 6px !important;
+  }
+  .chip,
+  .popup-chips .chip {
+    padding: 4px 9px !important;
+    font-size: 0.78rem !important;
+    border-radius: 999px !important;
+  }
+
+  /* 7. Med records and prescriptions on mobile */
+  .med-record-card {
+    padding: 10px !important;
+  }
+  .med-record-card h4 {
+    font-size: 0.88rem !important;
+  }
+  .status-pill {
+    padding: 3px 7px !important;
+    font-size: 0.72rem !important;
+  }
 }

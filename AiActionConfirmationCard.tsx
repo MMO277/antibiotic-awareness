@@ -235,20 +235,36 @@ export default function AiActionConfirmationCard({
       </div>
 
       {/* Structured Preview / Editable Fields */}
-      <div style={{ display: 'grid', gap: '8px', marginBottom: '10px' }}>
+      <div
+        className="action-fields-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: '6px',
+          marginBottom: '10px',
+        }}
+      >
         {proposal.fields.map((field) => {
           const currentVal =
             fieldValues[field.key] !== undefined ? fieldValues[field.key] : field.value;
           const isUncertain = field.uncertainOrMissing && !currentVal.trim();
+          const isFullWidth =
+            field.key === 'title' ||
+            field.key === 'notes' ||
+            field.key === 'cultureSensitiveS' ||
+            field.key === 'cultureResistantR' ||
+            field.key === 'reportedSymptoms' ||
+            field.key === 'emergencyContact';
 
           return (
             <div
               key={field.key}
               style={{
+                gridColumn: isFullWidth ? '1 / -1' : undefined,
                 background: isUncertain ? '#fffbeb' : '#f8fafc',
                 border: isUncertain ? '1px solid #f59e0b' : '1px solid #e2e8f0',
                 borderRadius: '8px',
-                padding: '7px 10px',
+                padding: '6px 8px',
               }}
             >
               <div

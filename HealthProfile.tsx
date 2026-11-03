@@ -552,7 +552,7 @@ export default function HealthProfile() {
         {editingPersonal ? (
           <form onSubmit={savePersonalInfo} className="stack modal-form">
             <div className="form-row">
-              <div className="form-group">
+              <div className="form-group form-group-full">
                 <label><b>{isAr ? 'اسم المريض:' : 'Patient Name:'}</b></label>
                 <input value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder={isAr ? 'الاسم بالكامل' : 'Full Name'} />
               </div>
@@ -564,8 +564,6 @@ export default function HealthProfile() {
                 <label><b>{isAr ? 'الوزن (كجم):' : 'Weight (kg):'}</b></label>
                 <input value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder={isAr ? 'مثال: 75' : 'e.g. 75'} />
               </div>
-            </div>
-            <div className="form-row">
               <div className="form-group">
                 <label><b>{isAr ? 'فصيلة الدم:' : 'Blood Type:'}</b></label>
                 <input value={bloodInput} onChange={(e) => setBloodInput(e.target.value)} placeholder="A+, O+, B-..." />
@@ -578,9 +576,7 @@ export default function HealthProfile() {
                   <option value="female">{isAr ? 'أنثى' : 'Female'}</option>
                 </select>
               </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
+              <div className="form-group form-group-full">
                 <label><b>{isAr ? 'رقم هاتف الطوارئ:' : 'Emergency Contact:'}</b></label>
                 <input value={contactInput} onChange={(e) => setContactInput(e.target.value)} placeholder="01xxxxxxxxx" />
               </div>
@@ -591,12 +587,12 @@ export default function HealthProfile() {
           </form>
         ) : (
           <div className="profile-details-grid">
-            <div><b>{isAr ? 'الاسم:' : 'Name:'}</b> {profile.displayName || (isAr ? 'غير مسجل' : 'Not set')}</div>
+            <div className="profile-detail-full"><b>{isAr ? 'الاسم:' : 'Name:'}</b> {profile.displayName || (isAr ? 'غير مسجل' : 'Not set')}</div>
             <div><b>{isAr ? 'العمر:' : 'Age:'}</b> {profile.age || '—'}</div>
             <div><b>{isAr ? 'الوزن:' : 'Weight:'}</b> {profile.weightKg ? `${profile.weightKg} ${isAr ? 'كجم' : 'kg'}` : '—'}</div>
             <div><b>{isAr ? 'فصيلة الدم:' : 'Blood Type:'}</b> {profile.bloodType || '—'}</div>
             <div><b>{isAr ? 'النوع:' : 'Gender:'}</b> {profile.gender === 'male' ? (isAr ? 'ذكر' : 'Male') : profile.gender === 'female' ? (isAr ? 'أنثى' : 'Female') : '—'}</div>
-            <div><b>{isAr ? 'هاتف الطوارئ:' : 'Emergency Phone:'}</b> {profile.emergencyContact || '—'}</div>
+            <div className="profile-detail-full"><b>{isAr ? 'هاتف الطوارئ:' : 'Emergency Phone:'}</b> {profile.emergencyContact || '—'}</div>
           </div>
         )}
       </section>
