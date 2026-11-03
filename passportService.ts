@@ -1,19 +1,15 @@
 /**
  * passportService.ts
- * Smart Patient Passport — Firebase + Cloudinary
- * الصور على Cloudinary (مجاني) — باقي البيانات على Firebase
+ * Smart Patient Passport — Cloudinary للصور + Firebase للبيانات
  */
 
-import {
-  doc, getDoc, setDoc, collection, addDoc,
-} from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
-// ── Cloudinary Config ─────────────────────────────────────────────────────────
 const CLOUD_NAME = 'gdcfiqr3';
 const UPLOAD_PRESET = 'passport_photos';
 
-/** رفع صورة البطاقة لـ Cloudinary */
+/** رفع صورة لـ Cloudinary — مجاني 100% */
 export async function uploadPassportPhoto(_uid: string, file: File): Promise<string> {
   const formData = new FormData();
   formData.append('file', file);
@@ -24,8 +20,10 @@ export async function uploadPassportPhoto(_uid: string, file: File): Promise<str
     `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
     { method: 'POST', body: formData }
   );
-
-  if (!res.ok) throw new Error('Cloudinary upload failed');
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Cloudinary error: ${err}`);
+  }
   const data = await res.json();
   return data.secure_url as string;
 }
@@ -45,7 +43,6 @@ export async function getPassportPhotoUrl(uid: string): Promise<string> {
   } catch { return ''; }
 }
 
-// ── Passport Share ────────────────────────────────────────────────────────────
 export interface PassportShare {
   pin: string;
   expiresAt: number;

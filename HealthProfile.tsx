@@ -1,6 +1,6 @@
 import { pick } from './types';
 import { createPortal } from 'react-dom';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useAuth } from './authContext';
@@ -12,6 +12,15 @@ import {
   AllergySeverity,
   EvidenceStatus,
 } from './allergyData';
+import {
+  getPassportShare,
+  sharePassport,
+  revokePassport,
+  uploadPassportPhoto,
+  savePassportPhotoUrl,
+  getPassportPhotoUrl,
+  PassportShare,
+} from './passportService';
 import {
   useSyncedSchedules,
   calculateScheduleProgress,
@@ -35,6 +44,93 @@ export default function HealthProfile() {
     treatmentEvents,
     syncStatus: journeySyncStatus,
   } = useSyncedSchedules();
+
+  // ── Passport states ──────────────────────────────────────────────────────────
+  const [passportPhoto, setPassportPhoto] = useState('');
+  const [passportPhotoLoading, setPassportPhotoLoading] = useState(false);
+  const [passportShare, setPassportShare] = useState<PassportShare | null>(null);
+  const [passportLoading, setPassportLoading] = useState(true);
+  const [passportPin, setPassportPin] = useState('');
+  const [passportHours, setPassportHours] = useState(24);
+  const [passportSharing, setPassportSharing] = useState(false);
+  const [chronicInput, setChronicInput] = useState('');
+  const photoFileRef = useRef<HTMLInputElement>(null);
+
+  // تحميل بيانات البطاقة
+  useEffect(() => {
+    if (!user) { setPassportLoading(false); return; }
+    Promise.all([
+      getPassportShare(user.uid),
+      getPassportPhotoUrl(user.uid),
+    ]).then(([s, photo]) => {
+      setPassportShare(s);
+      setPassportPhoto(photo);
+      setPassportLoading(false);
+    });
+  }, [user]);
+
+  const handlePassportPhoto = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setPassportPhotoLoading(true);
+    try {
+      const url = await uploadPassportPhoto(user.uid, file);
+      await savePassportPhotoUrl(user.uid, url);
+      setPassportPhoto(url);
+    } catch (err) {
+      alert(isAr ? 'فشل رفع الصورة. حاول مرة أخرى.' : 'Photo upload failed. Please try again.');
+    } finally {
+      setPassportPhotoLoading(false);
+    }
+  }, [user, isAr]);
+
+  const passportChronicList: string[] = (() => {
+    try {
+      const n = profile.notes || '';
+      const idx = n.indexOf('CHRONIC:');
+      if (idx === -1) return [];
+      return JSON.parse(n.slice(idx + 8).split('||')[0]);
+    } catch { return []; }
+  })();
+
+  const addChronic = () => {
+    if (!chronicInput.trim()) return;
+    const updated = [...passportChronicList, chronicInput.trim()];
+    const cleaned = (profile.notes || '').replace(/CHRONIC:[\s\S]*?(\|\||$)/, '');
+    setProfile((p) => ({ ...p, notes: `CHRONIC:${JSON.stringify(updated)}||${cleaned}` }));
+    setChronicInput('');
+  };
+
+  const removeChronic = (idx: number) => {
+    const updated = passportChronicList.filter((_, i) => i !== idx);
+    const cleaned = (profile.notes || '').replace(/CHRONIC:[\s\S]*?(\|\||$)/, '');
+    setProfile((p) => ({ ...p, notes: `CHRONIC:${JSON.stringify(updated)}||${cleaned}` }));
+  };
+
+  const handlePassportShare = async () => {
+    if (!user || passportPin.length < 4) return;
+    setPassportSharing(true);
+    await sharePassport(user.uid, passportPin, passportHours);
+    const s = await getPassportShare(user.uid);
+    setPassportShare(s);
+    setPassportSharing(false);
+    setPassportPin('');
+  };
+
+  const handlePassportRevoke = async () => {
+    if (!user) return;
+    await revokePassport(user.uid);
+    setPassportShare(null);
+  };
+
+  const passportUrl = user
+    ? `${window.location.origin}${window.location.pathname}#/passport/${user.uid}`
+    : '';
+  const passportQrSrc = user
+    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(passportUrl)}&margin=8&color=0b3c5d`
+    : '';
+  const passportIsActive = passportShare && passportShare.expiresAt > 0 && Date.now() < passportShare.expiresAt;
+  const passportRemaining = passportShare ? Math.max(0, Math.round((passportShare.expiresAt - Date.now()) / 60000)) : 0;
 
   // Personal info edit state
   const [editingPersonal, setEditingPersonal] = useState(false);
@@ -653,6 +749,210 @@ export default function HealthProfile() {
         </div>,
         document.body
       )}
+
+      {/* ══════════════ البطاقة الصحية الذكية ══════════════ */}
+      {user && (
+        <section className="card stack" style={{ borderTop: '4px solid #0b3c5d', marginTop: 8 }}>
+          <div className="card-head-row">
+            <h2 className="section-title">🪪 {isAr ? 'البطاقة الصحية الذكية' : 'Smart Patient Passport'}</h2>
+          </div>
+
+          {/* البطاقة المرئية */}
+          <div style={{
+            background: 'linear-gradient(135deg, #0b3c5d 0%, #1565a8 55%, #0ea5e9 100%)',
+            borderRadius: 16, padding: '18px 16px',
+            color: '#fff', position: 'relative', overflow: 'hidden',
+            direction: 'ltr',
+          }}>
+            <div style={{ position:'absolute', top:-40, right:-40, width:150, height:150, borderRadius:'50%', background:'rgba(255,255,255,0.06)' }} />
+            <div style={{ position:'absolute', bottom:-30, left:-30, width:110, height:110, borderRadius:'50%', background:'rgba(255,255,255,0.04)' }} />
+
+            {/* هيدر */}
+            <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
+              <span style={{ fontSize:'1.4rem' }}>🏥</span>
+              <div>
+                <div style={{ fontWeight:700, fontSize:'0.85rem' }}>Antibiotic Awareness</div>
+                <div style={{ fontSize:'0.6rem', opacity:0.7, letterSpacing:1 }}>SMART PATIENT PASSPORT</div>
+              </div>
+              <div style={{ marginInlineStart:'auto', fontSize:'0.6rem', opacity:0.6 }}>🇪🇬 Egypt</div>
+            </div>
+
+            {/* صورة + بيانات + QR */}
+            <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
+              {/* صورة */}
+              <div
+                onClick={() => photoFileRef.current?.click()}
+                style={{
+                  width:70, height:84, borderRadius:8,
+                  background:'rgba(255,255,255,0.12)',
+                  border:'2px solid rgba(255,255,255,0.5)',
+                  overflow:'hidden', flexShrink:0,
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  cursor:'pointer', position:'relative',
+                }}
+              >
+                {passportPhotoLoading
+                  ? <span style={{ fontSize:'1.5rem' }}>⏳</span>
+                  : passportPhoto
+                    ? <img src={passportPhoto} alt="" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    : <div style={{ textAlign:'center' }}>
+                        <div style={{ fontSize:'1.8rem' }}>👤</div>
+                        <div style={{ fontSize:'0.5rem', opacity:0.7, marginTop:2 }}>
+                          {isAr ? 'اضغط لإضافة صورة' : 'tap to add'}
+                        </div>
+                      </div>
+                }
+              </div>
+              <input ref={photoFileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handlePassportPhoto} />
+
+              {/* بيانات */}
+              <div style={{ flex:1 }}>
+                <div style={{ fontWeight:700, fontSize:'0.95rem', marginBottom:4 }}>
+                  {profile.displayName || (isAr ? 'الاسم غير مدخل' : 'Name not set')}
+                </div>
+                <div style={{ fontSize:'0.72rem', opacity:0.85, marginBottom:2 }}>
+                  {isAr ? 'العمر:' : 'Age:'} <b>{profile.age || '—'}</b>
+                </div>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:6 }}>
+                  <span style={{ background:'#e74c3c', borderRadius:6, padding:'2px 8px', fontSize:'0.72rem', fontWeight:700 }}>
+                    🩸 {profile.bloodType || '?'}
+                  </span>
+                  {profile.allergies.length > 0 && (
+                    <span style={{ background:'#f59e0b', color:'#1c1917', borderRadius:6, padding:'2px 8px', fontSize:'0.7rem', fontWeight:700 }}>
+                      ⚠️ {profile.allergies.length} {isAr ? 'حساسية' : 'Allerg.'}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* QR */}
+              <div style={{ background:'#fff', borderRadius:8, padding:3, width:64, height:64, flexShrink:0 }}>
+                <img src={passportQrSrc} alt="QR" style={{ width:58, height:58 }} />
+              </div>
+            </div>
+
+            {/* شريط سفلي */}
+            <div style={{ borderTop:'1px solid rgba(255,255,255,0.2)', paddingTop:8, marginTop:12, display:'flex', justifyContent:'space-between', fontSize:'0.6rem', opacity:0.55, fontFamily:'monospace' }}>
+              <span>{user.uid.slice(0,8).toUpperCase()} {user.uid.slice(8,16).toUpperCase()}</span>
+              <span>💊 {profile.medications.filter(m => m.status === 'active').length} {isAr ? 'دواء' : 'Meds'}</span>
+            </div>
+          </div>
+
+          {/* حالة المشاركة */}
+          {passportLoading ? (
+            <p className="small muted">{isAr ? 'جارٍ التحميل…' : 'Loading…'}</p>
+          ) : passportIsActive ? (
+            <div style={{ background:'#d1fae5', borderRadius:10, padding:'12px 14px', border:'1.5px solid #6ee7b7' }}>
+              <div style={{ fontWeight:700, color:'#065f46', marginBottom:6 }}>
+                ✅ {isAr ? 'البطاقة مفعّلة' : 'Passport Active'}
+              </div>
+              <div className="small" style={{ color:'#047857', marginBottom:10 }}>
+                {isAr ? `تنتهي بعد ${passportRemaining} دقيقة` : `Expires in ${passportRemaining} min`}
+              </div>
+              <button
+                className="btn"
+                style={{ background:'#ef4444', color:'#fff', border:'none', width:'100%' }}
+                onClick={handlePassportRevoke}
+              >
+                🚫 {isAr ? 'إيقاف المشاركة' : 'Revoke Access'}
+              </button>
+            </div>
+          ) : (
+            <>
+              <div style={{ background:'#fef3c7', borderRadius:8, padding:'10px 12px', border:'1px solid #fcd34d' }}>
+                <span className="small" style={{ color:'#92400e' }}>
+                  🔒 {isAr ? 'البطاقة غير مفعّلة — لا أحد يمكنه رؤيتها الآن' : 'Inactive — nobody can view it now'}
+                </span>
+              </div>
+
+              {/* نموذج التفعيل */}
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                <div>
+                  <label className="small" style={{ display:'block', marginBottom:4, fontWeight:600 }}>
+                    🔑 {isAr ? 'PIN (4 أرقام على الأقل)' : 'PIN (min 4 digits)'}
+                  </label>
+                  <input
+                    className="input"
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={8}
+                    value={passportPin}
+                    onChange={(e) => setPassportPin(e.target.value.replace(/\D/g, ''))}
+                    placeholder="● ● ● ●"
+                    style={{ width:'100%' }}
+                  />
+                </div>
+                <div>
+                  <label className="small" style={{ display:'block', marginBottom:4, fontWeight:600 }}>
+                    ⏱️ {isAr ? 'مدة الصلاحية' : 'Duration'}
+                  </label>
+                  <select
+                    className="input"
+                    value={passportHours}
+                    onChange={(e) => setPassportHours(Number(e.target.value))}
+                    style={{ width:'100%' }}
+                  >
+                    <option value={1}>{isAr ? 'ساعة واحدة' : '1 Hour'}</option>
+                    <option value={6}>{isAr ? '6 ساعات' : '6 Hours'}</option>
+                    <option value={12}>{isAr ? '12 ساعة' : '12 Hours'}</option>
+                    <option value={24}>{isAr ? '24 ساعة' : '24 Hours'}</option>
+                    <option value={48}>{isAr ? '48 ساعة' : '48 Hours'}</option>
+                  </select>
+                </div>
+                <button
+                  className="btn"
+                  disabled={passportPin.length < 4 || passportSharing}
+                  onClick={handlePassportShare}
+                  style={{ background:'#0b3c5d', color:'#fff', width:'100%' }}
+                >
+                  {passportSharing
+                    ? (isAr ? '⏳ جارٍ التفعيل…' : '⏳ Activating…')
+                    : (isAr ? '🔓 تفعيل البطاقة للمشاركة' : '🔓 Activate for Sharing')}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* الأمراض المزمنة */}
+          <div style={{ borderTop:'1px solid #e2e8f0', paddingTop:14 }}>
+            <div style={{ fontWeight:700, color:'#0b3c5d', marginBottom:8 }}>
+              🏥 {isAr ? 'الأمراض المزمنة' : 'Chronic Conditions'}
+            </div>
+            <p className="small muted" style={{ marginBottom:10 }}>
+              {isAr ? 'مهمة لتحديد تعارض الأدوية' : 'Important for drug interaction checks'}
+            </p>
+            <div style={{ display:'flex', gap:8, marginBottom:10 }}>
+              <input
+                className="input"
+                value={chronicInput}
+                onChange={(e) => setChronicInput(e.target.value)}
+                placeholder={isAr ? 'مثال: سكري النوع 2' : 'e.g. Type 2 Diabetes'}
+                onKeyDown={(e) => e.key === 'Enter' && addChronic()}
+                style={{ flex:1 }}
+              />
+              <button className="btn" onClick={addChronic}>{isAr ? 'إضافة' : 'Add'}</button>
+            </div>
+            {passportChronicList.length === 0
+              ? <p className="small muted">{isAr ? 'لا توجد أمراض مزمنة' : 'None added yet'}</p>
+              : (
+                <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                  {passportChronicList.map((c, i) => (
+                    <span key={i} style={{
+                      background:'#fef3c7', color:'#92400e',
+                      borderRadius:20, padding:'4px 12px', fontSize:'0.82rem',
+                      display:'flex', alignItems:'center', gap:6,
+                    }}>
+                      🔸 {c}
+                      <button onClick={() => removeChronic(i)} style={{ background:'none', border:'none', cursor:'pointer', color:'#b45309', fontWeight:700, padding:0 }}>×</button>
+                    </span>
+                  ))}
+                </div>
+              )
+            }
+          </div>
+        </section>
+      )}
+
     </main>
   );
 }
