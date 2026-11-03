@@ -3,14 +3,7 @@
  *
  * Action Preview Builder, Live Medication Safety Evaluator, Duplicate Detector,
  * and Validated Action Executor for the Antibiotic Awareness Personal Health Assistant.
- *
- * Architectural Guarantees:
- * - Never writes arbitrary unvalidated objects to Firebase.
- * - Integrates directly with `evaluateMedicationSafety` (`medicationSafetyEngine.ts`),
- *   `checkDrugAllergySafety` (`allergyData.ts`), and `validatePrescriptionInstructions` (`trackerData.ts`).
- * - Generates a rich `PendingAiActionProposal` with live safety warnings, duplicate detection alerts,
- *   and highlighted uncertain/missing fields before any write occurs.
- * - Executes writes only after `confirmedByPatient === true` and `verifyActionAuthorization` passes.
+ * All Arabic user-facing messages are crafted in warm, natural Egyptian Colloquial Arabic (مصري عامي).
  */
 
 import { Lang } from './types';
@@ -50,6 +43,9 @@ import {
   AiActionPayloadMap,
   AiActionType,
   CreateReminderArgs,
+  RemoveAllergyArgs,
+  RemoveChronicConditionArgs,
+  RemoveMedicationArgs,
   SaveMedicalDocumentArgs,
   StopReminderArgs,
   UpdatePrescriptionStatusArgs,
@@ -150,7 +146,7 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
     if (exists) {
       duplicateDetected = true;
       status = 'caution';
-      duplicateMessageAr = `⚠️ هذه الحالة الصحية (${a.conditionName}) مسجلة بالفعل في ملفك الصحي — لن يتم تكرارها عند الحفظ.`;
+      duplicateMessageAr = `⚠️ الحالة الصحية دي (${a.conditionName}) متسجلة عندك قبل كده في ملفك — مش هنسجلها مرتين عشان ملفك يفضل منظم.`;
       duplicateMessageEn = `⚠️ This condition (${a.conditionName}) is already recorded in your Health Profile — duplicates will be prevented.`;
     }
   }
@@ -165,7 +161,7 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
     if (exists) {
       duplicateDetected = true;
       status = 'caution';
-      duplicateMessageAr = `⚠️ توجد حساسية مسجلة بالفعل لنفس الدواء أو العائلة (${a.drugName}) في ملفك الصحي.`;
+      duplicateMessageAr = `⚠️ الحساسية دي (${a.drugName}) متسجلة بالفعل عندك في الملف الصحي.`;
       duplicateMessageEn = `⚠️ An allergy for this drug or family (${a.drugName}) is already documented in your profile.`;
     }
   }
@@ -217,7 +213,7 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
     if (dupMed) {
       duplicateDetected = true;
       if (status === 'safe') status = 'caution';
-      duplicateMessageAr = `⚠️ الدواء (${a.drugName}) موجود بالفعل في قائمة أدويتك النشطة.`;
+      duplicateMessageAr = `⚠️ الدوا ده (${a.drugName}) موجود فعلاً في قايمة أدويتك الحالية.`;
       duplicateMessageEn = `⚠️ Medication (${a.drugName}) is already in your active medications list.`;
     }
     checkDrugWithSafetyEngine(a.drugName, a.prescribedDose);
@@ -237,7 +233,7 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
         );
         if (dupRx) {
           duplicateDetected = true;
-          duplicateMessageAr = `ℹ️ توجد روشتة محفوظة مسبقاً لنفس الدواء (${item.medicineName}).`;
+          duplicateMessageAr = `ℹ️ في روشتة متسجلة عندك قبل كده لنفس الدوا (${item.medicineName}).`;
           duplicateMessageEn = `ℹ️ A saved prescription already exists for (${item.medicineName}).`;
         }
         checkDrugWithSafetyEngine(item.medicineName, item.prescribedDose);
@@ -245,7 +241,7 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
       if (item.unreadableFields && item.unreadableFields.length > 0 && status === 'safe') {
         status = 'caution';
         detailsAr.push(
-          `⚠️ توجد حقول غير مكتملة أو غير مقروءة (${item.unreadableFields.join('، ')}) — لا يتم افتراض الجرعات تلقائياً؛ يرجى استكمالها أو مراجعة الصيدلي.`
+          `⚠️ في خانات مش واضحة في الصورة (${item.unreadableFields.join('، ')}) — إحنا مش بنخمن الجرعات أبداً؛ يا ريت تكملها بإيدك أو تتأكد من الصيدلي.`
         );
         detailsEn.push(
           `⚠️ Missing or unreadable fields (${item.unreadableFields.join(', ')}) — doses are never invented; please fill or verify with your pharmacist.`
@@ -262,7 +258,7 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
     if (dupSch) {
       duplicateDetected = true;
       if (status === 'safe') status = 'caution';
-      duplicateMessageAr = `⚠️ يوجد جدول تذكير نشط بالفعل للدواء (${a.medicineName}).`;
+      duplicateMessageAr = `⚠️ في منبه شغال فعلاً للدوا ده (${a.medicineName}).`;
       duplicateMessageEn = `⚠️ An active reminder schedule already exists for (${a.medicineName}).`;
     }
     checkDrugWithSafetyEngine(a.medicineName, a.prescribedDose);
@@ -270,19 +266,19 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
 
   const headlines: Record<ActionSafetyPreview['status'], { ar: string; en: string }> = {
     safe: {
-      ar: '✅ فحص الأمان الأولي: لا توجد تعارضات مسجلة مع ملفك الصحي الحالي',
+      ar: '✅ فحص الأمان: تمام، مفيش أي تعارض مع حساسيتك أو ملفك الصحي الحالي',
       en: '✅ Live Safety Check: No documented conflicts with your current profile',
     },
     caution: {
-      ar: 'ℹ️ يتطلب المراجعة والتدقيق قبل الحفظ',
+      ar: 'ℹ️ محتاج تراجع البيانات دي وتتأكد منها قبل الحفظ',
       en: 'ℹ️ Requires Review & Verification Before Saving',
     },
     warning: {
-      ar: '⚠️ تنبيه أمان دوائي: يُرجى قراءة الملاحظات السريرية قبل الحفظ',
+      ar: '⚠️ تنبيه أمان دوائي: اقرا الملاحظات دي كويس قبل ما تحفظ',
       en: '⚠️ Medication Safety Warning: Please review clinical notes before saving',
     },
     urgent: {
-      ar: '🚨 تحذير حرج من محرك الأمان الدوائي (تعارض حساسية أو تداخل خطير)!',
+      ar: '🚨 خلي بالك! تحذير خطير من محرك الأمان الدوائي (تعارض حساسية أو تداخل شديد)!',
       en: '🚨 Critical Medication Safety Alert (Allergy Conflict or Severe Interaction)!',
     },
   };
@@ -301,8 +297,7 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
 }
 
 /**
- * Builds the editable fields list for a confirmation card so the patient can review or edit
- * any value before clicking "Confirm and Save".
+ * Builds the editable fields list for a confirmation card.
  */
 export function buildActionPreviewFields<K extends AiActionType>(
   actionType: K,
@@ -314,7 +309,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
       return [
         {
           key: 'conditionName',
-          labelAr: 'الحالة الصحية / المرض المزمن',
+          labelAr: 'المرض المزمن / الحالة الصحية',
           labelEn: 'Medical Condition',
           value: a.conditionName,
           editable: true,
@@ -331,12 +326,26 @@ export function buildActionPreviewFields<K extends AiActionType>(
       ];
     }
 
+    case 'remove_chronic_condition': {
+      const a = args as RemoveChronicConditionArgs;
+      return [
+        {
+          key: 'conditionName',
+          labelAr: 'الحالة اللي هتتحذف من ملفك',
+          labelEn: 'Condition to Remove',
+          value: a.conditionName,
+          editable: true,
+          inputType: 'text',
+        },
+      ];
+    }
+
     case 'add_allergy': {
       const a = args as AddAllergyArgs;
       return [
         {
           key: 'drugName',
-          labelAr: 'الدواء أو المادة المسببة للحساسية',
+          labelAr: 'الدوا أو المادة اللي بتعملك حساسية',
           labelEn: 'Allergenic Drug / Substance',
           value: a.drugName,
           editable: true,
@@ -344,7 +353,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
         },
         {
           key: 'allergenKey',
-          labelAr: 'العائلة الدوائية',
+          labelAr: 'العيلة الدوائية',
           labelEn: 'Drug Family',
           value: a.allergenKey,
           editable: true,
@@ -357,7 +366,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
         },
         {
           key: 'reportedSymptoms',
-          labelAr: 'الأعراض التي ظهرت',
+          labelAr: 'الأعراض اللي حصلتلك',
           labelEn: 'Reported Symptoms',
           value: a.reportedSymptoms,
           editable: true,
@@ -371,11 +380,25 @@ export function buildActionPreviewFields<K extends AiActionType>(
           editable: true,
           inputType: 'select',
           options: [
-            { value: 'life_threatening', labelAr: 'مهددة للحياة (صدمة تحسسية)', labelEn: 'Life-Threatening (Anaphylaxis)' },
-            { value: 'severe', labelAr: 'شديدة (تورم / ضيق تنفس)', labelEn: 'Severe' },
-            { value: 'moderate', labelAr: 'متوسطة (طفح جلدي)', labelEn: 'Moderate' },
+            { value: 'life_threatening', labelAr: 'خطيرة جداً (صدمة تحسسية / ضيق تنفس شديد)', labelEn: 'Life-Threatening (Anaphylaxis)' },
+            { value: 'severe', labelAr: 'شديدة (تورم في الوش أو الشفايف)', labelEn: 'Severe' },
+            { value: 'moderate', labelAr: 'متوسطة (طفح جلدي وهرش)', labelEn: 'Moderate' },
             { value: 'mild', labelAr: 'خفيفة (حكة بسيطة)', labelEn: 'Mild' },
           ],
+        },
+      ];
+    }
+
+    case 'remove_allergy': {
+      const a = args as RemoveAllergyArgs;
+      return [
+        {
+          key: 'drugName',
+          labelAr: 'حساسية الدوا اللي هتتمسح',
+          labelEn: 'Drug Allergy to Remove',
+          value: a.drugName,
+          editable: true,
+          inputType: 'text',
         },
       ];
     }
@@ -383,10 +406,20 @@ export function buildActionPreviewFields<K extends AiActionType>(
     case 'update_vitals': {
       const a = args as UpdateVitalsArgs;
       const fields: ActionPreviewField[] = [];
+      if (a.displayName !== undefined) {
+        fields.push({
+          key: 'displayName',
+          labelAr: 'الاسم',
+          labelEn: 'Name',
+          value: a.displayName,
+          editable: true,
+          inputType: 'text',
+        });
+      }
       if (a.weightKg !== undefined) {
         fields.push({
           key: 'weightKg',
-          labelAr: 'الوزن (كجم)',
+          labelAr: 'الوزن (كيلو)',
           labelEn: 'Weight (kg)',
           value: a.weightKg,
           editable: true,
@@ -396,7 +429,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
       if (a.age !== undefined) {
         fields.push({
           key: 'age',
-          labelAr: 'العمر (سنة)',
+          labelAr: 'السن (سنة)',
           labelEn: 'Age (years)',
           value: a.age,
           editable: true,
@@ -413,6 +446,31 @@ export function buildActionPreviewFields<K extends AiActionType>(
           inputType: 'text',
         });
       }
+      if (a.emergencyContact !== undefined) {
+        fields.push({
+          key: 'emergencyContact',
+          labelAr: 'رقم تليفون الطوارئ',
+          labelEn: 'Emergency Phone',
+          value: a.emergencyContact,
+          editable: true,
+          inputType: 'text',
+        });
+      }
+      if (a.pregnancyStatus !== undefined) {
+        fields.push({
+          key: 'pregnancyStatus',
+          labelAr: 'حالة الحمل / الرضاعة',
+          labelEn: 'Pregnancy / Lactation',
+          value: a.pregnancyStatus,
+          editable: true,
+          inputType: 'select',
+          options: [
+            { value: 'none', labelAr: 'لا يوجد', labelEn: 'None' },
+            { value: 'pregnant', labelAr: 'حامل', labelEn: 'Pregnant' },
+            { value: 'breastfeeding', labelAr: 'مرضع', labelEn: 'Breastfeeding' },
+          ],
+        });
+      }
       return fields;
     }
 
@@ -421,7 +479,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
       return [
         {
           key: 'drugName',
-          labelAr: 'اسم الدواء',
+          labelAr: 'اسم الدوا',
           labelEn: 'Medication Name',
           value: a.drugName,
           editable: true,
@@ -430,7 +488,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
         },
         {
           key: 'prescribedDose',
-          labelAr: 'الجرعة / التركيز الموصوف',
+          labelAr: 'الجرعة / التركيز',
           labelEn: 'Prescribed Dose / Strength',
           value: a.prescribedDose,
           editable: true,
@@ -439,31 +497,45 @@ export function buildActionPreviewFields<K extends AiActionType>(
         },
         {
           key: 'route',
-          labelAr: 'طريقة الاستعمال',
+          labelAr: 'طريقة الأخد',
           labelEn: 'Route',
           value: a.route || 'oral',
           editable: true,
           inputType: 'select',
           options: [
-            { value: 'oral', labelAr: 'أقراص / كبسول فموي', labelEn: 'Oral Tablet/Capsule' },
-            { value: 'suspension', labelAr: 'شراب معلق', labelEn: 'Oral Suspension' },
+            { value: 'oral', labelAr: 'أقراص / كبسول بالبق', labelEn: 'Oral Tablet/Capsule' },
+            { value: 'suspension', labelAr: 'شراب', labelEn: 'Oral Suspension' },
             { value: 'injection', labelAr: 'حقن', labelEn: 'Injection' },
-            { value: 'topical', labelAr: 'موضعي', labelEn: 'Topical' },
+            { value: 'topical', labelAr: 'دهان موضعي (كريم/مرهم)', labelEn: 'Topical' },
           ],
         },
         {
           key: 'frequency',
-          labelAr: 'عدد المرات يومياً',
+          labelAr: 'كام مرة في اليوم',
           labelEn: 'Frequency',
           value: a.frequency || 'twice_daily',
           editable: true,
           inputType: 'select',
           options: [
-            { value: 'once_daily', labelAr: 'مرة واحدة يومياً (كل 24 ساعة)', labelEn: 'Once daily (q24h)' },
-            { value: 'twice_daily', labelAr: 'مرتين يومياً (كل 12 ساعة)', labelEn: 'Twice daily (q12h)' },
-            { value: 'thrice_daily', labelAr: '3 مرات يومياً (كل 8 ساعات)', labelEn: '3 times daily (q8h)' },
-            { value: 'four_times_daily', labelAr: '4 مرات يومياً (كل 6 ساعات)', labelEn: '4 times daily (q6h)' },
+            { value: 'once_daily', labelAr: 'مرة واحدة في اليوم (كل 24 ساعة)', labelEn: 'Once daily (q24h)' },
+            { value: 'twice_daily', labelAr: 'مرتين في اليوم (كل 12 ساعة)', labelEn: 'Twice daily (q12h)' },
+            { value: 'thrice_daily', labelAr: '3 مرات في اليوم (كل 8 ساعات)', labelEn: '3 times daily (q8h)' },
+            { value: 'four_times_daily', labelAr: '4 مرات في اليوم (كل 6 ساعات)', labelEn: '4 times daily (q6h)' },
           ],
+        },
+      ];
+    }
+
+    case 'remove_medication': {
+      const a = args as RemoveMedicationArgs;
+      return [
+        {
+          key: 'drugName',
+          labelAr: 'الدوا اللي هيتشال من قايمتك',
+          labelEn: 'Medication to Remove',
+          value: a.drugName,
+          editable: true,
+          inputType: 'text',
         },
       ];
     }
@@ -482,7 +554,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
       return [
         {
           key: 'medicineName',
-          labelAr: 'اسم الدواء بالروشتة',
+          labelAr: 'اسم الدوا في الروشتة',
           labelEn: 'Prescribed Medicine',
           value: first.medicineName,
           editable: true,
@@ -491,7 +563,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
         },
         {
           key: 'prescribedDose',
-          labelAr: 'الجرعة والتركيز (كما بالروشتة)',
+          labelAr: 'الجرعة والتركيز (زي ما مكتوب في الروشتة)',
           labelEn: 'Prescribed Dose & Strength',
           value: first.prescribedDose,
           editable: true,
@@ -500,39 +572,39 @@ export function buildActionPreviewFields<K extends AiActionType>(
         },
         {
           key: 'route',
-          labelAr: 'طريقة الإعطاء',
+          labelAr: 'طريقة الاستعمال',
           labelEn: 'Administration Route',
           value: first.route,
           editable: true,
           inputType: 'select',
           uncertainOrMissing: !first.route,
           options: [
-            { value: '', labelAr: '— غير محدد (اختر للتأكيد) —', labelEn: '— Unspecified (Select) —' },
-            { value: 'oral', labelAr: 'أقراص / كبسول فموي', labelEn: 'Oral Tablet/Capsule' },
-            { value: 'suspension', labelAr: 'شراب معلق', labelEn: 'Oral Suspension' },
+            { value: '', labelAr: '— مش متحدد (اختاره عشان نأكده) —', labelEn: '— Unspecified (Select) —' },
+            { value: 'oral', labelAr: 'أقراص / كبسول', labelEn: 'Oral Tablet/Capsule' },
+            { value: 'suspension', labelAr: 'شراب', labelEn: 'Oral Suspension' },
             { value: 'injection', labelAr: 'حقن', labelEn: 'Injection' },
-            { value: 'topical', labelAr: 'موضعي', labelEn: 'Topical' },
+            { value: 'topical', labelAr: 'دهان موضعي', labelEn: 'Topical' },
           ],
         },
         {
           key: 'frequency',
-          labelAr: 'تكرار الجرعة اليومي',
+          labelAr: 'بتاخده كام مرة في اليوم',
           labelEn: 'Daily Frequency',
           value: first.frequency,
           editable: true,
           inputType: 'select',
           uncertainOrMissing: !first.frequency,
           options: [
-            { value: '', labelAr: '— غير محدد (اختر للتأكيد) —', labelEn: '— Unspecified (Select) —' },
-            { value: 'once_daily', labelAr: 'مرة واحدة يومياً (كل 24 ساعة)', labelEn: 'Once daily (q24h)' },
-            { value: 'twice_daily', labelAr: 'مرتين يومياً (كل 12 ساعة)', labelEn: 'Twice daily (q12h)' },
-            { value: 'thrice_daily', labelAr: '3 مرات يومياً (كل 8 ساعات)', labelEn: '3 times daily (q8h)' },
-            { value: 'four_times_daily', labelAr: '4 مرات يومياً (كل 6 ساعات)', labelEn: '4 times daily (q6h)' },
+            { value: '', labelAr: '— مش متحدد (اختاره عشان نأكده) —', labelEn: '— Unspecified (Select) —' },
+            { value: 'once_daily', labelAr: 'مرة واحدة في اليوم (كل 24 ساعة)', labelEn: 'Once daily (q24h)' },
+            { value: 'twice_daily', labelAr: 'مرتين في اليوم (كل 12 ساعة)', labelEn: 'Twice daily (q12h)' },
+            { value: 'thrice_daily', labelAr: '3 مرات في اليوم (كل 8 ساعات)', labelEn: '3 times daily (q8h)' },
+            { value: 'four_times_daily', labelAr: '4 مرات في اليوم (كل 6 ساعات)', labelEn: '4 times daily (q6h)' },
           ],
         },
         {
           key: 'durationDays',
-          labelAr: 'مدة الكورس (بالأيام)',
+          labelAr: 'مدة الكورس (كام يوم)',
           labelEn: 'Course Duration (Days)',
           value: first.durationDays !== null && first.durationDays !== undefined ? String(first.durationDays) : '',
           editable: true,
@@ -547,7 +619,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
       return [
         {
           key: 'medicineName',
-          labelAr: 'اسم الدواء',
+          labelAr: 'اسم الدوا',
           labelEn: 'Medicine Name',
           value: a.medicineName,
           editable: true,
@@ -555,16 +627,16 @@ export function buildActionPreviewFields<K extends AiActionType>(
         },
         {
           key: 'prescribedDose',
-          labelAr: 'الجرعة الموصوفة',
+          labelAr: 'الجرعة',
           labelEn: 'Prescribed Dose',
           value: a.prescribedDose,
           editable: true,
           inputType: 'text',
-          uncertainOrMissing: a.prescribedDose.includes('حسب الوصفة') || a.prescribedDose.includes('Per prescription'),
+          uncertainOrMissing: a.prescribedDose.includes('حسب الروشتة') || a.prescribedDose.includes('Per prescription'),
         },
         {
           key: 'doseTimes',
-          labelAr: 'مواعيد التذكير اليومية (HH:mm مفصولة بفاصلة)',
+          labelAr: 'مواعيد المنبه في اليوم (بنفس الصيغة 08:00, 20:00)',
           labelEn: 'Daily Reminder Times (HH:mm comma-separated)',
           value: a.doseTimes.join(', '),
           editable: true,
@@ -572,7 +644,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
         },
         {
           key: 'durationDays',
-          labelAr: 'مدة التذكير (بالأيام)',
+          labelAr: 'لمدة كام يوم',
           labelEn: 'Duration (Days)',
           value: String(a.durationDays),
           editable: true,
@@ -586,7 +658,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
       return [
         {
           key: 'medicineName',
-          labelAr: 'اسم الدواء',
+          labelAr: 'اسم الدوا',
           labelEn: 'Medicine Name',
           value: a.medicineName || '',
           editable: true,
@@ -608,7 +680,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
       return [
         {
           key: 'medicineName',
-          labelAr: 'إيقاف تذكير الدواء',
+          labelAr: 'إيقاف منبه الدوا',
           labelEn: 'Stop Reminder For Medicine',
           value: a.medicineName || '',
           editable: false,
@@ -621,9 +693,9 @@ export function buildActionPreviewFields<K extends AiActionType>(
       return [
         {
           key: 'medicineName',
-          labelAr: 'الروشتة / الدواء',
+          labelAr: 'الروشتة / الدوا',
           labelEn: 'Prescription / Medicine',
-          value: a.medicineName || a.prescriptionId || 'آخر روشتة محفوظة / Latest Prescription',
+          value: a.medicineName || a.prescriptionId || 'آخر روشتة متسجلة / Latest Prescription',
           editable: true,
           inputType: 'text',
         },
@@ -635,8 +707,8 @@ export function buildActionPreviewFields<K extends AiActionType>(
           editable: true,
           inputType: 'select',
           options: [
-            { value: 'verified_by_patient', labelAr: 'موثّقة ومؤكدة من الروشتة الورقية ✅', labelEn: 'Verified by Patient ✅' },
-            { value: 'needs_clarification', labelAr: 'تحتاج توضيحاً من الطبيب/الصيدلي 🚨', labelEn: 'Needs Clinician Clarification 🚨' },
+            { value: 'verified_by_patient', labelAr: 'متأكدة ومطابقة للروشتة الورقية ✅', labelEn: 'Verified by Patient ✅' },
+            { value: 'needs_clarification', labelAr: 'محتاجة مراجعة مع الدكتور أو الصيدلي 🚨', labelEn: 'Needs Clinician Clarification 🚨' },
           ],
         },
       ];
@@ -656,17 +728,17 @@ export function buildActionPreviewFields<K extends AiActionType>(
         },
         {
           key: 'category',
-          labelAr: 'تصنيف المستند',
+          labelAr: 'نوع المستند',
           labelEn: 'Document Category',
           value: a.category,
           editable: true,
           inputType: 'select',
           options: [
             { value: 'prescription', labelAr: 'روشتة طبية 📋', labelEn: 'Prescription 📋' },
-            { value: 'lab_report', labelAr: 'تحليل معملي 🧪', labelEn: 'Laboratory Result 🧪' },
-            { value: 'medical_report', labelAr: 'تقرير طبي 📄', labelEn: 'Medical Report 📄' },
+            { value: 'lab_report', labelAr: 'نتيجة تحليل 🧪', labelEn: 'Laboratory Result 🧪' },
+            { value: 'medical_report', labelAr: 'تقرير طبي / أشعة 📄', labelEn: 'Medical Report 📄' },
             { value: 'leaflet', labelAr: 'نشرة دوائية 💊', labelEn: 'Medication Leaflet 💊' },
-            { value: 'other', labelAr: 'مستند صحي آخر 📁', labelEn: 'Other Health Document 📁' },
+            { value: 'other', labelAr: 'مستند صحي تاني 📁', labelEn: 'Other Health Document 📁' },
           ],
         },
       ];
@@ -674,7 +746,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
         fields.push(
           {
             key: 'medicineName',
-            labelAr: 'الدواء المستخرج بالـ OCR',
+            labelAr: 'الدوا اللي قريناه من الصورة',
             labelEn: 'OCR-Extracted Medicine',
             value: rx.medicineName || '',
             editable: true,
@@ -683,7 +755,7 @@ export function buildActionPreviewFields<K extends AiActionType>(
           },
           {
             key: 'prescribedDose',
-            labelAr: 'الجرعة والتركيز المستخرج',
+            labelAr: 'الجرعة والتركيز',
             labelEn: 'Extracted Dose / Strength',
             value: rx.prescribedDose || '',
             editable: true,
@@ -692,23 +764,23 @@ export function buildActionPreviewFields<K extends AiActionType>(
           },
           {
             key: 'frequency',
-            labelAr: 'تكرار الجرعة المستخرج',
+            labelAr: 'تكرار الجرعة في اليوم',
             labelEn: 'Extracted Frequency',
             value: rx.frequency || '',
             editable: true,
             inputType: 'select',
             uncertainOrMissing: !rx.frequency,
             options: [
-              { value: '', labelAr: '— غير واضح بالصورة (حدد يدوياً) —', labelEn: '— Unclear in Image (Select) —' },
-              { value: 'once_daily', labelAr: 'مرة واحدة يومياً', labelEn: 'Once daily' },
-              { value: 'twice_daily', labelAr: 'مرتين يومياً', labelEn: 'Twice daily' },
-              { value: 'thrice_daily', labelAr: '3 مرات يومياً', labelEn: '3 times daily' },
-              { value: 'four_times_daily', labelAr: '4 مرات يومياً', labelEn: '4 times daily' },
+              { value: '', labelAr: '— مش واضح في الصورة (اختاره بإيدك) —', labelEn: '— Unclear in Image (Select) —' },
+              { value: 'once_daily', labelAr: 'مرة واحدة في اليوم', labelEn: 'Once daily' },
+              { value: 'twice_daily', labelAr: 'مرتين في اليوم', labelEn: 'Twice daily' },
+              { value: 'thrice_daily', labelAr: '3 مرات في اليوم', labelEn: '3 times daily' },
+              { value: 'four_times_daily', labelAr: '4 مرات في اليوم', labelEn: '4 times daily' },
             ],
           },
           {
             key: 'durationDays',
-            labelAr: 'مدة العلاج بالأيام',
+            labelAr: 'مدة الكورس (كام يوم)',
             labelEn: 'Duration (Days)',
             value: rx.durationDays !== null && rx.durationDays !== undefined ? String(rx.durationDays) : '',
             editable: true,
@@ -766,12 +838,12 @@ export function createPendingActionProposal<K extends AiActionType>(params: {
     fields,
     safetyPreview,
     sourceLabelAr: isOcrAction
-      ? 'استخراج ضوئي (OCR / Vision) — يتطلب مراجعة المريض'
-      : 'إدخال بواسطة المريض عبر المساعد الذكي (Patient-Reported)',
+      ? 'قراءة تلقائية من الصورة (OCR) — راجعها الأول'
+      : 'بيان أنت بلغت بيه في الشات (Patient-Reported)',
     sourceLabelEn: isOcrAction
       ? 'Vision / OCR Extraction — Requires Patient Review'
       : 'Patient-Reported via AI Health Assistant',
-    verificationBadgeAr: 'غير موثق سريرياً بعد (في انتظار تأكيدك)',
+    verificationBadgeAr: 'مستني تأكيدك عشان يتحفظ في ملفك',
     verificationBadgeEn: 'Not Clinically Verified (Awaiting Your Confirmation)',
     ...(params.previewImageUrl ? { previewImageUrl: params.previewImageUrl } : {}),
     ...(params.rawFileForUpload ? { rawFileForUpload: params.rawFileForUpload } : {}),
@@ -782,8 +854,7 @@ export function createPendingActionProposal<K extends AiActionType>(params: {
 }
 
 /**
- * Applies edited field values from the Confirmation Card back onto the proposal's structured arguments
- * and re-runs schema & safety checks.
+ * Applies edited field values from the Confirmation Card back onto the proposal's structured arguments.
  */
 export function applyEditedFieldsToProposal<K extends AiActionType>(
   proposal: PendingAiActionProposal<K>,
@@ -898,7 +969,6 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
 }): Promise<ActionExecutionResult> {
   const { proposal } = params;
 
-  // 1. Authorization & Cross-User Security Verification
   const authCheck = verifyActionAuthorization({
     actionType: proposal.actionType,
     authenticatedUid: params.authenticatedUid,
@@ -911,19 +981,18 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
     return {
       success: false,
       actionType: proposal.actionType,
-      messageAr: authCheck.messageAr || 'تم رفض العملية.',
+      messageAr: authCheck.messageAr || 'معلش، العملية دي مرفوضة.',
       messageEn: authCheck.messageEn || 'Operation denied.',
       errorCode: authCheck.reasonCode,
     };
   }
 
-  // 2. Strict Schema Validation
   const validation = validateActionArguments(proposal.actionType, proposal.args);
   if (!validation.valid || !validation.sanitized) {
     return {
       success: false,
       actionType: proposal.actionType,
-      messageAr: validation.errorsAr.join(' ') || 'بيانات الأمر غير مكتملة.',
+      messageAr: validation.errorsAr.join(' ') || 'بيانات الطلب ناقصة.',
       messageEn: validation.errorsEn.join(' ') || 'Invalid action arguments.',
       errorCode: 'schema_validation_failed',
     };
@@ -974,7 +1043,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
         return {
           success: false,
           actionType: 'add_chronic_condition',
-          messageAr: `ℹ️ الحالة الصحية «${a.conditionName}» مسجلة بالفعل في ملفك الصحي منذ ${dup.createdAt.slice(0, 10)} — تم منع التكرار.`,
+          messageAr: `ℹ️ الحالة دي «${a.conditionName}» متسجلة عندك أصلاً في ملفك الصحي — منعت التكرار.`,
           messageEn: `ℹ️ Condition "${a.conditionName}" is already recorded in your Health Profile — duplicate entry prevented.`,
           errorCode: 'duplicate_record',
         };
@@ -997,7 +1066,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       };
       const { withAudit, auditEntry } = await commitProfileWithAudit(
         nextProfile,
-        `تمت إضافة الحالة الصحية «${a.conditionName}» (أبلغ عنها المريض) إلى الملف الصحي.`,
+        `تمت إضافة الحالة الصحية «${a.conditionName}» للملف الصحي.`,
         `Added patient-reported condition "${a.conditionName}" to Health Profile.`,
         null,
         newCond
@@ -1005,8 +1074,46 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'add_chronic_condition',
-        messageAr: `✅ تم حفظ الحالة الصحية «${a.conditionName}» في ملفك الصحي بنجاح (الحالة: أبلغ عنها المريض — غير موثقة سريرياً).`,
+        messageAr: `✅ تمام يا فندم! سجلتلك «${a.conditionName}» في ملفك الصحي بنجاح.`,
         messageEn: `✅ Saved condition "${a.conditionName}" to your Health Profile (Status: Patient-reported, not clinically verified).`,
+        updatedProfile: withAudit,
+        auditLogId: auditEntry.id,
+      };
+    }
+
+    case 'remove_chronic_condition': {
+      const a = validation.sanitized as RemoveChronicConditionArgs;
+      const existingList = [...(profile.chronicConditions || [])];
+      const filtered = existingList.filter(
+        (c) => !c.conditionName.toLowerCase().includes(a.conditionName.toLowerCase())
+      );
+      if (filtered.length === existingList.length) {
+        return {
+          success: false,
+          actionType: 'remove_chronic_condition',
+          messageAr: `ملقتش «${a.conditionName}» متسجل في الأمراض المزمنة عندك.`,
+          messageEn: `Condition "${a.conditionName}" was not found in your profile.`,
+          errorCode: 'not_found',
+        };
+      }
+      const updatedNotes = syncNotesWithChronicConditions(profile.notes || '', filtered);
+      const nextProfile: UserHealthProfile = {
+        ...profile,
+        chronicConditions: filtered,
+        notes: updatedNotes,
+      };
+      const { withAudit, auditEntry } = await commitProfileWithAudit(
+        nextProfile,
+        `تم حذف الحالة الصحية «${a.conditionName}» من الملف الصحي.`,
+        `Removed condition "${a.conditionName}" from Health Profile.`,
+        existingList,
+        filtered
+      );
+      return {
+        success: true,
+        actionType: 'remove_chronic_condition',
+        messageAr: `✅ تمام، شيلت «${a.conditionName}» من ملفك الصحي.`,
+        messageEn: `✅ Removed "${a.conditionName}" from your Health Profile.`,
         updatedProfile: withAudit,
         auditLogId: auditEntry.id,
       };
@@ -1023,7 +1130,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
         return {
           success: false,
           actionType: 'add_allergy',
-          messageAr: `ℹ️ الحساسية من «${a.drugName}» مسجلة بالفعل في ملفك الصحي — تم منع التكرار.`,
+          messageAr: `ℹ️ حساسيتك من «${a.drugName}» متسجلة عندك قبل كده في ملفك الصحي.`,
           messageEn: `ℹ️ Allergy to "${a.drugName}" is already recorded in your Health Profile — duplicate prevented.`,
           errorCode: 'duplicate_record',
         };
@@ -1045,7 +1152,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       };
       const { withAudit, auditEntry } = await commitProfileWithAudit(
         nextProfile,
-        `تم تسجيل حساسية دوائية تجاه «${a.drugName}» (${a.severity}) في الملف الصحي.`,
+        `تم تسجيل حساسية دوائية من «${a.drugName}» (${a.severity}) في الملف الصحي.`,
         `Recorded drug allergy to "${a.drugName}" (${a.severity}) in Health Profile.`,
         null,
         newAllergy
@@ -1053,8 +1160,43 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'add_allergy',
-        messageAr: `✅ تم تسجيل حساسيتك من «${a.drugName}» في ملفك الصحي بنجاح. سيقوم محرك الأمان الدوائي بتحذيرك تلقائياً من أي مضاد حيوي ينتمي لنفس العائلة أو يسبب حساسية متصالبة.`,
+        messageAr: `✅ تمام، سجلتلك حساسية «${a.drugName}» في ملفك الصحي! من دلوقتي أي دوا هتسأل عليه أو تضيفه هفحصهولك أوتوماتيك ضد الحساسية دي.`,
         messageEn: `✅ Saved your "${a.drugName}" allergy to your Health Profile. The Medication Safety Engine will automatically screen future medications against this allergy.`,
+        updatedProfile: withAudit,
+        auditLogId: auditEntry.id,
+      };
+    }
+
+    case 'remove_allergy': {
+      const a = validation.sanitized as RemoveAllergyArgs;
+      const filtered = profile.allergies.filter(
+        (item) => !item.drugName.toLowerCase().includes(a.drugName.toLowerCase())
+      );
+      if (filtered.length === profile.allergies.length) {
+        return {
+          success: false,
+          actionType: 'remove_allergy',
+          messageAr: `ملقتش حساسية باسم «${a.drugName}» متسجلة في ملفك.`,
+          messageEn: `No allergy matching "${a.drugName}" was found in your profile.`,
+          errorCode: 'not_found',
+        };
+      }
+      const nextProfile: UserHealthProfile = {
+        ...profile,
+        allergies: filtered,
+      };
+      const { withAudit, auditEntry } = await commitProfileWithAudit(
+        nextProfile,
+        `تم مسح حساسية «${a.drugName}» من الملف الصحي.`,
+        `Removed allergy "${a.drugName}" from Health Profile.`,
+        profile.allergies,
+        filtered
+      );
+      return {
+        success: true,
+        actionType: 'remove_allergy',
+        messageAr: `✅ تمام، مسحت حساسية «${a.drugName}» من ملفك الصحي.`,
+        messageEn: `✅ Removed "${a.drugName}" allergy from your Health Profile.`,
         updatedProfile: withAudit,
         auditLogId: auditEntry.id,
       };
@@ -1063,6 +1205,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
     case 'update_vitals': {
       const a = validation.sanitized as UpdateVitalsArgs;
       const beforeVitals = {
+        displayName: profile.displayName,
         age: profile.age,
         weightKg: profile.weightKg,
         bloodType: profile.bloodType,
@@ -1082,21 +1225,33 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       };
       const changedLabelsAr: string[] = [];
       const changedLabelsEn: string[] = [];
+      if (a.displayName !== undefined) {
+        changedLabelsAr.push(`الاسم: ${a.displayName}`);
+        changedLabelsEn.push(`Name: ${a.displayName}`);
+      }
       if (a.weightKg !== undefined) {
         changedLabelsAr.push(`الوزن: ${a.weightKg} كجم`);
         changedLabelsEn.push(`Weight: ${a.weightKg} kg`);
       }
       if (a.age !== undefined) {
-        changedLabelsAr.push(`العمر: ${a.age} سنة`);
+        changedLabelsAr.push(`السن: ${a.age} سنة`);
         changedLabelsEn.push(`Age: ${a.age} yrs`);
       }
       if (a.bloodType !== undefined) {
         changedLabelsAr.push(`فصيلة الدم: ${a.bloodType}`);
         changedLabelsEn.push(`Blood Type: ${a.bloodType}`);
       }
+      if (a.emergencyContact !== undefined) {
+        changedLabelsAr.push(`طوارئ: ${a.emergencyContact}`);
+        changedLabelsEn.push(`Emergency: ${a.emergencyContact}`);
+      }
+      if (a.pregnancyStatus !== undefined) {
+        changedLabelsAr.push(`الحالة: ${a.pregnancyStatus === 'pregnant' ? 'حامل' : a.pregnancyStatus === 'breastfeeding' ? 'مرضع' : 'لا يوجد'}`);
+        changedLabelsEn.push(`Pregnancy/Lactation: ${a.pregnancyStatus}`);
+      }
       const { withAudit, auditEntry } = await commitProfileWithAudit(
         nextProfile,
-        `تم تحديث البيانات الحيوية في الملف الصحي (${changedLabelsAr.join('، ')}).`,
+        `تم تحديث البيانات الشخصية في الملف الصحي (${changedLabelsAr.join('، ')}).`,
         `Updated Health Profile vitals (${changedLabelsEn.join(', ')}).`,
         beforeVitals,
         a
@@ -1104,7 +1259,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'update_vitals',
-        messageAr: `✅ تم تحديث بياناتك في الملف الصحي بنجاح (${changedLabelsAr.join(' · ')}).`,
+        messageAr: `✅ تمام، حدثتلك بياناتك في الملف الصحي بنجاح (${changedLabelsAr.join(' · ')}).`,
         messageEn: `✅ Updated your Health Profile successfully (${changedLabelsEn.join(' · ')}).`,
         updatedProfile: withAudit,
         auditLogId: auditEntry.id,
@@ -1123,7 +1278,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
         return {
           success: false,
           actionType: 'add_medication',
-          messageAr: `ℹ️ الدواء «${a.drugName}» مسجل بالفعل في قائمة أدويتك الحالية — تم منع التكرار.`,
+          messageAr: `ℹ️ الدوا ده «${a.drugName}» متسجل فعلاً في قايمة أدويتك الحالية.`,
           messageEn: `ℹ️ Medication "${a.drugName}" is already in your active medications list — duplicate prevented.`,
           errorCode: 'duplicate_record',
         };
@@ -1147,7 +1302,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       };
       const { withAudit, auditEntry } = await commitProfileWithAudit(
         nextProfile,
-        `تمت إضافة الدواء «${a.drugName}» (${newMed.prescribedDose}) إلى قائمة الأدوية الحالية.`,
+        `تمت إضافة الدواء «${a.drugName}» (${newMed.prescribedDose}) لقايمة الأدوية الحالية.`,
         `Added medication "${a.drugName}" (${newMed.prescribedDose}) to current medication list.`,
         null,
         newMed
@@ -1155,8 +1310,43 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'add_medication',
-        messageAr: `✅ تمت إضافة «${a.drugName}» (${newMed.prescribedDose}) إلى قائمة أدويتك الحالية في الملف الصحي.`,
+        messageAr: `✅ تمام، ضفتلك «${a.drugName}» (${newMed.prescribedDose}) في قايمة أدويتك الحالية بملفك الصحي.`,
         messageEn: `✅ Added "${a.drugName}" (${newMed.prescribedDose}) to your active medication list in your Health Profile.`,
+        updatedProfile: withAudit,
+        auditLogId: auditEntry.id,
+      };
+    }
+
+    case 'remove_medication': {
+      const a = validation.sanitized as RemoveMedicationArgs;
+      const filtered = profile.medications.filter(
+        (m) => !m.drugName.toLowerCase().includes(a.drugName.toLowerCase())
+      );
+      if (filtered.length === profile.medications.length) {
+        return {
+          success: false,
+          actionType: 'remove_medication',
+          messageAr: `ملقتش دوا باسم «${a.drugName}» في قايمة أدويتك الحالية.`,
+          messageEn: `Medication "${a.drugName}" was not found in your medications list.`,
+          errorCode: 'not_found',
+        };
+      }
+      const nextProfile: UserHealthProfile = {
+        ...profile,
+        medications: filtered,
+      };
+      const { withAudit, auditEntry } = await commitProfileWithAudit(
+        nextProfile,
+        `تم حذف الدواء «${a.drugName}» من قايمة الأدوية.`,
+        `Removed medication "${a.drugName}" from medications list.`,
+        profile.medications,
+        filtered
+      );
+      return {
+        success: true,
+        actionType: 'remove_medication',
+        messageAr: `✅ تمام، شيلت «${a.drugName}» من قايمة أدويتك الحالية.`,
+        messageEn: `✅ Removed "${a.drugName}" from your medication list.`,
         updatedProfile: withAudit,
         auditLogId: auditEntry.id,
       };
@@ -1187,7 +1377,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
         const newRx: SavedPrescription = {
           id: `rx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           ...(item.antibioticId ? { antibioticId: item.antibioticId } : {}),
-          medicineName: item.medicineName || 'دواء غير محدد الاسم (يتطلب مراجعة)',
+          medicineName: item.medicineName || 'دواء غير محدد الاسم (محتاج مراجعة)',
           prescribedDose: item.prescribedDose,
           route: item.route,
           frequency: item.frequency,
@@ -1213,7 +1403,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
 
       const { withAudit, auditEntry } = await commitProfileWithAudit(
         profile,
-        `تم حفظ ${addedRxList.length} دواء/روشتة في سجل رادار الروشتة (${addedRxList.map((r) => r.medicineName).join('، ')}).`,
+        `تم حفظ ${addedRxList.length} دواء/روشتة في رادار الروشتة (${addedRxList.map((r) => r.medicineName).join('، ')}).`,
         `Saved ${addedRxList.length} prescription record(s) to Prescription Radar (${addedRxList.map((r) => r.medicineName).join(', ')}).`,
         null,
         addedRxList
@@ -1222,7 +1412,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'add_prescription',
-        messageAr: `✅ تم حفظ الروشتة (${addedRxList.map((r) => r.medicineName).join('، ')}) في حسابك برادار الروشتة.`,
+        messageAr: `✅ تمام، حفظتلك الروشتة (${addedRxList.map((r) => r.medicineName).join('، ')}) في رادار الروشتة بحسابك!`,
         messageEn: `✅ Saved prescription (${addedRxList.map((r) => r.medicineName).join(', ')}) to your Prescription Radar account.`,
         updatedProfile: withAudit,
         updatedPrescriptions: nextPrescriptions,
@@ -1236,7 +1426,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
         return {
           success: false,
           actionType: 'update_prescription_status',
-          messageAr: 'لا توجد روشتات محفوظة حالياً في حسابك لتحديث حالتها.',
+          messageAr: 'مفيش روشتات متسجلة في حسابك دلوقتي عشان نحدث حالتها.',
           messageEn: 'No saved prescriptions found in your account to update.',
           errorCode: 'not_found',
         };
@@ -1278,7 +1468,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'update_prescription_status',
-        messageAr: `✅ تم تحديث حالة روشتة «${matchedRx.medicineName}» بنجاح.`,
+        messageAr: `✅ تمام، حدثتلك حالة روشتة «${matchedRx.medicineName}» بنجاح.`,
         messageEn: `✅ Updated status for prescription "${matchedRx.medicineName}" successfully.`,
         updatedProfile: withAudit,
         updatedPrescriptions: nextRxList,
@@ -1297,7 +1487,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
         return {
           success: false,
           actionType: 'create_reminder',
-          messageAr: `ℹ️ يوجد تذكير نشط بالفعل للدواء «${a.medicineName}» في نفس المواعيد (${a.doseTimes.join('، ')}) — تم منع التكرار.`,
+          messageAr: `ℹ️ في منبه متظبط فعلاً للدوا «${a.medicineName}» في نفس المواعيد (${a.doseTimes.join('، ')}).`,
           messageEn: `ℹ️ An active reminder for "${a.medicineName}" at (${a.doseTimes.join(', ')}) already exists — duplicate prevented.`,
           errorCode: 'duplicate_record',
         };
@@ -1336,15 +1526,15 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       const notifSupported = typeof window !== 'undefined' && 'Notification' in window;
       const notifGranted = notifSupported && Notification.permission === 'granted';
       const notifNoteAr = notifGranted
-        ? 'التنبيهات مفعّلة في المتصفح.'
-        : 'ملاحظة: إشعارات النظام تعتمد على صلاحيات المتصفح/الجهاز؛ يمكنك أيضاً تنزيل ملف المنبهات (.ics) من المتابع العلاجي لضمان رنين الهاتف.';
+        ? 'والتنبيهات شغالة على متصفحك.'
+        : 'وتقدر كمان تنزل ملف المنبهات (.ics) من صفحة متابع الجرعات عشان موبايلك يرن في الميعاد حتى لو قافل النت.';
       const notifNoteEn = notifGranted
         ? 'Browser notifications are active.'
         : 'Note: System push notifications depend on browser/device support; you can also export phone alarms (.ics) in the Tracker.';
 
       const { withAudit, auditEntry } = await commitProfileWithAudit(
         profile,
-        `تم إنشاء جدول تذكير للدواء «${a.medicineName}» في المواعيد (${a.doseTimes.join('، ')}) لمدة ${a.durationDays} أيام.`,
+        `تم تظبيط جدول تذكير للدواء «${a.medicineName}» في المواعيد (${a.doseTimes.join('، ')}) لمدة ${a.durationDays} أيام.`,
         `Created medication reminder schedule for "${a.medicineName}" at (${a.doseTimes.join(', ')}) for ${a.durationDays} days.`,
         null,
         { scheduleId, medicineName: a.medicineName, doseTimes: a.doseTimes }
@@ -1353,9 +1543,9 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'create_reminder',
-        messageAr: `✅ تم إنشاء تذكير الدواء «${a.medicineName}» في المواعيد (${a.doseTimes
+        messageAr: `✅ ظبطتلك منبه وجدول جرعات «${a.medicineName}» كل يوم الساعة (${a.doseTimes
           .map((t) => formatTime12Hour(t, true))
-          .join(' و ')}) لمدة ${a.durationDays} أيام. ${notifNoteAr}`,
+          .join(' و ')}) لمدة ${a.durationDays} أيام! ${notifNoteAr}`,
         messageEn: `✅ Created dose reminder for "${a.medicineName}" at (${a.doseTimes
           .map((t) => formatTime12Hour(t, false))
           .join(' & ')}) for ${a.durationDays} days. ${notifNoteEn}`,
@@ -1376,7 +1566,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
         return {
           success: false,
           actionType: 'update_reminder',
-          messageAr: `لم يتم العثور على جدول تذكير نشط للدواء «${a.medicineName || ''}».`,
+          messageAr: `ملقتش منبه شغال للدوا «${a.medicineName || ''}» عشان أعدله.`,
           messageEn: `No active reminder schedule found for "${a.medicineName || ''}".`,
           errorCode: 'not_found',
         };
@@ -1423,7 +1613,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'update_reminder',
-        messageAr: `✅ تم تعديل تذكير «${target.medicineName}» بنجاح لتصبح المواعيد (${nextTimes
+        messageAr: `✅ تمام، عدلتلك مواعيد منبه «${target.medicineName}» وبقت الساعة (${nextTimes
           .map((t) => formatTime12Hour(t, true))
           .join(' و ')}).`,
         messageEn: `✅ Updated reminder for "${target.medicineName}" to (${nextTimes
@@ -1446,7 +1636,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
         return {
           success: false,
           actionType: 'stop_reminder',
-          messageAr: `لا يوجد تذكير نشط حالياً للدواء «${a.medicineName || ''}».`,
+          messageAr: `مفيش منبه شغال دلوقتي للدوا «${a.medicineName || ''}».`,
           messageEn: `No active reminder found for "${a.medicineName || ''}".`,
           errorCode: 'not_found',
         };
@@ -1458,7 +1648,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
 
       const { withAudit, auditEntry } = await commitProfileWithAudit(
         profile,
-        `تم إيقاف وحذف جدول التذكير للدواء «${target.medicineName}».`,
+        `تم إيقاف ومسح جدول التذكير للدواء «${target.medicineName}».`,
         `Stopped and removed reminder schedule for "${target.medicineName}".`,
         { scheduleId: target.id, medicineName: target.medicineName },
         null
@@ -1467,7 +1657,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'stop_reminder',
-        messageAr: `✅ تم إيقاف تذكير الدواء «${target.medicineName}» بنجاح.`,
+        messageAr: `✅ تمام، وقفتلك منبه دوا «${target.medicineName}».`,
         messageEn: `✅ Stopped medication reminder for "${target.medicineName}".`,
         updatedProfile: withAudit,
         updatedSchedules: nextSchedules,
@@ -1568,7 +1758,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       );
 
       const storageNoteAr = uploadOutcome.uploadedToCloud
-        ? 'تم رفع الملف الأصلي بأمان إلى Firebase Storage.'
+        ? 'والصورة الأصلية اترفعت بأمان على السحابة.'
         : uploadOutcome.errorAr || '';
       const storageNoteEn = uploadOutcome.uploadedToCloud
         ? 'Original file securely uploaded to Firebase Storage.'
@@ -1577,8 +1767,8 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: true,
         actionType: 'save_medical_document',
-        messageAr: `✅ تم حفظ المستند الطبي «${a.title}» في ملفك الصحي${
-          linkedRxId ? ' وربطه برادار الروشتة' : ''
+        messageAr: `✅ تمام، حفظتلك المستند الطبي «${a.title}» في ملفك الصحي${
+          linkedRxId ? ' وربطته برادار الروشتة' : ''
         }. ${storageNoteAr}`,
         messageEn: `✅ Saved medical document "${a.title}" to your Health Profile${
           linkedRxId ? ' and linked it to Prescription Radar' : ''
@@ -1593,7 +1783,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
       return {
         success: false,
         actionType: proposal.actionType,
-        messageAr: 'نوع العملية غير مدعوم كعملية حفظ.',
+        messageAr: 'نوع الطلب ده مش مدعوم كعملية حفظ.',
         messageEn: 'Unsupported write action type.',
       };
   }
@@ -1601,7 +1791,7 @@ export async function executeConfirmedAiAction<K extends AiActionType>(params: {
 
 /**
  * Executes a read-only query against the authenticated patient's own health profile,
- * prescriptions, reminders, and medical documents.
+ * prescriptions, reminders, and medical documents — speaking natural Egyptian Arabic.
  */
 export function executeReadOnlyAiAction(params: {
   actionType: AiActionType;
@@ -1623,7 +1813,7 @@ export function executeReadOnlyAiAction(params: {
     return {
       success: false,
       actionType: params.actionType,
-      messageAr: authCheck.messageAr || 'تم رفض الوصول.',
+      messageAr: authCheck.messageAr || 'معلش، غير مسموح بالوصول.',
       messageEn: authCheck.messageEn || 'Access denied.',
       errorCode: authCheck.reasonCode,
     };
@@ -1638,7 +1828,7 @@ export function executeReadOnlyAiAction(params: {
           success: true,
           actionType: 'show_allergies',
           messageAr:
-            '🛡️ لا توجد حساسيات دوائية مسجلة حالياً في ملفك الصحي.\n\nيمكنك قول مثلاً: «أضف حساسية البنسلين» لتسجيلها فوراً.',
+            '🛡️ بص يا سيدي، مفيش أي حساسية أدوية متسجلة في ملفك الصحي لحد دلوقتي.\n\nلو عندك حساسية من أي دوا قولي بس مثلاً: «عندي حساسية من البنسلين» وأنا هسجلهالك فوراً.',
           messageEn:
             '🛡️ You currently have no drug allergies documented in your Health Profile.\n\nYou can say, for example: "Add my penicillin allergy" to record one.',
         };
@@ -1647,8 +1837,8 @@ export function executeReadOnlyAiAction(params: {
         (a, i) =>
           `${i + 1}. ${a.drugName}: الخطورة (${a.severity}) — الأعراض: ${
             a.reportedSymptoms || 'غير محددة'
-          } — التوثيق: ${
-            a.evidenceStatus === 'clinically_verified' ? 'مؤكدة طبياً ✅' : 'أبلغ عنها المريض'
+          } — الحالة: ${
+            a.evidenceStatus === 'clinically_verified' ? 'متأكدة بتحليل طبي ✅' : 'متسجلة من كلامك'
           }`
       );
       const linesEn = profile.allergies.map(
@@ -1662,7 +1852,7 @@ export function executeReadOnlyAiAction(params: {
       return {
         success: true,
         actionType: 'show_allergies',
-        messageAr: `🚨 سجل الحساسية الدوائية في ملفك الصحي (${profile.allergies.length}):\n\n${linesAr.join('\n')}`,
+        messageAr: `🚨 دي الحساسيات المتسجلة في ملفك الصحي دلوقتي (${profile.allergies.length}):\n\n${linesAr.join('\n')}`,
         messageEn: `🚨 Your Documented Drug Allergies (${profile.allergies.length}):\n\n${linesEn.join('\n')}`,
       };
     }
@@ -1674,7 +1864,7 @@ export function executeReadOnlyAiAction(params: {
           success: true,
           actionType: 'show_medications',
           messageAr:
-            '💊 لا توجد أدوية نشطة مسجلة حالياً في ملفك الصحي أو متابع الجرعات.\n\nيمكنك إضافة دواء بقول: «أضف أوجمنتين 1 جرام لقائمة أدويتي» أو رفع صورة الروشتة عبر زر 📎.',
+            '💊 مفيش أدوية متسجلة في قايمتك الحالية دلوقتي.\n\nلو ماشي على أي دوا قولي مثلاً: «باخد أوجمنتين 1 جرام مرتين في اليوم» أو ارفع صورة الروشتة من زرار 📎 وأنا أضيفهولك.',
           messageEn:
             '💊 You have no active medications recorded in your Health Profile or Dose Tracker.\n\nYou can add one by saying "Add Augmentin 1g to my medication list" or by uploading a prescription image via 📎.',
         };
@@ -1683,21 +1873,21 @@ export function executeReadOnlyAiAction(params: {
       const linesEn: string[] = [];
       activeMeds.forEach((m, i) => {
         linesAr.push(
-          `${i + 1}. ${m.drugName}: الجرعة (${m.prescribedDose || 'غير محددة'}) — ${formatFrequencyLabel(
+          `${i + 1}. ${m.drugName}: الجرعة (${m.prescribedDose || 'مش محددة'}) — ${formatFrequencyLabel(
             m.frequency,
             true
-          )} — المصدر: ${m.evidenceStatus === 'clinically_verified' ? 'موثق طبياً' : 'أبلغ عنه المريض'}`
+          )}`
         );
         linesEn.push(
           `${i + 1}. ${m.drugName}: Dose (${m.prescribedDose || 'Unspecified'}) — ${formatFrequencyLabel(
             m.frequency,
             false
-          )} — Source: ${m.evidenceStatus === 'clinically_verified' ? 'Clinically Verified' : 'Patient-Reported'}`
+          )}`
         );
       });
       schedules.forEach((s) => {
         linesAr.push(
-          `• جدول نشط: ${s.medicineName} (${s.prescribedDose}) — مواعيد الجرعات: ${s.doseTimes
+          `• منبه وجدول شغال: ${s.medicineName} (${s.prescribedDose}) — مواعيده: ${s.doseTimes
             .map((t) => formatTime12Hour(t, true))
             .join(' و ')}`
         );
@@ -1710,7 +1900,7 @@ export function executeReadOnlyAiAction(params: {
       return {
         success: true,
         actionType: 'show_medications',
-        messageAr: `💊 قائمة أدويتك الحالية المسجلة بحسابك:\n\n${linesAr.join('\n')}`,
+        messageAr: `💊 دي الأدوية اللي متسجلة في حسابك دلوقتي:\n\n${linesAr.join('\n')}`,
         messageEn: `💊 Your Current Recorded Medications:\n\n${linesEn.join('\n')}`,
       };
     }
@@ -1721,16 +1911,16 @@ export function executeReadOnlyAiAction(params: {
           success: true,
           actionType: 'show_reminders',
           messageAr:
-            '⏰ لا توجد تذكيرات أدوية مفعّلة حالياً في حسابك.\n\nيمكنك إنشاء تذكير بقول: «فكرني آخد أوجمنتين الساعة 8 صباحاً و 8 مساءً».',
+            '⏰ مفيش أي منبهات أدوية شغالة عندك دلوقتي.\n\nلو عايز أظبطلك منبه قولي بس: «فكرني آخد أوجمنتين الساعة 8 الصبح و 8 بالليل».',
           messageEn:
             '⏰ You have no active medication reminders.\n\nYou can create one by saying: "Remind me to take Augmentin at 8 AM and 8 PM".',
         };
       }
       const linesAr = schedules.map(
         (s, i) =>
-          `${i + 1}. ${s.medicineName} (${s.prescribedDose}): المواعيد اليومية (${s.doseTimes
+          `${i + 1}. ${s.medicineName} (${s.prescribedDose}): كل يوم الساعة (${s.doseTimes
             .map((t) => formatTime12Hour(t, true))
-            .join('، ')}) — المدة: ${s.durationDays} أيام (من ${s.startDate} إلى ${s.endDate})`
+            .join('، ')}) — لمدة ${s.durationDays} أيام (من ${s.startDate} لحد ${s.endDate})`
       );
       const linesEn = schedules.map(
         (s, i) =>
@@ -1741,7 +1931,7 @@ export function executeReadOnlyAiAction(params: {
       return {
         success: true,
         actionType: 'show_reminders',
-        messageAr: `⏰ تذكيرات وجداول الجرعات المفعّلة في حسابك (${schedules.length}):\n\n${linesAr.join('\n')}`,
+        messageAr: `⏰ دي منبهات وجداول الجرعات الشغالة في حسابك (${schedules.length}):\n\n${linesAr.join('\n')}`,
         messageEn: `⏰ Your Active Medication Reminders (${schedules.length}):\n\n${linesEn.join('\n')}`,
       };
     }
@@ -1752,22 +1942,22 @@ export function executeReadOnlyAiAction(params: {
           success: true,
           actionType: 'show_prescriptions',
           messageAr:
-            '📋 لا توجد روشتات محفوظة حالياً في حسابك. يمكنك رفع صورة روشتتك عبر زر 📎 لتحليلها وحفظها.',
+            '📋 مفيش روشتات محفوظة في حسابك لحد دلوقتي. دوس على زرار 📎 وصور الروشتة وأنا هقرأها وأحفظهالك.',
           messageEn:
             '📋 You have no saved prescriptions yet. You can attach a prescription image using the 📎 button to analyze and save it.',
         };
       }
       const linesAr = prescriptions.slice(0, 5).map(
         (rx, i) =>
-          `${i + 1}. ${rx.medicineName}: ${rx.prescribedDose || 'بدون جرعة محددة'} · ${formatRouteLabel(
+          `${i + 1}. ${rx.medicineName}: ${rx.prescribedDose || 'بدون تركيز محدد'} · ${formatRouteLabel(
             rx.route,
             true
           )} · ${formatFrequencyLabel(rx.frequency, true)} (${
             rx.verificationStatus === 'verified_by_patient'
-              ? 'موثقة ✅'
+              ? 'متأكدة ✅'
               : rx.verificationStatus === 'needs_clarification'
-                ? 'تحتاج توضيحاً 🚨'
-                : 'غير موثقة ⚠️'
+                ? 'محتاجة مراجعة 🚨'
+                : 'مقروءة بالـ OCR ⚠️'
           })`
       );
       const linesEn = prescriptions.slice(0, 5).map(
@@ -1786,7 +1976,7 @@ export function executeReadOnlyAiAction(params: {
       return {
         success: true,
         actionType: 'show_prescriptions',
-        messageAr: `📋 الروشتات المحفوظة في حسابك (${prescriptions.length}):\n\n${linesAr.join('\n')}`,
+        messageAr: `📋 دي الروشتات المحفوظة في حسابك (${prescriptions.length}):\n\n${linesAr.join('\n')}`,
         messageEn: `📋 Your Saved Prescriptions (${prescriptions.length}):\n\n${linesEn.join('\n')}`,
       };
     }
@@ -1798,7 +1988,7 @@ export function executeReadOnlyAiAction(params: {
           success: true,
           actionType: 'show_medical_documents',
           messageAr:
-            '📂 لا توجد تقارير طبية أو نتائج تحاليل مرفوعة في حسابك بعد. اضغط على زر 📎 لرفع صورة تقرير أو تحليل أو روشتة.',
+            '📂 مفيش تقارير طبية أو تحاليل مرفوعة في حسابك لسه. تقدر ترفع أي صورة تحليل أو تقرير من زرار 📎.',
           messageEn:
             '📂 No medical reports or lab results uploaded to your account yet. Use the 📎 button to upload a report, lab result, or prescription.',
         };
@@ -1814,7 +2004,7 @@ export function executeReadOnlyAiAction(params: {
       return {
         success: true,
         actionType: 'show_medical_documents',
-        messageAr: `📂 أحدث المستندات والتقارير الطبية في حسابك (${docs.length}):\n\n${linesAr.join('\n')}`,
+        messageAr: `📂 دي أحدث التقارير والتحاليل المرفوعة في حسابك (${docs.length}):\n\n${linesAr.join('\n')}`,
         messageEn: `📂 Your Latest Medical Documents & Reports (${docs.length}):\n\n${linesEn.join('\n')}`,
       };
     }
@@ -1826,24 +2016,24 @@ export function executeReadOnlyAiAction(params: {
       const docsCount = (profile.medicalDocuments || []).length;
 
       const summaryAr = [
-        `📊 ملخص ملفك الصحي وسجلاتك المحفوظة:`,
-        `• البيانات الأساسية: الاسم (${profile.displayName || 'غير مسجل'}) · العمر (${profile.age || '—'}) · الوزن (${
+        `📊 ده ملخص كامل لملفك الصحي المتسجل معانا يا فندم:`,
+        `• البيانات الشخصية: الاسم (${profile.displayName || 'مش متسجل'}) · السن (${profile.age || '—'}) · الوزن (${
           profile.weightKg ? `${profile.weightKg} كجم` : '—'
         }) · فصيلة الدم (${profile.bloodType || '—'})`,
-        `• الحالات الصحية المزمنة (${chronics.length}): ${
-          chronics.length > 0 ? chronics.join('، ') + ' (أبلغ عنها المريض)' : 'لا يوجد'
+        `• الأمراض المزمنة والحالات الصحية (${chronics.length}): ${
+          chronics.length > 0 ? chronics.join('، ') : 'الحمد لله مفيش حاجة متسجلة'
         }`,
-        `• الحساسية الدوائية المسجلة (${profile.allergies.length}): ${
+        `• سجل الحساسية الدوائية (${profile.allergies.length}): ${
           profile.allergies.length > 0
             ? profile.allergies.map((a) => `${a.drugName} [${a.severity}]`).join('، ')
-            : 'لا توجد حساسية مسجلة'
+            : 'مفيش حساسية متسجلة'
         }`,
-        `• الأدوية الحالية بالملف (${activeMeds.length}): ${
+        `• الأدوية اللي ماشي عليها (${activeMeds.length}): ${
           activeMeds.length > 0
             ? activeMeds.map((m) => `${m.drugName} (${m.prescribedDose})`).join('، ')
-            : 'لا يوجد'
+            : 'مفيش أدوية حالية'
         }`,
-        `• الروشتات المحفوظة (${prescriptions.length}) وجداول التذكير النشطة (${schedules.length}) والمستندات المرفوعة (${docsCount}).`,
+        `• الروشتات المحفوظة (${prescriptions.length}) · منبهات الأدوية الشغالة (${schedules.length}) · التحاليل والتقارير المرفوعة (${docsCount}).`,
       ].join('\n');
 
       const summaryEn = [

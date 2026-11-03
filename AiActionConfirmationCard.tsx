@@ -2,15 +2,7 @@
  * AiActionConfirmationCard.tsx
  *
  * Interactive Patient Action Confirmation Card for `ChatWidget.tsx` and `Assistant.tsx`.
- *
- * Features:
- * - Displays structured preview of the proposed action (Condition, Allergy, Vitals, Medication,
- *   Prescription, Reminder, or Uploaded Medical Document).
- * - Clearly distinguishes AI-extracted / patient-reported data from saved verified medical records.
- * - Shows live `medicationSafetyEngine` status banner & allergy/interaction alerts BEFORE saving.
- * - Highlights uncertain or unreadable OCR fields for manual correction.
- * - Supports full inline editing ("Edit" mode) + "Confirm and Save" + "Cancel" workflow.
- * - Never claims an action was saved until the backend/executor operation succeeds.
+ * Crafted with warm, natural Egyptian Colloquial Arabic (مصري عامي) when lang === 'ar'.
  */
 
 import { useState } from 'react';
@@ -73,7 +65,7 @@ export default function AiActionConfirmationCard({
       case 'update_prescription_status':
         return {
           to: '/prescription-radar',
-          labelAr: '📡 فتح رادار الروشتة',
+          labelAr: '📡 افتح رادار الروشتة',
           labelEn: '📡 Open Prescription Radar',
         };
       case 'create_reminder':
@@ -81,13 +73,13 @@ export default function AiActionConfirmationCard({
       case 'stop_reminder':
         return {
           to: '/tracker',
-          labelAr: '⏰ فتح متابع الجرعات والتنبيهات',
+          labelAr: '⏰ افتح متابع الجرعات والمنبهات',
           labelEn: '⏰ Open Dose Tracker',
         };
       default:
         return {
           to: '/health-profile',
-          labelAr: '👤 فتح ملفي الصحي',
+          labelAr: '👤 افتح ملفي الصحي',
           labelEn: '👤 Open My Health Profile',
         };
     }
@@ -160,18 +152,18 @@ export default function AiActionConfirmationCard({
         >
           {proposal.status === 'confirmed_saved'
             ? isAr
-              ? '✅ تم الحفظ في حسابك'
+              ? '✅ اتحفظ في حسابك خلاص'
               : '✅ Saved to Account'
             : proposal.status === 'cancelled'
               ? isAr
-                ? '✕ ملغاة'
+                ? '✕ اتلغى'
                 : '✕ Cancelled'
               : proposal.status === 'failed'
                 ? isAr
-                  ? '⚠️ لم يكتمل الحفظ'
+                  ? '⚠️ متحفظش'
                   : '⚠️ Save Failed'
                 : isAr
-                  ? '⏳ بانتظار تأكيدك'
+                  ? '⏳ مستني تأكيدك'
                   : '⏳ Awaiting Confirmation'}
         </span>
       </div>
@@ -204,11 +196,11 @@ export default function AiActionConfirmationCard({
           />
           <div style={{ fontSize: '0.78rem', color: '#334155' }}>
             <div style={{ fontWeight: 700 }}>
-              📎 {isAr ? 'معاينة المرفق الطبي' : 'Medical Attachment Preview'}
+              📎 {isAr ? 'معاينة الصورة المرفوعة' : 'Medical Attachment Preview'}
             </div>
             <div>
               {isAr
-                ? 'راجع الحقول المستخرجة بالأسفل وعدل أي حقل غير واضح قبل الحفظ.'
+                ? 'بص على البيانات اللي طلعناها تحت، ولو في حاجة محتاجة تظبيط دوس «تعديل» قبل ما تحفظ.'
                 : 'Review the extracted fields below and edit any unclear field before saving.'}
             </div>
           </div>
@@ -273,7 +265,7 @@ export default function AiActionConfirmationCard({
                 <span>{isAr ? field.labelAr : field.labelEn}:</span>
                 {isUncertain && (
                   <span style={{ color: '#d97706', fontSize: '0.72rem' }}>
-                    ⚠️ {isAr ? 'حقل غير واضح / مطلوب' : 'Unclear / Required'}
+                    ⚠️ {isAr ? 'خانة ناقصة / مش واضحة' : 'Unclear / Required'}
                   </span>
                 )}
               </div>
@@ -308,7 +300,7 @@ export default function AiActionConfirmationCard({
                       setFieldValues((prev) => ({ ...prev, [field.key]: e.target.value }))
                     }
                     placeholder={
-                      isAr ? 'أدخل القيمة الصحيحة من الروشتة...' : 'Enter verified value...'
+                      isAr ? 'اكتب القيمة الصح هنا...' : 'Enter verified value...'
                     }
                     style={{
                       width: '100%',
@@ -329,9 +321,9 @@ export default function AiActionConfirmationCard({
                           ? isAr
                             ? matchedOpt.labelAr
                             : matchedOpt.labelEn
-                          : currentVal || (isAr ? 'غير محدد (اضغط تعديل لإدخاله)' : 'Unspecified (Click Edit)');
+                          : currentVal || (isAr ? 'مش متحدد (دوس تعديل عشان تكتبه)' : 'Unspecified (Click Edit)');
                       })()
-                    : currentVal || (isAr ? 'غير محدد (اضغط تعديل لإدخاله)' : 'Unspecified (Click Edit)')}
+                    : currentVal || (isAr ? 'مش متحدد (دوس تعديل عشان تكتبه)' : 'Unspecified (Click Edit)')}
                 </div>
               )}
             </div>
@@ -351,7 +343,7 @@ export default function AiActionConfirmationCard({
           }}
         >
           <span>
-            📌 <b>{isAr ? 'حالة التوثيق:' : 'Verification:'}</b>{' '}
+            📌 <b>{isAr ? 'الحالة:' : 'Verification:'}</b>{' '}
             {isAr ? proposal.verificationBadgeAr : proposal.verificationBadgeEn}
           </span>
         </div>
@@ -377,10 +369,10 @@ export default function AiActionConfirmationCard({
           >
             {saving
               ? isAr
-                ? '⏳ جاري الحفظ...'
+                ? '⏳ بحفظهولك...'
                 : '⏳ Saving...'
               : isAr
-                ? '✅ تأكيد وحفظ (Confirm & Save)'
+                ? '✅ أيوه، أكد واحفظ'
                 : '✅ Confirm and Save'}
           </button>
 
@@ -398,10 +390,10 @@ export default function AiActionConfirmationCard({
           >
             {editing
               ? isAr
-                ? '✔️ تم التعديل'
+                ? '✔️ خلصت تعديل'
                 : '✔️ Done Editing'
               : isAr
-                ? '✏️ تعديل (Edit)'
+                ? '✏️ تعديل البيانات'
                 : '✏️ Edit'}
           </button>
 
@@ -418,7 +410,7 @@ export default function AiActionConfirmationCard({
               borderColor: '#fca5a5',
             }}
           >
-            {isAr ? '✕ إلغاء (Cancel)' : '✕ Cancel'}
+            {isAr ? '✕ لا، الغي' : '✕ Cancel'}
           </button>
         </div>
       ) : (

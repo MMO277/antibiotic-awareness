@@ -1,20 +1,17 @@
 /**
  * aiConversationContext.ts
  *
- * Shared Conversation State, Synchronized Action Proposals, and Permitted Patient Context
- * Builder for both `ChatWidget.tsx` (floating assistant) and `Assistant.tsx` (full-page view).
- *
- * Ensures that if a patient starts a conversation or uploads a prescription in the floating
- * ChatWidget and clicks "Expand to full page" (`/assistant`), their messages, pending
- * confirmation cards, and context remain 100% synchronized in real time.
+ * Shared Conversation State, Synchronized Action Proposals, Clinical Grounding,
+ * and Egyptian Colloquial Arabic Context Builder for `ChatWidget.tsx` and `Assistant.tsx`.
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { ChatUiMessage } from './assistantLogic';
+import { ChatUiMessage, Reply } from './assistantLogic';
 import { PendingAiActionProposal } from './aiActionExecutor';
 import { UserHealthProfile } from './allergyData';
 import { SavedPrescription, TreatmentSchedule } from './trackerData';
-import { Lang } from './types';
+import { Lang, pick } from './types';
+import type { Link as ReplyLink } from './assistantReplies';
 
 export interface EnhancedChatUiMessage extends ChatUiMessage {
   id: string;
@@ -23,11 +20,11 @@ export interface EnhancedChatUiMessage extends ChatUiMessage {
   actionProposal?: PendingAiActionProposal;
   isSystemActionResult?: boolean;
   actionResultSuccess?: boolean;
+  links?: ReplyLink[];
 }
 
 const CONVERSATION_SYNC_EVENT = 'aa-ai-conversation-sync';
 
-// Module-level shared store scoped by current session UID so switching between ChatWidget and Assistant page is seamless
 let sharedUid: string | null = null;
 let sharedMessages: EnhancedChatUiMessage[] = [];
 
@@ -45,7 +42,6 @@ export function useSyncedAiConversation(currentUid: string | null | undefined) {
   const normalizedUid = currentUid || null;
 
   if (sharedUid !== normalizedUid) {
-    // Clear in-memory conversation when user switches accounts or logs out for strict privacy
     sharedUid = normalizedUid;
     sharedMessages = [];
   }
@@ -96,45 +92,85 @@ export function useSyncedAiConversation(currentUid: string | null | undefined) {
 
 /**
  * Builds a concise, privacy-scoped summary of the authenticated patient's permitted health context
- * to pass to Gemini when answering personalized medical questions (e.g., "Can I take Augmentin?" -> knows patient has Penicillin allergy!).
+ * AND grounds the AI with any verified clinical protocol matched locally.
  */
 export function buildPermittedPatientContextPrompt(params: {
   profile: UserHealthProfile;
   schedules: TreatmentSchedule[];
   prescriptions: SavedPrescription[];
   lang: Lang;
+  localVerifiedReply?: Reply | null;
 }): string {
-  const { profile, schedules, prescriptions } = params;
-  const allergies = profile.allergies.map((a) => `${a.drugName} (${a.severity})`).join(', ');
-  const chronics = (profile.chronicConditions || []).map((c) => c.conditionName).join(', ');
+  const { profile, schedules, prescriptions, lang, localVerifiedReply } = params;
+  const allergies = profile.allergies.map((a) => `${a.drugName} (${a.severity})`).join('، ');
+  const chronics = (profile.chronicConditions || []).map((c) => c.conditionName).join('، ');
   const activeMeds = profile.medications
     .filter((m) => m.status === 'active')
     .map((m) => `${m.drugName} ${m.prescribedDose}`.trim())
-    .join(', ');
+    .join('، ');
   const activeSchedules = schedules
-    .map((s) => `${s.medicineName} (${s.prescribedDose} at ${s.doseTimes.join('/')})`)
-    .join(', ');
+    .map((s) => `${s.medicineName} (${s.prescribedDose} في مواعيد ${s.doseTimes.join(' و ')})`)
+    .join('، ');
 
-  if (!allergies && !chronics && !activeMeds && !activeSchedules && !profile.age && !profile.weightKg) {
-    return '';
+  let clinicalGrounding = '';
+  if (localVerifiedReply) {
+    if (localVerifiedReply.kind === 'answer') {
+      clinicalGrounding = localVerifiedReply.hits
+        .map((h) => `${pick(h.title, lang)}: ${pick(h.text, lang)}`)
+        .join('\n')
+        .slice(0, 700);
+    } else if (localVerifiedReply.kind === 'text') {
+      clinicalGrounding = pick(localVerifiedReply.text, lang).slice(0, 700);
+    }
   }
 
-  return [
-    `\n[بيانات الملف الصحي للمريض الحالي (للإرشاد الآمن فقط - لا تخترع أي بيانات غير مذكورة):`,
-    profile.age ? `- العمر: ${profile.age}` : '',
-    profile.weightKg ? `- الوزن: ${profile.weightKg} كجم` : '',
-    allergies ? `- الحساسية الدوائية المسجلة: ${allergies} (حذر المريض فوراً إذا سأل عن دواء يتعارض معها!)` : '- الحساسية الدوائية: لا توجد حساسية مسجلة',
-    chronics ? `- الحالات الصحية المزمنة (أبلغ عنها المريض): ${chronics}` : '',
-    activeMeds ? `- الأدوية الحالية: ${activeMeds}` : '',
-    activeSchedules ? `- جداول الجرعات النشطة: ${activeSchedules}` : '',
-    `عدد الروشتات المحفوظة: ${prescriptions.length}]`,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const parts: string[] = [];
+
+  parts.push(
+    `[بيانات الملف الصحي للمريض الحالي:`,
+    `- الاسم: ${profile.displayName || 'غير مسجل'} | السن: ${profile.age || 'غير مسجل'} | الوزن: ${profile.weightKg ? `${profile.weightKg} كجم` : 'غير مسجل'} | فصيلة الدم: ${profile.bloodType || 'غير مسجلة'}`,
+    `- الحساسية الدوائية المسجلة: ${allergies || 'لا توجد حساسية مسجلة'}`,
+    `- الأمراض المزمنة: ${chronics || 'لا توجد أمراض مزمنة مسجلة'}`,
+    `- الأدوية الحالية: ${activeMeds || 'لا توجد أدوية حالية'}`,
+    `- منبهات الجرعات الشغالة: ${activeSchedules || 'لا توجد منبهات شغالة'}`,
+    `- عدد الروشتات المحفوظة: ${prescriptions.length}]`
+  );
+
+  if (clinicalGrounding) {
+    parts.push(
+      `[معلومات طبية موثقة من قاعدة بيانات المنصة للاستعانة بها في الرد (اشرحها للمريض بالعامية المصرية الودودة لو سؤاله بالعربي):`,
+      `${clinicalGrounding}]`
+    );
+  }
+
+  return parts.join('\n');
 }
 
 /**
- * Returns context-aware quick-action chips tailored to the patient's current state and language.
+ * Converts formal Arabic medical text into warm Egyptian Colloquial Arabic for offline fallback.
+ */
+export function toEgyptianColloquial(formalText: string): string {
+  if (!formalText) return '';
+  return formalText
+    .replace(/لا يجب/g, 'مينفعش')
+    .replace(/يجب عليك/g, 'لازم')
+    .replace(/ينبغي/g, 'الأفضل')
+    .replace(/هل ترغب في/g, 'تحب')
+    .replace(/يرجى/g, 'يا ريت')
+    .replace(/استشر الطبيب أو الصيدلي/g, 'ترجع للدكتور أو الصيدلي بتاعك')
+    .replace(/مراجعة الطبيب أو الصيدلي/g, 'مراجعة الدكتور أو الصيدلي')
+    .replace(/المضادات الحيوية لا تعالج/g, 'المضادات الحيوية مش بتعالج')
+    .replace(/لا تعالج/g, 'مش بتعالج')
+    .replace(/بسبب/g, 'عشان')
+    .replace(/لأنها/g, 'عشان هي')
+    .replace(/لأنه/g, 'عشان هو')
+    .replace(/عند الشعور بتحسن/g, 'أول ما تحس إنك بقيت أحسن')
+    .replace(/إيقاف المضاد الحيوي/g, 'إنك توقف المضاد الحيوي')
+    .replace(/ماذا أفعل/g, 'أعمل إيه');
+}
+
+/**
+ * Returns context-aware quick-action chips in natural Egyptian Colloquial Arabic or English.
  */
 export function getSmartAssistantActionChips(lang: Lang): Array<{
   label: string;
@@ -143,14 +179,14 @@ export function getSmartAssistantActionChips(lang: Lang): Array<{
 }> {
   if (lang === 'ar') {
     return [
-      { label: '📸 رفع روشتة أو تحليل', prompt: '__UPLOAD_DOCUMENT__', isUploadTrigger: true },
-      { label: '📋 ملخص ملفي الصحي', prompt: 'لخص ملفي الصحي وسجلاتي' },
-      { label: '💊 اعرض أدويتي الحالية', prompt: 'اعرض أدويتي الحالية' },
-      { label: '🛡️ اعرض سجل حساسيتي', prompt: 'اعرض حساسياتي المسجلة' },
-      { label: '⏰ مواعيد جرعاتي وتذكيراتي', prompt: 'اعرض تذكيراتي ومواعيد جرعاتي' },
-      { label: '➕ إضافة حساسية بنسلين', prompt: 'أضف حساسية البنسلين إلى ملفي الصحي' },
-      { label: '🏥 إضافة مرض السكري لملفي', prompt: 'أضف مرض السكري إلى ملفي الصحي' },
-      { label: '🔔 تذكير جرعة 8 ص و 8 م', prompt: 'فكرني آخد أوجمنتين 1 جرام الساعة 8 صباحاً و 8 مساءً' },
+      { label: '📸 صور أو ارفع روشتة / تحليل', prompt: '__UPLOAD_DOCUMENT__', isUploadTrigger: true },
+      { label: '📋 لخصلي ملفي الصحي', prompt: 'لخصلي ملفي الصحي وسجلاتي' },
+      { label: '💊 إيه الأدوية اللي ماشي عليها؟', prompt: 'وريني أدويتي الحالية' },
+      { label: '🛡️ إيه الحساسية المتسجلة عندي؟', prompt: 'وريني حساسياتي المتسجلة' },
+      { label: '⏰ مواعيد جرعاتي ومنبهاتي', prompt: 'وريني منبهات الأدوية ومواعيد جرعاتي' },
+      { label: '➕ سجل حساسية بنسلين', prompt: 'عندي حساسية من البنسلين ضيفها في ملفي' },
+      { label: '🏥 سجل إن عندي سكر', prompt: 'عندي سكر ضيفه في ملفي الصحي' },
+      { label: '🔔 ظبط منبه أوجمنتين 8 ص و 8 م', prompt: 'فكرني آخد أوجمنتين 1 جرام الساعة 8 الصبح و 8 بالليل' },
     ];
   }
 

@@ -20,9 +20,12 @@ import { PrescriptionCaptureMethod } from './trackerData';
 
 export type AiActionType =
   | 'add_chronic_condition'
+  | 'remove_chronic_condition'
   | 'add_allergy'
+  | 'remove_allergy'
   | 'update_vitals'
   | 'add_medication'
+  | 'remove_medication'
   | 'add_prescription'
   | 'update_prescription_status'
   | 'create_reminder'
@@ -46,6 +49,10 @@ export interface AddChronicConditionArgs {
   notes?: string;
 }
 
+export interface RemoveChronicConditionArgs {
+  conditionName: string;
+}
+
 export interface AddAllergyArgs {
   drugName: string;
   allergenKey: string;
@@ -53,6 +60,10 @@ export interface AddAllergyArgs {
   severity: AllergySeverity;
   evidenceStatus: EvidenceStatus;
   notes?: string;
+}
+
+export interface RemoveAllergyArgs {
+  drugName: string;
 }
 
 export interface UpdateVitalsArgs {
@@ -78,6 +89,11 @@ export interface AddMedicationArgs {
   evidenceStatus: EvidenceStatus;
   source: 'patient_chat' | 'manual_entry' | 'prescription_ocr' | 'clinician_verified';
   notes?: string;
+}
+
+export interface RemoveMedicationArgs {
+  drugName: string;
+  mode?: 'delete' | 'discontinue';
 }
 
 export interface AddPrescriptionItemArgs {
@@ -160,9 +176,12 @@ export interface ReadQueryArgs {
 
 export type AiActionPayloadMap = {
   add_chronic_condition: AddChronicConditionArgs;
+  remove_chronic_condition: RemoveChronicConditionArgs;
   add_allergy: AddAllergyArgs;
+  remove_allergy: RemoveAllergyArgs;
   update_vitals: UpdateVitalsArgs;
   add_medication: AddMedicationArgs;
+  remove_medication: RemoveMedicationArgs;
   add_prescription: AddPrescriptionArgs;
   update_prescription_status: UpdatePrescriptionStatusArgs;
   create_reminder: CreateReminderArgs;
@@ -227,13 +246,20 @@ export function normalizeHHMM(raw: unknown): string | null {
       return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
     }
   }
-  const matchAmPm = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm|ص|صباحا|صباحاً|م|مساء|مساءً)$/i);
+  const matchAmPm = s.match(
+    /^(\d{1,2})(?::(\d{2}))?\s*(am|pm|ص|صباحا|صباحاً|الصبح|م|مساء|مساءً|بالليل|ليلا|ليلاً|ظهرا|ظهراً|عصرا|عصراً)$/i
+  );
   if (matchAmPm) {
     let h = parseInt(matchAmPm[1], 10);
     const m = matchAmPm[2] ? parseInt(matchAmPm[2], 10) : 0;
     const period = matchAmPm[3].toLowerCase();
-    const isPm = period === 'pm' || period.startsWith('م');
-    const isAm = period === 'am' || period.startsWith('ص');
+    const isPm =
+      period === 'pm' ||
+      period.startsWith('م') ||
+      period.includes('ليل') ||
+      period.includes('عصر') ||
+      period.includes('ظهر');
+    const isAm = period === 'am' || period.startsWith('ص') || period.includes('صبح');
     if (h >= 1 && h <= 12 && m >= 0 && m <= 59) {
       if (isPm && h < 12) h += 12;
       if (isAm && h === 12) h = 0;
@@ -254,7 +280,7 @@ export function validateActionArguments<K extends AiActionType>(
   if (!rawArgs || typeof rawArgs !== 'object' || Array.isArray(rawArgs)) {
     return {
       valid: false,
-      errorsAr: ['بيانات الأمر غير صالحة أو مفقودة.'],
+      errorsAr: ['معلش، بيانات الطلب مش واضحة أو ناقصة.'],
       errorsEn: ['Action arguments must be a valid object.'],
       missingFields: ['arguments'],
     };
@@ -268,7 +294,7 @@ export function validateActionArguments<K extends AiActionType>(
       const conditionName = sanitizeText(a.conditionName, 120);
       if (!conditionName) {
         missingFields.push('conditionName');
-        errorsAr.push('يرجى تحديد اسم الحالة الصحية أو المرض المزمن المراد إضافته.');
+        errorsAr.push('قولي اسم المرض المزمن أو الحالة الصحية اللي عايز تضيفها.');
         errorsEn.push('Please specify the medical condition name to add.');
       }
       const evidenceStatus: EvidenceStatus = VALID_EVIDENCE.has(a.evidenceStatus)
@@ -295,17 +321,34 @@ export function validateActionArguments<K extends AiActionType>(
       };
     }
 
+    case 'remove_chronic_condition': {
+      const conditionName = sanitizeText(a.conditionName, 120);
+      if (!conditionName) {
+        missingFields.push('conditionName');
+        errorsAr.push('إيه اسم الحالة الصحية اللي عايز تشيلها من ملفك؟');
+        errorsEn.push('Please specify the condition name to remove.');
+      }
+      const sanitized: RemoveChronicConditionArgs = { conditionName };
+      return {
+        valid: errorsAr.length === 0,
+        sanitized: sanitized as unknown as AiActionPayloadMap[K],
+        errorsAr,
+        errorsEn,
+        missingFields,
+      };
+    }
+
     case 'add_allergy': {
       const drugName = sanitizeText(a.drugName, 120);
       if (!drugName) {
         missingFields.push('drugName');
-        errorsAr.push('يرجى تحديد اسم الدواء أو المادة المسببة للحساسية.');
+        errorsAr.push('قولي اسم الدوا أو المادة اللي بتعملك حساسية.');
         errorsEn.push('Please specify the allergenic drug or substance name.');
       }
       const allergenKey = sanitizeText(a.allergenKey, 50) || 'other';
       const reportedSymptoms =
         sanitizeText(a.reportedSymptoms, 200) ||
-        'تفاعل تحسسي أبلغ عنه المريض / Patient-reported reaction';
+        'تفاعل تحسسي بلّغ عنه المريض / Patient-reported reaction';
       const severity: AllergySeverity = VALID_SEVERITIES.has(a.severity)
         ? a.severity
         : 'severe';
@@ -329,40 +372,59 @@ export function validateActionArguments<K extends AiActionType>(
       };
     }
 
+    case 'remove_allergy': {
+      const drugName = sanitizeText(a.drugName, 120);
+      if (!drugName) {
+        missingFields.push('drugName');
+        errorsAr.push('قولي اسم الدوا اللي عايز تمسح حساسيته من ملفك.');
+        errorsEn.push('Please specify the allergy drug name to remove.');
+      }
+      const sanitized: RemoveAllergyArgs = { drugName };
+      return {
+        valid: errorsAr.length === 0,
+        sanitized: sanitized as unknown as AiActionPayloadMap[K],
+        errorsAr,
+        errorsEn,
+        missingFields,
+      };
+    }
+
     case 'update_vitals': {
       const sanitized: UpdateVitalsArgs = {};
-      if (a.displayName !== undefined) sanitized.displayName = sanitizeText(a.displayName, 80);
-      if (a.age !== undefined) {
+      if (a.displayName !== undefined && String(a.displayName).trim()) {
+        sanitized.displayName = sanitizeText(a.displayName, 80);
+      }
+      if (a.age !== undefined && String(a.age).trim() !== '') {
         const ageNum = parseInt(String(a.age).replace(/[^\d]/g, ''), 10);
         if (!isNaN(ageNum) && ageNum >= 0 && ageNum <= 125) {
           sanitized.age = String(ageNum);
         } else {
-          errorsAr.push('العمر المدخل غير صالح (يجب أن يكون بين 0 و 125 سنة).');
+          errorsAr.push('السن لازم يكون رقم صحيح بين 0 و 125 سنة.');
           errorsEn.push('Invalid age (must be between 0 and 125 years).');
         }
       }
-      if (a.weightKg !== undefined) {
+      if (a.weightKg !== undefined && String(a.weightKg).trim() !== '') {
         const wNum = parseFloat(String(a.weightKg).replace(/[^\d.]/g, ''));
         if (!isNaN(wNum) && wNum >= 1 && wNum <= 350) {
           sanitized.weightKg = String(Math.round(wNum * 10) / 10);
         } else {
-          errorsAr.push('الوزن المدخل غير صالح (يجب أن يكون بين 1 و 350 كجم).');
+          errorsAr.push('الوزن لازم يكون رقم بين 1 و 350 كيلو.');
           errorsEn.push('Invalid weight (must be between 1 and 350 kg).');
         }
       }
       if (a.gender !== undefined && ['male', 'female', ''].includes(a.gender)) {
         sanitized.gender = a.gender;
       }
-      if (a.bloodType !== undefined) {
-        const bt = sanitizeText(a.bloodType, 10).toUpperCase();
+      if (a.bloodType !== undefined && String(a.bloodType).trim() !== '') {
+        const bt = sanitizeText(a.bloodType, 10).toUpperCase().replace(/\s+/g, '');
         if (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].includes(bt)) {
           sanitized.bloodType = bt;
         } else {
-          errorsAr.push('فصيلة الدم غير معروفة (مثال: A+, O+, B-, AB+).');
+          errorsAr.push('فصيلة الدم مش معروفة (الأنواع المتاحة: A+, A-, B+, B-, AB+, AB-, O+, O-).');
           errorsEn.push('Unrecognized blood type (expected A+, O+, B-, AB+, etc.).');
         }
       }
-      if (a.emergencyContact !== undefined) {
+      if (a.emergencyContact !== undefined && String(a.emergencyContact).trim() !== '') {
         sanitized.emergencyContact = sanitizeText(a.emergencyContact, 40);
       }
       if (
@@ -386,7 +448,7 @@ export function validateActionArguments<K extends AiActionType>(
 
       if (Object.keys(sanitized).length === 0 && errorsAr.length === 0) {
         missingFields.push('vitals');
-        errorsAr.push('لم يتم تحديد أي قيمة لتحديثها في الملف الصحي.');
+        errorsAr.push('مفيش بيان واضح (زي الوزن أو السن أو فصيلة الدم) عشان أحدثه.');
         errorsEn.push('No valid profile field was provided to update.');
       }
 
@@ -403,7 +465,7 @@ export function validateActionArguments<K extends AiActionType>(
       const drugName = sanitizeText(a.drugName, 120);
       if (!drugName) {
         missingFields.push('drugName');
-        errorsAr.push('اسم الدواء مطلوب (لا يقوم المساعد باختراع أسماء أدوية).');
+        errorsAr.push('لازم تقولي اسم الدوا الأول (المساعد مش بيخمن أسماء أدوية من نفسه).');
         errorsEn.push('Medication name is required (never invented by AI).');
       }
       const prescribedDose = sanitizeText(a.prescribedDose, 80);
@@ -444,11 +506,31 @@ export function validateActionArguments<K extends AiActionType>(
       };
     }
 
+    case 'remove_medication': {
+      const drugName = sanitizeText(a.drugName, 120);
+      if (!drugName) {
+        missingFields.push('drugName');
+        errorsAr.push('قولي اسم الدوا اللي عايز تشيله أو توقفه من قايمة أدويتك.');
+        errorsEn.push('Please specify the medication name to remove.');
+      }
+      const sanitized: RemoveMedicationArgs = {
+        drugName,
+        mode: a.mode === 'discontinue' ? 'discontinue' : 'delete',
+      };
+      return {
+        valid: errorsAr.length === 0,
+        sanitized: sanitized as unknown as AiActionPayloadMap[K],
+        errorsAr,
+        errorsEn,
+        missingFields,
+      };
+    }
+
     case 'add_prescription': {
       const rawItems = Array.isArray(a.items) ? a.items : [];
       if (rawItems.length === 0) {
         missingFields.push('items');
-        errorsAr.push('لا توجد أدوية مستخرجة لإضافتها إلى سجل الروشتات.');
+        errorsAr.push('مفيش أدوية واضحة في الروشتة عشان أضيفها.');
         errorsEn.push('No prescription items provided.');
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -527,7 +609,7 @@ export function validateActionArguments<K extends AiActionType>(
       const medicineName = sanitizeText(a.medicineName, 120);
       if (!prescriptionId && !medicineName) {
         missingFields.push('medicineName');
-        errorsAr.push('يرجى تحديد اسم الدواء أو الروشتة المراد تحديث حالتها.');
+        errorsAr.push('قولي اسم الدوا أو الروشتة اللي عايز تحدث حالتها.');
         errorsEn.push('Please specify the prescription or medicine name to update.');
       }
       const newStatus = [
@@ -557,7 +639,7 @@ export function validateActionArguments<K extends AiActionType>(
       const medicineName = sanitizeText(a.medicineName, 120);
       if (!medicineName) {
         missingFields.push('medicineName');
-        errorsAr.push('يرجى تحديد اسم الدواء لإنشاء التذكير.');
+        errorsAr.push('قولي اسم الدوا اللي عايز أعملك تذكير ليه.');
         errorsEn.push('Please specify the medicine name for the reminder.');
       }
       const prescribedDose = sanitizeText(a.prescribedDose, 80);
@@ -570,7 +652,7 @@ export function validateActionArguments<K extends AiActionType>(
         .filter((t: string | null): t is string => Boolean(t));
       if (doseTimes.length === 0) {
         missingFields.push('doseTimes');
-        errorsAr.push('يرجى تحديد موعد الجرعة (مثال: 08:00 صباحاً أو 20:00 مساءً).');
+        errorsAr.push('قولي ميعاد الجرعة الساعة كام (مثلاً: 8 الصبح و 8 بالليل).');
         errorsEn.push('Please specify at least one valid dose time (e.g., 08:00 or 20:00).');
       }
       const frequency = ['once_daily', 'twice_daily', 'thrice_daily', 'four_times_daily'].includes(
@@ -620,7 +702,7 @@ export function validateActionArguments<K extends AiActionType>(
       const medicineName = sanitizeText(a.medicineName, 120);
       if (!scheduleId && !medicineName) {
         missingFields.push('medicineName');
-        errorsAr.push('يرجى تحديد اسم الدواء أو التذكير المراد تعديله.');
+        errorsAr.push('قولي اسم الدوا اللي عايز تعدل ميعاد تذكيره.');
         errorsEn.push('Please specify which medication reminder to modify.');
       }
       const newDoseTimes = Array.isArray(a.newDoseTimes)
@@ -657,7 +739,7 @@ export function validateActionArguments<K extends AiActionType>(
       const medicineName = sanitizeText(a.medicineName, 120);
       if (!scheduleId && !medicineName) {
         missingFields.push('medicineName');
-        errorsAr.push('يرجى تحديد اسم الدواء أو التذكير المراد إيقافه.');
+        errorsAr.push('قولي اسم الدوا اللي عايز توقف التذكير بتاعه.');
         errorsEn.push('Please specify which reminder to stop.');
       }
       const sanitized: StopReminderArgs = {

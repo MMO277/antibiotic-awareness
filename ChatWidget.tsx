@@ -9,6 +9,7 @@ import { useSyncedHealthProfile } from './allergyData';
 import { useSyncedSchedules } from './trackerData';
 import {
   buildPassages,
+  classify,
   respond,
   extractAnswerPlainText,
   isDirectVerifiedMatch,
@@ -21,7 +22,11 @@ import {
   stopSpeech,
   VoiceRecognitionHandle,
 } from './speechService';
-import { detectPatientActionIntent } from './aiActionRegistry';
+import {
+  detectPatientActionIntent,
+  extractAiToolCallFromResponse,
+  DetectedActionIntent,
+} from './aiActionRegistry';
 import {
   applyEditedFieldsToProposal,
   createPendingActionProposal,
@@ -37,17 +42,18 @@ import {
   buildPermittedPatientContextPrompt,
   EnhancedChatUiMessage,
   getSmartAssistantActionChips,
+  toEgyptianColloquial,
   useSyncedAiConversation,
 } from './aiConversationContext';
 import AiActionConfirmationCard from './AiActionConfirmationCard';
 
 const WIDGET_CHIPS: Record<string, string[]> = {
   ar: [
-    'هل المضاد الحيوي يعالج البرد؟',
-    'مخاطر حقنة البرد الشعبية؟',
-    'أفضل مضاد حيوي للأسنان؟',
-    'ماذا أفعل لو نسيت الجرعة؟',
-    'هل الحليب يبطل مفعول المضاد؟',
+    'هو المضاد الحيوي بيعالج البرد؟',
+    'إيه خطورة حقنة البرد الشعبية؟',
+    'إيه أحسن مضاد حيوي لوجع الضرس؟',
+    'أعمل إيه لو نسيت ميعاد الجرعة؟',
+    'هو اللبن بيبطل مفعول المضاد الحيوي؟',
   ],
   en: [
     'Do antibiotics treat colds?',
@@ -105,7 +111,6 @@ export default function ChatWidget() {
 
   const smartActionChips = useMemo(() => getSmartAssistantActionChips(lang), [lang]);
 
-  // Bacteria Hunter Gaming Mode: close any open panel when gameplay starts
   useEffect(() => {
     const onGaming = (e: Event) => {
       if ((e as CustomEvent<{ active: boolean }>).detail?.active) {
@@ -135,6 +140,113 @@ export default function ChatWidget() {
     }
   }, [msgs, loading, uploadProgress, isOpen]);
 
+  function dispatchDetectedAction(
+    actionIntent: DetectedActionIntent,
+    date: string,
+    speakReply: boolean,
+    customLeadText?: string
+  ): boolean {
+    if (!actionIntent.matched) return false;
+
+    if (actionIntent.safetyRefusal) {
+      const refusalText = isAr
+        ? actionIntent.safetyRefusal.messageAr
+        : actionIntent.safetyRefusal.messageEn;
+      setMsgs((m) => [
+        ...m,
+        {
+          id: `msg-${Date.now()}-refusal`,
+          who: 'bot',
+          text: refusalText,
+          date,
+          isAi: true,
+        },
+      ]);
+      setLoading(false);
+      if (speakReply) speakText(refusalText, lang);
+      return true;
+    }
+
+    if (actionIntent.needsClarification) {
+      const clarifyText = isAr
+        ? actionIntent.clarificationQuestionAr || 'قولي بس التفاصيل الناقصة وأنا أعملهالك فوراً.'
+        : actionIntent.clarificationQuestionEn || 'Please clarify the required details.';
+      setMsgs((m) => [
+        ...m,
+        {
+          id: `msg-${Date.now()}-clarify`,
+          who: 'bot',
+          text: clarifyText,
+          date,
+          isAi: true,
+        },
+      ]);
+      setLoading(false);
+      if (speakReply) speakText(clarifyText, lang);
+      return true;
+    }
+
+    if (actionIntent.actionType && actionIntent.riskLevel === 'read_only') {
+      const readResult = executeReadOnlyAiAction({
+        actionType: actionIntent.actionType,
+        authenticatedUid: user?.uid,
+        profile,
+        schedules,
+        prescriptions,
+        lang,
+      });
+      const replyText = isAr ? readResult.messageAr : readResult.messageEn;
+      setMsgs((m) => [
+        ...m,
+        {
+          id: `msg-${Date.now()}-read`,
+          who: 'bot',
+          text: replyText,
+          date,
+          isAi: true,
+          isSystemActionResult: true,
+          actionResultSuccess: readResult.success,
+        },
+      ]);
+      setLoading(false);
+      if (speakReply) speakText(replyText, lang);
+      return true;
+    }
+
+    if (actionIntent.actionType && actionIntent.args) {
+      const proposal = createPendingActionProposal({
+        actionType: actionIntent.actionType,
+        args: actionIntent.args,
+        profile,
+        schedules,
+        prescriptions,
+      });
+      const leadText =
+        customLeadText ||
+        (isAr
+          ? actionIntent.conversationalLeadAr ||
+            'من عنيا ليك! جهزتلك الطلب ده عشان تراجعه، بص عليه ودوس «أيوه، أكد واحفظ» عشان يتسجل في ملفك:'
+          : actionIntent.conversationalLeadEn ||
+            'I have prepared this action for your review. Please verify the details below and click "Confirm and Save":');
+      setMsgs((m) => [
+        ...m,
+        {
+          id: `msg-${Date.now()}-proposal`,
+          who: 'bot',
+          text: leadText,
+          date,
+          isAi: true,
+          actionProposal: proposal,
+        },
+      ]);
+      setLoading(false);
+      if (speakReply) speakText(leadText, lang);
+      return true;
+    }
+
+    return false;
+  }
+
   async function ask(raw: string, speakReply = false) {
     const text = raw.trim().slice(0, 300);
     if (!text || loading) return;
@@ -151,109 +263,22 @@ export default function ChatWidget() {
     setQ('');
     setLoading(true);
 
-    // 1) Check Personal Health Assistant Action Engine FIRST (Health Profile, Allergies, Prescriptions, Reminders, Summaries)
-    const lastMedContext = prescriptions[0]?.medicineName || schedules[0]?.medicineName || profile.medications[0]?.drugName;
+    // 1) Check Fast Local Egyptian Colloquial + English Action Engine FIRST
+    const lastMedContext =
+      prescriptions[0]?.medicineName ||
+      schedules[0]?.medicineName ||
+      profile.medications[0]?.drugName;
     const actionIntent = detectPatientActionIntent(text, lang, lastMedContext);
-
-    if (actionIntent.matched) {
-      if (actionIntent.safetyRefusal) {
-        const refusalText = isAr
-          ? actionIntent.safetyRefusal.messageAr
-          : actionIntent.safetyRefusal.messageEn;
-        setMsgs((m) => [
-          ...m,
-          {
-            id: `msg-${Date.now()}-refusal`,
-            who: 'bot',
-            text: refusalText,
-            date,
-            isAi: true,
-          },
-        ]);
-        setLoading(false);
-        if (speakReply) speakText(refusalText, lang);
-        return;
-      }
-
-      if (actionIntent.needsClarification) {
-        const clarifyText = isAr
-          ? actionIntent.clarificationQuestionAr || 'يرجى توضيح التفاصيل المطلوبة.'
-          : actionIntent.clarificationQuestionEn || 'Please clarify the required details.';
-        setMsgs((m) => [
-          ...m,
-          {
-            id: `msg-${Date.now()}-clarify`,
-            who: 'bot',
-            text: clarifyText,
-            date,
-            isAi: true,
-          },
-        ]);
-        setLoading(false);
-        if (speakReply) speakText(clarifyText, lang);
-        return;
-      }
-
-      if (actionIntent.actionType && actionIntent.riskLevel === 'read_only') {
-        const readResult = executeReadOnlyAiAction({
-          actionType: actionIntent.actionType,
-          authenticatedUid: user?.uid,
-          profile,
-          schedules,
-          prescriptions,
-          lang,
-        });
-        const replyText = isAr ? readResult.messageAr : readResult.messageEn;
-        setMsgs((m) => [
-          ...m,
-          {
-            id: `msg-${Date.now()}-read`,
-            who: 'bot',
-            text: replyText,
-            date,
-            isAi: true,
-            isSystemActionResult: true,
-            actionResultSuccess: readResult.success,
-          },
-        ]);
-        setLoading(false);
-        if (speakReply) speakText(replyText, lang);
-        return;
-      }
-
-      if (actionIntent.actionType && actionIntent.args) {
-        const proposal = createPendingActionProposal({
-          actionType: actionIntent.actionType,
-          args: actionIntent.args,
-          profile,
-          schedules,
-          prescriptions,
-        });
-        const leadText = isAr
-          ? 'قمت بتجهيز هذا الإجراء لمراجعتك. يرجى التحقق من البيانات بالأسفل والضغط على «تأكيد وحفظ» لاعتماده في ملفك الصحي:'
-          : 'I have prepared this action for your review. Please verify the details below and click "Confirm and Save" to apply it to your account:';
-        setMsgs((m) => [
-          ...m,
-          {
-            id: `msg-${Date.now()}-proposal`,
-            who: 'bot',
-            text: leadText,
-            date,
-            isAi: true,
-            actionProposal: proposal,
-          },
-        ]);
-        setLoading(false);
-        if (speakReply) speakText(leadText, lang);
-        return;
-      }
+    if (actionIntent.matched && dispatchDetectedAction(actionIntent, date, speakReply)) {
+      return;
     }
 
-    // 2) Check Verified Clinical Database & Condition Protocols
+    // 2) Check Immediate Life-Threatening Emergency or Prompt Injection Guard
+    const safetyVerdict = classify(text);
     const localReply = respond(passages, meds, text);
-    if (isDirectVerifiedMatch(localReply)) {
+    if (safetyVerdict === 'emergency' || safetyVerdict === 'injection') {
       const botMsg: EnhancedChatUiMessage = {
-        id: `msg-${Date.now()}-local`,
+        id: `msg-${Date.now()}-emerg`,
         who: 'bot',
         reply: localReply,
         date,
@@ -265,7 +290,17 @@ export default function ChatWidget() {
       return;
     }
 
-    // 3) For open-ended questions, use AI Assistant with permitted patient context
+    // Extract any medicine links from local database so we can attach them to the Egyptian AI reply
+    const matchedLinks =
+      localReply.kind === 'text' && localReply.links
+        ? localReply.links
+        : localReply.kind === 'answer'
+          ? localReply.hits
+              .filter((h) => Boolean(h.link))
+              .map((h) => ({ to: h.link || '/', label: h.title }))
+          : undefined;
+
+    // 3) Call Conversational AI (speaks Egyptian Colloquial Arabic + can emit [[ACTION_CALL: ...]] for any free-form request!)
     try {
       const history: ChatMessage[] = msgs.map((m) => ({
         who: m.who,
@@ -276,35 +311,52 @@ export default function ChatWidget() {
         schedules,
         prescriptions,
         lang,
+        localVerifiedReply: isDirectVerifiedMatch(localReply) ? localReply : null,
       });
-      const enrichedQuestion = patientContext ? `${text}\n${patientContext}` : text;
+      const enrichedQuestion = patientContext ? `${text}\n\n${patientContext}` : text;
 
-      const aiResponse = await askGemini(enrichedQuestion, history);
+      const rawAiResponse = await askGemini(enrichedQuestion, history);
+      const { cleanReplyText, detectedIntent } = extractAiToolCallFromResponse(rawAiResponse);
+
+      if (
+        detectedIntent &&
+        detectedIntent.matched &&
+        dispatchDetectedAction(detectedIntent, date, speakReply, cleanReplyText)
+      ) {
+        return;
+      }
+
+      const finalText = cleanReplyText || rawAiResponse;
       const botMsg: EnhancedChatUiMessage = {
         id: `msg-${Date.now()}-ai`,
         who: 'bot',
-        text: aiResponse,
+        text: finalText,
         date,
         isAi: true,
+        ...(matchedLinks && matchedLinks.length > 0 ? { links: matchedLinks } : {}),
       };
       setMsgs((m) => [...m, botMsg]);
       setLoading(false);
-      if (speakReply) speakText(aiResponse, lang);
+      if (speakReply) speakText(finalText, lang);
       return;
     } catch (err) {
       console.warn('AI fallback in widget:', err);
     }
 
+    // 4) Offline Fallback (converted to Egyptian Colloquial Arabic when lang === 'ar')
+    const fallbackPlain = extractAnswerPlainText({ who: 'bot', reply: localReply }, lang);
+    const colloquialFallback = isAr ? toEgyptianColloquial(fallbackPlain) : fallbackPlain;
     const botMsg: EnhancedChatUiMessage = {
       id: `msg-${Date.now()}-fallback`,
       who: 'bot',
-      reply: localReply,
+      text: colloquialFallback,
       date,
-      isAi: false,
+      isAi: true,
+      ...(matchedLinks && matchedLinks.length > 0 ? { links: matchedLinks } : {}),
     };
     setMsgs((m) => [...m, botMsg]);
     setLoading(false);
-    if (speakReply) speakText(extractAnswerPlainText(botMsg, lang), lang);
+    if (speakReply) speakText(colloquialFallback, lang);
   }
 
   async function handleFileAttachment(e: ChangeEvent<HTMLInputElement>) {
@@ -341,7 +393,7 @@ export default function ChatWidget() {
           id: `msg-${Date.now()}-file-user`,
           who: 'me',
           text: isAr
-            ? `📎 تم إرفاق مستند طبي: ${validation.sanitizedFileName}`
+            ? `📎 رفعت صورة/مستند: ${validation.sanitizedFileName}`
             : `📎 Attached medical document: ${validation.sanitizedFileName}`,
           attachmentPreviewUrl: compressed.previewDataUrl,
           attachmentFileName: validation.sanitizedFileName,
@@ -383,7 +435,7 @@ export default function ChatWidget() {
       });
 
       const leadMsg = isAr
-        ? analysis.extractedSummaryAr
+        ? `قرأتلك الصورة اللي رفعتها! ${analysis.extractedSummaryAr}`
         : analysis.extractedSummaryEn;
 
       setMsgs((m) => [
@@ -405,7 +457,7 @@ export default function ChatWidget() {
           id: `msg-${Date.now()}-doc-fail`,
           who: 'bot',
           text: isAr
-            ? '⚠️ حدث خطأ أثناء تحليل الصورة المرفقة. يرجى المحاولة بصورة أوضح.'
+            ? '⚠️ معلش، معرفتش أقرأ الصورة دي كويس. جرب تصورها تاني في إضاءة أوضح.'
             : '⚠️ Could not analyze the attached image. Please try again with a clearer image.',
           date,
           isAi: true,
@@ -471,7 +523,7 @@ export default function ChatWidget() {
           actionProposal: {
             ...m.actionProposal,
             status: 'cancelled',
-            resultMessageAr: 'تم إلغاء العملية بناءً على طلبك ولم يتم حفظ أي تغيير.',
+            resultMessageAr: 'خلاص تمام، لغيت العملية ومتحفظش أي تغيير.',
             resultMessageEn: 'Action cancelled. No changes were saved to your account.',
           },
         };
@@ -606,17 +658,17 @@ export default function ChatWidget() {
               <ul style={{ margin: '6px 0 0', paddingInlineStart: '18px', fontSize: '0.9rem' }}>
                 <li>
                   {isAr
-                    ? 'تورم مفاجئ في الوجه أو الشفتين أو اللسان أو الحلق.'
+                    ? 'تورم مفاجئ في الوش أو الشفايف أو اللسان أو الزور.'
                     : 'Sudden swelling of face, lips, tongue, or throat.'}
                 </li>
                 <li>
                   {isAr
-                    ? 'ضيق شديد في التنفس أو صفير بالصدر أو صعوبة البلع.'
+                    ? 'ضيق شديد في النفس أو تزييق في الصدر أو صعوبة في البلع.'
                     : 'Difficulty breathing, wheezing, or trouble swallowing.'}
                 </li>
                 <li>
                   {isAr
-                    ? 'دوخة شديدة أو هبوط حاد أو طفح جلدي منتشر.'
+                    ? 'دوخة شديدة أو هبوط حاد أو طفح جلدي في الجسم كله.'
                     : 'Severe dizziness, collapse, or widespread hives.'}
                 </li>
               </ul>
@@ -703,7 +755,7 @@ export default function ChatWidget() {
               📞{' '}
               {tr(
                 lang,
-                `اتصال فوري بالطوارئ — ${countryName} (${emergency.number})`,
+                `كلم الإسعاف فوراً — ${countryName} (${emergency.number})`,
                 `Call Emergency Now — ${countryName} (${emergency.number})`,
                 `Appeler les urgences — ${countryName} (${emergency.number})`,
                 `Llamar a emergencias — ${countryName} (${emergency.number})`
@@ -718,7 +770,7 @@ export default function ChatWidget() {
             >
               📋{' '}
               {isAr
-                ? 'فتح دليل الآثار الجانبية وخطوات الإسعاف الكاملة'
+                ? 'افتح دليل الآثار الجانبية وخطوات الإسعاف الكاملة'
                 : 'Open Full Side Effects & First-Aid Guide'}
             </Link>
           </div>
@@ -731,12 +783,12 @@ export default function ChatWidget() {
             <div className="popup-title">
               <span className="head-avatar">🤖</span>
               <div>
-                <b>{isAr ? 'مساعدك الصحي الشخصي الذكي' : 'AI Personal Health Assistant'}</b>
+                <b>{isAr ? 'مساعدك الصحي الشخصي (بالمصري)' : 'AI Personal Health Assistant'}</b>
                 <div className="online-status">
                   <span className="status-dot"></span>
                   <small>
                     {isAr
-                      ? 'يدعم الأوامر، رفع الروشتات 📎، والمايك 🎤'
+                      ? 'بينفذ طلباتك، بيقرأ الروشتات 📎، وبيسمعك بالمايك 🎤'
                       : 'Supports Actions, Uploads 📎 & Voice 🎤'}
                   </small>
                 </div>
@@ -780,7 +832,7 @@ export default function ChatWidget() {
             {msgs.length === 0 && (
               <div className="msg bot">
                 {isAr
-                  ? 'أهلاً بك! أنا مساعدك الصحي الشخصي. يمكنك سؤالي عن أي دواء، أو إعطائي أوامر مباشرة مثل: «أضف حساسية البنسلين»، «أضف مرض السكري لملفي»، «فكرني آخد أوجمنتين الساعة 8»، أو رفع صورة روشتتك عبر زر 📎!'
+                  ? 'يا هلا بيك! أنا مساعدك الصحي الشخصي. كلمني بالمصري براحتك خالص؛ قولي مثلاً: «عندي حساسية من البنسلين»، «عندي سكر ضيفه في ملفي»، «وزني 75 كيلو»، «فكرني آخد أوجمنتين الساعة 8»، أو ارفع صورة روشتتك من زرار 📎 وأنا هظبطلك كل حاجة!'
                   : 'Hello! I am your Personal Health Assistant. Ask me about any antibiotic, upload a prescription/lab image via 📎, or give commands like "Add my penicillin allergy", "Add diabetes to my health profile", or "Remind me to take Augmentin at 8 AM".'}
               </div>
             )}
@@ -825,15 +877,15 @@ export default function ChatWidget() {
                       <div className="ai-badge">
                         {m.actionProposal
                           ? isAr
-                            ? '⚡ إجراء صحي مقترح (يتطلب تأكيدك)'
+                            ? '⚡ إجراء جاهز للتأكيد في حسابك'
                             : '⚡ Proposed Health Action'
                           : m.isSystemActionResult
                             ? isAr
-                              ? '📋 بيانات سجلك الصحي المحفوظة'
+                              ? '📋 من ملفك الصحي'
                               : '📋 Saved Patient Record'
                             : isAr
-                              ? '✨ إجابة طبية منظمة'
-                              : '✨ Structured Medical Answer'}
+                              ? '✨ مساعدك الصيدلاني الذكي'
+                              : '✨ AI Health Assistant'}
                       </div>
                       {plainText && (
                         <button
@@ -859,6 +911,18 @@ export default function ChatWidget() {
                         onCloseWidget={() => setIsOpen(false)}
                       />
                     )}
+                    {m.links && m.links.length > 0 && (
+                      <div className="src" style={{ marginTop: '6px' }}>
+                        {m.links.map((l, k) => (
+                          <span key={l.to + k}>
+                            {k > 0 && ' · '}
+                            <Link to={l.to} onClick={() => setIsOpen(false)}>
+                              💊 {pick(l.label, lang)}
+                            </Link>
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="src">{m.date}</div>
                   </div>
                 );
@@ -866,49 +930,11 @@ export default function ChatWidget() {
 
               const r = m.reply;
               if (!r) return null;
-              if (r.kind === 'answer') {
-                return (
-                  <div key={m.id || i} className="msg bot">
-                    <div
-                      className="row"
-                      style={{
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '4px',
-                      }}
-                    >
-                      <strong className="small" style={{ color: '#0b3c5d' }}>
-                        {pick(r.lead, lang)}
-                      </strong>
-                      <button
-                        type="button"
-                        className="chip"
-                        onClick={() => speakText(plainText, lang)}
-                      >
-                        🔊
-                      </button>
-                    </div>
-                    {r.hits.map((p) => (
-                      <div key={p.id} style={{ marginBottom: '6px' }}>
-                        <p style={{ whiteSpace: 'pre-line', lineHeight: 1.7, margin: '4px 0' }}>
-                          {cleanAssistantMarkdown(pick(p.text, lang))}
-                        </p>
-                        <div className="src">
-                          <Link to={p.link ?? '/'} onClick={() => setIsOpen(false)}>
-                            🔗 {p.label}
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="src">{m.date}</div>
-                  </div>
-                );
-              }
               return (
                 <div
                   key={m.id || i}
-                  className={`msg bot ${r.tone === 'warn' || r.tone === 'alert' ? 'warn' : ''}`}
-                  role={r.tone === 'alert' ? 'alert' : undefined}
+                  className={`msg bot ${r.kind === 'text' && (r.tone === 'warn' || r.tone === 'alert') ? 'warn' : ''}`}
+                  role={r.kind === 'text' && r.tone === 'alert' ? 'alert' : undefined}
                 >
                   <div
                     className="row"
@@ -919,7 +945,7 @@ export default function ChatWidget() {
                     }}
                   >
                     <p style={{ margin: 0, whiteSpace: 'pre-line', lineHeight: 1.7 }}>
-                      {cleanAssistantMarkdown(pick(r.text, lang))}
+                      {cleanAssistantMarkdown(plainText)}
                     </p>
                     <button
                       type="button"
@@ -929,18 +955,6 @@ export default function ChatWidget() {
                       🔊
                     </button>
                   </div>
-                  {r.links && r.links.length > 0 && (
-                    <div className="src" style={{ marginTop: '6px' }}>
-                      {r.links.map((l, k) => (
-                        <span key={l.to + k}>
-                          {k > 0 && ' · '}
-                          <Link to={l.to} onClick={() => setIsOpen(false)}>
-                            💊 {pick(l.label, lang)}
-                          </Link>
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -950,7 +964,7 @@ export default function ChatWidget() {
                 <div style={{ fontWeight: 700, marginBottom: '4px' }}>
                   🔍{' '}
                   {isAr
-                    ? `جاري ضغط وتحليل المستند الطبي (${uploadProgress}%)...`
+                    ? `بقرألك الصورة وبجهز البيانات (${uploadProgress}%)...`
                     : `Analyzing medical document (${uploadProgress}%)...`}
                 </div>
                 <div
@@ -976,7 +990,7 @@ export default function ChatWidget() {
             {loading && uploadProgress === null && (
               <div className="msg bot loading-msg">
                 <span className="dot-pulse">● ● ●</span>{' '}
-                {isAr ? 'جاري تجهيز الرد أو الإجراء...' : 'Processing...'}
+                {isAr ? 'ثانية واحدة بجهزلك الرد...' : 'Processing...'}
               </div>
             )}
             <div ref={endRef} />
@@ -1029,7 +1043,7 @@ export default function ChatWidget() {
               onClick={() => fileInputRef.current?.click()}
               title={
                 isAr
-                  ? 'إرفاق صورة روشتة أو تحليل أو تقرير طبي'
+                  ? 'ارفع صورة روشتة أو تحليل أو تقرير طبي'
                   : 'Attach prescription, lab result, or medical report'
               }
               disabled={loading}
@@ -1041,7 +1055,7 @@ export default function ChatWidget() {
               type="button"
               className="btn ghost"
               onClick={toggleVoiceMic}
-              title={isAr ? 'تحدث بالمايك' : 'Speak'}
+              title={isAr ? 'اتكلم بالمايك' : 'Speak'}
               style={{
                 padding: '6px 10px',
                 background: listening ? '#fee2e2' : undefined,
@@ -1057,17 +1071,17 @@ export default function ChatWidget() {
               placeholder={
                 listening
                   ? isAr
-                    ? 'تحدث الآن...'
+                    ? 'سامعك... اتكلم دلوقتي'
                     : 'Listening...'
                   : isAr
-                    ? 'اطلب إجراءً (مثل: أضف حساسية البنسلين) أو اسأل...'
+                    ? 'اكتب بالمصري طلبك أو سؤالك (مثلاً: سجل حساسية بنسلين)...'
                     : 'Ask or command (e.g., Add penicillin allergy)...'
               }
               aria-label="Ask assistant"
               disabled={loading}
             />
             <button className="btn" disabled={loading || !q.trim()}>
-              {loading ? '...' : isAr ? 'إرسال' : 'Send'}
+              {loading ? '...' : isAr ? 'ابعت' : 'Send'}
             </button>
           </form>
         </div>

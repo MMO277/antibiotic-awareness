@@ -8,6 +8,7 @@ import { useSyncedHealthProfile } from './allergyData';
 import { useSyncedSchedules } from './trackerData';
 import {
   buildPassages,
+  classify,
   respond,
   extractAnswerPlainText,
   isDirectVerifiedMatch,
@@ -20,7 +21,11 @@ import {
   stopSpeech,
   VoiceRecognitionHandle,
 } from './speechService';
-import { detectPatientActionIntent } from './aiActionRegistry';
+import {
+  detectPatientActionIntent,
+  extractAiToolCallFromResponse,
+  DetectedActionIntent,
+} from './aiActionRegistry';
 import {
   applyEditedFieldsToProposal,
   createPendingActionProposal,
@@ -36,21 +41,22 @@ import {
   buildPermittedPatientContextPrompt,
   EnhancedChatUiMessage,
   getSmartAssistantActionChips,
+  toEgyptianColloquial,
   useSyncedAiConversation,
 } from './aiConversationContext';
 import AiActionConfirmationCard from './AiActionConfirmationCard';
 
 const CHIPS: Record<string, string[]> = {
   ar: [
-    'هل المضاد الحيوي يعالج البرد والزكام؟',
-    'ما هي مخاطر حقنة البرد (مجموعة البرد)؟',
-    'هل ينفع أوقف المضاد لما أحس بتحسن؟',
-    'ماذا أفعل لو نسيت جرعة المضاد؟',
-    'هل شرب الحليب يبطل مفعول المضاد؟',
-    'كيف أخزّن المضاد الحيوي الشراب للأطفال؟',
-    'هل المضاد يسبب إسهال وما فائدة الزبادي؟',
-    'هل المضاد يؤثر على حبوب منع الحمل؟',
-    'هل المضاد يعالج وجع الضرس والأسنان؟',
+    'هو المضاد الحيوي بيعالج البرد والأنفلونزا؟',
+    'إيه خطورة حقنة البرد (مجموعة البرد)؟',
+    'ينفع أوقف المضاد أول ما أحس إني خفيت؟',
+    'أعمل إيه لو نسيت جرعة المضاد الحيوي؟',
+    'شرب اللبن بيبطل مفعول المضاد الحيوي؟',
+    'إزاي أحفظ المضاد الحيوي الشراب بتاع الأطفال؟',
+    'المضاد الحيوي بيعمل إسهال؟ وإيه فايدة الزبادي؟',
+    'هل المضاد الحيوي بيأثر على حبوب منع الحمل؟',
+    'إيه أحسن مضاد حيوي لوجع الضرس والأسنان؟',
   ],
   en: [
     'Do antibiotics treat colds or flu?',
@@ -91,7 +97,7 @@ const CHIPS: Record<string, string[]> = {
     '¿Puedo suspender el antibiótico cuando me sienta mejor?',
     '¿Qué debo hacer si olvido una dosis?',
     '¿La leche interactúa con los antibióticos?',
-    '¿Cómo almacenar las suspensiones pediatrics de antibióticos?',
+    '¿Cómo almacenar las suspensiones pediátricas de antibióticos?',
     '¿Los antibióticos causan diarrea y cómo ayuda el yogur?',
     '¿Los antibióticos reducen la eficacia de los anticonceptivos?',
     '¿Los antibióticos curan el dolor de muelas?',
@@ -238,6 +244,101 @@ export default function Assistant() {
     };
   }, []);
 
+  function dispatchDetectedAction(
+    actionIntent: DetectedActionIntent,
+    date: string,
+    shouldSpeakReply: boolean,
+    customLeadText?: string
+  ): boolean {
+    if (!actionIntent.matched) return false;
+
+    if (actionIntent.safetyRefusal) {
+      const refusalText = isAr
+        ? actionIntent.safetyRefusal.messageAr
+        : actionIntent.safetyRefusal.messageEn;
+      setMsgs((m) => [
+        ...m,
+        { id: `msg-${Date.now()}-refusal`, who: 'bot', text: refusalText, date, isAi: true },
+      ]);
+      setLoading(false);
+      if (shouldSpeakReply) speakText(refusalText, lang);
+      return true;
+    }
+
+    if (actionIntent.needsClarification) {
+      const clarifyText = isAr
+        ? actionIntent.clarificationQuestionAr || 'قولي بس التفاصيل الناقصة وأنا أعملهالك فوراً.'
+        : actionIntent.clarificationQuestionEn || 'Please clarify the required details.';
+      setMsgs((m) => [
+        ...m,
+        { id: `msg-${Date.now()}-clarify`, who: 'bot', text: clarifyText, date, isAi: true },
+      ]);
+      setLoading(false);
+      if (shouldSpeakReply) speakText(clarifyText, lang);
+      return true;
+    }
+
+    if (actionIntent.actionType && actionIntent.riskLevel === 'read_only') {
+      const readResult = executeReadOnlyAiAction({
+        actionType: actionIntent.actionType,
+        authenticatedUid: user?.uid,
+        profile,
+        schedules,
+        prescriptions,
+        lang,
+      });
+      const replyText = isAr ? readResult.messageAr : readResult.messageEn;
+      setMsgs((m) => [
+        ...m,
+        {
+          id: `msg-${Date.now()}-read`,
+          who: 'bot',
+          text: replyText,
+          date,
+          isAi: true,
+          isSystemActionResult: true,
+          actionResultSuccess: readResult.success,
+        },
+      ]);
+      setLoading(false);
+      if (shouldSpeakReply) speakText(replyText, lang);
+      return true;
+    }
+
+    if (actionIntent.actionType && actionIntent.args) {
+      const proposal = createPendingActionProposal({
+        actionType: actionIntent.actionType,
+        args: actionIntent.args,
+        profile,
+        schedules,
+        prescriptions,
+      });
+      const leadText =
+        customLeadText ||
+        (isAr
+          ? actionIntent.conversationalLeadAr ||
+            'من عنيا ليك! جهزتلك الطلب ده عشان تراجعه، بص عليه ودوس «أيوه، أكد واحفظ» عشان يتسجل في ملفك:'
+          : actionIntent.conversationalLeadEn ||
+            'I have prepared this action for your review. Please verify the details below and click "Confirm and Save":');
+      setMsgs((m) => [
+        ...m,
+        {
+          id: `msg-${Date.now()}-proposal`,
+          who: 'bot',
+          text: leadText,
+          date,
+          isAi: true,
+          actionProposal: proposal,
+        },
+      ]);
+      setLoading(false);
+      if (shouldSpeakReply) speakText(leadText, lang);
+      return true;
+    }
+
+    return false;
+  }
+
   async function ask(raw: string, shouldSpeakReply = autoSpeak) {
     const text = raw.trim().slice(0, 300);
     if (!text || loading) return;
@@ -252,100 +353,22 @@ export default function Assistant() {
     setQ('');
     setLoading(true);
 
-    // 1) Check Personal Health Assistant Action Engine FIRST
+    // 1) Check Fast Local Egyptian Colloquial + English Action Engine FIRST
     const lastMedContext =
       prescriptions[0]?.medicineName ||
       schedules[0]?.medicineName ||
       profile.medications[0]?.drugName;
     const actionIntent = detectPatientActionIntent(text, lang, lastMedContext);
-
-    if (actionIntent.matched) {
-      if (actionIntent.safetyRefusal) {
-        const refusalText = isAr
-          ? actionIntent.safetyRefusal.messageAr
-          : actionIntent.safetyRefusal.messageEn;
-        setMsgs((m) => [
-          ...m,
-          { id: `msg-${Date.now()}-refusal`, who: 'bot', text: refusalText, date, isAi: true },
-        ]);
-        setLoading(false);
-        if (shouldSpeakReply) speakText(refusalText, lang);
-        return;
-      }
-
-      if (actionIntent.needsClarification) {
-        const clarifyText = isAr
-          ? actionIntent.clarificationQuestionAr || 'يرجى توضيح التفاصيل المطلوبة.'
-          : actionIntent.clarificationQuestionEn || 'Please clarify the required details.';
-        setMsgs((m) => [
-          ...m,
-          { id: `msg-${Date.now()}-clarify`, who: 'bot', text: clarifyText, date, isAi: true },
-        ]);
-        setLoading(false);
-        if (shouldSpeakReply) speakText(clarifyText, lang);
-        return;
-      }
-
-      if (actionIntent.actionType && actionIntent.riskLevel === 'read_only') {
-        const readResult = executeReadOnlyAiAction({
-          actionType: actionIntent.actionType,
-          authenticatedUid: user?.uid,
-          profile,
-          schedules,
-          prescriptions,
-          lang,
-        });
-        const replyText = isAr ? readResult.messageAr : readResult.messageEn;
-        setMsgs((m) => [
-          ...m,
-          {
-            id: `msg-${Date.now()}-read`,
-            who: 'bot',
-            text: replyText,
-            date,
-            isAi: true,
-            isSystemActionResult: true,
-            actionResultSuccess: readResult.success,
-          },
-        ]);
-        setLoading(false);
-        if (shouldSpeakReply) speakText(replyText, lang);
-        return;
-      }
-
-      if (actionIntent.actionType && actionIntent.args) {
-        const proposal = createPendingActionProposal({
-          actionType: actionIntent.actionType,
-          args: actionIntent.args,
-          profile,
-          schedules,
-          prescriptions,
-        });
-        const leadText = isAr
-          ? 'قمت بتجهيز هذا الإجراء لمراجعتك. يرجى التحقق من البيانات بالأسفل والضغط على «تأكيد وحفظ» لاعتماده في ملفك الصحي:'
-          : 'I have prepared this action for your review. Please verify the details below and click "Confirm and Save" to apply it to your account:';
-        setMsgs((m) => [
-          ...m,
-          {
-            id: `msg-${Date.now()}-proposal`,
-            who: 'bot',
-            text: leadText,
-            date,
-            isAi: true,
-            actionProposal: proposal,
-          },
-        ]);
-        setLoading(false);
-        if (shouldSpeakReply) speakText(leadText, lang);
-        return;
-      }
+    if (actionIntent.matched && dispatchDetectedAction(actionIntent, date, shouldSpeakReply)) {
+      return;
     }
 
-    // 2) Check Verified Clinical Database & Condition Protocols
+    // 2) Check Immediate Life-Threatening Emergency or Prompt Injection Guard
+    const safetyVerdict = classify(text);
     const localReply = respond(passages, meds, text);
-    if (isDirectVerifiedMatch(localReply)) {
+    if (safetyVerdict === 'emergency' || safetyVerdict === 'injection') {
       const botMsg: EnhancedChatUiMessage = {
-        id: `msg-${Date.now()}-local`,
+        id: `msg-${Date.now()}-emerg`,
         who: 'bot',
         reply: localReply,
         date,
@@ -353,13 +376,20 @@ export default function Assistant() {
       };
       setMsgs((m) => [...m, botMsg]);
       setLoading(false);
-      if (shouldSpeakReply) {
-        speakText(extractAnswerPlainText(botMsg, lang), lang);
-      }
+      if (shouldSpeakReply) speakText(extractAnswerPlainText(botMsg, lang), lang);
       return;
     }
 
-    // 3) For open-ended questions outside local passages, use AI Assistant with permitted patient context
+    const matchedLinks =
+      localReply.kind === 'text' && localReply.links
+        ? localReply.links
+        : localReply.kind === 'answer'
+          ? localReply.hits
+              .filter((h) => Boolean(h.link))
+              .map((h) => ({ to: h.link || '/', label: h.title }))
+          : undefined;
+
+    // 3) Call Conversational AI (speaks Egyptian Colloquial Arabic + can emit [[ACTION_CALL: ...]] for any free-form command!)
     try {
       const history: ChatMessage[] = msgs.map((m) => ({
         who: m.who,
@@ -370,40 +400,52 @@ export default function Assistant() {
         schedules,
         prescriptions,
         lang,
+        localVerifiedReply: isDirectVerifiedMatch(localReply) ? localReply : null,
       });
-      const enrichedQuestion = patientContext ? `${text}\n${patientContext}` : text;
+      const enrichedQuestion = patientContext ? `${text}\n\n${patientContext}` : text;
 
-      const aiResponse = await askGemini(enrichedQuestion, history);
+      const rawAiResponse = await askGemini(enrichedQuestion, history);
+      const { cleanReplyText, detectedIntent } = extractAiToolCallFromResponse(rawAiResponse);
+
+      if (
+        detectedIntent &&
+        detectedIntent.matched &&
+        dispatchDetectedAction(detectedIntent, date, shouldSpeakReply, cleanReplyText)
+      ) {
+        return;
+      }
+
+      const finalText = cleanReplyText || rawAiResponse;
       const botMsg: EnhancedChatUiMessage = {
         id: `msg-${Date.now()}-ai`,
         who: 'bot',
-        text: aiResponse,
+        text: finalText,
         date,
         isAi: true,
+        ...(matchedLinks && matchedLinks.length > 0 ? { links: matchedLinks } : {}),
       };
       setMsgs((m) => [...m, botMsg]);
       setLoading(false);
-      if (shouldSpeakReply) {
-        speakText(aiResponse, lang);
-      }
+      if (shouldSpeakReply) speakText(finalText, lang);
       return;
     } catch (err) {
       console.warn('AI fallback to local reply:', err);
     }
 
+    // 4) Offline Fallback (converted to Egyptian Colloquial Arabic when lang === 'ar')
+    const fallbackPlain = extractAnswerPlainText({ who: 'bot', reply: localReply }, lang);
+    const colloquialFallback = isAr ? toEgyptianColloquial(fallbackPlain) : fallbackPlain;
     const botMsg: EnhancedChatUiMessage = {
       id: `msg-${Date.now()}-fallback`,
       who: 'bot',
-      reply: localReply,
+      text: colloquialFallback,
       date,
-      isAi: false,
+      isAi: true,
+      ...(matchedLinks && matchedLinks.length > 0 ? { links: matchedLinks } : {}),
     };
     setMsgs((m) => [...m, botMsg]);
     setLoading(false);
-
-    if (shouldSpeakReply) {
-      speakText(extractAnswerPlainText(botMsg, lang), lang);
-    }
+    if (shouldSpeakReply) speakText(colloquialFallback, lang);
   }
 
   async function handleFileAttachment(e: ChangeEvent<HTMLInputElement>) {
@@ -440,7 +482,7 @@ export default function Assistant() {
           id: `msg-${Date.now()}-file-user`,
           who: 'me',
           text: isAr
-            ? `📎 تم إرفاق مستند طبي: ${validation.sanitizedFileName}`
+            ? `📎 رفعت صورة/مستند: ${validation.sanitizedFileName}`
             : `📎 Attached medical document: ${validation.sanitizedFileName}`,
           attachmentPreviewUrl: compressed.previewDataUrl,
           attachmentFileName: validation.sanitizedFileName,
@@ -486,7 +528,9 @@ export default function Assistant() {
         {
           id: `msg-${Date.now()}-doc-proposal`,
           who: 'bot',
-          text: isAr ? analysis.extractedSummaryAr : analysis.extractedSummaryEn,
+          text: isAr
+            ? `قرأتلك الصورة اللي رفعتها! ${analysis.extractedSummaryAr}`
+            : analysis.extractedSummaryEn,
           date,
           isAi: true,
           actionProposal: proposal,
@@ -500,7 +544,7 @@ export default function Assistant() {
           id: `msg-${Date.now()}-doc-fail`,
           who: 'bot',
           text: isAr
-            ? '⚠️ حدث خطأ أثناء تحليل الصورة المرفقة. يرجى المحاولة بصورة أوضح.'
+            ? '⚠️ معلش، معرفتش أقرأ الصورة دي كويس. جرب تصورها تاني في إضاءة أوضح.'
             : '⚠️ Could not analyze the attached image. Please try again with a clearer image.',
           date,
           isAi: true,
@@ -566,7 +610,7 @@ export default function Assistant() {
           actionProposal: {
             ...m.actionProposal,
             status: 'cancelled',
-            resultMessageAr: 'تم إلغاء العملية بناءً على طلبك ولم يتم حفظ أي تغيير.',
+            resultMessageAr: 'خلاص تمام، لغيت العملية ومتحفظش أي تغيير.',
             resultMessageEn: 'Action cancelled. No changes were saved to your account.',
           },
         };
@@ -585,7 +629,7 @@ export default function Assistant() {
     if (!isVoiceRecognitionSupported()) {
       setVoiceNote(
         isAr
-          ? 'متصفحك الحالي لا يدعم الإملاء الصوتي المباشر. يُرجى استخدام متصفح Chrome أو Edge أو Safari.'
+          ? 'متصفحك الحالي مش بيدعم المايك المباشر. جرب تفتح من Chrome أو Edge أو Safari.'
           : 'Your browser does not support Web Speech Recognition. Please use Chrome, Edge, or Safari.'
       );
       return;
@@ -594,7 +638,7 @@ export default function Assistant() {
     stopListenRef.current?.stop();
     setVoiceNote(
       isAr
-        ? '🎙️ تحدث الآن... أنا أستمع إليك (يمكنك طلب إضافة حساسية أو تذكير أو سؤال طبي)'
+        ? '🎙️ اتكلم دلوقتي بالعامية المصرية براحتك... أنا سامعك'
         : '🎙️ Speak now... Listening for questions or health profile commands'
     );
     setListening(true);
@@ -640,10 +684,10 @@ export default function Assistant() {
           }}
         >
           <div>
-            <h1>🤖 {isAr ? 'مساعدك الصحي الشخصي الذكي' : t('asstTitle')}</h1>
+            <h1>🤖 {isAr ? 'مساعدك الصحي الشخصي (بالمصري)' : t('asstTitle')}</h1>
             <p className="muted" style={{ margin: 0 }}>
               {isAr
-                ? 'اسأل عن أي دواء، أو أدر ملفك الصحي وروشتاتك وتذكيراتك بالأوامر المباشرة أو برفع الصور.'
+                ? 'كلمني بالمصري براحتك! اسألني عن أي مضاد حيوي، أو قولي أسجل حساسيتك، أدويتك، أمراضك المزمنة، أو أظبطلك منبه للجرعات.'
                 : 'Ask clinical questions or manage your Health Profile, prescriptions, and reminders via natural commands or uploads.'}
             </p>
           </div>
@@ -657,7 +701,7 @@ export default function Assistant() {
               onClick={() => fileInputRef.current?.click()}
               disabled={loading}
             >
-              📎 {isAr ? 'رفع روشتة / تحليل' : 'Upload Rx / Lab'}
+              📎 {isAr ? 'صور / ارفع روشتة أو تحليل' : 'Upload Rx / Lab'}
             </button>
             <button
               type="button"
@@ -670,8 +714,8 @@ export default function Assistant() {
               🔊{' '}
               {isAr
                 ? autoSpeak
-                  ? 'النطق التلقائي: مفعّل'
-                  : 'تفعيل نطق الإجابات صوتياً'
+                  ? 'النطق الصوتي: شغال'
+                  : 'شغّل نطق الإجابات بالصوت'
                 : autoSpeak
                   ? 'Auto-Voice: ON'
                   : 'Enable Voice Readout'}
@@ -698,12 +742,12 @@ export default function Assistant() {
           <b style={{ fontSize: '1.05rem', display: 'block', marginBottom: '4px' }}>
             🗣️{' '}
             {isAr
-              ? 'الأوامر الصوتية وتحليل الروشتات والملف الصحي'
+              ? 'اتكلم أو اكتب بالعامية المصرية وأنا هنفذ طلبك فوراً!'
               : 'Live Voice Commands, Prescription OCR & Health Record Actions'}
           </b>
           <span className="small" style={{ color: '#e0f2fe' }}>
             {isAr
-              ? 'جرب قول: "أضف حساسية البنسلين"، "حدث وزني إلى 75 كجم"، "فكرني آخد أوجمنتين الساعة 8 صباحاً"، أو ارفع صورة روشتة!'
+              ? 'جرب تقولي: "عندي حساسية من البنسلين"، "أنا مريض سكر وضغط"، "وزني 75 كيلو"، "باخد أوجمنتين 1 جرام كل 12 ساعة"، أو "ظبطلي منبه للفلاجيل الساعة 8 الصبح و 8 بالليل"!'
               : 'Try saying: "Add my penicillin allergy", "Update my weight to 75 kg", "Remind me to take Augmentin at 8 AM", or upload a prescription image!'}
           </span>
         </div>
@@ -721,10 +765,10 @@ export default function Assistant() {
         >
           {listening
             ? isAr
-              ? '⏹️ إيقاف الاستماع...'
+              ? '⏹️ وقف المايك...'
               : '⏹️ Stop Listening...'
             : isAr
-              ? '🎤 اضغط وتحدث بالمايك الآن'
+              ? '🎤 دوس واتكلم بالمايك'
               : '🎤 Tap & Speak Now'}
         </button>
       </div>
@@ -740,7 +784,7 @@ export default function Assistant() {
           {msgs.length === 0 && (
             <div className="msg bot">
               {isAr
-                ? 'أهلاً بك في مساعدك الصحي الشخصي! يمكنك اختيار أحد الإجراءات السريعة بالأسفل، أو كتابة أمر مباشر، أو إرفاق صورة روشتة/تحليل عبر زر 📎.'
+                ? 'منورني يا فندم! أنا مساعدك الصحي الشخصي. قولي عايز تعمل إيه في ملفك الصحي أو اسألني أي سؤال يخطر في بالك بالمصري، أو دوس على زرار 📎 لو معاك صورة روشتة أو تحليل عايزني أقرأهولك.'
                 : 'Welcome to your AI Personal Health Assistant! Choose a quick action below, type a command, or attach a prescription/lab image using 📎.'}
             </div>
           )}
@@ -801,14 +845,14 @@ export default function Assistant() {
                     >
                       {m.actionProposal
                         ? isAr
-                          ? '⚡ إجراء صحي مقترح — يتطلب تأكيدك'
+                          ? '⚡ إجراء جاهز للتأكيد في حسابك'
                           : '⚡ Proposed Health Action — Confirmation Required'
                         : m.isSystemActionResult
                           ? isAr
-                            ? '📋 بيانات سجلك الصحي المحفوظة'
+                            ? '📋 بيانات متسجلة في ملفك الصحي'
                             : '📋 Saved Patient Health Record'
                           : isAr
-                            ? '✨ إجابة طبية منظمة وموثقة'
+                            ? '✨ مساعدك الصيدلاني الذكي'
                             : '✨ Structured Medical Answer'}
                     </span>
                     {plainForSpeech && (
@@ -816,7 +860,7 @@ export default function Assistant() {
                         type="button"
                         className="chip"
                         onClick={() => speakText(plainForSpeech, lang)}
-                        title={isAr ? 'استمع للإجابة صوتياً' : 'Listen to answer'}
+                        title={isAr ? 'اسمع الإجابة بالصوت' : 'Listen to answer'}
                       >
                         🔊 {isAr ? 'اسمع الإجابة' : 'Listen'}
                       </button>
@@ -831,6 +875,35 @@ export default function Assistant() {
                       onCancel={handleCancelProposal}
                     />
                   )}
+                  {m.links && m.links.length > 0 && (
+                    <div
+                      className="row wrapRow"
+                      style={{
+                        gap: '6px',
+                        marginTop: '10px',
+                        paddingTop: '8px',
+                        borderTop: '1px solid #d3e4ea',
+                      }}
+                    >
+                      {m.links.map((l, k) => (
+                        <Link
+                          key={l.to + k}
+                          to={l.to}
+                          className="chip"
+                          style={{
+                            textDecoration: 'none',
+                            background: '#ffffff',
+                            borderColor: '#0e9aa7',
+                            color: '#0a7c87',
+                            fontWeight: 700,
+                            fontSize: '0.84rem',
+                          }}
+                        >
+                          💊 {pick(l.label, lang)}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                   <div className="src" style={{ marginTop: '8px' }}>
                     {t('asstChecked')} {m.date}
                   </div>
@@ -840,75 +913,11 @@ export default function Assistant() {
 
             const r = m.reply;
             if (!r) return null;
-            if (r.kind === 'answer') {
-              return (
-                <div key={m.id || i} className="msg bot">
-                  <div
-                    className="row"
-                    style={{
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    <strong style={{ color: '#0b3c5d', fontSize: '0.95rem' }}>
-                      {pick(r.lead, lang)}
-                    </strong>
-                    <button
-                      type="button"
-                      className="chip"
-                      onClick={() => speakText(plainForSpeech, lang)}
-                    >
-                      🔊 {isAr ? 'اسمع الإجابة' : 'Listen'}
-                    </button>
-                  </div>
-                  {r.hits.map((p) => (
-                    <div
-                      key={p.id}
-                      style={{
-                        background: '#ffffff',
-                        border: '1px solid #d3e4ea',
-                        borderRadius: '10px',
-                        padding: '10px 12px',
-                        marginBottom: '8px',
-                      }}
-                    >
-                      <FormattedClinicalText text={pick(p.text, lang)} />
-                      <div
-                        className="src"
-                        style={{
-                          marginTop: '8px',
-                          paddingTop: '6px',
-                          borderTop: '1px solid #eef6f8',
-                        }}
-                      >
-                        <Link to={p.link ?? '/'} style={{ fontWeight: 700 }}>
-                          🔗 {p.label}
-                        </Link>
-                        {p.unreviewed && <> · {t('unreviewed')}</>}
-                        {p.refs.map((x) => (
-                          <span key={x.url}>
-                            {' · '}
-                            <a href={x.url} target="_blank" rel="noopener noreferrer">
-                              {x.title}
-                            </a>
-                            {x.publisher ? ` (${x.publisher})` : ''}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                  <div className="src">
-                    {t('asstChecked')} {m.date}
-                  </div>
-                </div>
-              );
-            }
             return (
               <div
                 key={m.id || i}
-                className={`msg bot ${r.tone === 'warn' || r.tone === 'alert' ? 'warn' : ''}`}
-                role={r.tone === 'alert' ? 'alert' : undefined}
+                className={`msg bot ${r.kind === 'text' && (r.tone === 'warn' || r.tone === 'alert') ? 'warn' : ''}`}
+                role={r.kind === 'text' && r.tone === 'alert' ? 'alert' : undefined}
               >
                 <div
                   className="row"
@@ -927,7 +936,7 @@ export default function Assistant() {
                       fontSize: '0.82rem',
                     }}
                   >
-                    ✅ {isAr ? 'دليل سريري معتمد من المنصة' : 'Verified Clinical Protocol'}
+                    ✅ {isAr ? 'إرشادات الطوارئ والسلامة' : 'Verified Safety Protocol'}
                   </span>
                   <button
                     type="button"
@@ -937,36 +946,7 @@ export default function Assistant() {
                     🔊 {isAr ? 'اسمع الإجابة' : 'Listen'}
                   </button>
                 </div>
-                <FormattedClinicalText text={pick(r.text, lang)} />
-                {r.links && r.links.length > 0 && (
-                  <div
-                    className="row wrapRow"
-                    style={{
-                      gap: '6px',
-                      marginTop: '10px',
-                      paddingTop: '8px',
-                      borderTop: '1px solid #d3e4ea',
-                    }}
-                  >
-                    {r.links.map((l, k) => (
-                      <Link
-                        key={l.to + k}
-                        to={l.to}
-                        className="chip"
-                        style={{
-                          textDecoration: 'none',
-                          background: '#ffffff',
-                          borderColor: '#0e9aa7',
-                          color: '#0a7c87',
-                          fontWeight: 700,
-                          fontSize: '0.84rem',
-                        }}
-                      >
-                        💊 {pick(l.label, lang)}
-                      </Link>
-                    ))}
-                  </div>
-                )}
+                <FormattedClinicalText text={plainForSpeech} />
                 <div className="src" style={{ marginTop: '6px' }}>
                   {t('asstChecked')} {m.date}
                 </div>
@@ -979,7 +959,7 @@ export default function Assistant() {
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>
                 🔍{' '}
                 {isAr
-                  ? `جاري ضغط وتحليل المستند الطبي (${uploadProgress}%)...`
+                  ? `بقرألك الصورة وبجهز البيانات (${uploadProgress}%)...`
                   : `Analyzing medical document (${uploadProgress}%)...`}
               </div>
               <div
@@ -1005,7 +985,7 @@ export default function Assistant() {
           {loading && uploadProgress === null && (
             <div className="msg bot loading-msg">
               <span className="dot-pulse">● ● ●</span>{' '}
-              {isAr ? 'جاري تحضير الإجابة أو الإجراء...' : 'Preparing response...'}
+              {isAr ? 'ثانية واحدة بجهزلك الرد...' : 'Preparing response...'}
             </div>
           )}
           <div ref={end} />
@@ -1062,7 +1042,7 @@ export default function Assistant() {
             onClick={() => fileInputRef.current?.click()}
             title={
               isAr
-                ? 'إرفاق صورة روشتة أو تحليل أو تقرير طبي'
+                ? 'ارفع صورة روشتة أو تحليل أو تقرير طبي'
                 : 'Attach prescription, lab result, or medical report'
             }
             disabled={loading}
@@ -1073,7 +1053,7 @@ export default function Assistant() {
             type="button"
             className="btn ghost"
             onClick={toggleVoiceMic}
-            title={isAr ? 'اسأل بصوتك بالمايك' : 'Speak with microphone'}
+            title={isAr ? 'اتكلم بالمايك' : 'Speak with microphone'}
             style={{
               background: listening ? '#fee2e2' : undefined,
               borderColor: listening ? '#dc2626' : undefined,
@@ -1088,14 +1068,14 @@ export default function Assistant() {
             onChange={(e) => setQ(e.target.value)}
             placeholder={
               isAr
-                ? 'اكتب سؤالك أو أمرك الصحي (مثال: أضف حساسية البنسلين، فكرني بجرعة 8 صباحاً)...'
+                ? 'اكتب بالمصري طلبك أو سؤالك (مثلاً: عندي حساسية بنسلين، ظبطلي منبه الساعة 8)...'
                 : 'Ask a question or give a command (e.g., Add penicillin allergy, Remind me at 8 AM)...'
             }
             aria-label={t('asstPlaceholder')}
             disabled={loading}
           />
           <button className="btn" disabled={loading || !q.trim()}>
-            {loading ? '...' : t('asstSend')}
+            {loading ? '...' : isAr ? 'ابعت' : t('asstSend')}
           </button>
         </form>
       </section>
