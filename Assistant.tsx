@@ -340,7 +340,7 @@ export default function Assistant() {
   }
 
   async function ask(raw: string, shouldSpeakReply = autoSpeak) {
-    const text = raw.trim().slice(0, 300);
+    const text = raw.trim().slice(0, 2000);
     if (!text || loading) return;
 
     if (text === '__UPLOAD_DOCUMENT__') {
@@ -366,7 +366,7 @@ export default function Assistant() {
     // 2) Check Immediate Life-Threatening Emergency or Prompt Injection Guard
     const safetyVerdict = classify(text);
     const localReply = respond(passages, meds, text);
-    if (safetyVerdict === 'emergency' || safetyVerdict === 'injection') {
+    if (safetyVerdict === 'emergency') {
       const botMsg: EnhancedChatUiMessage = {
         id: `msg-${Date.now()}-emerg`,
         who: 'bot',
@@ -1064,11 +1064,11 @@ export default function Assistant() {
           </button>
           <input
             value={q}
-            maxLength={300}
+            maxLength={2000}
             onChange={(e) => setQ(e.target.value)}
             placeholder={
               isAr
-                ? 'اكتب بالمصري طلبك أو سؤالك (مثلاً: عندي حساسية بنسلين، ظبطلي منبه الساعة 8)...'
+                ? 'اسألني في أي سؤال طبي أو عام أو اطلب أمر بالمصري (سجل حساسية، ظبط منبه، اقرأ تحليل أو روشتة)...'
                 : 'Ask a question or give a command (e.g., Add penicillin allergy, Remind me at 8 AM)...'
             }
             aria-label={t('asstPlaceholder')}

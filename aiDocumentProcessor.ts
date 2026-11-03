@@ -2,7 +2,8 @@
  * aiDocumentProcessor.ts
  *
  * Medical Image & Document Upload, Validation, Compression, Multi-Medication OCR Extraction,
- * and Secure Firebase Storage Service for the Antibiotic Awareness Personal Health Assistant.
+ * Culture & Sensitivity (S/R) Lab Analyzer, and Secure Firebase Storage Service
+ * for the Antibiotic Awareness Personal Health Assistant.
  *
  * Safety & Security Principles:
  * - Validates MIME types (JPEG, PNG, WEBP, PDF) and enforces an 8 MB ceiling.
@@ -10,6 +11,7 @@
  * - Compresses images client-side before OCR and Storage upload.
  * - Extracts single or multiple medications from a prescription without EVER inventing
  *   a missing dose, strength, frequency, route, or duration.
+ * - Extracts Culture & Sensitivity (مزرعة وحساسية) organisms, Sensitive (S), and Resistant (R) antibiotics.
  * - Flags unreadable or ambiguous fields in `unreadableFields` for mandatory patient review.
  * - Uploads original/compressed files to `/patient_documents/{uid}/{docId}_{safeName}`
  *   only when authenticated and Firebase Storage is configured, reporting real upload results.
@@ -90,8 +92,10 @@ export function validateMedicalUploadFile(file: {
       valid: false,
       sanitizedFileName: safeName,
       mimeType: file?.type || '',
-      errorAr: '⛔ نوع الملف غير مسموح به أمنياً. يُسمح فقط بصور الروشتات والتقارير (JPG, PNG, WEBP) أو ملفات PDF.',
-      errorEn: '⛔ Unsafe file type blocked. Only medical images (JPG, PNG, WEBP) or PDF documents are allowed.',
+      errorAr:
+        '⛔ نوع الملف ده مش مسموح بيه عشان أمان حسابك. تقدر ترفع بس صور الروشتات والتحاليل (JPG, PNG, WEBP) أو ملفات PDF.',
+      errorEn:
+        '⛔ Unsafe file type blocked. Only medical images (JPG, PNG, WEBP) or PDF documents are allowed.',
     };
   }
 
@@ -113,7 +117,7 @@ export function validateMedicalUploadFile(file: {
       valid: false,
       sanitizedFileName: safeName,
       mimeType: inferredMime,
-      errorAr: '⚠️ صيغة الملف غير مدعومة. يرجى اختيار صورة واضحة (JPG أو PNG أو WEBP) أو مستند PDF.',
+      errorAr: '⚠️ صيغة الملف دي مش مدعومة. يا ريت تختار صورة واضحة (JPG أو PNG أو WEBP) أو ملف PDF.',
       errorEn: '⚠️ Unsupported file format. Please select a clear image (JPG, PNG, WEBP) or PDF document.',
     };
   }
@@ -123,7 +127,7 @@ export function validateMedicalUploadFile(file: {
       valid: false,
       sanitizedFileName: safeName,
       mimeType: inferredMime,
-      errorAr: '⚠️ الملف المرفق فارغ أو غير صالح.',
+      errorAr: '⚠️ الملف اللي اخترته فاضي أو بايظ، جرب ترفع صورة تانية واضحة.',
       errorEn: '⚠️ The selected file is empty or invalid.',
     };
   }
@@ -133,7 +137,7 @@ export function validateMedicalUploadFile(file: {
       valid: false,
       sanitizedFileName: safeName,
       mimeType: inferredMime,
-      errorAr: '⚠️ حجم الملف يتجاوز الحد الأقصى المسموح به (8 ميجابايت). يرجى اختيار صورة أصغر حجماً.',
+      errorAr: '⚠️ حجم الملف أكبر من المسموح بيه (8 ميجابايت). يا ريت تختار صورة أصغر شوية.',
       errorEn: '⚠️ File size exceeds the 8 MB limit. Please upload a smaller image or PDF.',
     };
   }
@@ -247,7 +251,6 @@ export function extractMultiplePrescriptionItemsFromText(
   const cleanText = (rawText || '').trim();
   if (!cleanText) return [];
 
-  // Split by explicit RX blocks or numbered lines if multiple medications exist
   const candidateSegments: string[] = [];
   const lines = cleanText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
@@ -330,6 +333,88 @@ export function extractMultiplePrescriptionItemsFromText(
 }
 
 /**
+ * Extracts Culture & Sensitivity (مزرعة البكتيريا والحساسية S / R) findings from lab text.
+ */
+export function extractCultureAndSensitivityFindings(rawText: string): {
+  isCultureReport: boolean;
+  organism?: string;
+  sensitiveAntibiotics: string[];
+  resistantAntibiotics: string[];
+} {
+  const text = (rawText || '').trim();
+  if (!text) {
+    return { isCultureReport: false, sensitiveAntibiotics: [], resistantAntibiotics: [] };
+  }
+
+  const isCultureReport =
+    /(culture|sensitivity|antibiogram|isolated organism|colony count|مزرعة|حساسية المضادات|ميكروب|بكتيريا)/i.test(
+      text
+    );
+
+  let organism: string | undefined;
+  const orgMatch = text.match(
+    /(?:organism|isolated|growth of|bacteria|الميكروب|البكتيريا)[:\s-]*([A-Za-z.\s]{4,35}|e\.?\s*coli|klebsiella|staphylococcus|streptococcus|pseudomonas|proteus|enterococcus|salmonella)/i
+  );
+  if (orgMatch) {
+    organism = orgMatch[1].trim();
+  } else {
+    const knownOrg = text.match(
+      /\b(Escherichia coli|E\.?\s*coli|Klebsiella(?:\s+pneumoniae)?|Staphylococcus(?:\s+aureus)?|MRSA|Streptococcus|Pseudomonas(?:\s+aeruginosa)?|Proteus(?:\s+mirabilis)?|Enterococcus|Acinetobacter)\b/i
+    );
+    if (knownOrg) organism = knownOrg[1].trim();
+  }
+
+  const sensitiveAntibiotics: string[] = [];
+  const resistantAntibiotics: string[] = [];
+
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  for (const line of lines) {
+    // Check if any known active ingredient or antibiotic name appears on this line
+    let abxLabel = '';
+    const normLine = norm(line);
+    for (const ing of ACTIVE_INGREDIENTS) {
+      const nEn = norm(ing.nameEn);
+      const nAr = norm(ing.nameAr);
+      if ((nEn.length >= 4 && normLine.includes(nEn)) || (nAr.length >= 3 && normLine.includes(nAr))) {
+        abxLabel = `${ing.nameAr} (${ing.nameEn})`;
+        break;
+      }
+    }
+    if (!abxLabel) {
+      const genericAbx = line.match(
+        /\b(Amoxicillin|Clavulanate|Augmentin|Cefotaxime|Ceftriaxone|Cefuroxime|Cefixime|Cefepime|Meropenem|Imipenem|Ertapenem|Ciprofloxacin|Levofloxacin|Moxifloxacin|Nitrofurantoin|Fosfomycin|Amikacin|Gentamicin|Trimethoprim|Sulfamethoxazole|Cotrimoxazole|Azithromycin|Clarithromycin|Doxycycline|Tigecycline|Vancomycin|Linezolid|Colistin|Piperacillin|Tazobactam)\b/i
+      );
+      if (genericAbx) abxLabel = genericAbx[1];
+    }
+
+    if (!abxLabel) continue;
+
+    const isSensitive =
+      /\b(sensitive|susceptible)\b/i.test(line) ||
+      /[:\s\t(-]+(S|S\+|S\+\+|\+\+\+)[\s\t)]*$/i.test(line) ||
+      /(حساس|فعال)/i.test(line);
+    const isResistant =
+      /\b(resistant|resistance)\b/i.test(line) ||
+      /[:\s\t(-]+(R)[\s\t)]*$/i.test(line) ||
+      /(مقاوم|غير فعال)/i.test(line);
+
+    if (isResistant && !resistantAntibiotics.includes(abxLabel)) {
+      resistantAntibiotics.push(abxLabel);
+    } else if (isSensitive && !sensitiveAntibiotics.includes(abxLabel)) {
+      sensitiveAntibiotics.push(abxLabel);
+    }
+  }
+
+  return {
+    isCultureReport:
+      isCultureReport || sensitiveAntibiotics.length > 0 || resistantAntibiotics.length > 0,
+    organism,
+    sensitiveAntibiotics,
+    resistantAntibiotics,
+  };
+}
+
+/**
  * Classifies document category from text/filename and extracts structured fields.
  */
 export function classifyAndSummarizeDocumentText(
@@ -346,7 +431,10 @@ export function classifyAndSummarizeDocumentText(
 } {
   const combined = `${rawText || ''} ${fileName || ''}`.toLowerCase();
 
+  const cultureFindings = extractCultureAndSensitivityFindings(rawText);
+
   const isLab =
+    cultureFindings.isCultureReport ||
     /(cbc|hemoglobin|wbc|rbc|creatinine|alt|ast|crp|esr|urine analysis|culture|sensitivity|مزرعة|تحليل|معمل|هيموجلوبين|صورة دم|وظائف كلى|وظائف كبد)/i.test(
       combined
     );
@@ -360,12 +448,16 @@ export function classifyAndSummarizeDocumentText(
     );
 
   let category: MedicalDocumentCategory = 'prescription';
-  if (isLab && !ocrResult?.detectedDrugName) category = 'lab_report';
-  else if (isLeaflet && !ocrResult?.extractedFrequencyKey) category = 'leaflet';
-  else if (isReport && !ocrResult?.detectedDrugName) category = 'medical_report';
+  if (cultureFindings.isCultureReport || (isLab && !ocrResult?.detectedDrugName)) {
+    category = 'lab_report';
+  } else if (isLeaflet && !ocrResult?.extractedFrequencyKey) {
+    category = 'leaflet';
+  } else if (isReport && !ocrResult?.detectedDrugName) {
+    category = 'medical_report';
+  }
 
   const extractedFields: Record<string, string> = {};
-  if (ocrResult?.detectedDrugName) {
+  if (ocrResult?.detectedDrugName && !cultureFindings.isCultureReport) {
     extractedFields.medicineName = ocrResult.detectedDrugName;
   }
   if (ocrResult?.extractedDoseText) {
@@ -391,48 +483,95 @@ export function classifyAndSummarizeDocumentText(
   if (wbcMatch) extractedFields.wbc = wbcMatch[1];
   const creatMatch = rawText.match(/(?:creatinine|كرياتينين)[:\s]*(\d+(?:\.\d+)?)/i);
   if (creatMatch) extractedFields.serumCreatinine = creatMatch[1];
+  const crpMatch = rawText.match(/(?:crp|سي آر بي)[:\s]*(\d+(?:\.\d+)?)/i);
+  if (crpMatch) extractedFields.crp = crpMatch[1];
+
+  // Add Culture & Sensitivity fields if detected
+  if (cultureFindings.organism) {
+    extractedFields.cultureOrganism = cultureFindings.organism;
+  }
+  if (cultureFindings.sensitiveAntibiotics.length > 0) {
+    extractedFields.cultureSensitiveS = cultureFindings.sensitiveAntibiotics.join('، ');
+  }
+  if (cultureFindings.resistantAntibiotics.length > 0) {
+    extractedFields.cultureResistantR = cultureFindings.resistantAntibiotics.join('، ');
+  }
 
   const categoryTitles: Record<MedicalDocumentCategory, { ar: string; en: string }> = {
     prescription: { ar: 'روشتة طبية', en: 'Medical Prescription' },
-    lab_report: { ar: 'نتيجة تحليل معملي', en: 'Laboratory Result' },
+    lab_report: {
+      ar: cultureFindings.isCultureReport ? 'تحليل مزرعة وحساسية مضادات (S/R)' : 'نتيجة تحليل معملي',
+      en: cultureFindings.isCultureReport ? 'Culture & Sensitivity Report (S/R)' : 'Laboratory Result',
+    },
     medical_report: { ar: 'تقرير طبي', en: 'Medical Report' },
     leaflet: { ar: 'نشرة دوائية', en: 'Medication Leaflet' },
     other: { ar: 'مستند صحي', en: 'Health Document' },
   };
 
-  const titleAr = ocrResult?.detectedDrugName
-    ? `${categoryTitles[category].ar} — ${ocrResult.detectedDrugName}`
-    : `${categoryTitles[category].ar} (${sanitizeText(fileName, 40)})`;
-  const titleEn = ocrResult?.detectedDrugName
-    ? `${categoryTitles[category].en} — ${ocrResult.detectedDrugName}`
-    : `${categoryTitles[category].en} (${sanitizeText(fileName, 40)})`;
+  const titleAr = cultureFindings.isCultureReport
+    ? `${categoryTitles.lab_report.ar}${cultureFindings.organism ? ` — ${cultureFindings.organism}` : ''}`
+    : ocrResult?.detectedDrugName
+      ? `${categoryTitles[category].ar} — ${ocrResult.detectedDrugName}`
+      : `${categoryTitles[category].ar} (${sanitizeText(fileName, 40)})`;
+
+  const titleEn = cultureFindings.isCultureReport
+    ? `${categoryTitles.lab_report.en}${cultureFindings.organism ? ` — ${cultureFindings.organism}` : ''}`
+    : ocrResult?.detectedDrugName
+      ? `${categoryTitles[category].en} — ${ocrResult.detectedDrugName}`
+      : `${categoryTitles[category].en} (${sanitizeText(fileName, 40)})`;
 
   const hasDrug = Boolean(ocrResult?.detectedDrugName);
   const unreadableCount = ocrResult?.unreadableFields?.length || 0;
 
-  const summaryAr = hasDrug
-    ? `تم رصد دواء «${ocrResult?.detectedDrugName}»${
-        ocrResult?.extractedDoseText ? ` بتركيز/جرعة (${ocrResult.extractedDoseText})` : ' (الجرعة غير واضحة)'
-      }.${
-        unreadableCount > 0
-          ? ` توجد ${unreadableCount} حقول غير مكتملة أو غير واضحة تتطلب مراجعتك وتأكيدك قبل الحفظ.`
-          : ' جميع الحقول الأساسية مقروءة وجاهزة لمراجعتك.'
-      }`
-    : rawText.trim()
-      ? `تم استخراج نص من المستند (${categoryTitles[category].ar}). يرجى مراجعة البيانات المستخرجة وتأكيدها قبل الحفظ.`
-      : `لم يتمكن الـ OCR من قراءة نص واضح تلقائياً من هذه الصورة. يمكنك إدخال أو تعديل البيانات يدوياً قبل حفظ المستند في حسابك.`;
+  let summaryAr = '';
+  let summaryEn = '';
 
-  const summaryEn = hasDrug
-    ? `Detected medication "${ocrResult?.detectedDrugName}"${
-        ocrResult?.extractedDoseText ? ` (${ocrResult.extractedDoseText})` : ' (dose unclear)'
-      }.${
-        unreadableCount > 0
-          ? ` ${unreadableCount} field(s) are missing or unclear and require your confirmation before saving.`
-          : ' All primary fields were extracted and are ready for your review.'
-      }`
-    : rawText.trim()
-      ? `Extracted text from ${categoryTitles[category].en}. Please review and confirm before saving.`
-      : `Automated OCR could not read clear text from this image. You can manually fill or edit the fields before saving.`;
+  if (cultureFindings.isCultureReport) {
+    const partsAr: string[] = ['🔬 ده تحليل مزرعة وحساسية للمضادات الحيوية!'];
+    const partsEn: string[] = ['🔬 Culture & Sensitivity lab report detected.'];
+    if (cultureFindings.organism) {
+      partsAr.push(`الميكروب اللي طلع في المزرعة: (${cultureFindings.organism}).`);
+      partsEn.push(`Isolated organism: (${cultureFindings.organism}).`);
+    }
+    if (cultureFindings.sensitiveAntibiotics.length > 0) {
+      partsAr.push(
+        `✅ المضادات الفعالة (Sensitive - S): ${cultureFindings.sensitiveAntibiotics.join('، ')}.`
+      );
+      partsEn.push(`✅ Sensitive (S): ${cultureFindings.sensitiveAntibiotics.join(', ')}.`);
+    }
+    if (cultureFindings.resistantAntibiotics.length > 0) {
+      partsAr.push(
+        `⛔ المضادات المقاومة اللي مش هتجيب نتيجة (Resistant - R): ${cultureFindings.resistantAntibiotics.join('، ')}.`
+      );
+      partsEn.push(`⛔ Resistant (R): ${cultureFindings.resistantAntibiotics.join(', ')}.`);
+    }
+    partsAr.push('اعرض النتيجة دي على دكتورك عشان يختارلك أنسب مضاد من قايمة الـ (S).');
+    summaryAr = partsAr.join(' ');
+    summaryEn = partsEn.join(' ');
+  } else if (hasDrug) {
+    summaryAr = `طلعتلك من الروشتة دواء «${ocrResult?.detectedDrugName}»${
+      ocrResult?.extractedDoseText ? ` بجرعة/تركيز (${ocrResult.extractedDoseText})` : ' (الجرعة مش واضحة في الصورة)'
+    }.${
+      unreadableCount > 0
+        ? ` في ${unreadableCount} خانات مش واضحة أوي، بص عليها وكملها قبل ما تدوس حفظ.`
+        : ' كل البيانات الأساسية مقروءة وجاهزة لمراجعتك.'
+    }`;
+    summaryEn = `Detected medication "${ocrResult?.detectedDrugName}"${
+      ocrResult?.extractedDoseText ? ` (${ocrResult.extractedDoseText})` : ' (dose unclear)'
+    }.${
+      unreadableCount > 0
+        ? ` ${unreadableCount} field(s) are missing or unclear and require your confirmation before saving.`
+        : ' All primary fields were extracted and are ready for your review.'
+    }`;
+  } else if (rawText.trim()) {
+    summaryAr = `قرأتلك النص اللي في المستند (${categoryTitles[category].ar}). راجع البيانات المستخرجة وأكدها قبل الحفظ.`;
+    summaryEn = `Extracted text from ${categoryTitles[category].en}. Please review and confirm before saving.`;
+  } else {
+    summaryAr =
+      'مقدرتش أقرأ نص واضح تلقائياً من الصورة دي. تقدر تكتب أو تعدل البيانات بإيدك في الكارت تحت قبل ما تحفظ المستند في ملفك.';
+    summaryEn =
+      'Automated OCR could not read clear text from this image. You can manually fill or edit the fields before saving.';
+  }
 
   return {
     category,
@@ -464,7 +603,7 @@ export async function analyzeUploadedMedicalDocument(params: {
     params.fileName
   );
 
-  // Also check if Gemini Vision can extract multi-drug lines when an API key is configured
+  // Also check if Gemini Vision can extract multi-drug lines or Culture S/R tables when an API key is configured
   let multiText = ocrResult.rawExtractedText || '';
   const apiKey = getApiKey();
   if (apiKey && apiKey.startsWith('AIza') && params.mimeType.startsWith('image/')) {
@@ -479,7 +618,7 @@ export async function analyzeUploadedMedicalDocument(params: {
               role: 'user',
               parts: [
                 {
-                  text: 'List every medication, lab value, or medical finding visible in this image on separate lines. Never guess or invent unreadable values.',
+                  text: 'List every medication, lab value (e.g. Creatinine, WBC, CRP, Hemoglobin), or Culture & Sensitivity result (Organism name, Sensitive S antibiotics, Resistant R antibiotics) visible in this image on separate lines. Never guess or invent unreadable values.',
                 },
                 {
                   inlineData: {
@@ -490,7 +629,7 @@ export async function analyzeUploadedMedicalDocument(params: {
               ],
             },
           ],
-          generationConfig: { temperature: 0.05, maxOutputTokens: 400 },
+          generationConfig: { temperature: 0.05, maxOutputTokens: 500 },
         }),
       });
       if (resp.ok) {
@@ -505,33 +644,39 @@ export async function analyzeUploadedMedicalDocument(params: {
     }
   }
 
-  const multiItems = extractMultiplePrescriptionItemsFromText(multiText, params.fileName);
+  const docMeta = classifyAndSummarizeDocumentText(multiText, params.fileName, ocrResult);
+  const effectiveCategory = params.forcedCategory || docMeta.category;
+
+  const multiItems =
+    effectiveCategory === 'lab_report' && docMeta.extractedFields.cultureSensitiveS
+      ? []
+      : extractMultiplePrescriptionItemsFromText(multiText, params.fileName);
+
   const extractedPrescriptions: AddPrescriptionItemArgs[] =
     multiItems.length > 0
       ? multiItems
-      : [
-          {
-            ...(ocrResult.matchedIngredientId ? { antibioticId: ocrResult.matchedIngredientId } : {}),
-            medicineName: ocrResult.detectedDrugName || '',
-            prescribedDose: ocrResult.extractedDoseText || '',
-            route: ocrResult.extractedRoute || '',
-            frequency: ocrResult.extractedFrequencyKey || '',
-            durationDays: ocrResult.extractedDurationDays,
-            ...(ocrResult.extractedNotes ? { notes: ocrResult.extractedNotes } : {}),
-            ...(ocrResult.extractedCoMeds.length > 0
-              ? { coMedications: ocrResult.extractedCoMeds }
-              : {}),
-            captureMethod: 'ocr_upload',
-            isOcrUnverified: true,
-            rawExtractedText: ocrResult.rawExtractedText,
-            imageFileName: params.fileName,
-            unreadableFields: ocrResult.unreadableFields,
-            createScheduleAlso: false,
-          },
-        ];
-
-  const docMeta = classifyAndSummarizeDocumentText(multiText, params.fileName, ocrResult);
-  const effectiveCategory = params.forcedCategory || docMeta.category;
+      : effectiveCategory === 'lab_report' && !ocrResult.detectedDrugName
+        ? []
+        : [
+            {
+              ...(ocrResult.matchedIngredientId ? { antibioticId: ocrResult.matchedIngredientId } : {}),
+              medicineName: ocrResult.detectedDrugName || '',
+              prescribedDose: ocrResult.extractedDoseText || '',
+              route: ocrResult.extractedRoute || '',
+              frequency: ocrResult.extractedFrequencyKey || '',
+              durationDays: ocrResult.extractedDurationDays,
+              ...(ocrResult.extractedNotes ? { notes: ocrResult.extractedNotes } : {}),
+              ...(ocrResult.extractedCoMeds.length > 0
+                ? { coMedications: ocrResult.extractedCoMeds }
+                : {}),
+              captureMethod: 'ocr_upload',
+              isOcrUnverified: true,
+              rawExtractedText: ocrResult.rawExtractedText,
+              imageFileName: params.fileName,
+              unreadableFields: ocrResult.unreadableFields,
+              createScheduleAlso: false,
+            },
+          ];
 
   return {
     title: params.lang === 'ar' ? docMeta.titleAr : docMeta.titleEn,
@@ -548,7 +693,7 @@ export async function analyzeUploadedMedicalDocument(params: {
     contradictionWarnings: ocrResult.contradictionWarnings,
     extractedPrescriptions,
     isUnclearOrIncomplete:
-      !ocrResult.detectedDrugName ||
+      (effectiveCategory === 'prescription' && !ocrResult.detectedDrugName) ||
       ocrResult.unreadableFields.length > 0 ||
       ocrResult.contradictionWarnings.length > 0,
   };
@@ -570,7 +715,7 @@ export async function uploadMedicalDocumentToStorage(params: {
   if (!params.uid) {
     return {
       uploadedToCloud: false,
-      errorAr: 'وضع الزائر (بدون تسجيل دخول): تم حفظ المعاينة والبيانات محلياً على هذا الجهاز فقط.',
+      errorAr: 'وضع الزائر (من غير تسجيل دخول): حفظتلك المعاينة والبيانات محلياً على جهازك ده بس.',
       errorEn: 'Guest mode (not signed in): Preview and structured record saved locally on this device only.',
     };
   }
@@ -579,7 +724,7 @@ export async function uploadMedicalDocumentToStorage(params: {
     return {
       uploadedToCloud: false,
       errorAr:
-        'خدمة Firebase Storage غير مفعّلة في متغيرات البيئة الحالية — تم حفظ البيانات المهيكلة والمعاينة المضغوطة في حسابك بـ Firestore.',
+        'خدمة Firebase Storage مش مفعّلة في الإعدادات حالياً — حفظتلك البيانات المهيكلة والمعاينة المضغوطة في حسابك بـ Firestore.',
       errorEn:
         'Firebase Storage is not configured in environment variables — structured record and compressed preview saved to your Firestore profile.',
     };
@@ -597,7 +742,7 @@ export async function uploadMedicalDocumentToStorage(params: {
     } else {
       return {
         uploadedToCloud: false,
-        errorAr: 'لا توجد بيانات ملف صالحة للرفع إلى السحابة.',
+        errorAr: 'مفيش بيانات ملف صالحة للرفع على السحابة.',
         errorEn: 'No file binary data available to upload.',
       };
     }
@@ -611,7 +756,7 @@ export async function uploadMedicalDocumentToStorage(params: {
     const errMsg = err instanceof Error ? err.message : String(err);
     return {
       uploadedToCloud: false,
-      errorAr: `تعذر رفع الملف الأصلي إلى Firebase Storage (${errMsg}). لم يتم فقدان البيانات المستخرجة.`,
+      errorAr: `معرفتش أرفع الملف الأصلي على Firebase Storage (${errMsg})، بس متقلقش حفظتلك كل البيانات المستخرجة في ملفك.`,
       errorEn: `Failed to upload original file to Firebase Storage (${errMsg}). Extracted structured data is preserved.`,
     };
   }

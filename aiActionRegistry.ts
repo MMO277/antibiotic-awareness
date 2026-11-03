@@ -692,7 +692,7 @@ export function detectPatientActionIntent(
 
   // ── 4. ADD ALLERGY TO HEALTH PROFILE ────────────────────────────────────────
   const isAddAllergyIntent =
-    /(?:add|record|save|register|document)\s+(?:my\s+|a\s+|an\s+)?[\w\s\-]+allergy|i\s*(?:am|'m)\s*allergic\s+to\s+[\w\s\-]+|allergic\s+to\s+[\w\s\-]+|add\s+[\w\s\-]+\s+to\s+my\s+allerg|(?:أضف|اضف|سجل|ضيف|حط|اكتب|زود)\s*(?:ان\s*عندي\s*|إني\s*عندي\s*)?(?:حساسية|حساسيه|حساسيتي\s*من)|(?:انا\s*|أنا\s*)?(?:عندي|لدي|بيجيلي|بتحسس\s*من|جسمي\s*بيتحسس\s*من)\s*(?:حساسية|حساسيه)?\s*(?:من|ضد)/i.test(
+    /(?:add|record|save|register|document)\s+(?:my\s+|a\s+|an\s+)?[\w\s\-]+allergy|i\s*(?:am|'m)\s*allergic\s+to\s+[\w\s\-]+|allergic\s+to\s+[\w\s\-]+|add\s+[\w\s\-]+\s+to\s+my\s+allerg|(?:أضف|اضف|سجل|سجلي|ضيف|ضيفلي|حط|حطلي|اكتب|اكتبلي|زود|زودلي)\s*(?:لي\s*)?(?:ان\s*عندي\s*|إني\s*عندي\s*|اني\s*عندي\s*)?(?:حساسية|حساسيه|حساسيتي\s*من)|(?:انا\s*|أنا\s*)?(?:عندي|لدي|بيجيلي|بتحسس\s*من|جسمي\s*بيتحسس\s*من)\s*(?:حساسية|حساسيه)(?:\s+(?:من|ضد))?\s+[\u0600-\u06FFa-zA-Z]{3,}|(?:انا\s*|أنا\s*)?(?:بتحسس|جسمي\s*بيتحسس)\s*(?:من|ضد)/i.test(
       normalizedDigits
     );
 
@@ -706,7 +706,7 @@ export function detectPatientActionIntent(
         /(?:add\s+(?:my\s+|a\s+)?|allergic\s+to\s+)([a-zA-Z0-9\-\s]{3,35}?)(?:\s+allergy|\s+to\s+my|\s*$)/i
       );
       const arCustom = normalizedDigits.match(
-        /(?:حساسية\s*(?:من|ضد)?|حساسيه\s*(?:من|ضد)?|بتحسس\s*من|سجل\s*حساسية|أضف\s*حساسية|اضف\s*حساسية|ضيف\s*حساسية|حط\s*حساسية)\s+([\u0600-\u06FFa-zA-Z0-9\s\-]{3,35})/i
+        /(?:حساسية\s*(?:من|ضد)?|حساسيه\s*(?:من|ضد)?|بتحسس\s*من|(?:سجل|سجلي|أضف|اضف|ضيف|ضيفلي|حط|حطلي|اكتب|اكتبلي)\s*(?:لي\s*)?حساسية)\s+([\u0600-\u06FFa-zA-Z0-9\s\-]{3,35})/i
       );
       customDrugName = (enCustom?.[1] || arCustom?.[1] || '')
         .replace(/(?:في\s*ملفي|لملفي|الصحي|عندي|لو\s*سمحت).*$/i, '')
@@ -768,7 +768,7 @@ export function detectPatientActionIntent(
 
   // ── 5. ADD CHRONIC CONDITION TO HEALTH PROFILE ──────────────────────────────
   const isAddConditionIntent =
-    /(?:add|record|save|include)\s+[\w\s\-]+?\s+to\s+my\s+(?:health\s*profile|medical\s*history|conditions?|profile)|i\s+have\s+(?:diabetes|hypertension|high\s+blood\s+pressure|asthma|kidney\s+disease|liver\s+disease|g6pd)[\s,;]*(?:add|save|record)?|(?:أضف|اضف|ضيف|سجل|حط|اكتب|زود)\s+[\u0600-\u06FFa-zA-Z0-9\s\-]+?\s*(?:في|إلى|الى|لـ|ل|عندي)?\s*(?:ملفي\s*الصحي|ملفي|تاريخي\s*الطبي|الأمراض\s*المزمنة|حسابي)|(?:انا\s*|أنا\s*)?(?:عندي|لدي|مريض|أعاني\s*من|بعاني\s*من)\s+(?:سكر|السكري|السكر|ضغط|الضغط|ربو|الربو|حساسية\s*صدر|قصور\s*كلى|أنيميا\s*الفول|انيميا\s*الفول|غدة|الغدة|قرحة|كبد|قلب)/i.test(
+    /(?:add|record|save|include)\s+[\w\s\-]+?\s+to\s+my\s+(?:health\s*profile|medical\s*history|conditions?|profile)|i\s+have\s+(?:diabetes|hypertension|high\s+blood\s+pressure|asthma|kidney\s+disease|liver\s+disease|g6pd)[\s,;]*(?:add|save|record)?|(?:أضف|اضف|ضيف|ضيفلي|سجل|سجلي|حط|حطلي|اكتب|اكتبلي|زود|زودلي)\s*(?:لي\s*)?[\u0600-\u06FFa-zA-Z0-9\s\-]+?\s*(?:في|إلى|الى|لـ|ل|عندي)?\s*(?:ملفي\s*الصحي|ملفي|تاريخي\s*الطبي|الأمراض\s*المزمنة|حسابي)|(?:انا\s*|أنا\s*)?(?:عندي|لدي|مريض|أعاني\s*من|بعاني\s*من)\s+(?:سكر|السكري|السكر|ضغط|الضغط|ربو|الربو|حساسية\s*صدر|قصور\s*كلى|أنيميا\s*الفول|انيميا\s*الفول|غدة|الغدة|قرحة|كبد|قلب)/i.test(
       normalizedDigits
     );
 

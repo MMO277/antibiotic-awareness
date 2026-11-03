@@ -248,7 +248,7 @@ export default function ChatWidget() {
   }
 
   async function ask(raw: string, speakReply = false) {
-    const text = raw.trim().slice(0, 300);
+    const text = raw.trim().slice(0, 2000);
     if (!text || loading) return;
 
     if (text === '__UPLOAD_DOCUMENT__') {
@@ -276,7 +276,7 @@ export default function ChatWidget() {
     // 2) Check Immediate Life-Threatening Emergency or Prompt Injection Guard
     const safetyVerdict = classify(text);
     const localReply = respond(passages, meds, text);
-    if (safetyVerdict === 'emergency' || safetyVerdict === 'injection') {
+    if (safetyVerdict === 'emergency') {
       const botMsg: EnhancedChatUiMessage = {
         id: `msg-${Date.now()}-emerg`,
         who: 'bot',
@@ -1066,7 +1066,7 @@ export default function ChatWidget() {
             </button>
             <input
               value={q}
-              maxLength={300}
+              maxLength={2000}
               onChange={(e) => setQ(e.target.value)}
               placeholder={
                 listening
@@ -1074,7 +1074,7 @@ export default function ChatWidget() {
                     ? 'سامعك... اتكلم دلوقتي'
                     : 'Listening...'
                   : isAr
-                    ? 'اكتب بالمصري طلبك أو سؤالك (مثلاً: سجل حساسية بنسلين)...'
+                    ? 'اسألني في أي حاجة أو اطلب أي أمر بالمصري (أدوية، تحاليل، صحة عامة، منبه، حساسية)...'
                     : 'Ask or command (e.g., Add penicillin allergy)...'
               }
               aria-label="Ask assistant"

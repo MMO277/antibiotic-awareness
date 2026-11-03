@@ -31,7 +31,7 @@ import {
   UserHealthProfile,
 } from './allergyData';
 import { TreatmentSchedule, SavedPrescription } from './trackerData';
-import { detectPatientActionIntent } from './aiActionRegistry';
+import { detectPatientActionIntent, extractAiToolCallFromResponse } from './aiActionRegistry';
 import {
   applyEditedFieldsToProposal,
   createPendingActionProposal,
@@ -44,6 +44,7 @@ import {
 } from './aiActionPermissions';
 import {
   classifyAndSummarizeDocumentText,
+  extractCultureAndSensitivityFindings,
   extractMultiplePrescriptionItemsFromText,
   uploadMedicalDocumentToStorage,
   validateMedicalUploadFile,
@@ -576,6 +577,86 @@ export async function runAllAiActionEngineTests(): Promise<TestCaseResult[]> {
     assert(
       (legacyProfile.chronicConditions || []).length === 2,
       'normalizeProfile must hydrate chronicConditions from legacy CHRONIC: notes'
+    );
+  });
+
+  // SCENARIO 18: Verify Egyptian Colloquial NLU, AI [[ACTION_CALL: ...]] parser, and Culture S/R + Renal/Pediatric Clinical Guards
+  await runScenario(18, 'Verify Egyptian Colloquial NLU, [[ACTION_CALL]] parser, and Culture (S/R) + Renal/Pediatric clinical checks', () => {
+    const egAllergy = detectPatientActionIntent('يا دكتور اكتبلي حساسية بنسلين في ملفي', 'ar');
+    assert(
+      egAllergy.matched && egAllergy.actionType === 'add_allergy',
+      'Egyptian colloquial add_allergy phrase must match'
+    );
+
+    const toolExtracted = extractAiToolCallFromResponse(
+      'ألف سلامة عليك يا بطل! هسجلك الضغط العالي في ملفك حالاً.\n[[ACTION_CALL: {"actionType":"add_chronic_condition","args":{"conditionName":"ضغط الدم المرتفع"}}]]'
+    );
+    assert(
+      Boolean(toolExtracted.detectedIntent?.matched && toolExtracted.detectedIntent?.actionType === 'add_chronic_condition'),
+      'extractAiToolCallFromResponse must parse [[ACTION_CALL: ...]] and build validated proposal intent'
+    );
+    assert(
+      !toolExtracted.cleanReplyText.includes('ACTION_CALL'),
+      'extractAiToolCallFromResponse must strip [[ACTION_CALL: ...]] tag from cleanReplyText'
+    );
+
+    const cultureSample = `Urine Culture & Sensitivity Report
+Isolated Organism: E. coli
+Amoxicillin/Clavulanate : Resistant (R)
+Ciprofloxacin : Resistant (R)
+Nitrofurantoin : Sensitive (S)
+Fosfomycin : Sensitive (S)`;
+    const cultureParsed = extractCultureAndSensitivityFindings(cultureSample);
+    assert(
+      cultureParsed.isCultureReport &&
+        cultureParsed.sensitiveAntibiotics.length >= 2 &&
+        cultureParsed.resistantAntibiotics.length >= 2,
+      'Must extract Sensitive (S) and Resistant (R) antibiotics from Culture report'
+    );
+
+    const docMeta = classifyAndSummarizeDocumentText(cultureSample, 'urine_culture.jpg');
+    const profileWithCulture = {
+      ...profile,
+      ageYears: 8,
+      weightKg: '25',
+      renalStatus: 'impaired' as const,
+      medicalDocuments: [
+        {
+          id: 'doc-culture-1',
+          title: docMeta.titleAr,
+          category: 'lab_report' as const,
+          fileName: 'urine_culture.jpg',
+          mimeType: 'image/jpeg',
+          fileSize: 12000,
+          extractedSummary: docMeta.summaryAr,
+          extractedFields: docMeta.extractedFields,
+          unreadableFields: [],
+          verifiedByPatient: true,
+          uploadedAt: new Date().toISOString(),
+        },
+      ],
+    };
+
+    const resistantCheck = createPendingActionProposal({
+      actionType: 'add_medication',
+      args: {
+        drugName: 'Ciprofloxacin',
+        prescribedDose: '250 mg',
+        status: 'active',
+        source: 'patient_chat',
+      },
+      profile: profileWithCulture,
+      schedules,
+      prescriptions,
+    });
+    assert(
+      resistantCheck.safetyPreview.status === 'urgent' &&
+        resistantCheck.safetyPreview.detailsAr.some((d) => d.includes('Resistant - R')),
+      'Must flag Urgent alert when medication is Resistant (R) in patient Culture & Sensitivity report'
+    );
+    assert(
+      resistantCheck.safetyPreview.detailsAr.some((d) => d.includes('25 كجم')),
+      'Must include Pediatric Weight-Based (mg/kg) check when patient age <= 12'
     );
   });
 

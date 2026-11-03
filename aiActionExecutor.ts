@@ -201,6 +201,55 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
       if (!detailsAr.includes(lineAr)) detailsAr.push(lineAr);
       if (!detailsEn.includes(lineEn)) detailsEn.push(lineEn);
     }
+
+    // Clinical Upgrade 1: Culture & Sensitivity (S/R) Cross-Check against saved lab reports
+    const lowerDrug = drugName.trim().toLowerCase();
+    for (const doc of profile.medicalDocuments || []) {
+      const resR = (doc.extractedFields?.cultureResistantR || '').toLowerCase();
+      const sensS = (doc.extractedFields?.cultureSensitiveS || '').toLowerCase();
+      const org = doc.extractedFields?.cultureOrganism || 'الميكروب';
+      if (resR && lowerDrug.length >= 3 && resR.includes(lowerDrug)) {
+        status = 'urgent';
+        const rAr = `🚨 تنبيه مزرعة بكتيريا (${doc.title}): الدوا ده (${drugName}) طالع مقاوم (Resistant - R) لـ (${org}) في تحليل المزرعة بتاعك ومش هيجيب نتيجة! راجع الدكتور فوراً لاختيار بديل حساس (S).`;
+        const rEn = `🚨 Culture Alert (${doc.title}): (${drugName}) is listed as Resistant (R) against (${org}) in your lab report. Consult your doctor for a Sensitive (S) alternative.`;
+        if (!detailsAr.includes(rAr)) detailsAr.push(rAr);
+        if (!detailsEn.includes(rEn)) detailsEn.push(rEn);
+      } else if (sensS && lowerDrug.length >= 3 && sensS.includes(lowerDrug)) {
+        const sAr = `✅ مطابق لتحليل المزرعة (${doc.title}): الدوا ده (${drugName}) طالع حساس وفعال (Sensitive - S) ضد (${org}).`;
+        const sEn = `✅ Matches Culture Report (${doc.title}): (${drugName}) is listed as Sensitive (S) against (${org}).`;
+        if (!detailsAr.includes(sAr)) detailsAr.push(sAr);
+        if (!detailsEn.includes(sEn)) detailsEn.push(sEn);
+      }
+    }
+
+    // Clinical Upgrade 2: Renal Impairment / High Creatinine Dose Guard
+    const hasHighCreatinine = (profile.medicalDocuments || []).some((doc) => {
+      const val = parseFloat(doc.extractedFields?.serumCreatinine || '');
+      return !isNaN(val) && val > 1.4;
+    });
+    if (profile.renalStatus === 'impaired' || hasHighCreatinine) {
+      if (status === 'safe') status = 'warning';
+      const renAr = `⚠️ تنبيه كلى هام: بما إن وظائف الكلى متأثرة (أو الكرياتينين عالي)، لازم الدكتور أو الصيدلي يظبط جرعة (${drugName}) وفتراته حسب معدل فلترة الكلى (CrCl) ويتجنب المسكنات التقيلة على الكلى.`;
+      const renEn = `⚠️ Renal Dose Guard: Due to impaired renal function / elevated creatinine, verify renal dose adjustment (CrCl) for (${drugName}) with your doctor or pharmacist.`;
+      if (!detailsAr.includes(renAr)) detailsAr.push(renAr);
+      if (!detailsEn.includes(renEn)) detailsEn.push(renEn);
+    }
+
+    // Clinical Upgrade 3: Pediatric Weight-Based (mg/kg) Dose Guard
+    if (profile.ageYears !== null && profile.ageYears <= 12) {
+      if (profile.weightKg && profile.weightKg > 0) {
+        const pedAr = `👶 مراجعة جرعة الأطفال بالوزن (${profile.weightKg} كجم): في الأطفال الجرعة بتتحسب بالمجم لكل كجم (mg/kg/day) — اتأكد مع الصيدلي إن الجرعة دي (${doseText || 'الموصوفة'}) مظبوطة على وزن ${profile.weightKg} كجم.`;
+        const pedEn = `👶 Pediatric Weight Check (${profile.weightKg} kg): Pediatric doses are calculated in mg/kg/day — verify with your pharmacist that (${doseText || 'the prescribed dose'}) matches ${profile.weightKg} kg.`;
+        if (!detailsAr.includes(pedAr)) detailsAr.push(pedAr);
+        if (!detailsEn.includes(pedEn)) detailsEn.push(pedEn);
+      } else {
+        if (status === 'safe') status = 'caution';
+        const noWAr = `👶 تنبيه: سن المريض طفل (${profile.ageYears} سنة) والوزن مش متسجل في الملف الصحي. سجل الوزن بالكيلوجرام عشان نراجع أمان جرعات الشراب بدقة.`;
+        const noWEn = `👶 Pediatric Note: Patient age is ${profile.ageYears} yrs but weight (kg) is not recorded. Add weight in kg for accurate pediatric dose checks.`;
+        if (!detailsAr.includes(noWAr)) detailsAr.push(noWAr);
+        if (!detailsEn.includes(noWEn)) detailsEn.push(noWEn);
+      }
+    }
   };
 
   if (actionType === 'add_medication') {
@@ -742,7 +791,39 @@ export function buildActionPreviewFields<K extends AiActionType>(
           ],
         },
       ];
-      if (rx) {
+      if (a.extractedFields?.cultureOrganism || a.extractedFields?.cultureSensitiveS || a.extractedFields?.cultureResistantR) {
+        if (a.extractedFields.cultureOrganism) {
+          fields.push({
+            key: 'cultureOrganism',
+            labelAr: 'الميكروب في المزرعة (Organism)',
+            labelEn: 'Isolated Organism',
+            value: a.extractedFields.cultureOrganism,
+            editable: true,
+            inputType: 'text',
+          });
+        }
+        if (a.extractedFields.cultureSensitiveS) {
+          fields.push({
+            key: 'cultureSensitiveS',
+            labelAr: 'المضادات الفعالة الحساسة (Sensitive - S) ✅',
+            labelEn: 'Sensitive Antibiotics (S) ✅',
+            value: a.extractedFields.cultureSensitiveS,
+            editable: true,
+            inputType: 'text',
+          });
+        }
+        if (a.extractedFields.cultureResistantR) {
+          fields.push({
+            key: 'cultureResistantR',
+            labelAr: 'المضادات المقاومة غير الفعالة (Resistant - R) ⛔',
+            labelEn: 'Resistant Antibiotics (R) ⛔',
+            value: a.extractedFields.cultureResistantR,
+            editable: true,
+            inputType: 'text',
+          });
+        }
+      }
+      if (rx && (rx.medicineName || a.category === 'prescription')) {
         fields.push(
           {
             key: 'medicineName',
