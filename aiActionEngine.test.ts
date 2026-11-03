@@ -32,6 +32,8 @@ import {
 } from './allergyData';
 import { TreatmentSchedule, SavedPrescription } from './trackerData';
 import { detectPatientActionIntent, extractAiToolCallFromResponse } from './aiActionRegistry';
+import { generateContextualSiteReply, getSeedMedicinesFallback, EnhancedChatUiMessage } from './aiConversationContext';
+import { buildPassages, respond } from './assistantLogic';
 import {
   applyEditedFieldsToProposal,
   createPendingActionProposal,
@@ -661,6 +663,71 @@ Fosfomycin : Sensitive (S)`;
     assert(
       resistantCheck.safetyPreview.detailsAr.some((d) => d.includes('25 كجم')),
       'Must include Pediatric Weight-Based (mg/kg) check when patient age <= 12'
+    );
+  });
+
+  // SCENARIO 19: Verify Instant Multi-Turn Conversational Memory ("ودني بتوجعني" -> "طب إيه أحسن وبكام؟" -> "طب جرعته إيه؟")
+  await runScenario(19, 'Verify instant multi-turn conversational continuity across site medicine data', () => {
+    const seedMeds = getSeedMedicinesFallback();
+    const passages = buildPassages(seedMeds);
+    const turn1Q = 'ودني بتوجعني وعايز حاجة';
+    const turn1Local = respond(passages, seedMeds, turn1Q);
+    const turn1Res = generateContextualSiteReply({
+      userText: turn1Q,
+      msgs: [],
+      meds: seedMeds,
+      profile,
+      lang: 'ar',
+      localReply: turn1Local,
+    });
+    assert(
+      turn1Res.handledFast && turn1Res.topicMemory.lastCondition === 'ear',
+      'Turn 1 must immediately recognize ear pain condition and respond in Egyptian Arabic'
+    );
+
+    const historyAfterTurn1: EnhancedChatUiMessage[] = [
+      { id: 'u1', who: 'me', text: turn1Q },
+      { id: 'b1', who: 'bot', text: turn1Res.replyText, links: turn1Res.links },
+    ];
+
+    const turn2Q = 'طب إيه أحسن واحد فيهم وبكام سعره في الصيدلية؟';
+    const turn2Local = respond(passages, seedMeds, turn2Q);
+    const turn2Res = generateContextualSiteReply({
+      userText: turn2Q,
+      msgs: historyAfterTurn1,
+      meds: seedMeds,
+      profile,
+      lang: 'ar',
+      localReply: turn2Local,
+    });
+    assert(
+      turn2Res.handledFast &&
+        turn2Res.replyText.includes('أوجمنتين') &&
+        turn2Res.replyText.includes('الأسعار التقريبية في مصر'),
+      'Turn 2 follow-up ("طب إيه أحسن وبكام؟") must remember the ear infection topic and compare medicines + prices from site data'
+    );
+
+    const historyAfterTurn2: EnhancedChatUiMessage[] = [
+      ...historyAfterTurn1,
+      { id: 'u2', who: 'me', text: turn2Q },
+      { id: 'b2', who: 'bot', text: turn2Res.replyText, links: turn2Res.links },
+    ];
+
+    const turn3Q = 'طب جرعته إيه كل كام ساعة وآخد معاه مسكن إيه للوجع؟';
+    const turn3Local = respond(passages, seedMeds, turn3Q);
+    const turn3Res = generateContextualSiteReply({
+      userText: turn3Q,
+      msgs: historyAfterTurn2,
+      meds: seedMeds,
+      profile,
+      lang: 'ar',
+      localReply: turn3Local,
+    });
+    assert(
+      turn3Res.handledFast &&
+        turn3Res.replyText.includes('الجرعات المعتادة') &&
+        turn3Res.replyText.includes('باراسيتامول'),
+      'Turn 3 follow-up ("طب جرعته إيه وآخد معاه مسكن إيه؟") must answer dosing and pain relief for the remembered ear medications'
     );
   });
 

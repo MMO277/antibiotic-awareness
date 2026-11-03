@@ -185,9 +185,11 @@ export async function askGemini(
   );
 
   if (key && key.startsWith('AIza')) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
-      const recentHistory = history.slice(-6);
+      const recentHistory = history.slice(-10);
       const contents = [
         ...recentHistory.map((m) => ({
           role: m.who === 'me' ? 'user' : 'model',
@@ -205,12 +207,14 @@ export async function askGemini(
           'Content-Type': 'application/json',
           'x-goog-api-key': key,
         },
+        signal: controller.signal,
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: dynamicSystemPrompt }] },
           contents,
           generationConfig: { temperature: 0.25, maxOutputTokens: 700 },
         }),
       });
+      clearTimeout(timer);
 
       if (response.ok) {
         const data = await response.json();
@@ -218,34 +222,44 @@ export async function askGemini(
         if (reply) return cleanAssistantMarkdown(reply);
       }
     } catch {
+      clearTimeout(timer);
       /* fallback to keyless endpoint */
     }
   }
 
   const messages = [
     { role: 'system', content: dynamicSystemPrompt },
-    ...history.slice(-6).map((m) => ({
+    ...history.slice(-10).map((m) => ({
       role: m.who === 'me' ? 'user' : 'assistant',
       content: m.text,
     })),
     { role: 'user', content: question },
   ];
 
-  const res = await fetch('https://text.pollinations.ai/openai', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'openai',
-      messages,
-      temperature: 0.25,
-    }),
-  });
+  const pollController = new AbortController();
+  const pollTimer = setTimeout(() => pollController.abort(), 4500);
+  try {
+    const res = await fetch('https://text.pollinations.ai/openai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: pollController.signal,
+      body: JSON.stringify({
+        model: 'openai',
+        messages,
+        temperature: 0.25,
+      }),
+    });
+    clearTimeout(pollTimer);
 
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const json = await res.json();
-  const text = json?.choices?.[0]?.message?.content;
-  if (!text) throw new Error('EMPTY_RESPONSE');
-  return cleanAssistantMarkdown(text);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    const text = json?.choices?.[0]?.message?.content;
+    if (!text) throw new Error('EMPTY_RESPONSE');
+    return cleanAssistantMarkdown(text);
+  } catch (err) {
+    clearTimeout(pollTimer);
+    throw err;
+  }
 }
 
 export interface VisionAnalysisResult {

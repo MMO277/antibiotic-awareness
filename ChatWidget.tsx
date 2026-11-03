@@ -14,7 +14,7 @@ import {
   extractAnswerPlainText,
   isDirectVerifiedMatch,
 } from './assistantLogic';
-import { askGemini, ChatMessage, cleanAssistantMarkdown } from './geminiApi';
+import { askGemini, ChatMessage, cleanAssistantMarkdown, isCustomApiKey } from './geminiApi';
 import {
   isVoiceRecognitionSupported,
   speakText,
@@ -41,6 +41,7 @@ import {
 import {
   buildPermittedPatientContextPrompt,
   EnhancedChatUiMessage,
+  generateContextualSiteReply,
   getSmartAssistantActionChips,
   toEgyptianColloquial,
   useSyncedAiConversation,
@@ -290,15 +291,43 @@ export default function ChatWidget() {
       return;
     }
 
-    // Extract any medicine links from local database so we can attach them to the Egyptian AI reply
+    // 2.5) Run Instant Multi-Turn Contextual Engine (<10ms) across site data & conversation history
+    const contextualResult = generateContextualSiteReply({
+      userText: text,
+      msgs,
+      meds,
+      profile,
+      lang,
+      localReply,
+    });
+
     const matchedLinks =
-      localReply.kind === 'text' && localReply.links
-        ? localReply.links
-        : localReply.kind === 'answer'
-          ? localReply.hits
-              .filter((h) => Boolean(h.link))
-              .map((h) => ({ to: h.link || '/', label: h.title }))
-          : undefined;
+      contextualResult.links && contextualResult.links.length > 0
+        ? contextualResult.links
+        : localReply.kind === 'text' && localReply.links
+          ? localReply.links
+          : localReply.kind === 'answer'
+            ? localReply.hits
+                .filter((h) => Boolean(h.link))
+                .map((h) => ({ to: h.link || '/', label: h.title }))
+            : undefined;
+
+    // If our contextual engine matched a medical condition, medicine, or follow-up question from site data,
+    // reply IMMEDIATELY (<10ms) unless the user configured a custom Gemini API key!
+    if (contextualResult.handledFast && !isCustomApiKey()) {
+      const fastMsg: EnhancedChatUiMessage = {
+        id: `msg-${Date.now()}-fast`,
+        who: 'bot',
+        text: contextualResult.replyText,
+        date,
+        isAi: true,
+        ...(matchedLinks && matchedLinks.length > 0 ? { links: matchedLinks } : {}),
+      };
+      setMsgs((m) => [...m, fastMsg]);
+      setLoading(false);
+      if (speakReply) speakText(contextualResult.replyText, lang);
+      return;
+    }
 
     // 3) Call Conversational AI (speaks Egyptian Colloquial Arabic + can emit [[ACTION_CALL: ...]] for any free-form request!)
     try {
@@ -312,6 +341,7 @@ export default function ChatWidget() {
         prescriptions,
         lang,
         localVerifiedReply: isDirectVerifiedMatch(localReply) ? localReply : null,
+        topicMemory: contextualResult.topicMemory,
       });
       const enrichedQuestion = patientContext ? `${text}\n\n${patientContext}` : text;
 
@@ -343,8 +373,10 @@ export default function ChatWidget() {
       console.warn('AI fallback in widget:', err);
     }
 
-    // 4) Offline Fallback (converted to Egyptian Colloquial Arabic when lang === 'ar')
-    const fallbackPlain = extractAnswerPlainText({ who: 'bot', reply: localReply }, lang);
+    // 4) Offline Fallback (uses contextualResult if available, or converts localReply to Egyptian Colloquial Arabic)
+    const fallbackPlain = contextualResult.handledFast
+      ? contextualResult.replyText
+      : extractAnswerPlainText({ who: 'bot', reply: localReply }, lang);
     const colloquialFallback = isAr ? toEgyptianColloquial(fallbackPlain) : fallbackPlain;
     const botMsg: EnhancedChatUiMessage = {
       id: `msg-${Date.now()}-fallback`,
