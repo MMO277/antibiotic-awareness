@@ -3,6 +3,7 @@ import { doc, getDoc, onSnapshot, runTransaction, serverTimestamp, setDoc } from
 import { auth, db, configured } from './firebase';
 import { useAuth } from './authContext';
 import { AllergyRecord, checkDrugAllergySafety } from './allergyData';
+import { syncNativeAlarmsWithSchedules } from './nativeAlarmService';
 
 export type DoseStatus = 'upcoming' | 'taken' | 'missed' | 'unconfirmed';
 
@@ -1434,6 +1435,11 @@ export function saveSchedules(schedules: TreatmentSchedule[], uid?: string | nul
     window.dispatchEvent(
       new CustomEvent(SCHEDULES_EVENT, { detail: { uid: effectiveUid, schedules: clean } })
     );
+    try {
+      syncNativeAlarmsWithSchedules(clean);
+    } catch {
+      // Safe non-blocking sync
+    }
   } catch (err) {
     console.error('Failed to save treatment schedules locally:', err);
   }

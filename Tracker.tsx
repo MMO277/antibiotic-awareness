@@ -11,6 +11,7 @@ import {
   PrescriptionOcrExtractionResult,
 } from './geminiApi';
 import { pick } from './types';
+import { triggerTestAlarm } from './nativeAlarmService';
 import {
   TreatmentSchedule,
   ScheduledDose,
@@ -976,7 +977,19 @@ export default function Tracker() {
                     className="btn-secondary small"
                     onClick={() => downloadScheduleIcs(sch, isAr)}
                   >
-                    📅 {isAr ? 'منبهات الموبايل (.ics)' : 'Phone Alarms (.ics)'}
+                    📅 {isAr ? 'منبهات (.ics)' : 'Alarms (.ics)'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary small"
+                    style={{ background: '#f0fdf4', borderColor: '#16a34a', color: '#15803d', fontWeight: 600 }}
+                    onClick={async () => {
+                      const res = await triggerTestAlarm(isAr);
+                      alert(res.message);
+                    }}
+                    title={isAr ? 'تجربة رنين المنبه بعد 5 ثواني' : 'Test alarm sound in 5s'}
+                  >
+                    🔔 {isAr ? 'تجربة رنين المنبه' : 'Test Alarm'}
                   </button>
                   <button type="button" className="btn-secondary" onClick={() => openEdit(sch)}>
                     ✏️ {isAr ? 'تعديل' : 'Edit'}
