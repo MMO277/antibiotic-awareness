@@ -615,24 +615,25 @@ Fosfomycin : Sensitive (S)`;
     );
 
     const docMeta = classifyAndSummarizeDocumentText(cultureSample, 'urine_culture.jpg');
-    const profileWithCulture = {
+    const profileWithCulture: UserHealthProfile = {
       ...profile,
-      ageYears: 8,
+      age: '8',
       weightKg: '25',
-      renalStatus: 'impaired' as const,
+      renalStatus: 'impaired',
       medicalDocuments: [
         {
           id: 'doc-culture-1',
           title: docMeta.titleAr,
-          category: 'lab_report' as const,
+          category: 'lab_report',
           fileName: 'urine_culture.jpg',
           mimeType: 'image/jpeg',
           fileSize: 12000,
           extractedSummary: docMeta.summaryAr,
           extractedFields: docMeta.extractedFields,
           unreadableFields: [],
-          verifiedByPatient: true,
-          uploadedAt: new Date().toISOString(),
+          verificationStatus: 'patient_confirmed',
+          source: 'patient_upload',
+          createdAt: new Date().toISOString(),
         },
       ],
     };
@@ -642,7 +643,10 @@ Fosfomycin : Sensitive (S)`;
       args: {
         drugName: 'Ciprofloxacin',
         prescribedDose: '250 mg',
+        route: 'oral',
+        frequency: 'twice_daily',
         status: 'active',
+        evidenceStatus: 'patient_reported',
         source: 'patient_chat',
       },
       profile: profileWithCulture,

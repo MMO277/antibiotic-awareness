@@ -236,16 +236,18 @@ export function evaluateActionSafetyPreview<K extends AiActionType>(
     }
 
     // Clinical Upgrade 3: Pediatric Weight-Based (mg/kg) Dose Guard
-    if (profile.ageYears !== null && profile.ageYears <= 12) {
-      if (profile.weightKg && profile.weightKg > 0) {
+    const parsedAgeYears = parseFloat(profile.age || '');
+    const parsedWeightKg = parseFloat(profile.weightKg || '');
+    if (!isNaN(parsedAgeYears) && parsedAgeYears > 0 && parsedAgeYears <= 12) {
+      if (!isNaN(parsedWeightKg) && parsedWeightKg > 0) {
         const pedAr = `👶 مراجعة جرعة الأطفال بالوزن (${profile.weightKg} كجم): في الأطفال الجرعة بتتحسب بالمجم لكل كجم (mg/kg/day) — اتأكد مع الصيدلي إن الجرعة دي (${doseText || 'الموصوفة'}) مظبوطة على وزن ${profile.weightKg} كجم.`;
         const pedEn = `👶 Pediatric Weight Check (${profile.weightKg} kg): Pediatric doses are calculated in mg/kg/day — verify with your pharmacist that (${doseText || 'the prescribed dose'}) matches ${profile.weightKg} kg.`;
         if (!detailsAr.includes(pedAr)) detailsAr.push(pedAr);
         if (!detailsEn.includes(pedEn)) detailsEn.push(pedEn);
       } else {
         if (status === 'safe') status = 'caution';
-        const noWAr = `👶 تنبيه: سن المريض طفل (${profile.ageYears} سنة) والوزن مش متسجل في الملف الصحي. سجل الوزن بالكيلوجرام عشان نراجع أمان جرعات الشراب بدقة.`;
-        const noWEn = `👶 Pediatric Note: Patient age is ${profile.ageYears} yrs but weight (kg) is not recorded. Add weight in kg for accurate pediatric dose checks.`;
+        const noWAr = `👶 تنبيه: سن المريض طفل (${profile.age} سنة) والوزن مش متسجل في الملف الصحي. سجل الوزن بالكيلوجرام عشان نراجع أمان جرعات الشراب بدقة.`;
+        const noWEn = `👶 Pediatric Note: Patient age is ${profile.age} yrs but weight (kg) is not recorded. Add weight in kg for accurate pediatric dose checks.`;
         if (!detailsAr.includes(noWAr)) detailsAr.push(noWAr);
         if (!detailsEn.includes(noWEn)) detailsEn.push(noWEn);
       }
