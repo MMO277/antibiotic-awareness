@@ -347,7 +347,7 @@ function formatEgyptianBrandsForMed(medId: string): string {
   return prods
     .map(
       (p) =>
-        `• ${p.tradeNameAr} (${p.tradeNameEn}) — التركيز: ${p.strength} — السعر التقريبي: ${p.priceEgp} ج.م (${p.packUnitAr})`
+        `• ${p.tradeNameAr} (${p.tradeNameEn}) — التركيز: ${p.strength} — السعر التقريبي: ${p.priceEgp ?? 'غير محدد'} ج.م (${p.dosageFormLabel.ar})`
     )
     .join('\n');
 }
