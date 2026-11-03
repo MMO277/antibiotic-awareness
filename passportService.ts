@@ -6,25 +6,41 @@
 import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
-const CLOUD_NAME = 'gdcfiqr3';
-const UPLOAD_PRESET = 'passport_photos';
 
-/** رفع صورة لـ Cloudinary — مجاني 100% */
+/**
+ * تحويل الصورة لـ base64 مضغوطة وحفظها في Firestore مباشرة
+ * لا يحتاج أي سيرفر خارجي
+ */
 export async function uploadPassportPhoto(_uid: string, file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', UPLOAD_PRESET);
+  return new Promise((resolve, reject) => {
+    // ضغط الصورة أولاً عبر Canvas
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
 
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
-    { method: 'POST', body: formData }
-  );
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Cloudinary error: ${err}`);
-  }
-  const data = await res.json();
-  return data.secure_url as string;
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      const canvas = document.createElement('canvas');
+      const MAX = 400; // حد أقصى للعرض أو الارتفاع
+      let w = img.width;
+      let h = img.height;
+      if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } }
+      else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) { reject(new Error('Canvas not supported')); return; }
+      ctx.drawImage(img, 0, 0, w, h);
+      const base64 = canvas.toDataURL('image/jpeg', 0.75);
+      resolve(base64);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = objectUrl;
+  });
 }
 
 /** حفظ URL الصورة في Firestore */
