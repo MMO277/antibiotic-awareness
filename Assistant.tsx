@@ -38,11 +38,11 @@ import {
   validateMedicalUploadFile,
 } from './aiDocumentProcessor';
 import {
+  buildOpenEgyptianOfflineFallback,
   buildPermittedPatientContextPrompt,
   EnhancedChatUiMessage,
   generateContextualSiteReply,
   getSmartAssistantActionChips,
-  toEgyptianColloquial,
   useSyncedAiConversation,
 } from './aiConversationContext';
 import AiActionConfirmationCard from './AiActionConfirmationCard';
@@ -463,11 +463,10 @@ export default function Assistant() {
       console.warn('AI fallback to local reply:', err);
     }
 
-    // 4) Offline Fallback (uses contextualResult if available, or converts localReply to Egyptian Colloquial Arabic)
-    const fallbackPlain = contextualResult.handledFast
+    // 4) Offline Fallback (uses contextualResult if available, or open-domain Egyptian fallback — NEVER antibiotic-only R.NONE!)
+    const colloquialFallback = contextualResult.handledFast
       ? contextualResult.replyText
-      : extractAnswerPlainText({ who: 'bot', reply: localReply }, lang);
-    const colloquialFallback = isAr ? toEgyptianColloquial(fallbackPlain) : fallbackPlain;
+      : buildOpenEgyptianOfflineFallback(text, lang);
     const botMsg: EnhancedChatUiMessage = {
       id: `msg-${Date.now()}-fallback`,
       who: 'bot',

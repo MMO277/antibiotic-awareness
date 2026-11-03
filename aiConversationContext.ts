@@ -2,8 +2,8 @@
  * aiConversationContext.ts
  *
  * Shared Conversation State, Multi-Turn Topic & Medicine Memory Engine,
- * Instant Egyptian Colloquial Medical Synthesizer (<10ms response time),
- * and Clinical Grounding for `ChatWidget.tsx` and `Assistant.tsx`.
+ * Instant Egyptian Colloquial Medical & Everyday Health Synthesizer (<10ms response time),
+ * and Open General-Topic Grounding for `ChatWidget.tsx` and `Assistant.tsx`.
  */
 
 import { useEffect, useState, useCallback } from 'react';
@@ -40,8 +40,22 @@ export interface EnhancedChatUiMessage extends ChatUiMessage {
   links?: ReplyLink[];
 }
 
+export type GeneralHealthTopicKey =
+  | 'headache'
+  | 'gi_pain'
+  | 'acidity'
+  | 'cold_flu'
+  | 'fever'
+  | 'diarrhea_constipation'
+  | 'vitamins_fatigue'
+  | 'muscle_joint'
+  | 'allergy_skin'
+  | 'bp_diabetes'
+  | 'sleep_anxiety';
+
 export interface ConversationTopicMemory {
   lastCondition: ConditionKind | null;
+  lastGeneralTopic: GeneralHealthTopicKey | null;
   lastMedicines: Medicine[];
   lastPersonalKind: PKind | null;
   recentUserQuestions: string[];
@@ -166,12 +180,12 @@ const CONDITION_NAMES_AR: Record<ConditionKind, string> = {
 
 const CONDITION_PAIN_AND_CARE_AR: Record<ConditionKind, string> = {
   ear: '• لتسكين وجع الودن فوراً: تقدر تاخد مسكن آمن زي «باراسيتامول» (بنادول / سيتال) أو «إيبوبروفين» (بروفين بعد الأكل لو مفيش تعب في المعدة أو الكلى)، مع عمل كمادات دافية على الودن من بره.\n• تنبيه مهم جداً: أوعى تحط أي نقط في ودنك أو زيت قبل ما دكتور أنف وأذن يبص بمنظار الأذن ويتأكد إن طبلة الودن سليمة ومفيش فيها ثقب.',
-  dental: '• لتسكين وجع الضرس المؤقت: مسكن «باراسيتامول» أو مضاد التهاب زي «إيبوبروفين / بروفين» (بعد الأكل وبشرط سلامة المعدة والكلى) مع مضمضة بمية دافية وملح.\n• خلي بالك: المضاد الحيوي مش مسكن ومش بيسكن عصب الضرس لوحده؛ لازم دكتور الأسنان يفتح الضرس أو ينضف الخراج.',
-  throat: '• لتهدئة وجع الزور واللوز: اشرب سوائل دافية، غرغرة بمية دافية وملح، استحلاب للحلق، ومسكن وخافض حرارة زي «باراسيتامول».',
-  uti: '• لتهدئة حرقان البول: اشرب مية كتير جداً (2 لـ 3 لتر في اليوم) عشان تغسل المثانة أول بأول، وممكن فوار مطهر للمسالك بعد مراجعة الصيدلي، ويفضل عمل تحليل بول أو مزرعة قبل المضاد.',
-  skin: '• للعناية بالدمامل أو التهاب الجلد: كمادات دافية نضيفة، غسول مطهر موضعي، وعدم عصر الدمل بإيدك أبداً عشان العدوى متنتشرش.',
+  dental: '• لتسكين وجع الضرس المؤقت: مسكن «باراسيتامول» أو مضاد التهاب زي «إيبوبروفين / بروفين» أو «كتافلام» (بعد الأكل وبشرط سلامة المعدة والكلى) مع مضمضة بمية دافية وملح.\n• خلي بالك: المضاد الحيوي مش مسكن ومش بيسكن عصب الضرس لوحده؛ لازم دكتور الأسنان يفتح الضرس أو ينضف الخراج.',
+  throat: '• لتهدئة وجع الزور واللوز: اشرب سوائل دافية، غرغرة بمية دافية وملح، استحلاب للحلق (زي ستربسلز أو زورا سي)، ومسكن وخافض حرارة زي «باراسيتامول».',
+  uti: '• لتهدئة حرقان البول: اشرب مية كتير جداً (2 لـ 3 لتر في اليوم) عشان تغسل المثانة أول بأول، وممكن فوار مطهر للمسالك (زي يوريفين أو بروكسيمول) بعد مراجعة الصيدلي، ويفضل عمل تحليل بول أو مزرعة قبل المضاد.',
+  skin: '• للعناية بالدمامل أو التهاب الجلد: كمادات دافية نضيفة، غسول مطهر موضعي (بيتادين)، ودهان مضاد حيوي موضعي زي «فيوسيدين»، وعدم عصر الدمل بإيدك أبداً.',
   sinus: '• لتخفيف صداع وضغط الجيوب الأنفية: غسيل الأنف بمحلول ملحي (بخاخ ماء بحر) واستنشاق بخار مية دافية مع مسكن «باراسيتامول».',
-  chest: '• لتهدئة الكحة والبلغم: سوائل دافية كتير (ينسون، تليو، جنزبيل بعسل)، ومذيب بلغم مناسب لو الكحة ببلغم بعد استشارة الصيدلي.',
+  chest: '• لتهدئة الكحة والبلغم: سوائل دافية كتير (ينسون، تليو، ورق جوافة)، ومذيب بلغم مناسب لو الكحة ببلغم (زي ألتراسولف أو ميوكوسول) بعد استشارة الصيدلي.',
   stomach: '• لراحة المعدة مع العلاج: ابعد عن المسبكات والقهوة والشطة والمسكنات التقيلة على المعدة، والتزم بدواء الحموضة قبل الأكل بنص ساعة.',
 };
 
@@ -187,30 +201,342 @@ const CONDITION_BEST_COMPARISON_AR: Record<ConditionKind, string> = {
 };
 
 /**
- * Scans the conversation history from newest to oldest to extract the active medical topic,
- * condition, and medications so follow-up questions ("طب إيه أحسن؟", "بكام؟", "جرعته إيه؟")
- * work seamlessly across turns.
+ * Comprehensive Non-Antibiotic General Health & Everyday Medicine Knowledge Base (in Egyptian Colloquial Arabic)
+ * so the assistant answers general medical questions (painkillers, stomach, cold, fever, vitamins, BP, etc.)
+ * IMMEDIATELY (<10ms) and supports full multi-turn follow-up ("طب إيه أحسن؟", "بكام؟", "جرعته إيه؟")!
  */
+interface GeneralTopicGuide {
+  titleAr: string;
+  initialReplyAr: string;
+  bestComparisonAr: string;
+  dosingAr: string;
+  pricesAndBrandsAr: string;
+  sideEffectsAndSafetyAr: string;
+}
+
+const GENERAL_HEALTH_GUIDES: Record<GeneralHealthTopicKey, GeneralTopicGuide> = {
+  headache: {
+    titleAr: 'الصداع ووجع الدماغ',
+    initialReplyAr:
+      'ألف سلامة عليك من الصداع! بص يا سيدي، عشان الصداع يفك معاك بسرعة وبأمان:\n\n' +
+      '1. الخيار الأول والآمن جداً على المعدة: «باراسيتامول» زي (بنادول الأزرق، بنادول إكسترا، سيتال، أو أبيمول 500 مجم).\n' +
+      '2. لو الصداع تقيل أو نصفي: ممكن «بروفين 400 مجم» أو «باي-ألكوفان» أو «كتافلام 50 مجم» بس لازم يتاخد بعد الأكل وميكونش عندك قرحة معدة أو حساسية صدر أو تعب في الكلى.\n' +
+      '3. نصايح مهمة فوراً: اشرب كوبايتين مية كبار (لأن قلة المية أشهر سبب للصداع)، ريح عينك من الموبايل، ولو الصداع ماسك في قفاك أو معاه زغللة قيس الضغط الأول عشان نتطمن!\n\n' +
+      '💬 تحب أقولك أنهي أحسن مسكن فيهم لحالتك، ولا تحب تعرف جرعاتهم وأسعارهم في الصيدلية؟',
+    bestComparisonAr:
+      '1. الأحسن والأأمن لمعظم الناس (خصوصاً لو معدتك حساسة أو ضغطك عالي أو حامل): هو «بنادول العادي (الأزرق) أو سيتال» لأنه مبيتعبش المعدة ولا بيرفع الضغط.\n' +
+      '2. الأحسن للصداع اللي معاه إرهاق أو محتاج تركيز: «بنادول إكسترا (الأحمر)» لأن فيه كافيين بيزود مفعول المسكن (بس بلاش لو ضغطك عالي أو قبل النوم).\n' +
+      '3. الأقوى للصداع الشديد أو النصفي: «باي-ألكوفان» أو «بروفين 400»، بس لازم بعد الأكل وممنوع لمرضى الكلى وقرحة المعدة.',
+    dosingAr:
+      '• بنادول / سيتال / أبيمول (500 مجم): قرص لـ قرصين كل 6 أو 8 ساعات (بحد أقصى 8 أقراص يعني 4000 مجم في اليوم).\n' +
+      '• بروفين 400 مجم أو باي-ألكوفان: قرص واحد بعد الأكل كل 8 إلى 12 ساعة عند اللزوم فقط.',
+    pricesAndBrandsAr:
+      '• سيتال 500 مجم أو أبيمول: حوالي 20 لـ 30 ج.م للعلبة.\n' +
+      '• بنادول أدفانس (الأزرق) / بنادول إكسترا (الأحمر): حوالي 45 لـ 65 ج.م.\n' +
+      '• بروفين 400 مجم أو باي-ألكوفان: حوالي 40 لـ 55 ج.م للعلبة.',
+    sideEffectsAndSafetyAr:
+      '• الباراسيتامول (بنادول/سيتال): آمن جداً بالحمل والرضاعة وبالجرعات العادية، بس كتره فوق الحد الأقصى بيأثر على الكبد.\n' +
+      '• المسكنات التانية (بروفين/كتافلام/باي-ألكوفان): كترها على معدة فاضية بيتعب جدار المعدة وبيأثر على الكلى ويرفع الضغط، فخدها بس عند اللزوم وبعد الأكل.',
+  },
+  gi_pain: {
+    titleAr: 'المغص والقولون والانتفاخ',
+    initialReplyAr:
+      'ألف سلامة على بطنك! بص يا سيدي، علاج المغص وتعب البطن بيعتمد على طبيعة الوجع:\n\n' +
+      '1. لو مغص وتقلصات في البطن: أحسن حاجة مضاد للتقلصات زي «فيسرالجين (Visceralgine)» أو «بوسكوبان (Buscopan)» أو «سبازموفري».\n' +
+      '2. لو قولون عصبي ومغص مع انتفاخ وتوتر: «كولوفيرين (Coloverin A أو D)» أو «كولونا (Colona)» قبل الأكل بثلث ساعة بيهدي حركة القولون جداً.\n' +
+      '3. لو انتفاخ وغازات كاتمة على نفسك: «ديسفلاتيل (Disflatyl)» قرصين مضغ بعد الأكل أو «أوكاربون (Eucarbon)».\n' +
+      '4. مشروب دافي يريحك حالاً: كوباية نعناع دافي أو ينسون بـ كمون من غير سكر كتير.\n\n' +
+      '⚠️ خلي بالك: لو الوجع شديد جداً في الجنب اليمين من تحت مع سخونية وغممان نفس، لازم دكتور يكشف فوراً عشان نطمن على الزايدة.\n' +
+      '💬 قولي، الوجع عندك مغص بس ولا معاه انتفاخ أو قولون عشان أقولك أحسن واحد فيهم وجرعته؟',
+    bestComparisonAr:
+      '1. الأحسن للمغص المفاجئ والتقلصات: «فيسرالجين أقراص أو شراب» أو «سبازموفري» لأنهم بيفكوا تقلص العضلات الملساء في البطن بسرعة.\n' +
+      '2. الأحسن للقولون العصبي اللي بيجي مع الزعل أو الأكل التقيل: «كولوفيرين D» (لو فيه انتفاخ وغازات) أو «كولوفيرين A» أو «كولونا» (لو القولون سببه التوتر والعصبية).\n' +
+      '3. الأحسن للغازات والانتفاخ بس: «ديسفلاتيل مضغ» أو «سميثيكون» لأنه آمن جداً ومبيمتصش في الدم.',
+    dosingAr:
+      '• كولوفيرين / كولونا: قرص قبل الأكل بـ 20 دقيقة (مرتين لـ 3 مرات يومياً).\n' +
+      '• فيسرالجين / بوسكوبان: قرص عند اللزوم (حتى 3 مرات يومياً).\n' +
+      '• ديسفلاتيل: قرصين مضغ بعد الأكل وقبل النوم.',
+    pricesAndBrandsAr:
+      '• فيسرالجين أقراص: حوالي 45 ج.م.\n' +
+      '• كولوفيرين (A / D / SR): حوالي 55 لـ 75 ج.م للعلبة.\n' +
+      '• كولونا أقراص: حوالي 50 ج.م.\n' +
+      '• ديسفلاتيل 30 قرص مضغ: حوالي 45 ج.م.',
+    sideEffectsAndSafetyAr:
+      '• أدوية القولون والمغص آمنة عموماً، بس «فيسرالجين» و«بوسكوبان» ممكن يعملوا شوية نشفان في الريق، وميفضلش ياخدهم مريض تضخم البروستاتا أو المياه الزرقاء في العين إلا باستشارة الدكتور.',
+  },
+  acidity: {
+    titleAr: 'حموضة المعدة وحرقان الصدر والارتجاع',
+    initialReplyAr:
+      'ألف سلامة عليك من الحموضة وحرقان المعدة! بص يا سيدي، عندنا حل سريع يطفي الحرقان دلوقتي، وحل يعالج السبب:\n\n' +
+      '1. لراحة فورية في خلال دقايق: شراب أو أكياس «جافيسكون (Gaviscon)» أو «مالوكس (Maalox)» أو أقراص مضغ «ريني (Rennie)» بعد الأكل وقبل النوم؛ ده بيعمل طبقة عازلة تمنع الحمض يطلع في المريء.\n' +
+      '2. لتقليل إفراز حمض المعدة طوال اليوم: كبسولات «أوميز (أوميبرازول 20 أو 40 مجم)» أو «كونترولوك (بانتوبرازول)» أو «نيكسيوم (إيسوميبرازول)» قرص واحد على الريق قبل الفطار بنص ساعة.\n' +
+      '3. نصايح تفرق معاك جداً: متنامش بعد الأكل على طول (استنى ساعتين)، قلل المسبكات والشطة والقهوة على الريق، وعلي المخدة شوية وإنت نايم.\n\n' +
+      '💬 تحب أقولك أنهي أحسن واحد فيهم لحالتك، ولا تحب تعرف أسعارهم وجرعاتهم؟',
+    bestComparisonAr:
+      '1. الأحسن والأسرع لو الحرقان شغال دلوقتي بعد أكلة تقيلة: «جافيسكون أدفانس» أو «مالوكس» لأنه بيعادل الحمض في نفس اللحظة.\n' +
+      '2. الأحسن والأقوى لو الحموضة والارتجاع بيتكرروا معاك كل يوم: «نيكسيوم 40 مجم» أو «كونترولوك 40 مجم» قبل الفطار بنص ساعة لأن مفعوله بيقعد 24 ساعة كاملة.\n' +
+      '3. لو الحموضة معاها قيء أو تقل في حركة المعدة: الدكتور أحياناً بيضيف «موتيليوم» أو «موزابرايد» قبل الأكل عشان يسرع هضم الأكل.',
+    dosingAr:
+      '• أوميز / كونترولوك / نيكسيوم: كبسولة واحدة الصبح على الريق قبل الفطار بـ 30 دقيقة.\n' +
+      '• جافيسكون / مالوكس: معلقة كبيرة (أو كيس) بعد الوجبات الرئيسية وقبل النوم.',
+    pricesAndBrandsAr:
+      '• أوميز 20 مجم: حوالي 40 ج.م (اقتصادي وفعال جداً).\n' +
+      '• كونترولوك 40 مجم / نيكسيوم 40 مجم / زوركال: من 75 لـ 160 ج.م حسب الصنف والشركة.\n' +
+      '• جافيسكون شراب أو أكياس / مالوكس: من 65 لـ 110 ج.م.',
+    sideEffectsAndSafetyAr:
+      '• آمنة جداً، بس لو đang تاخد مضاد حيوي (زي سيبروفار أو دوكسيسيكلين) لازم تفصل بينه وبين فوار أو شراب الحموضة (مالوكس/جافيسكون) بساعتين على الأقل عشان ميمسكش في المضاد ويقلل امتصاصه.',
+  },
+  cold_flu: {
+    titleAr: 'نزلة البرد والرشح والأنفلونزا',
+    initialReplyAr:
+      'ألف سلامة عليك من دور البرد! بص يا سيدي، أهم قاعدة طبية هي إن **البرد والأنفلونزا عدوى فيروسية**، يعني المضاد الحيوي مش بيعالجهم خالص، بالعكس الصح إننا نريح الجسم وناخد علاج للأعراض:\n\n' +
+      '1. للرشح وتكسير الجسم والصداع: أقراص برد متكاملة زي «كونجستال (Congestal)» أو «كومتركس (Comtrex)» أو «بنادول كولد آند فلو» أو «فلورست».\n' +
+      '2. لو ضغطك عالي: ابعد عن أدوية البرد العادية وخليك في «بنادول العادي (الأزرق)» مع مضاد هيستامين لوحده زي «تلفاست» أو «كلاريتين» عشان تمنع رفع الضغط.\n' +
+      '3. لانسداد المناخير: بخاخ محلول ملحي «ماء بحر (أوشن سبراي / سينومارين)» آمن تماماً، أو «أوتريفين» لمدة 3 لـ 5 أيام بالكتير.\n' +
+      '4. لتقوية مناعتك: فيتامين سي فوار (سي ريتارد / سيفامول) + زنك، وشوربة دافية وسوائل كتير (ينسون، ليمون دافي بعسل).\n\n' +
+      '💬 تحب أقولك أنهي أحسن دوا برد فيهم ليك (اللي بينيم ولا اللي من غير نعاس)، ولا تحب تعرف أسعارهم وجرعاتهم؟',
+    bestComparisonAr:
+      '1. لو عايز تروح شغلك أو تذاكر من غير ما تنعس: الأحسن هو «بنادول كولد آند فلو داي (الأصفر - Day)» أو «كلارينيز» لأنه مش بيسبب خمول.\n' +
+      '2. لو الرشح والعطس شديد وعايز تنام وترتاح بالليل: «كونجستال» أو «كومتركس» أو «فلورست» ممتازين لأن فيهم مضاد هيستامين بيوقف الرشح ويساعدك تنام.\n' +
+      '3. لو مريض ضغط مرتفع: الأحسن والأأمن هو «سيتال / بنادول أزرق» + «تلفاست 180» + بخاخ ماء بحر.',
+    dosingAr:
+      '• كونجستال / كومتركس / فلورست / بنادول كولد: قرص كل 8 ساعات بعد الأكل.\n' +
+      '• فيتامين سي 500 أو 1000 مجم: مرة واحدة يومياً بعد الفطار.',
+    pricesAndBrandsAr:
+      '• كونجستال / فلورست: حوالي 30 لـ 45 ج.م للعلبة.\n' +
+      '• كومتركس / بنادول كولد آند فلو: حوالي 50 لـ 75 ج.م.\n' +
+      '• سيفامول أو فيتاسيد ج فوار: حوالي 30 لـ 40 ج.م.',
+    sideEffectsAndSafetyAr:
+      '• أدوية البرد (زي كونجستال وكومتركس) بتعمل شوية نعاس فبلاش تسوق بعدها، وممنوع تاخد نوعين دوا برد مع بعض عشان الاتنين فيهم باراسيتامول ومينفعش نضاعف الجرعة. ואوعى تاخد «حقنة البرد الشعبية» نهائياً لأنها خطر جداً.',
+  },
+  fever: {
+    titleAr: 'السخونية وارتفاع درجة الحرارة',
+    initialReplyAr:
+      'ألف سلامة عليك من السخونية! بص يا سيدي، عشان ننزل الحرارة بأمان وندور على السبب:\n\n' +
+      '1. الخافض الأول والأأمن للكبار والأطفال: «باراسيتامول» (بنادول، سيتال، أبيمول، أو بيرال) قرص كل 6 ساعات للكبار، أو شراب/لبوس للأطفال بجرعة محسوبة على الوزن.\n' +
+      '2. لو الحرارة عالية ومش بتنزل بالباراسيتامول لوحده: ممكن بالتبادل مع «بروفين (إيبوبروفين)» بعد الأكل وتحت إشراف الطبيب أو الصيدلي (بشرط عدم وجود جفاف أو حساسية).\n' +
+      '3. الكمادات الصح: اعمل كمادات بمية فاترة (من الحنفية، مش متلجة ومش بخل أو كحول) وحطها على جناب الرقبة وتحت الباط وبين الفخذين، واشرب سوائل ومية كتير جداً.\n\n' +
+      '⚠️ امتى لازم تكشف فوراً؟ لو الحرارة معدية 39.5 ومبتنزلش، أو مستمرة أكتر من 3 أيام (72 ساعة)، أو معاها نهجان أو تخريف أو طفح جلدي.\n' +
+      '💬 السخونية دي عند شخص كبير ولا طفل؟ ومعاها أعراض تانية (زي وجع زور أو كحة أو وجع بطن) عشان أفيدك أكتر؟',
+    bestComparisonAr:
+      '1. الأحسن والأأمن كخط أول: «الباراسيتامول (سيتال / بنادول / أبيمول)» لأنه لطيف على المعدة والكلى وآمن لكل الأعمار.\n' +
+      '2. الأقوى لو فيه التهاب مع السخونية (زي التهاب اللوز أو الأذن): «بروفين شراب أو أقراص» بعد الأكل، بس بلاش على معدة فاضية.\n' +
+      '3. تحذير مهم: ممنوع إعطاء الأسبرين أو الفولتارين/الكتافلام للأطفال في السخونية الفيروسية.',
+    dosingAr:
+      '• للكبار: قرص لـ قرصين باراسيتامول 500 مجم كل 6 ساعات.\n' +
+      '• للأطفال: جرعة الباراسيتامول الشراب بتتحسب بـ (10 لـ 15 مجم لكل كيلو من وزن الطفل) كل 6 ساعات — قولي وزن الطفل بالكيلو وأحسبلك الجرعة الاسترشادية عشان تراجعها مع الصيدلي!',
+    pricesAndBrandsAr:
+      '• سيتال أقراص / شراب / نقط: من 20 لـ 35 ج.م.\n' +
+      '• بنادول أدفانس: حوالي 45 ج.م.\n' +
+      '• بروفين شراب للأطفال أو أقراص: حوالي 35 لـ 50 ج.م.',
+    sideEffectsAndSafetyAr:
+      '• اتأكد إنك مش بتدي دوايين فيهم نفس المادة الفعالة (باراسيتامول) في نفس الوقت، واشرب مية وعصاير طبيعية كتير لتعويض العرق والسوائل.',
+  },
+  diarrhea_constipation: {
+    titleAr: 'الإسهال والنزلة المعوية أو الإمساك',
+    initialReplyAr:
+      'ألف سلامة عليك! بص يا سيدي، على حسب المشكلة اللي عندك:\n\n' +
+      'أولاً — لو عندك إسهال أو نزلة معوية:\n' +
+      '1. أهم خطوة: تعويض السوائل بمحلول معالجة الجفاف (ORS / هيدروسيف) ومية وشوربة عشان ميحصلش هبوط أو جفاف.\n' +
+      '2. مطهر معوي: «أنتينال (Antinal)» أو «نانازوكسيد (Nanazoxid)» أو «ستربتوكين»، مع «سميكتا (Smecta)» أو «كابكت» لربط البطن.\n' +
+      '3. الأكل المناسب: بطاطس مسلوقة، رز أبيض، تفاح، موز، وزبادي لتعويض البكتيريا النافعة.\n\n' +
+      'ثانياً — لو عندك إمساك:\n' +
+      '1. اشرب مية دافية على الريق وكل سلطة وخضار وشوفان.\n' +
+      '2. ملين لطيف وآمن مبيعملش تعود: شراب «دوفالاك (Duphalac / لاكتولوز)» أو «أجيولاكس» أو نقط «بيكولاكس» بالليل عند اللزوم.\n\n' +
+      '💬 قولي، المشكلة عندك إسهال ولا إمساك؟ ومعاها سخونية أو مغص عشان أقولك أحسن اختيار وجرعته؟',
+    bestComparisonAr:
+      '1. في الإسهال البسيط: «أنتينال كبسول أو شراب» هو الأشهر والأسرع لأنه بيشتغل جوه الأمعاء بس ومبيمتصش في الدم.\n' +
+      '2. لو الإسهال سببه طفيليات أو إسهال مستمر: «نانازوكسيد» أو «فلاجيل» تحت إشراف الدكتور.\n' +
+      '3. في الإمساك: «دوفالاك شراب (لاكتولوز)» هو الأحسن والأأمن حتى للحوامل والأطفال وكبار السن.',
+    dosingAr:
+      '• أنتينال 200 مجم: كبسولة كل 6 ساعات (4 مرات يومياً) لمدة 3 لـ 5 أيام.\n' +
+      '• نانازوكسيد 500 مجم: قرص كل 12 ساعة مع الأكل لمدة 3 أيام.\n' +
+      '• دوفالاك شراب للإمساك: معلقة لـ معلقتين كبار مرة أو مرتين يومياً مع شرب مية كتير.',
+    pricesAndBrandsAr:
+      '• أنتينال كبسول / شراب: حوالي 35 لـ 50 ج.م.\n' +
+      '• نانازوكسيد أقراص / شراب: حوالي 55 لـ 70 ج.م.\n' +
+      '• دوفالاك شراب: حوالي 65 ج.م، وبيكولاكس نقط حوالي 25 ج.م.',
+    sideEffectsAndSafetyAr:
+      '• ⚠️ تحذير مهم في الإسهال: لو الإسهال معاه دم أو مخاط شديد أو سخونية عالية جداً، مينفعش ناخد أدوية بتوقف حركة الأمعاء (زي إيموديوم) ولازم دكتور يكشف فوراً.',
+  },
+  vitamins_fatigue: {
+    titleAr: 'الهمدان والدوخة والأنيميا والفيتامينات',
+    initialReplyAr:
+      'ألف سلامة عليك من الهمدان والدوخة! بص يا سيدي، الخمول والدوخة وسقوط الشعر غالباً بيكون وراهم نقص في واحد من 3 حاجات أساسية:\n\n' +
+      '1. أنيميا نقص الحديد ومخزون الحديد (Ferritin): بتعمل دوخة، نهجان من أقل مجهود، بهتان، وسقوط شعر. أشهر علاج ليها في مصر: «فيروجلوبين (Feroglobin)» أو «فرافيرو 27 (Pravotin / Feraferro)» أو «فوليكابرون».\n' +
+      '2. نقص فيتامين د (Vitamin D): بيعمل وجع في العضم والضهر، خمول، وتقلب مزاج. أشهر بدائله: نقط «فيدروب (Vidrop)» أو أقراص «أوسوفورتين (Ossofortin)».\n' +
+      '3. نقص فيتامين ب12 والأعصاب: بيعمل تنميل وشكشكة وضعف تركيز، وأشهر حاجة ليه: أقراص «ميلجا (Milga)» أو «نيوروتون» أو «تراي بي».\n' +
+      '4. للنشاط العام والمناعة: مكمل شامل زي «كيروفيت (Kerovit)» أو «فيتاماكس بلس» أو «سنتروم» كبسولة بعد الفطار.\n\n' +
+      '💬 تحب أقولك التحاليل المطلوبة عشان تعرف سبب الدوخة بالظبط، ولا أقولك أنهي أحسن فيتامين فيهم وأسعاره؟',
+    bestComparisonAr:
+      '1. لو المشكلة أنيميا وسقوط شعر: الأحسن والأخف على المعدة هو «فرافيرو 27 (Feraferro)» أو «فيروجلوبين كبسول» (وخده مع عصير برتقال أو فيتامين سي عشان الحديد يمتص كويس، وابعده عن الشاي واللبن بساعتين).\n' +
+      '2. لو المشكلة إرهاق عام وتنميل أعصاب: «ميلجا أدفانس» للأعصاب + «كيروفيت» بعد الفطار.\n' +
+      '3. نصيحة ذهبية: اعمل 3 تحاليل بسيطة (صورة دم CBC + مخزون حديد Ferritin + فيتامين D) وصورلي النتيجة هنا وأنا أقرأهالك بالتفصيل!',
+    dosingAr:
+      '• الفيتامينات العامة (كيروفيت / سنتروم): كبسولة واحدة يومياً بعد وجبة الفطار.\n' +
+      '• كبسولات الحديد (فيروجلوبين / فرافيرو): كبسولة واحدة يومياً بعد الغداء مع كوب عصير برتقال (وبعيد عن الشاي والقهوة واللبن بساعتين).\n' +
+      '• ميلجا للأعصاب: قرص مرة أو مرتين يومياً بعد الأكل.',
+    pricesAndBrandsAr:
+      '• فيروجلوبين 30 كبسولة: حوالي 100 ج.م.\n' +
+      '• فرافيرو 27: حوالي 130 ج.م.\n' +
+      '• ميلجا 40 قرص: حوالي 70 لـ 90 ج.م.\n' +
+      '• فيدروب نقط: حوالي 20 ج.م، وأوسوفورتين من 90 لـ 140 ج.م.',
+    sideEffectsAndSafetyAr:
+      '• مكملات الحديد طبيعي جداً تغمق لون البراز فمتقلقش من ده، ولو عملت إمساك بسيط اشرب مية كتير وخدها بعد الأكل.',
+  },
+  muscle_joint: {
+    titleAr: 'ألم الضهر والرقبة والمفاصل والشد العضلي',
+    initialReplyAr:
+      'ألف سلامة عليك من وجع الضهر والعضلات! بص يا سيدي، عشان تفك الشد العضلي وتريح الوجع:\n\n' +
+      '1. دهان موضعي آمن وممتاز: «فولتارين جل (Voltaren Emulgel)» أو «أولفين جل» أو «موف كريم» مع كمادات مية دافية على مكان الشد العضلي 15 دقيقة.\n' +
+      '2. لو فيه شد عضلي في الضهر أو الرقبة: باسط عضلات مع مسكن زي «ميولجين (Myolgin)» أو «ديمرا (Dimra)» أو «مارك فاست» بعد الأكل وبالليل قبل النوم.\n' +
+      '3. لو التهاب في المفاصل أو الركبة: مضاد التهاب خفيف على المعدة زي «سيلبريكس (Celebrex 200)» أو «أركوكسيا» بعد الأكل وتحت إشراف الطبيب.\n\n' +
+      '⚠️ لو وجع الضهر نازل بتنميل أو كهرباء في الرجل لحد القدم، لازم نكشف مخ وأعصاب أو عظام عشان نطمن على الغضروف وعرق النسا.\n' +
+      '💬 تحب أقولك أنهي أحسن اختيار فيهم لحالتك وأسعاره وجرعته؟',
+    bestComparisonAr:
+      '1. الأحسن والأقوى للشد العضلي في الضهر والرقبة: «ديمرا (Dimra)» أو «مارك فاست» لأن فيهم باسط عضلات قوي مع مضاد التهاب.\n' +
+      '2. لو معدتك حساسة أو بتتعب من المسكنات: خليك في «الدهان الموضعي (فولتارين جل)» + «ميولجين» أو «سيلبريكس» بعد الأكل مع قرص حماية للمعدة.\n' +
+      '3. لو فيه تورم أو كدمة جديدة (أول 24 ساعة): استخدم «ريباريل جل (Reparil Gel)» وأقراص «ألفينترن» قبل الأكل بساعة.',
+    dosingAr:
+      '• فولتارين جل / ريبيريل جل: دهان خفيف بدون دعك عنيف 3 مرات يومياً.\n' +
+      '• ميولجين / ديمرا: قرص بعد الغداء وقرص قبل النوم لمدة 3 لـ 5 أيام عند اللزوم.',
+    pricesAndBrandsAr:
+      '• ميولجين كبسول: حوالي 35 لـ 45 ج.م.\n' +
+      '• ديمرا 20 قرص: حوالي 65 ج.م.\n' +
+      '• فولتارين جل / أولفين جل: حوالي 45 لـ 65 ج.م.',
+    sideEffectsAndSafetyAr:
+      '• باسط العضلات بيسبب شوية نعاس واسترخاء، فالأفضل تاخده بالليل قبل النوم، ودايماً المسكنات تتاخد بعد الأكل ومع كوباية مية كاملة ومرضى الكلى والضغط وقرحة المعدة يستشيروا الدكتور الأول.',
+  },
+  allergy_skin: {
+    titleAr: 'حساسية الجلد والهرش والحروق السطحية',
+    initialReplyAr:
+      'ألف سلامة عليك! بص يا سيدي، على حسب المشكلة الجلدية اللي عندك:\n\n' +
+      '1. لو حساسية جلد، هرش، أو ارتكاريا: قرص مضاد هيستامين مبيسببش نعاس زي «تلفاست 180 مجم (Telfast)» أو «إيريوس (Aerius)» أو «كلاريتين»، أو «زيرتك» قبل النوم، مع لوشن ملطف للجلد زي «كلامين لوشن» أو «بولي ديرم».\n' +
+      '2. لو لسعة أو حرق سطحي بسيط: حط المكان تحت مية جارية فاترة من الحنفية 10 دقايق فوراً (وأوعى تحط معجون سنان أو تلج مباشر!)، وبعدها ادهن كريم «ميبو (MEBO)» أو «ديرمازين».\n' +
+      '3. لو جرح سطحي أو خربشة: طهره بـ «بيتادين» ومحلول ملح، وحط مرهم مضاد حيوي موضعي زي «فيوسيدين (Fucidin)» أو «باكتروبان».\n\n' +
+      '💬 قولي، المشكلة هرش وحساسية ولا حرق ولا جرح عشان أقولك أحسن كريم أو برشام ليها؟',
+    bestComparisonAr:
+      '1. الأحسن لحساسية الجلد والهرش بالنهار من غير ما تنعس: «تلفاست 180 مجم» أو «إيريوس» قرص واحد في اليوم.\n' +
+      '2. الأحسن للحروق وتجديد الجلد بدون أثر: مرهم «ميبو (MEBO)» الطبيعي لأنه بيسكن الألم ويبني الجلد بسرعة.\n' +
+      '3. الأحسن للجروح أو الخراريج الصغيرة: كريم أو مرهم «فيوسيدين» أو «جاراميسين».',
+    dosingAr:
+      '• تلفاست 180 / كلاريتين / زيرتك: قرص واحد فقط يومياً بالليل.\n' +
+      '• كريم ميبو أو فيوسيدين: طبقة رقيقة مرتين لـ 3 مرات يومياً.',
+    pricesAndBrandsAr:
+      '• تلفاست 180 مجم: حوالي 75 ج.م (وبديله فاستيل أو أليرفين أرخص بحوالي 35 ج.م).\n' +
+      '• زيرتك / كلاريتين: حوالي 45 لـ 60 ج.م.\n' +
+      '• كريم ميبو: حوالي 75 لـ 95 ج.م، وفيوسيدين حوالي 45 لـ 60 ج.م.',
+    sideEffectsAndSafetyAr:
+      '• 🚨 تنبيه طوارئ: لو الحساسية الجلدية ظهر معاها ورم في الشفايف أو اللسان أو ضيق في النفس، دي حساسية مفرطة وتحتاج تروح أقرب طوارئ فوراً!',
+  },
+  bp_diabetes: {
+    titleAr: 'تنظيم الضغط والسكر ومتابعتهم',
+    initialReplyAr:
+      'أهلاً بيك وربنا يديك الصحة والعافية دايماً! بخصوص متابعة الضغط والسكر:\n\n' +
+      '1. المعدل الطبيعي للضغط: بيكون حوالي 120/80 (ولحد 130/85 مقبول)، ولو فوق 140/90 في أكتر من قياس وإنت مرتاح يبقى محتاج متابعة وتنظيم علاج مع دكتور الباطنة أو القلب.\n' +
+      '2. المعدل الطبيعي للسكر: الصايم من 70 لـ 100 (ولمريض السكر بنستهدف أقل من 130 صايم وأقل من 180 بعد الأكل بساعتين، والسكر التراكمي HbA1c أقل من 7%).\n' +
+      '3. نصيحة مهمة جداً: أدوية الضغط والسكر لازم تتاخد في مواعيدها الثابتة كل يوم ومينفعش نوقفها من نفسنا حتى لو القراءة مظبوطة.\n\n' +
+      '💡 تحب أسجلك «الضغط» أو «السكر» في ملفك الصحي هنا (قولي بس: "عندي ضغط" أو "عندي سكر") عشان أراجعلك أي دوا جديد وأتأكد إنه مبيتعارضش معاهم؟',
+    bestComparisonAr:
+      '• في أدوية الضغط والسكر، الدكتور هو اللي بيختار العيلة الدوائية الأنسب حسب السن ووظائف الكلى (مثلاً: كونكور، أملور، كوفرسيل، إكسفورج للضغط؛ أو جلوكوفاج، دياميكرون، جانوميت، فورسيجا للسكر).\n' +
+      '• دورنا هنا في المنصة إننا نراجعلك أي مضاد حيوي أو مسكن مع أدوية الضغط والسكر بتاعتك عشان نمنع أي تداخل دوائي!',
+    dosingAr:
+      '• جلوكوفاج (ميتفورمين): بيتاخد وسط أو بعد الأكل لتقليل تعب المعدة.\n' +
+      '• أدوية الضغط: بتتاخد في ميعاد ثابت يومياً حسب إرشادات طبيبك المعالج (وتقدر تقولي "فكرني بدوا الضغط الساعة كذا" وهظبطلك منبه ليه فوراً!).',
+    pricesAndBrandsAr:
+      '• لو بتسأل عن سعر أو بديل أي دوا ضغط أو سكر معين، اكتبلي اسمه وهساعدك فوراً.',
+    sideEffectsAndSafetyAr:
+      '• ⚠️ نصيحة ذهبية لمريض الضغط والسكر: ابعد على قد ما تقدر عن المسكنات القوية (زي بروفين، كتافلام، فولتارين) وأدوية البرد العادية (زي كونجستال) لأنها بترفع الضغط وبتتعب الكلى، وخليك دايماً في «الباراسيتامول (بنادول الأزرق أو سيتال)» عند اللزوم.',
+  },
+  sleep_anxiety: {
+    titleAr: 'الأرق وقلة النوم والتوتر',
+    initialReplyAr:
+      'ألف سلامة عليك، النوم الكويس أساس راحة الجسم والمناعة! بص يا سيدي، عشان تنام بعمق ومن غير أدوية منومة تعمل تعود:\n\n' +
+      '1. مكملات طبيعية وآمنة لتنظيم النوم: «ميلاتونين (Melatonin 3mg أو 5mg)» قبل النوم بنص ساعة في أوضة ضلمة؛ ده هرمون النوم الطبيعي وملوش أي إدمان.\n' +
+      '2. لتهدئة الشد العصبي والعضلي بالليل: قرص «ماغنسيوم بلس (Magnesium Plus)» بعد العشاء بيساعد الأعصاب والعضلات تسترخي.\n' +
+      '3. مشروبات وعادات تساعدك فوراً: كوباية بابونج (كاموميل) أو ينسون أو لبن دافي قبل النوم، وقف القهوة والشاي بعد الساعة 5 المغرب، وابعد الموبايل عن عينك قبل النوم بنص ساعة.\n\n' +
+      '💬 تحب تعرف أحسن نوع ميلاتونين أو ماغنسيوم في الصيدلية وأسعارهم؟',
+    bestComparisonAr:
+      '1. لو مشكلتك إنك بتقعد تتقلب على السرير ومش بتدخل في النوم بسهولة: الأحسن هو «ميلاتونين 3 مجم أو 5 مجم» أو «نايت كالم (تحت إشراف طبيب فقط للحالات الشديدة)».\n' +
+      '2. لو مشكلتك توتر وقلق وشد في جسمك بيصحيك: «ماغنسيوم بلس» أو «أشواجندا (Ashwagandha)» ممتازين لتهدئة التوتر طبيعياً.',
+    dosingAr:
+      '• ميلاتونين: قرص واحد قبل ميعاد النوم بـ 30 لـ 45 دقيقة مع إطفاء النور.\n' +
+      '• ماغنسيوم بلس: قرص واحد يومياً بعد وجبة العشاء.',
+    pricesAndBrandsAr:
+      '• ماغنسيوم بلس: حوالي 45 لـ 60 ج.م.\n' +
+      '• ميلاتونين (أفبيتونين / ميلاتونين): حوالي 60 لـ 110 ج.م حسب التركيز.',
+    sideEffectsAndSafetyAr:
+      '• الميلاتونين والماغنسيوم مكملات آمنة ومبتعملش تعود، بعكس المنومات المهدئة اللي مينفعش تتاخد غير بروشتة دكتور.',
+  },
+};
+
 function matchConditionEnhanced(x: string): ConditionKind | null {
   const base = matchCondition(x);
   if (base) return base;
   if (/ودن|ودني|وداني|طبله الودن/.test(x)) return 'ear';
   if (/سنان|سناني|ضرس|ضروسي|اللثه/.test(x)) return 'dental';
   if (/زور|زوري|حلقي|اللوز/.test(x)) return 'throat';
-  if (/حرقان|المثانه|مسالك/.test(x)) return 'uti';
+  if (/حرقان في البول|حرقان بول|المثانه|مسالك/.test(x)) return 'uti';
   if (/دمل|دمامل|خراج/.test(x)) return 'skin';
   if (/جيوب|مناخير|انفيه/.test(x)) return 'sinus';
-  if (/كحه|بلغم|صدري/.test(x)) return 'chest';
-  if (/معدتي|بطني|جرثومه/.test(x)) return 'stomach';
+  if (/كحه ببلغم|بلغم اخضر|التهاب شعبي|التهاب رئوي/.test(x)) return 'chest';
+  if (/جرثومه المعده|حلزونيه/.test(x)) return 'stomach';
   return null;
 }
 
+/**
+ * Matches non-antibiotic everyday health & medical topics so the assistant answers general medical questions
+ * immediately in Egyptian Colloquial Arabic and supports multi-turn follow-ups!
+ */
+export function matchGeneralHealthTopic(x: string): GeneralHealthTopicKey | null {
+  if (/صداع|دماغ|دماغي|راسي بتوجعني|صداع نصفي|مايجرين|بنادول|سيتال|ابيمول|بروفين|باي الكوفان|كتافلام|headache|migraine/.test(x)) {
+    return 'headache';
+  }
+  if (/حموضه|حرقان المعده|حرقان في المعده|حمو على الصدر|ارتجاع|جافيسكون|مالوكس|اوميز|نيكسيوم|كونترولوك|انتودين|فاموتيدين|heartburn|acidity|reflux/.test(x)) {
+    return 'acidity';
+  }
+  if (/مغص|قولون|انتفاخ|غازات|تقلصات|بطني بتوجعني|وجع بطن|معدتي بتوجعني|فيسرالجين|بوسكوبان|كولوفيرين|كولونا|ديسفلاتيل|stomach ache|cramps|ibs|bloating/.test(x)) {
+    return 'gi_pain';
+  }
+  if (/اسهال|نزله معويه|امساك|بطني ماشيه|انتينال|نانازوكسيد|سميكتا|دوفالاك|ملين|بيكولاكس|diarrhea|constipation/.test(x)) {
+    return 'diarrhea_constipation';
+  }
+  if (/سخونيه|سخن|حراره عاليه|حرارتي|دفيان|خافض حراره|كمادات|fever|temperature/.test(x)) {
+    return 'fever';
+  }
+  if (/برد|رشح|زكام|انفلونزا|عطس|تكسير في الجسم|كونجستال|كومتركس|فلورست|تلفاست|اوتريفين|كحه ناشفه|كحه|سعال|common cold|flu/.test(x)) {
+    return 'cold_flu';
+  }
+  if (/همدان|دوخه|دايخ|ارهاق|خمول|تعبان|انيميا|فقر دم|نقص حديد|فيتامين|سقوط شعر|شعري بيقع|فيروجلوبين|فرافيرو|ميلجا|كيروفيت|فيدروب|سنتروم|تنميل|anemia|vitamins|fatigue|dizziness/.test(x)) {
+    return 'vitamins_fatigue';
+  }
+  if (/وجع ضهر|ضهري بيوجعني|وجع رقبه|رقبتي|مفاصل|ركبتي|شد عضلي|عضلات|غضروف|عرق النسا|ميولجين|ديمرا|فولتارين|سيلبريكس|الفيترن|الفينترن|back pain|joint pain|muscle/.test(x)) {
+    return 'muscle_joint';
+  }
+  if (/هرش|حكه|ارتكاريا|حساسيه جلد|طفح جلدي|حرق|اتحرقت|ميبو|جرح|اتعورت|بيتادين|فيوسيدين|زيرتك|كلاريتين|rash|itching|burn|wound/.test(x)) {
+    return 'allergy_skin';
+  }
+  if (/ضغطي|الضغط العالي|الضغط الواطي|قياس الضغط|السكر التراكمي|سكر صايم|جلوكوفاج|كونكور|املور|blood pressure|diabetes/.test(x)) {
+    return 'bp_diabetes';
+  }
+  if (/ارق|مش عارف انام|قله نوم|توتر|قلق|ميلاتونين|ماغنسيوم|insomnia|sleep/.test(x)) {
+    return 'sleep_anxiety';
+  }
+  return null;
+}
+
+/**
+ * Scans the conversation history from newest to oldest to extract the active medical topic,
+ * general health topic, condition, and medications so follow-up questions ("طب إيه أحسن؟", "بكام؟", "جرعته إيه؟")
+ * work seamlessly across turns.
+ */
 export function extractConversationTopicMemory(
   msgs: EnhancedChatUiMessage[],
   meds: Medicine[],
   lang: Lang
 ): ConversationTopicMemory {
   let lastCondition: ConditionKind | null = null;
+  let lastGeneralTopic: GeneralHealthTopicKey | null = null;
   const medMap = new Map<string, Medicine>();
   let lastPersonalKind: PKind | null = null;
   const recentUserQuestions: string[] = [];
@@ -226,17 +552,20 @@ export function extractConversationTopicMemory(
       }
     }
 
-    if (!lastCondition && m.who === 'me') {
-      const cond = matchConditionEnhanced(x);
-      if (cond) lastCondition = cond;
+    if (m.who === 'me') {
+      if (!lastCondition && !lastGeneralTopic) {
+        const cond = matchConditionEnhanced(x);
+        const gen = matchGeneralHealthTopic(x);
+        if (cond) lastCondition = cond;
+        else if (gen) lastGeneralTopic = gen;
+      }
     }
 
-    if (!lastPersonalKind) {
+    if (!lastPersonalKind && m.who === 'me') {
       const pk = personalKind(x);
       if (pk) lastPersonalKind = pk;
     }
 
-    // Check explicit links attached to bot messages (e.g., /medicine/amoxicillin-clavulanic-acid)
     const msgLinks = m.links || (m.reply?.kind === 'text' ? m.reply.links : undefined) || [];
     for (const l of msgLinks) {
       if (l.to && l.to.startsWith('/medicine/')) {
@@ -248,7 +577,6 @@ export function extractConversationTopicMemory(
       }
     }
 
-    // Check medicines mentioned by name or brand in the message text
     const textMeds = findMeds(meds, plain);
     for (const tm of textMeds) {
       if (!medMap.has(tm.id)) {
@@ -257,7 +585,6 @@ export function extractConversationTopicMemory(
     }
   }
 
-  // If a condition was discussed but no specific Medicine objects were in medMap yet, populate from condition defaults
   if (lastCondition && medMap.size === 0) {
     const defaultIds = CONDITION_DEFAULT_MED_IDS[lastCondition] || [];
     for (const id of defaultIds) {
@@ -268,6 +595,7 @@ export function extractConversationTopicMemory(
 
   return {
     lastCondition,
+    lastGeneralTopic,
     lastMedicines: Array.from(medMap.values()).slice(0, 4),
     lastPersonalKind,
     recentUserQuestions,
@@ -338,9 +666,6 @@ export function detectFollowUpAspects(rawText: string): FollowUpAspect[] {
   return aspects;
 }
 
-/**
- * Formats commercial products in Egypt for a given active ingredient ID.
- */
 function formatEgyptianBrandsForMed(medId: string): string {
   const prods = EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => p.activeIngredientId === medId).slice(0, 5);
   if (prods.length === 0) return '';
@@ -354,10 +679,11 @@ function formatEgyptianBrandsForMed(medId: string): string {
 
 /**
  * Fast (<10ms), deeply contextual Egyptian Colloquial Conversational Engine that answers:
- * 1) Any condition question (e.g., "ودني بتوجعني وعايز حاجة")
- * 2) Any medicine question (e.g., "أوجمنتين بكام وجرعته إيه؟")
- * 3) Any follow-up question across conversation turns (e.g., "طب إيه أحسن؟", "طب بكام؟", "طب جرعته إيه؟", "آخد معاه مسكن إيه؟", "إيه البديل؟")
- * using ALL data in the platform (`meds`, `EGYPTIAN_COMMERCIAL_PRODUCTS`, `CONDITIONS`, `PERSONAL`, `profile`).
+ * 1) Any infection/antibiotic condition ("ودني بتوجعني", "ضروسي", "لوز")
+ * 2) Any general medical/symptom question ("عندي صداع", "مغص وقولون", "حموضة", "برد ورشح", "سخونية", "فيتامينات ودوخة", "وجع ضهر", "إسهال أو إمساك")
+ * 3) Any medicine in the database ("أوجمنتين", "زيثروماكس", "فلاجيل"...)
+ * 4) Any follow-up question across conversation turns ("طب إيه أحسن؟", "بكام؟", "جرعته إيه؟", "إيه البديل؟", "ليه أضرار؟")
+ * While leaving open non-medical questions free to go to `askGemini` (without EVER dumping canned antibiotic articles!).
  */
 export function generateContextualSiteReply(params: {
   userText: string;
@@ -372,18 +698,36 @@ export function generateContextualSiteReply(params: {
   links?: ReplyLink[];
   topicMemory: ConversationTopicMemory;
 } {
-  const { userText, msgs, profile, lang, localReply } = params;
+  const { userText, msgs, profile, lang } = params;
   const meds = params.meds && params.meds.length > 0 ? params.meds : getSeedMedicinesFallback();
   const x = norm(userText);
   const topicMemory = extractConversationTopicMemory(msgs, meds, lang);
 
-  // Check if the current message introduces a new condition or new medicine(s)
+  // Quick friendly Egyptian greetings & identity questions
+  if (
+    lang === 'ar' &&
+    /^(ازيك|إزيك|عامل ايه|اخبارك|اهلا|أهلا|مرحبا|السلام عليكم|سلام عليكم|صباح الخير|مساء الخير|هاي|hi|hello)$/i.test(
+      userText.trim()
+    )
+  ) {
+    return {
+      handledFast: true,
+      replyText:
+        'يا هلا بيك! الحمد لله كله تمام 🌟 أنا مساعدك الصحي والشخصي الذكي، بتكلم معاك بالمصري ومفتوح لأي سؤال في الدنيا (أي تعب أو عرض عندك، أي دوا أو مسكن أو فيتامين، قراءة تحاليل وروشتات، تسجيل حساسية أو أمراض مزمنة أو منبهات أدوية، أو حتى دردشة عامة). قولي، حاسس بإيه أو تحب أساعدك في إيه النهاردة؟',
+      topicMemory,
+    };
+  }
+
   const currentCondition = matchConditionEnhanced(x);
+  const currentGeneralTopic = !currentCondition ? matchGeneralHealthTopic(x) : null;
   const currentMeds = findMeds(meds, userText);
   const currentPersonal = personalKind(x);
   const followUpAspects = detectFollowUpAspects(userText);
 
-  const activeCondition = currentCondition || topicMemory.lastCondition;
+  const activeCondition = currentCondition || (!currentGeneralTopic ? topicMemory.lastCondition : null);
+  const activeGeneralTopic =
+    currentGeneralTopic || (!currentCondition && currentMeds.length === 0 ? topicMemory.lastGeneralTopic : null);
+
   const activeMeds: Medicine[] =
     currentMeds.length > 0
       ? currentMeds
@@ -391,7 +735,9 @@ export function generateContextualSiteReply(params: {
         ? (CONDITION_DEFAULT_MED_IDS[currentCondition] || [])
             .map((id) => meds.find((m) => m.id === id))
             .filter((m): m is Medicine => Boolean(m))
-        : topicMemory.lastMedicines;
+        : !currentGeneralTopic
+          ? topicMemory.lastMedicines
+          : [];
 
   const links: ReplyLink[] = activeMeds.map((m) => ({
     to: `/medicine/${m.id}`,
@@ -412,7 +758,63 @@ export function generateContextualSiteReply(params: {
     }
   }
 
-  // CASE 1: User is asking a follow-up question (or multi-part question) tied to the current or previous turn!
+  // ── CASE A: Follow-Up on a General Health Topic (e.g., Headache, GI pain, Acidity, Cold, Fever, Vitamins, Back pain) ──
+  const isFollowUpOnGeneralTopic =
+    Boolean(activeGeneralTopic) &&
+    !currentCondition &&
+    currentMeds.length === 0 &&
+    followUpAspects.length > 0 &&
+    (!currentGeneralTopic || followUpAspects.some((a) => a !== 'pain_relief'));
+
+  if (isFollowUpOnGeneralTopic && activeGeneralTopic && lang === 'ar') {
+    const guide = GENERAL_HEALTH_GUIDES[activeGeneralTopic];
+    const sectionsAr: string[] = [
+      `بص يا سيدي، تكملة لكلامنا عن «${guide.titleAr}»:`,
+    ];
+    if (followUpAspects.includes('best_choice') || followUpAspects.includes('pain_relief')) {
+      sectionsAr.push(`أنهي أحسن اختيار فيهم لحالتك؟\n${guide.bestComparisonAr}`);
+    }
+    if (followUpAspects.includes('dose')) {
+      sectionsAr.push(`الجرعات المعتادة وطريقة الاستخدام:\n${guide.dosingAr}`);
+    }
+    if (followUpAspects.includes('price') || followUpAspects.includes('substitutes')) {
+      sectionsAr.push(`الأصناف والأسعار التقريبية في الصيدليات المصرية:\n${guide.pricesAndBrandsAr}`);
+    }
+    if (
+      followUpAspects.includes('side_effects') ||
+      followUpAspects.includes('interactions') ||
+      followUpAspects.includes('pregnancy_child') ||
+      followUpAspects.includes('more_details')
+    ) {
+      sectionsAr.push(`معلومات الأمان والأعراض الجانبية:\n${guide.sideEffectsAndSafetyAr}`);
+    }
+    sectionsAr.push('لو حابب تسألني عن أي تفصيلة تانية أو عايز أظبطلك منبه بمواعيد العلاج قولي فوراً!');
+    return {
+      handledFast: true,
+      replyText: sectionsAr.join('\n\n'),
+      topicMemory: {
+        ...topicMemory,
+        lastGeneralTopic: activeGeneralTopic,
+        lastCondition: null,
+      },
+    };
+  }
+
+  // ── CASE B: Initial Question on a General Health Topic (Headache, Stomach, Cold, Fever, Vitamins, etc.) ──
+  if (currentGeneralTopic && lang === 'ar') {
+    const guide = GENERAL_HEALTH_GUIDES[currentGeneralTopic];
+    return {
+      handledFast: true,
+      replyText: guide.initialReplyAr,
+      topicMemory: {
+        ...topicMemory,
+        lastGeneralTopic: currentGeneralTopic,
+        lastCondition: null,
+      },
+    };
+  }
+
+  // ── CASE C: Follow-Up or Multi-Aspect Question on an Infection Condition or Catalog Medicine ──
   const isFollowUpOnPriorTurn =
     !currentCondition &&
     currentMeds.length === 0 &&
@@ -424,7 +826,6 @@ export function generateContextualSiteReply(params: {
 
   if (isFollowUpOnPriorTurn || isMultiAspectOnCurrentTurn) {
     if (lang !== 'ar') {
-      // English contextual synthesis
       const sectionsEn: string[] = [];
       if (activeCondition) {
         sectionsEn.push(
@@ -464,7 +865,6 @@ export function generateContextualSiteReply(params: {
       }
     }
 
-    // Egyptian Colloquial Arabic multi-aspect / follow-up synthesis!
     const sectionsAr: string[] = [];
     const medNamesAr = activeMeds.map((m) => m.genericName.ar || m.genericName.en).join('، و');
 
@@ -587,11 +987,11 @@ export function generateContextualSiteReply(params: {
     }
   }
 
-  // CASE 2: Direct Condition Match on current turn (e.g., "ودني بتوجعني وعايز حاجة")
+  // ── CASE D: Direct Infection Condition Match on current turn (e.g., "ودني بتوجعني", "ضروسي", "لوز") ──
   if (currentCondition && lang === 'ar') {
     const condData = CONDITIONS[currentCondition];
     const partsAr: string[] = [
-      `ألف سلامة عليك من ${CONDITION_NAMES_AR[currentCondition]}! بص يا سيدي، هقولك على الحاجات اللي تريحك فوراً والمضادات الحيوية المعتمدة علمياً للحالة دي:`,
+      `ألف سلامة عليك من ${CONDITION_NAMES_AR[currentCondition]}! بص يا سيدي، هقولك على الحاجات اللي تريحك فوراً والعلاجات المعتمدة علمياً للحالة دي:`,
       toEgyptianColloquial(condData.text.ar),
       `طب تعمل إيه يريح الوجع دلوقتي؟\n${CONDITION_PAIN_AND_CARE_AR[currentCondition]}`,
     ];
@@ -609,12 +1009,13 @@ export function generateContextualSiteReply(params: {
       topicMemory: {
         ...topicMemory,
         lastCondition: currentCondition,
+        lastGeneralTopic: null,
         lastMedicines: activeMeds,
       },
     };
   }
 
-  // CASE 3: Direct Medicine Match on current turn (e.g., "كلمني عن أوجمنتين")
+  // ── CASE E: Direct Medicine Match on current turn (e.g., "كلمني عن أوجمنتين") ──
   if (currentMeds.length > 0 && lang === 'ar') {
     const m = currentMeds[0];
     const brands = formatEgyptianBrandsForMed(m.id);
@@ -643,10 +1044,17 @@ export function generateContextualSiteReply(params: {
     };
   }
 
-  // CASE 4: Direct Personal Advice Match (e.g., حقنة البرد، نسيان الجرعة، اللبن والمضاد)
-  if (currentPersonal && lang === 'ar') {
+  // ── CASE F: Specific Antibiotic Safety Questions (e.g., حقنة البرد، نسيان الجرعة، اللبن والمضاد) ──
+  // Note: Only match when the user explicitly asks about these specific antibiotic topics!
+  if (
+    currentPersonal &&
+    currentPersonal !== 'symptom' &&
+    currentPersonal !== 'general' &&
+    /(مضاد|حقنه البرد|مجموعه البرد|نسيت الجرعه|لبن|حليب|حبوب منع الحمل|اوقف المضاد|شراب الاطفال)/.test(x) &&
+    lang === 'ar'
+  ) {
     const pData = PERSONAL[currentPersonal];
-    const replyAr = `بص يا سيدي، بخصوص سؤالك:\n\n${toEgyptianColloquial(pData.text.ar)}\n\nلو عندك أي سؤال تاني أو عايز تعرف تفاصيل عن دوا معين قولي وأنا معاك!`;
+    const replyAr = `بص يا سيدي، بخصوص سؤالك:\n\n${toEgyptianColloquial(pData.text.ar)}\n\nلو عندك أي سؤال تاني في أي موضوع قولي وأنا معاك!`;
     return {
       handledFast: true,
       replyText: replyAr,
@@ -658,28 +1066,29 @@ export function generateContextualSiteReply(params: {
     };
   }
 
-  // CASE 5: Direct verified passage match from articles/myths
-  if (localReply.kind === 'answer' && lang === 'ar') {
-    const passageText = localReply.hits
-      .map((h) => `• ${pick(h.title, 'ar')}:\n${toEgyptianColloquial(pick(h.text, 'ar'))}`)
-      .join('\n\n');
-    const hitLinks = localReply.hits
-      .filter((h) => Boolean(h.link))
-      .map((h) => ({ to: h.link || '/', label: h.title }));
-    return {
-      handledFast: true,
-      replyText: `بص يا سيدي، دي الخلاصة العلمية الموثقة بخصوص سؤالك:\n\n${passageText}\n\nلو تحب تسأل عن أي تفصيلة تانية أنا معاك!`,
-      links: hitLinks,
-      topicMemory,
-    };
-  }
-
+  // IMPORTANT: For ANY other question (general medicine, lifestyle, nutrition, culture, coding, daily chat),
+  // return handledFast = false so it goes straight to the Open Conversational AI (askGemini)
+  // without EVER hijacking the conversation with static antibiotic passages!
   return {
     handledFast: false,
     replyText: '',
     links: undefined,
     topicMemory,
   };
+}
+
+/**
+ * Smart open-domain fallback when all external cloud AI endpoints are unreachable (e.g. offline),
+ * ensuring the assistant NEVER falls back to the old "المضادات الحيوية صممت حصرياً..." message!
+ */
+export function buildOpenEgyptianOfflineFallback(userText: string, lang: Lang): string {
+  if (lang !== 'ar') {
+    return `I heard your question about "${userText.slice(0, 80)}". Right now the external AI service is temporarily busy, but I can immediately help you with any symptoms (headache, stomach pain, fever, cold, ear/dental/throat pain, vitamins, blood pressure, diabetes), medication details, prescription/lab OCR uploads, or updating your health profile and reminders!`;
+  }
+  return (
+    `أهلاً بيك يا صاحبي! سؤالك عن «${userText.slice(0, 70)}» وصلي، بس السيرفر الخارجي للأسئلة المفتوحة عليه ضغط لحظي دلوقتي.\n\n` +
+    `جرب تبعت سؤالك تاني في ثانية، أو اسألني فوراً في أي حاجة طبية أو صحية (صداع، مغص وقولون، حموضة، برد وسخونية، دوخة وفيتامينات، ضغط وسكر، وجع ودن أو ضرس أو زور، قراءة تحاليل ومزارع وروشتات، أو تظبيط منبهاتك وملفك الصحي) وهرد عليك في نفس اللحظة!`
+  );
 }
 
 /**
@@ -694,7 +1103,7 @@ export function buildPermittedPatientContextPrompt(params: {
   localVerifiedReply?: Reply | null;
   topicMemory?: ConversationTopicMemory;
 }): string {
-  const { profile, schedules, prescriptions, lang, localVerifiedReply, topicMemory } = params;
+  const { profile, schedules, prescriptions, topicMemory } = params;
   const allergies = profile.allergies.map((a) => `${a.drugName} (${a.severity})`).join('، ');
   const chronics = (profile.chronicConditions || []).map((c) => c.conditionName).join('، ');
   const activeMeds = profile.medications
@@ -705,53 +1114,31 @@ export function buildPermittedPatientContextPrompt(params: {
     .map((s) => `${s.medicineName} (${s.prescribedDose} في مواعيد ${s.doseTimes.join(' و ')})`)
     .join('، ');
 
-  let clinicalGrounding = '';
-  if (localVerifiedReply) {
-    if (localVerifiedReply.kind === 'answer') {
-      clinicalGrounding = localVerifiedReply.hits
-        .map((h) => `${pick(h.title, lang)}: ${pick(h.text, lang)}`)
-        .join('\n')
-        .slice(0, 700);
-    } else if (localVerifiedReply.kind === 'text') {
-      clinicalGrounding = pick(localVerifiedReply.text, lang).slice(0, 700);
-    }
-  }
-
   const parts: string[] = [];
 
   parts.push(
-    `[بيانات الملف الصحي للمريض الحالي:`,
-    `- الاسم: ${profile.displayName || 'غير مسجل'} | السن: ${profile.age || 'غير مسجل'} | الوزن: ${profile.weightKg ? `${profile.weightKg} كجم` : 'غير مسجل'} | فصيلة الدم: ${profile.bloodType || 'غير مسجلة'}`,
-    `- الحساسية الدوائية المسجلة: ${allergies || 'لا توجد حساسية مسجلة'}`,
-    `- الأمراض المزمنة: ${chronics || 'لا توجد أمراض مزمنة مسجلة'}`,
-    `- الأدوية الحالية: ${activeMeds || 'لا توجد أدوية حالية'}`,
-    `- منبهات الجرعات الشغالة: ${activeSchedules || 'لا توجد منبهات شغالة'}`,
-    `- عدد الروشتات المحفوظة: ${prescriptions.length}]`
+    `[ملف المريض: الاسم: ${profile.displayName || 'غير مسجل'} | السن: ${profile.age || 'غير مسجل'} | الوزن: ${profile.weightKg ? `${profile.weightKg} كجم` : 'غير مسجل'} | الحساسية: ${allergies || 'لا توجد'} | الأمراض المزمنة: ${chronics || 'لا توجد'} | الأدوية الحالية: ${activeMeds || 'لا توجد'} | المنبهات: ${activeSchedules || 'لا توجد'} | الروشتات: ${prescriptions.length}]`
   );
 
-  if (topicMemory && (topicMemory.lastCondition || topicMemory.lastMedicines.length > 0)) {
+  if (
+    topicMemory &&
+    (topicMemory.lastCondition || topicMemory.lastGeneralTopic || topicMemory.lastMedicines.length > 0)
+  ) {
     const condLabel = topicMemory.lastCondition
       ? CONDITION_NAMES_AR[topicMemory.lastCondition]
-      : 'غير محدد';
+      : topicMemory.lastGeneralTopic
+        ? GENERAL_HEALTH_GUIDES[topicMemory.lastGeneralTopic].titleAr
+        : 'موضوع عام';
     const medDetails = topicMemory.lastMedicines
+      .slice(0, 3)
       .map(
         (m) =>
-          `• ${m.genericName.ar} (${m.genericName.en}): الاستعمال: ${m.approvedUses.ar} | الجرعة: ${m.dosingReference.ar} | السعر في مصر: ${m.priceEgypt.ar} | البدايل: ${m.substitutes.ar} | الآثار الجانبية: ${m.sideEffects.ar}`
+          `• ${m.genericName.ar} (${m.genericName.en}): الجرعة: ${m.dosingReference.ar} | السعر: ${m.priceEgypt.ar} | البدايل: ${m.substitutes.ar}`
       )
       .join('\n');
 
     parts.push(
-      `[سياق المحادثة السابقة من قاعدة بيانات الموقع (اربط سؤال المستخدم الحالي بهذا السياق لو كان سؤال متابعة مثل "إيه أحسن؟" أو "بكام؟" أو "جرعته إيه؟"):`,
-      `- الحالة الصحية التي نتحدث عنها: ${condLabel}`,
-      ...(medDetails ? [`- الأدوية المطروحة في الحوار من قاعدة بياناتنا:\n${medDetails}`] : []),
-      `]`
-    );
-  }
-
-  if (clinicalGrounding) {
-    parts.push(
-      `[معلومات طبية موثقة من قاعدة بيانات المنصة للاستعانة بها في الرد (اشرحها للمريض بالعامية المصرية الودودة لو سؤاله بالعربي):`,
-      `${clinicalGrounding}]`
+      `[سياق الحوار السابق (اربط سؤال المستخدم به لو كان سؤال متابعة): الموضوع: ${condLabel}${medDetails ? `\n${medDetails}` : ''}]`
     );
   }
 
@@ -759,7 +1146,7 @@ export function buildPermittedPatientContextPrompt(params: {
 }
 
 /**
- * Converts formal Arabic medical text into warm Egyptian Colloquial Arabic for offline fallback.
+ * Converts formal Arabic medical text into warm Egyptian Colloquial Arabic.
  */
 export function toEgyptianColloquial(formalText: string): string {
   if (!formalText) return '';

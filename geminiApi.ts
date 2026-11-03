@@ -236,30 +236,52 @@ export async function askGemini(
     { role: 'user', content: question },
   ];
 
-  const pollController = new AbortController();
-  const pollTimer = setTimeout(() => pollController.abort(), 4500);
-  try {
-    const res = await fetch('https://text.pollinations.ai/openai', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: pollController.signal,
-      body: JSON.stringify({
-        model: 'openai',
-        messages,
-        temperature: 0.25,
-      }),
-    });
-    clearTimeout(pollTimer);
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const json = await res.json();
-    const text = json?.choices?.[0]?.message?.content;
-    if (!text) throw new Error('EMPTY_RESPONSE');
-    return cleanAssistantMarkdown(text);
-  } catch (err) {
-    clearTimeout(pollTimer);
-    throw err;
+  for (const modelName of ['openai', 'openai-fast', 'mistral']) {
+    const pollController = new AbortController();
+    const pollTimer = setTimeout(() => pollController.abort(), 8000);
+    try {
+      const res = await fetch('https://text.pollinations.ai/openai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: pollController.signal,
+        body: JSON.stringify({
+          model: modelName,
+          messages,
+          temperature: 0.3,
+        }),
+      });
+      clearTimeout(pollTimer);
+      if (res.ok) {
+        const json = await res.json();
+        const text = json?.choices?.[0]?.message?.content;
+        if (text && text.trim()) {
+          return cleanAssistantMarkdown(text);
+        }
+      }
+    } catch {
+      clearTimeout(pollTimer);
+    }
   }
+
+  // Final lightweight GET fallback on pollinations for open questions
+  const getController = new AbortController();
+  const getTimer = setTimeout(() => getController.abort(), 7000);
+  try {
+    const compactPrompt = `جاوب باللهجة المصرية العامية الودودة وبشكل مباشر ومفيد على السؤال التالي:
+${question.slice(0, 700)}`;
+    const res = await fetch(
+      `https://text.pollinations.ai/${encodeURIComponent(compactPrompt)}?model=openai`,
+      { signal: getController.signal }
+    );
+    clearTimeout(getTimer);
+    if (res.ok) {
+      const txt = await res.text();
+      if (txt && txt.trim()) return cleanAssistantMarkdown(txt);
+    }
+  } catch {
+    clearTimeout(getTimer);
+  }
+  throw new Error('ALL_AI_ENDPOINTS_UNAVAILABLE');
 }
 
 export interface VisionAnalysisResult {
