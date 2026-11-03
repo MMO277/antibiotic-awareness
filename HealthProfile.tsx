@@ -50,11 +50,19 @@ export default function HealthProfile() {
   const [passportPhotoLoading, setPassportPhotoLoading] = useState(false);
   const [passportShare, setPassportShare] = useState<PassportShare | null>(null);
   const [passportLoading, setPassportLoading] = useState(true);
-  const [passportPin, setPassportPin] = useState('');
+  // PIN محفوظ مرة واحدة
+  const [savedPin, setSavedPin] = useState('');
+  const [pinInput, setPinInput] = useState('');
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [pinSaving, setPinSaving] = useState(false);
+  // مشاركة
   const [passportHours, setPassportHours] = useState(24);
   const [passportSharing, setPassportSharing] = useState(false);
+  // مشاركة الصورة/الرابط
+  const [shareSuccess, setShareSuccess] = useState('');
   const [chronicInput, setChronicInput] = useState('');
   const photoFileRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   // تحميل بيانات البطاقة
   useEffect(() => {
@@ -64,6 +72,7 @@ export default function HealthProfile() {
       getPassportPhotoUrl(user.uid),
     ]).then(([s, photo]) => {
       setPassportShare(s);
+      if (s?.pin) setSavedPin(s.pin);
       setPassportPhoto(photo);
       setPassportLoading(false);
     });
@@ -107,20 +116,187 @@ export default function HealthProfile() {
     setProfile((p) => ({ ...p, notes: `CHRONIC:${JSON.stringify(updated)}||${cleaned}` }));
   };
 
+  // حفظ PIN جديد
+  const handleSavePin = async () => {
+    if (!user || pinInput.length < 4) return;
+    setPinSaving(true);
+    await sharePassport(user.uid, pinInput, 0); // حفظ PIN بدون تفعيل مشاركة
+    setSavedPin(pinInput);
+    setPinInput('');
+    setShowPinSetup(false);
+    setPinSaving(false);
+  };
+
+  // تفعيل المشاركة بالـ PIN المحفوظ
   const handlePassportShare = async () => {
-    if (!user || passportPin.length < 4) return;
+    if (!user || !savedPin) return;
     setPassportSharing(true);
-    await sharePassport(user.uid, passportPin, passportHours);
+    await sharePassport(user.uid, savedPin, passportHours);
     const s = await getPassportShare(user.uid);
     setPassportShare(s);
     setPassportSharing(false);
-    setPassportPin('');
   };
 
   const handlePassportRevoke = async () => {
     if (!user) return;
     await revokePassport(user.uid);
     setPassportShare(null);
+  };
+
+  // مشاركة الرابط
+  const handleShareLink = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: isAr ? 'بطاقتي الصحية' : 'My Health Passport',
+        text: isAr ? 'بطاقتي الصحية الذكية — الـ PIN مطلوب للوصول' : 'My Smart Health Passport — PIN required',
+        url: passportUrl,
+      });
+    } else {
+      navigator.clipboard.writeText(passportUrl);
+      setShareSuccess(isAr ? '✅ تم نسخ الرابط!' : '✅ Link copied!');
+      setTimeout(() => setShareSuccess(''), 3000);
+    }
+  };
+
+  // بناء صورة البطاقة بـ Canvas مباشرة بدون html2canvas
+  const handleShareImage = async () => {
+    if (!user) return;
+    try {
+      const canvas = document.createElement('canvas');
+      const W = 800; const H = 450;
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('no ctx');
+
+      // خلفية gradient
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, '#0b3c5d');
+      grad.addColorStop(0.55, '#1565a8');
+      grad.addColorStop(1, '#0ea5e9');
+      ctx.fillStyle = grad;
+      ctx.roundRect(0, 0, W, H, 28);
+      ctx.fill();
+
+      // دوائر زخرفية
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.beginPath(); ctx.arc(W + 60, -60, 200, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-50, H + 50, 160, 0, Math.PI * 2); ctx.fill();
+
+      // هيدر
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.roundRect(32, 28, W - 64, 54, 12); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 20px system-ui';
+      ctx.fillText('🏥  Antibiotic Awareness — SMART PATIENT PASSPORT', 52, 62);
+
+      // اسم المريض
+      ctx.font = 'bold 32px system-ui';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(profile.displayName || 'Patient', 200, 140);
+
+      // بيانات
+      ctx.font = '18px system-ui';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillText(`${isAr ? 'العمر' : 'Age'}: ${profile.age || '—'}`, 200, 172);
+      ctx.fillText(`${isAr ? 'النوع' : 'Gender'}: ${profile.gender === 'male' ? (isAr ? 'ذكر' : 'Male') : profile.gender === 'female' ? (isAr ? 'أنثى' : 'Female') : '—'}`, 200, 198);
+
+      // فصيلة الدم
+      ctx.fillStyle = '#e74c3c';
+      ctx.roundRect(200, 212, 120, 36, 8); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 18px system-ui';
+      ctx.fillText(`🩸 ${profile.bloodType || '?'}`, 216, 235);
+
+      // حساسية
+      if (profile.allergies.length > 0) {
+        ctx.fillStyle = '#f59e0b';
+        ctx.roundRect(332, 212, 160, 36, 8); ctx.fill();
+        ctx.fillStyle = '#1c1917';
+        ctx.font = 'bold 16px system-ui';
+        ctx.fillText(`⚠️ ${profile.allergies.length} ${isAr ? 'حساسية' : 'Allergies'}`, 348, 235);
+      }
+
+      // صورة المريض
+      if (passportPhoto) {
+        try {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          await new Promise<void>((res, rej) => {
+            img.onload = () => res();
+            img.onerror = () => rej();
+            img.src = passportPhoto;
+          });
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(36, 100, 140, 168, 12);
+          ctx.clip();
+          ctx.drawImage(img, 36, 100, 140, 168);
+          ctx.restore();
+          // إطار
+          ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+          ctx.lineWidth = 2;
+          ctx.roundRect(36, 100, 140, 168, 12);
+          ctx.stroke();
+        } catch { /* صورة مش متاحة */ }
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.roundRect(36, 100, 140, 168, 12); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '56px system-ui';
+        ctx.fillText('👤', 62, 200);
+      }
+
+      // QR
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(passportUrl)}&margin=6&color=0b3c5d`;
+      try {
+        const qrImg = new Image();
+        qrImg.crossOrigin = 'anonymous';
+        await new Promise<void>((res, rej) => {
+          qrImg.onload = () => res();
+          qrImg.onerror = () => rej();
+          qrImg.src = qrUrl;
+        });
+        // خلفية بيضاء للـ QR
+        ctx.fillStyle = '#fff';
+        ctx.roundRect(W - 188, 100, 152, 152, 10); ctx.fill();
+        ctx.drawImage(qrImg, W - 184, 104, 144, 144);
+      } catch { /* QR مش اتحمل */ }
+
+      // شريط سفلي
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.roundRect(32, H - 56, W - 64, 34, 8); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.font = '13px monospace';
+      ctx.fillText(`ID: ${user.uid.slice(0,8).toUpperCase()} ${user.uid.slice(8,16).toUpperCase()}`, 48, H - 33);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.font = '13px system-ui';
+      ctx.textAlign = 'right';
+      ctx.fillText(`💊 ${profile.medications.filter(m => m.status === 'active').length} ${isAr ? 'دواء نشط' : 'Active Meds'}`, W - 48, H - 33);
+      ctx.textAlign = 'left';
+
+      // مشاركة أو تنزيل
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'health-passport.png', { type: 'image/png' });
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: isAr ? 'بطاقتي الصحية الذكية' : 'My Smart Health Passport',
+          });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = 'health-passport.png'; a.click();
+          URL.revokeObjectURL(url);
+          setShareSuccess(isAr ? '✅ تم تنزيل البطاقة!' : '✅ Passport downloaded!');
+          setTimeout(() => setShareSuccess(''), 3000);
+        }
+      }, 'image/png');
+
+    } catch (err) {
+      setShareSuccess(isAr ? '⚠️ التقط screenshot للبطاقة' : '⚠️ Take a screenshot instead');
+      setTimeout(() => setShareSuccess(''), 4000);
+    }
   };
 
   const passportUrl = user
@@ -855,54 +1031,93 @@ export default function HealthProfile() {
             </div>
           </div>
 
-          {/* حالة المشاركة */}
+          {/* ── قسم الـ PIN ── */}
           {passportLoading ? (
             <p className="small muted">{isAr ? 'جارٍ التحميل…' : 'Loading…'}</p>
-          ) : passportIsActive ? (
-            <div style={{ background:'#d1fae5', borderRadius:10, padding:'12px 14px', border:'1.5px solid #6ee7b7' }}>
-              <div style={{ fontWeight:700, color:'#065f46', marginBottom:6 }}>
-                ✅ {isAr ? 'البطاقة مفعّلة' : 'Passport Active'}
-              </div>
-              <div className="small" style={{ color:'#047857', marginBottom:10 }}>
-                {isAr ? `تنتهي بعد ${passportRemaining} دقيقة` : `Expires in ${passportRemaining} min`}
-              </div>
-              <button
-                className="btn"
-                style={{ background:'#ef4444', color:'#fff', border:'none', width:'100%' }}
-                onClick={handlePassportRevoke}
-              >
-                🚫 {isAr ? 'إيقاف المشاركة' : 'Revoke Access'}
-              </button>
-            </div>
           ) : (
-            <>
-              <div style={{ background:'#fef3c7', borderRadius:8, padding:'10px 12px', border:'1px solid #fcd34d' }}>
-                <span className="small" style={{ color:'#92400e' }}>
-                  🔒 {isAr ? 'البطاقة غير مفعّلة — لا أحد يمكنه رؤيتها الآن' : 'Inactive — nobody can view it now'}
-                </span>
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+
+              {/* PIN الحالي */}
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#f8fafc', borderRadius:10, padding:'10px 14px' }}>
+                <div>
+                  <div style={{ fontWeight:700, color:'#0b3c5d', fontSize:'0.85rem' }}>
+                    🔑 {isAr ? 'كود البطاقة (PIN)' : 'Passport PIN'}
+                  </div>
+                  <div className="small muted" style={{ marginTop:2 }}>
+                    {savedPin ? '● ● ● ●' : (isAr ? 'لم يتم تعيين PIN بعد' : 'No PIN set yet')}
+                  </div>
+                </div>
+                <button
+                  className="btn btn-sm"
+                  style={{ fontSize:'0.78rem' }}
+                  onClick={() => { setShowPinSetup(true); setPinInput(''); }}
+                >
+                  {savedPin ? (isAr ? '✏️ تغيير' : '✏️ Change') : (isAr ? '+ تعيين PIN' : '+ Set PIN')}
+                </button>
               </div>
 
-              {/* نموذج التفعيل */}
-              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                <div>
-                  <label className="small" style={{ display:'block', marginBottom:4, fontWeight:600 }}>
-                    🔑 {isAr ? 'PIN (4 أرقام على الأقل)' : 'PIN (min 4 digits)'}
-                  </label>
-                  <input
-                    className="input"
-                    type="password"
-                    inputMode="numeric"
-                    maxLength={8}
-                    value={passportPin}
-                    onChange={(e) => setPassportPin(e.target.value.replace(/\D/g, ''))}
-                    placeholder="● ● ● ●"
-                    style={{ width:'100%' }}
-                  />
+              {/* فورم تعيين PIN */}
+              {showPinSetup && (
+                <div style={{ background:'#eff6ff', borderRadius:10, padding:'12px 14px', border:'1px solid #bfdbfe' }}>
+                  <div style={{ fontWeight:600, color:'#1e40af', marginBottom:8, fontSize:'0.85rem' }}>
+                    {savedPin ? (isAr ? 'تغيير الـ PIN' : 'Change PIN') : (isAr ? 'تعيين PIN جديد' : 'Set New PIN')}
+                  </div>
+                  <div style={{ display:'flex', gap:8 }}>
+                    <input
+                      className="input"
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={8}
+                      value={pinInput}
+                      onChange={(e) => setPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="● ● ● ●"
+                      style={{ flex:1, textAlign:'center', fontSize:'1.2rem', letterSpacing:6 }}
+                    />
+                    <button
+                      className="btn"
+                      disabled={pinInput.length < 4 || pinSaving}
+                      onClick={handleSavePin}
+                      style={{ background:'#0b3c5d', color:'#fff' }}
+                    >
+                      {pinSaving ? '⏳' : (isAr ? 'حفظ' : 'Save')}
+                    </button>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => setShowPinSetup(false)}
+                    >
+                      {isAr ? 'إلغاء' : 'Cancel'}
+                    </button>
+                  </div>
+                  <p className="small muted" style={{ marginTop:6 }}>
+                    {isAr ? '4 أرقام على الأقل' : 'At least 4 digits'}
+                  </p>
                 </div>
-                <div>
-                  <label className="small" style={{ display:'block', marginBottom:4, fontWeight:600 }}>
-                    ⏱️ {isAr ? 'مدة الصلاحية' : 'Duration'}
-                  </label>
+              )}
+
+              {/* حالة المشاركة */}
+              {passportIsActive ? (
+                <div style={{ background:'#d1fae5', borderRadius:10, padding:'12px 14px', border:'1.5px solid #6ee7b7' }}>
+                  <div style={{ fontWeight:700, color:'#065f46', marginBottom:4 }}>
+                    ✅ {isAr ? 'البطاقة مفعّلة الآن' : 'Passport is Active'}
+                  </div>
+                  <div className="small" style={{ color:'#047857', marginBottom:10 }}>
+                    ⏰ {isAr ? `تنتهي بعد ${passportRemaining} دقيقة` : `Expires in ${passportRemaining} min`}
+                  </div>
+                  <button
+                    className="btn"
+                    style={{ background:'#ef4444', color:'#fff', border:'none', width:'100%' }}
+                    onClick={handlePassportRevoke}
+                  >
+                    🚫 {isAr ? 'إيقاف المشاركة' : 'Stop Sharing'}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                  <div style={{ background:'#fef3c7', borderRadius:8, padding:'8px 12px', border:'1px solid #fcd34d' }}>
+                    <span className="small" style={{ color:'#92400e' }}>
+                      🔒 {isAr ? 'غير مفعّلة — اختر المدة واضغط شارك' : 'Inactive — choose duration and share'}
+                    </span>
+                  </div>
                   <select
                     className="input"
                     value={passportHours}
@@ -916,18 +1131,44 @@ export default function HealthProfile() {
                     <option value={48}>{isAr ? '48 ساعة' : '48 Hours'}</option>
                   </select>
                 </div>
-                <button
-                  className="btn"
-                  disabled={passportPin.length < 4 || passportSharing}
-                  onClick={handlePassportShare}
-                  style={{ background:'#0b3c5d', color:'#fff', width:'100%' }}
-                >
-                  {passportSharing
-                    ? (isAr ? '⏳ جارٍ التفعيل…' : '⏳ Activating…')
-                    : (isAr ? '🔓 تفعيل البطاقة للمشاركة' : '🔓 Activate for Sharing')}
-                </button>
-              </div>
-            </>
+              )}
+
+              {/* رسالة نجاح */}
+              {shareSuccess && (
+                <div style={{ background:'#d1fae5', borderRadius:8, padding:'8px 12px', textAlign:'center', fontWeight:600, color:'#065f46', fontSize:'0.85rem' }}>
+                  {shareSuccess}
+                </div>
+              )}
+
+              {/* أزرار المشاركة */}
+              {savedPin && (
+                <div style={{ display:'flex', gap:8 }}>
+                  <button
+                    className="btn"
+                    style={{ flex:1, background:'#0b3c5d', color:'#fff', fontSize:'0.82rem' }}
+                    disabled={passportSharing}
+                    onClick={async () => { await handlePassportShare(); handleShareImage(); }}
+                  >
+                    {passportSharing ? '⏳' : (isAr ? '🖼️ شارك صورة' : '🖼️ Share Image')}
+                  </button>
+                  <button
+                    className="btn"
+                    style={{ flex:1, background:'#1a6b9a', color:'#fff', fontSize:'0.82rem' }}
+                    disabled={passportSharing}
+                    onClick={async () => { await handlePassportShare(); handleShareLink(); }}
+                  >
+                    {isAr ? '🔗 شارك رابط' : '🔗 Share Link'}
+                  </button>
+                </div>
+              )}
+
+              {!savedPin && (
+                <p className="small muted" style={{ textAlign:'center' }}>
+                  {isAr ? '⬆️ عيّن PIN أولاً لتفعيل المشاركة' : '⬆️ Set a PIN first to enable sharing'}
+                </p>
+              )}
+
+            </div>
           )}
 
           {/* الأمراض المزمنة */}
