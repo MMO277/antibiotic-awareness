@@ -723,7 +723,8 @@ export function validateActionArguments<K extends AiActionType>(
     case 'show_reminders':
     case 'show_prescriptions':
     case 'show_medical_documents':
-    case 'summarize_health_records': {
+    case 'summarize_health_records':
+    default: {
       const sanitized: ReadQueryArgs = {
         ...(a.filterText ? { filterText: sanitizeText(a.filterText, 100) } : {}),
         ...(typeof a.limit === 'number' && a.limit >= 1 && a.limit <= 50
