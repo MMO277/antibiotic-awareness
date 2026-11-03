@@ -1,24 +1,17 @@
 /**
  * passportService.ts
  * Smart Patient Passport — Firebase service layer
- * - كل مريض ليه passport_id ثابت (= uid)
- * - المريض يشارك بـ PIN + مدة
- * - بعد انتهاء المدة الصلاحية تنتهي تلقائيًا
  */
 
 import {
-  doc,
-  getDoc,
-  setDoc,
-  serverTimestamp,
-  collection,
-  addDoc,
+  doc, getDoc, setDoc, collection, addDoc,
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage, configured } from './firebase';
 
 export interface PassportShare {
-  pin: string;           // PIN المريض (مخزنة plain — مش sensitive data طبية)
-  expiresAt: number;     // timestamp بالمللي ثانية
+  pin: string;
+  expiresAt: number;
   createdAt: number;
 }
 
@@ -27,59 +20,76 @@ export interface PassportAccessLog {
   note: string;
 }
 
-/** يجيب حالة المشاركة الحالية للمريض */
-export async function getPassportShare(uid: string): Promise<PassportShare | null> {
-  if (!db) return null;
-  const ref = doc(db, 'passportShares', uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) return null;
-  return snap.data() as PassportShare;
+/** رفع صورة البطاقة لـ Firebase Storage */
+export async function uploadPassportPhoto(uid: string, file: File): Promise<string> {
+  if (!configured || !storage) throw new Error('STORAGE_NOT_CONFIGURED');
+  const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  const storageRef = ref(storage, `passport_photos/${uid}/photo.${ext}`);
+  await uploadBytes(storageRef, file, { contentType: file.type || 'image/jpeg' });
+  const url = await getDownloadURL(storageRef);
+  return url;
 }
 
-/** المريض يشارك البطاقة: يحدد PIN ومدة (بالساعات) */
+/** حفظ URL الصورة في Firestore */
+export async function savePassportPhotoUrl(uid: string, url: string): Promise<void> {
+  if (!db) return;
+  await setDoc(doc(db, 'passportShares', uid), { photoUrl: url }, { merge: true });
+}
+
+/** جيب URL الصورة */
+export async function getPassportPhotoUrl(uid: string): Promise<string> {
+  if (!db) return '';
+  const snap = await getDoc(doc(db, 'passportShares', uid));
+  return snap.exists() ? (snap.data().photoUrl || '') : '';
+}
+
+/** جيب حالة المشاركة */
+export async function getPassportShare(uid: string): Promise<PassportShare | null> {
+  if (!db) return null;
+  const snap = await getDoc(doc(db, 'passportShares', uid));
+  if (!snap.exists()) return null;
+  const d = snap.data();
+  if (!d.pin && !d.expiresAt) return null;
+  return { pin: d.pin || '', expiresAt: d.expiresAt || 0, createdAt: d.createdAt || 0 };
+}
+
+/** تفعيل المشاركة */
 export async function sharePassport(uid: string, pin: string, hours: number): Promise<void> {
   if (!db) return;
   const now = Date.now();
-  const share: PassportShare = {
+  await setDoc(doc(db, 'passportShares', uid), {
     pin,
     expiresAt: now + hours * 60 * 60 * 1000,
     createdAt: now,
-  };
-  await setDoc(doc(db, 'passportShares', uid), share);
+  }, { merge: true });
 }
 
-/** المريض يوقف المشاركة فورًا */
+/** إيقاف المشاركة */
 export async function revokePassport(uid: string): Promise<void> {
   if (!db) return;
   await setDoc(doc(db, 'passportShares', uid), {
-    pin: '',
-    expiresAt: 0,
-    createdAt: 0,
-  });
+    pin: '', expiresAt: 0, createdAt: 0,
+  }, { merge: true });
 }
 
-/** التحقق من PIN والمدة — بيرجع true لو صح */
+/** التحقق من PIN والمدة */
 export function isPassportValid(share: PassportShare | null, enteredPin: string): boolean {
   if (!share) return false;
   if (Date.now() > share.expiresAt) return false;
-  if (share.pin !== enteredPin) return false;
-  return true;
+  return share.pin === enteredPin;
 }
 
-/** تسجيل دخول في سجل الوصول */
+/** تسجيل دخول */
 export async function logPassportAccess(uid: string): Promise<void> {
   if (!db) return;
   try {
     await addDoc(collection(db, 'passportShares', uid, 'accessLogs'), {
-      accessedAt: Date.now(),
-      note: 'passport_viewed',
+      accessedAt: Date.now(), note: 'passport_viewed',
     });
-  } catch {
-    // سجل الوصول اختياري — لو فشل مش مشكلة
-  }
+  } catch { /* اختياري */ }
 }
 
-/** يجيب سجل الوصول للمريض (للعرض في بطاقته) */
+/** سجل الوصول */
 export async function getPassportAccessLogs(uid: string): Promise<PassportAccessLog[]> {
   if (!db) return [];
   try {
@@ -89,7 +99,5 @@ export async function getPassportAccessLogs(uid: string): Promise<PassportAccess
       .map((d) => d.data() as PassportAccessLog)
       .sort((a, b) => b.accessedAt - a.accessedAt)
       .slice(0, 10);
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
