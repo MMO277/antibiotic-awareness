@@ -154,7 +154,7 @@ export async function syncNativeAlarmsWithSchedules(
     if (!sch.doses || sch.doses.length === 0) continue;
 
     for (const d of sch.doses) {
-      if (d.status === 'taken' || d.status === 'skipped') continue;
+      if (d.status === 'taken') continue;
 
       const doseDate = new Date(d.scheduledTime);
       const doseTimeMs = doseDate.getTime();

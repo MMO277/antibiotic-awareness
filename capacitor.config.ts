@@ -1,4 +1,15 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+export interface CapacitorConfig {
+  appId: string;
+  appName: string;
+  webDir: string;
+  bundledWebRuntime?: boolean;
+  server?: {
+    androidScheme?: string;
+    cleartext?: boolean;
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  plugins?: Record<string, any>;
+}
 
 const config: CapacitorConfig = {
   appId: 'com.antibiotic.awareness',
