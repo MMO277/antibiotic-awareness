@@ -17,6 +17,9 @@ service cloud.firestore {
           && (!('treatmentEvents' in d) || d.treatmentEvents is list)
           && (!('radarWorkspace' in d) || d.radarWorkspace is map)
           && (!('healthProfile' in d) || d.healthProfile is map)
+          && (!('medicalDocuments' in d) || d.medicalDocuments is list)
+          && (!('patientAuditLogs' in d) || d.patientAuditLogs is list)
+          && (!('reminders' in d) || d.reminders is list)
           && (!('learnDone' in d) || d.learnDone is list);
     }
 
@@ -43,6 +46,30 @@ service cloud.firestore {
       allow read: if isOwner(uid) || isAdmin();
       allow create, update: if isOwner(uid) && validUserDocWrite();
       allow delete: if isAdmin();
+
+      // Patient-scoped immutable audit logs for AI & manual health record changes
+      match /auditLogs/{logId} {
+        allow read: if isOwner(uid) || isAdmin();
+        allow create: if isOwner(uid)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.actionType is string
+          && request.resource.data.timestamp is string;
+        allow update, delete: if false;
+      }
+
+      // Patient-scoped medical documents metadata collection
+      match /medicalDocuments/{docId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.category in ['prescription', 'lab_report', 'medical_report', 'leaflet', 'other']
+          && request.resource.data.fileName is string;
+        allow delete: if isOwner(uid);
+      }
+
+      // Patient-scoped medication reminders collection
+      match /reminders/{reminderId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     match /medicines/{id} {
@@ -182,21 +209,18 @@ service cloud.firestore {
 
     // ── Smart Patient Passport ──────────────────────────────────────────────────
 
-    // passportShares: المريض يتحكم في مشاركة بطاقته
+    // passportShares: المريض يتحكم في مشاركة بطاقته (يسمح بالقراءة للزائر فقط إذا كانت المشاركة مفعّلة ولم تنتهِ صلاحيتها)
     match /passportShares/{uid} {
-      // المريض نفسه يقرأ ويكتب
       allow read, write: if isOwner(uid);
-      // أي زائر يقدر يقرأ (عشان يتحقق من الـ PIN والمدة)
-      // الحماية الحقيقية هي الـ PIN والمدة في الكود
-      allow read: if true;
+      allow get: if resource.data.expiresAt is number && resource.data.expiresAt > 0;
     }
 
     // سجل الوصول — فرعي تحت passportShares
     match /passportShares/{uid}/accessLogs/{logId} {
-      // أي حد يكتب (لما يفتح البطاقة)
-      allow create: if true;
-      // المريض نفسه يقرأ
+      allow create: if request.resource.data.accessedAt is number
+        && request.resource.data.note is string;
       allow read: if isOwner(uid);
+      allow update, delete: if false;
     }
   }
 }

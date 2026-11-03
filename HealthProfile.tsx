@@ -11,6 +11,7 @@ import {
   useSyncedHealthProfile,
   AllergySeverity,
   EvidenceStatus,
+  syncNotesWithChronicConditions,
 } from './allergyData';
 import {
   getPassportShare,
@@ -62,7 +63,6 @@ export default function HealthProfile() {
   const [shareSuccess, setShareSuccess] = useState('');
   const [chronicInput, setChronicInput] = useState('');
   const photoFileRef = useRef<HTMLInputElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   // تحميل بيانات البطاقة
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function HealthProfile() {
       const url = await uploadPassportPhoto(user.uid, file);
       await savePassportPhotoUrl(user.uid, url);
       setPassportPhoto(url);
-    } catch (err) {
+    } catch {
       alert(isAr ? 'فشل رفع الصورة. حاول مرة أخرى.' : 'Photo upload failed. Please try again.');
     } finally {
       setPassportPhotoLoading(false);
@@ -94,6 +94,9 @@ export default function HealthProfile() {
   }, [user, isAr]);
 
   const passportChronicList: string[] = (() => {
+    if (profile.chronicConditions && profile.chronicConditions.length > 0) {
+      return profile.chronicConditions.map((c) => c.conditionName);
+    }
     try {
       const n = profile.notes || '';
       const idx = n.indexOf('CHRONIC:');
@@ -103,24 +106,51 @@ export default function HealthProfile() {
   })();
 
   const addChronic = () => {
-    if (!chronicInput.trim()) return;
-    const updated = [...passportChronicList, chronicInput.trim()];
-    const cleaned = (profile.notes || '').replace(/CHRONIC:[\s\S]*?(\|\||$)/, '');
-    setProfile((p) => ({ ...p, notes: `CHRONIC:${JSON.stringify(updated)}||${cleaned}` }));
+    const cleanName = chronicInput.trim();
+    if (!cleanName) return;
+    setProfile((p) => {
+      const existing = p.chronicConditions || [];
+      if (existing.some((c) => c.conditionName.toLowerCase() === cleanName.toLowerCase())) {
+        return p;
+      }
+      const nextChronics = [
+        {
+          id: `cond-${Date.now()}`,
+          conditionName: cleanName,
+          evidenceStatus: 'patient_reported' as const,
+          source: 'manual_entry' as const,
+          createdAt: new Date().toISOString(),
+        },
+        ...existing,
+      ];
+      return {
+        ...p,
+        chronicConditions: nextChronics,
+        notes: syncNotesWithChronicConditions(p.notes || '', nextChronics),
+      };
+    });
     setChronicInput('');
   };
 
   const removeChronic = (idx: number) => {
-    const updated = passportChronicList.filter((_, i) => i !== idx);
-    const cleaned = (profile.notes || '').replace(/CHRONIC:[\s\S]*?(\|\||$)/, '');
-    setProfile((p) => ({ ...p, notes: `CHRONIC:${JSON.stringify(updated)}||${cleaned}` }));
+    setProfile((p) => {
+      const targetName = passportChronicList[idx];
+      const nextChronics = (p.chronicConditions || []).filter(
+        (c, i) => (targetName ? c.conditionName !== targetName : i !== idx)
+      );
+      return {
+        ...p,
+        chronicConditions: nextChronics,
+        notes: syncNotesWithChronicConditions(p.notes || '', nextChronics),
+      };
+    });
   };
 
   // حفظ PIN جديد
   const handleSavePin = async () => {
     if (!user || pinInput.length < 4) return;
     setPinSaving(true);
-    await sharePassport(user.uid, pinInput, 0); // حفظ PIN بدون تفعيل مشاركة
+    await sharePassport(user.uid, pinInput, 0);
     setSavedPin(pinInput);
     setPinInput('');
     setShowPinSetup(false);
@@ -168,7 +198,6 @@ export default function HealthProfile() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('no ctx');
 
-      // خلفية gradient
       const grad = ctx.createLinearGradient(0, 0, W, H);
       grad.addColorStop(0, '#0b3c5d');
       grad.addColorStop(0.55, '#1565a8');
@@ -177,37 +206,31 @@ export default function HealthProfile() {
       ctx.roundRect(0, 0, W, H, 28);
       ctx.fill();
 
-      // دوائر زخرفية
       ctx.fillStyle = 'rgba(255,255,255,0.06)';
       ctx.beginPath(); ctx.arc(W + 60, -60, 200, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.arc(-50, H + 50, 160, 0, Math.PI * 2); ctx.fill();
 
-      // هيدر
       ctx.fillStyle = 'rgba(255,255,255,0.12)';
       ctx.roundRect(32, 28, W - 64, 54, 12); ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 20px system-ui';
       ctx.fillText('🏥  Antibiotic Awareness — SMART PATIENT PASSPORT', 52, 62);
 
-      // اسم المريض
       ctx.font = 'bold 32px system-ui';
       ctx.fillStyle = '#fff';
       ctx.fillText(profile.displayName || 'Patient', 200, 140);
 
-      // بيانات
       ctx.font = '18px system-ui';
       ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.fillText(`${isAr ? 'العمر' : 'Age'}: ${profile.age || '—'}`, 200, 172);
       ctx.fillText(`${isAr ? 'النوع' : 'Gender'}: ${profile.gender === 'male' ? (isAr ? 'ذكر' : 'Male') : profile.gender === 'female' ? (isAr ? 'أنثى' : 'Female') : '—'}`, 200, 198);
 
-      // فصيلة الدم
       ctx.fillStyle = '#e74c3c';
       ctx.roundRect(200, 212, 120, 36, 8); ctx.fill();
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 18px system-ui';
       ctx.fillText(`🩸 ${profile.bloodType || '?'}`, 216, 235);
 
-      // حساسية
       if (profile.allergies.length > 0) {
         ctx.fillStyle = '#f59e0b';
         ctx.roundRect(332, 212, 160, 36, 8); ctx.fill();
@@ -216,7 +239,6 @@ export default function HealthProfile() {
         ctx.fillText(`⚠️ ${profile.allergies.length} ${isAr ? 'حساسية' : 'Allergies'}`, 348, 235);
       }
 
-      // صورة المريض
       if (passportPhoto) {
         try {
           const img = new Image();
@@ -232,7 +254,6 @@ export default function HealthProfile() {
           ctx.clip();
           ctx.drawImage(img, 36, 100, 140, 168);
           ctx.restore();
-          // إطار
           ctx.strokeStyle = 'rgba(255,255,255,0.5)';
           ctx.lineWidth = 2;
           ctx.roundRect(36, 100, 140, 168, 12);
@@ -246,7 +267,6 @@ export default function HealthProfile() {
         ctx.fillText('👤', 62, 200);
       }
 
-      // QR
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(passportUrl)}&margin=6&color=0b3c5d`;
       try {
         const qrImg = new Image();
@@ -256,13 +276,11 @@ export default function HealthProfile() {
           qrImg.onerror = () => rej();
           qrImg.src = qrUrl;
         });
-        // خلفية بيضاء للـ QR
         ctx.fillStyle = '#fff';
         ctx.roundRect(W - 188, 100, 152, 152, 10); ctx.fill();
         ctx.drawImage(qrImg, W - 184, 104, 144, 144);
       } catch { /* QR مش اتحمل */ }
 
-      // شريط سفلي
       ctx.fillStyle = 'rgba(255,255,255,0.1)';
       ctx.roundRect(32, H - 56, W - 64, 34, 8); ctx.fill();
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
@@ -274,7 +292,6 @@ export default function HealthProfile() {
       ctx.fillText(`💊 ${profile.medications.filter(m => m.status === 'active').length} ${isAr ? 'دواء نشط' : 'Active Meds'}`, W - 48, H - 33);
       ctx.textAlign = 'left';
 
-      // مشاركة أو تنزيل
       canvas.toBlob(async (blob) => {
         if (!blob) return;
         const file = new File([blob], 'health-passport.png', { type: 'image/png' });
@@ -293,7 +310,7 @@ export default function HealthProfile() {
         }
       }, 'image/png');
 
-    } catch (err) {
+    } catch {
       setShareSuccess(isAr ? '⚠️ التقط screenshot للبطاقة' : '⚠️ Take a screenshot instead');
       setTimeout(() => setShareSuccess(''), 4000);
     }
@@ -312,6 +329,7 @@ export default function HealthProfile() {
   const [editingPersonal, setEditingPersonal] = useState(false);
   const [nameInput, setNameInput] = useState(profile.displayName);
   const [ageInput, setAgeInput] = useState(profile.age);
+  const [weightInput, setWeightInput] = useState(profile.weightKg || '');
   const [bloodInput, setBloodInput] = useState(profile.bloodType);
   const [contactInput, setContactInput] = useState(profile.emergencyContact);
   const [genderInput, setGenderInput] = useState(profile.gender);
@@ -335,16 +353,16 @@ export default function HealthProfile() {
   const medRoute = 'oral';
   const [medStatus, setMedStatus] = useState<'active' | 'completed' | 'discontinued'>('active');
 
-  // Keep form inputs in sync when cloud profile finishes hydrating or updates from another device
   useEffect(() => {
     if (!editingPersonal) {
       setNameInput(profile.displayName);
       setAgeInput(profile.age);
+      setWeightInput(profile.weightKg || '');
       setBloodInput(profile.bloodType);
       setContactInput(profile.emergencyContact);
       setGenderInput(profile.gender);
     }
-  }, [profile.displayName, profile.age, profile.bloodType, profile.emergencyContact, profile.gender, editingPersonal]);
+  }, [profile.displayName, profile.age, profile.weightKg, profile.bloodType, profile.emergencyContact, profile.gender, editingPersonal]);
 
   const savePersonalInfo = (e: FormEvent) => {
     e.preventDefault();
@@ -352,6 +370,7 @@ export default function HealthProfile() {
       ...prev,
       displayName: nameInput.trim(),
       age: ageInput.trim(),
+      weightKg: weightInput.trim(),
       bloodType: bloodInput.trim(),
       emergencyContact: contactInput.trim(),
       gender: genderInput.trim(),
@@ -411,6 +430,15 @@ export default function HealthProfile() {
     }
   };
 
+  const deleteMedicalDocument = (docId: string) => {
+    if (window.confirm(isAr ? 'هل تريد حذف هذا المستند الطبي من حسابك؟' : 'Delete this medical document from your account?')) {
+      setProfile((prev) => ({
+        ...prev,
+        medicalDocuments: (prev.medicalDocuments || []).filter((d) => d.id !== docId),
+      }));
+    }
+  };
+
   const exportProfileData = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(profile, null, 2));
     const downloadAnchor = document.createElement('a');
@@ -434,7 +462,7 @@ export default function HealthProfile() {
 
   const clearAllData = () => {
     if (window.confirm(isAr ? 'تحذير: سيتم مسح جميع بيانات الحساسية والأدوية المسجلة. هل توافق؟' : 'Warning: All stored health data will be deleted. Proceed?')) {
-      setProfile({ displayName: '', age: '', gender: '', bloodType: '', emergencyContact: '', notes: '', allergies: [], medications: [] });
+      setProfile({ displayName: '', age: '', weightKg: '', gender: '', bloodType: '', emergencyContact: '', notes: '', allergies: [], medications: [], chronicConditions: [], medicalDocuments: [] });
     }
   };
 
@@ -471,11 +499,11 @@ export default function HealthProfile() {
       <section className="card highlight-card profile-banner">
         <div className="banner-content">
           <div>
-            <h2>🛡️ {isAr ? 'فاحص الحساسية والأمان الدوائي' : 'Smart Allergy Safety Check'}</h2>
+            <h2>🛡️ {isAr ? 'فاحص الحساسية والأمان الدوائي والمساعد الذكي' : 'Smart Allergy Safety Check & AI Health Assistant'}</h2>
             <p className="small">
               {isAr
-                ? 'تحقق فوراً مما إذا كان أي مضاد حيوي يحتوي على مواد فعالة تطابق حساسيتك المسجلة أو يسبب حساسية متصالبة (Cross-Reactivity).'
-                : 'Instantly check whether any antibiotic matches your recorded allergies or shares cross-reactive ingredients.'}
+                ? 'تحقق فوراً مما إذا كان أي مضاد حيوي يحتوي على مواد فعالة تطابق حساسيتك المسجلة، أو استخدم المساعد الذكي لإدارة سجلك الصحي بالأوامر المباشرة.'
+                : 'Instantly check whether any antibiotic matches your recorded allergies, or use the AI Assistant to manage your records.'}
             </p>
           </div>
           <div className="row wrapRow" style={{ gap: '8px' }}>
@@ -484,6 +512,9 @@ export default function HealthProfile() {
             </Link>
             <Link to="/prescription-radar" className="btn-secondary">
               📡 {isAr ? 'رادار الروشتة ورحلة العلاج' : 'Prescription Radar & Journey'}
+            </Link>
+            <Link to="/assistant" className="btn-secondary">
+              🤖 {isAr ? 'المساعد الصحي الذكي' : 'AI Health Assistant'}
             </Link>
           </div>
         </div>
@@ -512,7 +543,7 @@ export default function HealthProfile() {
       {/* Personal Identity Card */}
       <section className="card stack">
         <div className="card-head-row">
-          <h2>📋 {isAr ? 'البيانات الشخصية للمريض:' : 'Patient Details:'}</h2>
+          <h2>📋 {isAr ? 'البيانات الشخصية والحيوية للمريض:' : 'Patient Details & Vitals:'}</h2>
           <button type="button" className="btn-secondary" onClick={() => setEditingPersonal(!editingPersonal)}>
             {editingPersonal ? (isAr ? 'إلغاء' : 'Cancel') : (isAr ? '✏️ تعديل البيانات' : '✏️ Edit')}
           </button>
@@ -528,6 +559,10 @@ export default function HealthProfile() {
               <div className="form-group">
                 <label><b>{isAr ? 'العمر:' : 'Age:'}</b></label>
                 <input value={ageInput} onChange={(e) => setAgeInput(e.target.value)} placeholder={isAr ? 'مثال: 45 سنة' : 'e.g. 45'} />
+              </div>
+              <div className="form-group">
+                <label><b>{isAr ? 'الوزن (كجم):' : 'Weight (kg):'}</b></label>
+                <input value={weightInput} onChange={(e) => setWeightInput(e.target.value)} placeholder={isAr ? 'مثال: 75' : 'e.g. 75'} />
               </div>
             </div>
             <div className="form-row">
@@ -558,6 +593,7 @@ export default function HealthProfile() {
           <div className="profile-details-grid">
             <div><b>{isAr ? 'الاسم:' : 'Name:'}</b> {profile.displayName || (isAr ? 'غير مسجل' : 'Not set')}</div>
             <div><b>{isAr ? 'العمر:' : 'Age:'}</b> {profile.age || '—'}</div>
+            <div><b>{isAr ? 'الوزن:' : 'Weight:'}</b> {profile.weightKg ? `${profile.weightKg} ${isAr ? 'كجم' : 'kg'}` : '—'}</div>
             <div><b>{isAr ? 'فصيلة الدم:' : 'Blood Type:'}</b> {profile.bloodType || '—'}</div>
             <div><b>{isAr ? 'النوع:' : 'Gender:'}</b> {profile.gender === 'male' ? (isAr ? 'ذكر' : 'Male') : profile.gender === 'female' ? (isAr ? 'أنثى' : 'Female') : '—'}</div>
             <div><b>{isAr ? 'هاتف الطوارئ:' : 'Emergency Phone:'}</b> {profile.emergencyContact || '—'}</div>
@@ -601,8 +637,8 @@ export default function HealthProfile() {
             <span>📡</span>
             <p>
               {isAr
-                ? 'لا توجد روشتات أو جداول علاجية محفوظة بعد. يمكنك تصوير الروشتة أو إدخالها في رادار الروشتة لبدء رحلة العلاج.'
-                : 'No saved prescriptions or active treatment schedules yet. Capture or enter a prescription in Prescription Radar to begin.'}
+                ? 'لا توجد روشتات أو جداول علاجية محفوظة بعد. يمكنك تصوير الروشتة أو إدخالها في رادار الروشتة أو عبر المساعد الذكي لبدء رحلة العلاج.'
+                : 'No saved prescriptions or active treatment schedules yet. Capture or enter a prescription in Prescription Radar or via the AI Assistant to begin.'}
             </p>
           </div>
         ) : (
@@ -804,6 +840,63 @@ export default function HealthProfile() {
         )}
       </section>
 
+      {/* Section 3: Uploaded Medical Documents & Lab Reports */}
+      <section className="card stack">
+        <div className="card-head-row">
+          <div>
+            <h2>📂 {isAr ? 'التقارير والتحاليل والمستندات الطبية المرفوعة:' : 'Uploaded Medical Documents & Lab Reports:'}</h2>
+            <p className="small muted">
+              {isAr
+                ? 'المستندات وصور الروشتات والتحاليل المحفوظة عبر المساعد الصحي الذكي.'
+                : 'Medical documents, lab results, and prescription images saved via the AI Health Assistant.'}
+            </p>
+          </div>
+          <Link to="/assistant" className="btn-secondary small">
+            📎 {isAr ? 'رفع مستند جديد عبر المساعد' : 'Upload via Assistant'}
+          </Link>
+        </div>
+
+        {(!profile.medicalDocuments || profile.medicalDocuments.length === 0) ? (
+          <div className="empty-state-box">
+            <span>📂</span>
+            <p>
+              {isAr
+                ? 'لا توجد تقارير أو تحاليل مرفوعة بعد. يمكنك إرفاق أي صورة روشتة أو تحليل عبر زر 📎 في المساعد الذكي.'
+                : 'No medical documents uploaded yet. Attach a prescription or lab report using 📎 in the AI Assistant.'}
+            </p>
+          </div>
+        ) : (
+          <div className="med-cards-stack">
+            {profile.medicalDocuments.map((docItem) => (
+              <div key={docItem.id} className="med-record-card" style={{ padding: '12px' }}>
+                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                    {docItem.previewDataUrl && (
+                      <img
+                        src={docItem.previewDataUrl}
+                        alt={docItem.title}
+                        style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, border: '1px solid #cbd5e1' }}
+                      />
+                    )}
+                    <div>
+                      <h4 style={{ margin: 0 }}>{docItem.title}</h4>
+                      <p className="small muted" style={{ margin: '4px 0' }}>{docItem.extractedSummary}</p>
+                      <small className="muted">
+                        {docItem.createdAt.slice(0, 10)} ·{' '}
+                        {docItem.verificationStatus === 'patient_confirmed'
+                          ? (isAr ? 'مؤكد من المريض ✅' : 'Patient Confirmed ✅')
+                          : (isAr ? 'يحتاج مراجعة ⚠️' : 'Needs Review ⚠️')}
+                      </small>
+                    </div>
+                  </div>
+                  <button type="button" className="undo-btn" onClick={() => deleteMedicalDocument(docItem.id)}>✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Footer Management Controls */}
       <div className="profile-footer-actions">
         <button type="button" className="btn-secondary" onClick={exportProfileData}>
@@ -957,7 +1050,6 @@ export default function HealthProfile() {
             <div style={{ position:'absolute', top:-40, right:-40, width:150, height:150, borderRadius:'50%', background:'rgba(255,255,255,0.06)' }} />
             <div style={{ position:'absolute', bottom:-30, left:-30, width:110, height:110, borderRadius:'50%', background:'rgba(255,255,255,0.04)' }} />
 
-            {/* هيدر */}
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
               <span style={{ fontSize:'1.4rem' }}>🏥</span>
               <div>
@@ -967,9 +1059,7 @@ export default function HealthProfile() {
               <div style={{ marginInlineStart:'auto', fontSize:'0.6rem', opacity:0.6 }}>🇪🇬 Egypt</div>
             </div>
 
-            {/* صورة + بيانات + QR */}
             <div style={{ display:'flex', gap:12, alignItems:'flex-start' }}>
-              {/* صورة */}
               <div
                 onClick={() => photoFileRef.current?.click()}
                 style={{
@@ -995,7 +1085,6 @@ export default function HealthProfile() {
               </div>
               <input ref={photoFileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handlePassportPhoto} />
 
-              {/* بيانات */}
               <div style={{ flex:1 }}>
                 <div style={{ fontWeight:700, fontSize:'0.95rem', marginBottom:4 }}>
                   {profile.displayName || (isAr ? 'الاسم غير مدخل' : 'Name not set')}
@@ -1018,26 +1107,21 @@ export default function HealthProfile() {
                 </div>
               </div>
 
-              {/* QR */}
               <div style={{ background:'#fff', borderRadius:8, padding:3, width:64, height:64, flexShrink:0 }}>
                 <img src={passportQrSrc} alt="QR" style={{ width:58, height:58 }} />
               </div>
             </div>
 
-            {/* شريط سفلي */}
             <div style={{ borderTop:'1px solid rgba(255,255,255,0.2)', paddingTop:8, marginTop:12, display:'flex', justifyContent:'space-between', fontSize:'0.6rem', opacity:0.55, fontFamily:'monospace' }}>
               <span>{user.uid.slice(0,8).toUpperCase()} {user.uid.slice(8,16).toUpperCase()}</span>
               <span>💊 {profile.medications.filter(m => m.status === 'active').length} {isAr ? 'دواء' : 'Meds'}</span>
             </div>
           </div>
 
-          {/* ── قسم الـ PIN ── */}
           {passportLoading ? (
             <p className="small muted">{isAr ? 'جارٍ التحميل…' : 'Loading…'}</p>
           ) : (
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-
-              {/* PIN الحالي */}
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', background:'#f8fafc', borderRadius:10, padding:'10px 14px' }}>
                 <div>
                   <div style={{ fontWeight:700, color:'#0b3c5d', fontSize:'0.85rem' }}>
@@ -1056,7 +1140,6 @@ export default function HealthProfile() {
                 </button>
               </div>
 
-              {/* فورم تعيين PIN */}
               {showPinSetup && (
                 <div style={{ background:'#eff6ff', borderRadius:10, padding:'12px 14px', border:'1px solid #bfdbfe' }}>
                   <div style={{ fontWeight:600, color:'#1e40af', marginBottom:8, fontSize:'0.85rem' }}>
@@ -1094,7 +1177,6 @@ export default function HealthProfile() {
                 </div>
               )}
 
-              {/* حالة المشاركة */}
               {passportIsActive ? (
                 <div style={{ background:'#d1fae5', borderRadius:10, padding:'12px 14px', border:'1.5px solid #6ee7b7' }}>
                   <div style={{ fontWeight:700, color:'#065f46', marginBottom:4 }}>
@@ -1133,14 +1215,12 @@ export default function HealthProfile() {
                 </div>
               )}
 
-              {/* رسالة نجاح */}
               {shareSuccess && (
                 <div style={{ background:'#d1fae5', borderRadius:8, padding:'8px 12px', textAlign:'center', fontWeight:600, color:'#065f46', fontSize:'0.85rem' }}>
                   {shareSuccess}
                 </div>
               )}
 
-              {/* أزرار المشاركة */}
               {savedPin && (
                 <div style={{ display:'flex', gap:8 }}>
                   <button
@@ -1167,17 +1247,16 @@ export default function HealthProfile() {
                   {isAr ? '⬆️ عيّن PIN أولاً لتفعيل المشاركة' : '⬆️ Set a PIN first to enable sharing'}
                 </p>
               )}
-
             </div>
           )}
 
           {/* الأمراض المزمنة */}
           <div style={{ borderTop:'1px solid #e2e8f0', paddingTop:14 }}>
             <div style={{ fontWeight:700, color:'#0b3c5d', marginBottom:8 }}>
-              🏥 {isAr ? 'الأمراض المزمنة' : 'Chronic Conditions'}
+              🏥 {isAr ? 'الأمراض المزمنة والحالات الصحية' : 'Chronic Conditions'}
             </div>
             <p className="small muted" style={{ marginBottom:10 }}>
-              {isAr ? 'مهمة لتحديد تعارض الأدوية' : 'Important for drug interaction checks'}
+              {isAr ? 'مهمة لتحديد تعارض الأدوية (يمكن إضافتها من هنا أو بأمر مباشر للمساعد الذكي)' : 'Important for drug interaction checks (can be added here or via the AI Assistant)'}
             </p>
             <div style={{ display:'flex', gap:8, marginBottom:10 }}>
               <input
@@ -1191,7 +1270,7 @@ export default function HealthProfile() {
               <button className="btn" onClick={addChronic}>{isAr ? 'إضافة' : 'Add'}</button>
             </div>
             {passportChronicList.length === 0
-              ? <p className="small muted">{isAr ? 'لا توجد أمراض مزمنة' : 'None added yet'}</p>
+              ? <p className="small muted">{isAr ? 'لا توجد أمراض مزمنة مسجلة' : 'None added yet'}</p>
               : (
                 <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                   {passportChronicList.map((c, i) => (

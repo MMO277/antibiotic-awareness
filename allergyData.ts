@@ -18,6 +18,7 @@ export interface AllergyRecord {
   severity: AllergySeverity;
   reactionDate?: string;
   evidenceStatus: EvidenceStatus;
+  source?: 'patient_chat' | 'manual_entry' | 'medical_document' | 'clinician_verified';
   notes?: string;
   createdAt: string;
 }
@@ -32,7 +33,61 @@ export interface MedicationRecord {
   startDate: string;
   endDate?: string;
   status: 'active' | 'completed' | 'discontinued';
+  evidenceStatus?: EvidenceStatus;
+  source?: 'patient_chat' | 'manual_entry' | 'prescription_ocr' | 'clinician_verified';
+  linkedPrescriptionId?: string;
+  linkedDocumentId?: string;
   notes?: string;
+}
+
+export interface ChronicConditionRecord {
+  id: string;
+  conditionName: string;
+  evidenceStatus: EvidenceStatus;
+  source: 'patient_chat' | 'manual_entry' | 'medical_document' | 'clinician_verified';
+  diagnosedDate?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export type MedicalDocumentCategory =
+  | 'prescription'
+  | 'lab_report'
+  | 'medical_report'
+  | 'leaflet'
+  | 'other';
+
+export interface MedicalDocumentRecord {
+  id: string;
+  title: string;
+  category: MedicalDocumentCategory;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  storagePath?: string;
+  downloadUrl?: string;
+  previewDataUrl?: string;
+  extractedSummary: string;
+  extractedFields: Record<string, string>;
+  unreadableFields: string[];
+  linkedPrescriptionId?: string;
+  linkedMedicationIds?: string[];
+  verificationStatus: 'patient_confirmed' | 'unverified_ocr' | 'needs_clarification';
+  source: 'patient_upload' | 'camera_capture';
+  createdAt: string;
+}
+
+export interface PatientAuditLogEntry {
+  id: string;
+  uid: string;
+  actionType: string;
+  actor: 'patient_confirmed_ai_action' | 'patient_manual' | 'system_safety_guard';
+  summaryAr: string;
+  summaryEn: string;
+  beforeSnapshot?: string;
+  afterSnapshot?: string;
+  timestamp: string;
 }
 
 export type PregnancyLactationStatus = 'none' | 'pregnant' | 'breastfeeding' | 'unknown';
@@ -41,12 +96,16 @@ export type OrganFunctionStatus = 'normal' | 'impaired' | 'unknown';
 export interface UserHealthProfile {
   displayName: string;
   age: string;
+  weightKg?: string;
   gender: string;
   bloodType: string;
   emergencyContact: string;
   notes: string;
   allergies: AllergyRecord[];
   medications: MedicationRecord[];
+  chronicConditions?: ChronicConditionRecord[];
+  medicalDocuments?: MedicalDocumentRecord[];
+  patientAuditLogs?: PatientAuditLogEntry[];
   pregnancyStatus?: PregnancyLactationStatus;
   renalStatus?: OrganFunctionStatus;
   hepaticStatus?: OrganFunctionStatus;
@@ -55,17 +114,22 @@ export interface UserHealthProfile {
 export const STORAGE_KEY = 'antibiotic_awareness_health_profile';
 const MIGRATED_LEGACY_PREFIX = 'aa_migrated_legacy_profile_';
 const PROFILE_EVENT = 'aa-health-profile-updated';
+const MAX_PATIENT_AUDIT_LOGS = 150;
 
 export function emptyHealthProfile(): UserHealthProfile {
   return {
     displayName: '',
     age: '',
+    weightKg: '',
     gender: '',
     bloodType: '',
     emergencyContact: '',
     notes: '',
     allergies: [],
     medications: [],
+    chronicConditions: [],
+    medicalDocuments: [],
+    patientAuditLogs: [],
     pregnancyStatus: 'unknown',
     renalStatus: 'unknown',
     hepaticStatus: 'unknown',
@@ -95,6 +159,47 @@ function stripUndefined<T>(value: T): T {
   return value;
 }
 
+/**
+ * Extracts legacy `CHRONIC:[...]||` list from `profile.notes` for backward compatibility
+ * with SmartPassport.tsx and PassportView.tsx.
+ */
+export function parseLegacyChronicFromNotes(notes: string): string[] {
+  try {
+    const n = notes || '';
+    const idx = n.indexOf('CHRONIC:');
+    if (idx === -1) return [];
+    const rawSegment = n.slice(idx + 8).split('||')[0].split('|')[0];
+    const parsed = JSON.parse(rawSegment);
+    return Array.isArray(parsed)
+      ? parsed.map((c) => String(c || '').trim()).filter(Boolean)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Synchronizes structured `chronicConditions` back into `notes` (`CHRONIC:[...]||`)
+ * so existing SmartPassport and PassportView components stay 100% in sync.
+ */
+export function syncNotesWithChronicConditions(
+  notes: string,
+  chronicConditions: ChronicConditionRecord[]
+): string {
+  const names = Array.from(
+    new Set(
+      chronicConditions
+        .map((c) => (c.conditionName || '').trim())
+        .filter(Boolean)
+    )
+  );
+  const cleaned = (notes || '').replace(/CHRONIC:[\s\S]*?(\|\||$)/, '');
+  if (names.length === 0) {
+    return cleaned;
+  }
+  return `CHRONIC:${JSON.stringify(names)}||${cleaned}`;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function normalizeProfile(raw: any): UserHealthProfile {
   if (!raw || typeof raw !== 'object') return emptyHealthProfile();
@@ -110,16 +215,152 @@ export function normalizeProfile(raw: any): UserHealthProfile {
     ? raw.hepaticStatus
     : 'unknown';
 
+  const rawNotes = typeof raw.notes === 'string' ? raw.notes : '';
+  const legacyChronicNames = parseLegacyChronicFromNotes(rawNotes);
+
+  const structuredChronics: ChronicConditionRecord[] = Array.isArray(raw.chronicConditions)
+    ? raw.chronicConditions
+        .filter((c: unknown) => c !== null && typeof c === 'object')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((c: any, idx: number) => ({
+          id:
+            typeof c.id === 'string' && c.id
+              ? c.id
+              : `cond-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+          conditionName: typeof c.conditionName === 'string' ? c.conditionName.trim() : '',
+          evidenceStatus: (['patient_reported', 'suspected', 'clinically_verified'].includes(
+            c.evidenceStatus
+          )
+            ? c.evidenceStatus
+            : 'patient_reported') as EvidenceStatus,
+          source: (['patient_chat', 'manual_entry', 'medical_document', 'clinician_verified'].includes(
+            c.source
+          )
+            ? c.source
+            : 'patient_chat') as ChronicConditionRecord['source'],
+          ...(typeof c.diagnosedDate === 'string' && c.diagnosedDate
+            ? { diagnosedDate: c.diagnosedDate }
+            : {}),
+          ...(typeof c.notes === 'string' && c.notes ? { notes: c.notes } : {}),
+          createdAt: typeof c.createdAt === 'string' && c.createdAt ? c.createdAt : new Date().toISOString(),
+          ...(typeof c.updatedAt === 'string' && c.updatedAt ? { updatedAt: c.updatedAt } : {}),
+        }))
+        .filter((c: ChronicConditionRecord) => Boolean(c.conditionName))
+    : [];
+
+  // Hydrate any condition present in legacy notes that isn't in structuredChronics yet
+  for (const legacyName of legacyChronicNames) {
+    const exists = structuredChronics.some(
+      (c) => c.conditionName.toLowerCase() === legacyName.toLowerCase()
+    );
+    if (!exists) {
+      structuredChronics.push({
+        id: `cond-legacy-${norm(legacyName) || Math.random().toString(36).slice(2, 6)}`,
+        conditionName: legacyName,
+        evidenceStatus: 'patient_reported',
+        source: 'manual_entry',
+        createdAt: new Date().toISOString(),
+      });
+    }
+  }
+
+  const syncedNotes =
+    structuredChronics.length > 0
+      ? syncNotesWithChronicConditions(rawNotes, structuredChronics)
+      : rawNotes;
+
+  const medicalDocuments: MedicalDocumentRecord[] = Array.isArray(raw.medicalDocuments)
+    ? raw.medicalDocuments
+        .filter((d: unknown) => d !== null && typeof d === 'object')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((d: any, idx: number) => ({
+          id:
+            typeof d.id === 'string' && d.id
+              ? d.id
+              : `doc-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+          title: typeof d.title === 'string' && d.title ? d.title : 'Medical Document',
+          category: (['prescription', 'lab_report', 'medical_report', 'leaflet', 'other'].includes(
+            d.category
+          )
+            ? d.category
+            : 'other') as MedicalDocumentCategory,
+          fileName: typeof d.fileName === 'string' ? d.fileName : 'document.jpg',
+          mimeType: typeof d.mimeType === 'string' ? d.mimeType : 'image/jpeg',
+          fileSize: typeof d.fileSize === 'number' && !isNaN(d.fileSize) ? d.fileSize : 0,
+          ...(typeof d.storagePath === 'string' && d.storagePath ? { storagePath: d.storagePath } : {}),
+          ...(typeof d.downloadUrl === 'string' && d.downloadUrl ? { downloadUrl: d.downloadUrl } : {}),
+          ...(typeof d.previewDataUrl === 'string' && d.previewDataUrl
+            ? { previewDataUrl: d.previewDataUrl }
+            : {}),
+          extractedSummary: typeof d.extractedSummary === 'string' ? d.extractedSummary : '',
+          extractedFields:
+            d.extractedFields && typeof d.extractedFields === 'object' && !Array.isArray(d.extractedFields)
+              ? Object.fromEntries(
+                  Object.entries(d.extractedFields).map(([k, v]) => [String(k), String(v ?? '')])
+                )
+              : {},
+          unreadableFields: Array.isArray(d.unreadableFields)
+            ? d.unreadableFields.map(String)
+            : [],
+          ...(typeof d.linkedPrescriptionId === 'string' && d.linkedPrescriptionId
+            ? { linkedPrescriptionId: d.linkedPrescriptionId }
+            : {}),
+          ...(Array.isArray(d.linkedMedicationIds)
+            ? { linkedMedicationIds: d.linkedMedicationIds.map(String) }
+            : {}),
+          verificationStatus: (['patient_confirmed', 'unverified_ocr', 'needs_clarification'].includes(
+            d.verificationStatus
+          )
+            ? d.verificationStatus
+            : 'unverified_ocr') as MedicalDocumentRecord['verificationStatus'],
+          source: (d.source === 'camera_capture' ? 'camera_capture' : 'patient_upload') as
+            | 'patient_upload'
+            | 'camera_capture',
+          createdAt: typeof d.createdAt === 'string' && d.createdAt ? d.createdAt : new Date().toISOString(),
+        }))
+    : [];
+
+  const patientAuditLogs: PatientAuditLogEntry[] = Array.isArray(raw.patientAuditLogs)
+    ? raw.patientAuditLogs
+        .filter((l: unknown) => l !== null && typeof l === 'object')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((l: any, idx: number) => ({
+          id: typeof l.id === 'string' && l.id ? l.id : `audit-${Date.now()}-${idx}`,
+          uid: typeof l.uid === 'string' ? l.uid : '',
+          actionType: typeof l.actionType === 'string' ? l.actionType : 'profile_update',
+          actor: (['patient_confirmed_ai_action', 'patient_manual', 'system_safety_guard'].includes(
+            l.actor
+          )
+            ? l.actor
+            : 'patient_confirmed_ai_action') as PatientAuditLogEntry['actor'],
+          summaryAr: typeof l.summaryAr === 'string' ? l.summaryAr : '',
+          summaryEn: typeof l.summaryEn === 'string' ? l.summaryEn : '',
+          ...(typeof l.beforeSnapshot === 'string' ? { beforeSnapshot: l.beforeSnapshot } : {}),
+          ...(typeof l.afterSnapshot === 'string' ? { afterSnapshot: l.afterSnapshot } : {}),
+          timestamp: typeof l.timestamp === 'string' && l.timestamp ? l.timestamp : new Date().toISOString(),
+        }))
+        .slice(0, MAX_PATIENT_AUDIT_LOGS)
+    : [];
+
   return {
     displayName: typeof raw.displayName === 'string' ? raw.displayName : '',
     age: typeof raw.age === 'string' ? raw.age : typeof raw.age === 'number' ? String(raw.age) : '',
+    weightKg:
+      typeof raw.weightKg === 'string'
+        ? raw.weightKg
+        : typeof raw.weightKg === 'number'
+          ? String(raw.weightKg)
+          : '',
     gender: typeof raw.gender === 'string' ? raw.gender : '',
     bloodType: typeof raw.bloodType === 'string' ? raw.bloodType : '',
     emergencyContact: typeof raw.emergencyContact === 'string' ? raw.emergencyContact : '',
-    notes: typeof raw.notes === 'string' ? raw.notes : '',
+    notes: syncedNotes,
     pregnancyStatus,
     renalStatus,
     hepaticStatus,
+    chronicConditions: structuredChronics,
+    medicalDocuments,
+    patientAuditLogs,
     allergies: Array.isArray(raw.allergies)
       ? raw.allergies
           .filter((a: unknown) => a !== null && typeof a === 'object')
@@ -136,6 +377,7 @@ export function normalizeProfile(raw: any): UserHealthProfile {
             evidenceStatus: (['patient_reported', 'suspected', 'clinically_verified'].includes(a.evidenceStatus)
               ? a.evidenceStatus
               : 'patient_reported') as EvidenceStatus,
+            ...(typeof a.source === 'string' ? { source: a.source as AllergyRecord['source'] } : {}),
             ...(typeof a.notes === 'string' ? { notes: a.notes } : {}),
             createdAt: typeof a.createdAt === 'string' ? a.createdAt : new Date().toISOString(),
           }))
@@ -157,6 +399,14 @@ export function normalizeProfile(raw: any): UserHealthProfile {
               | 'active'
               | 'completed'
               | 'discontinued',
+            ...(typeof m.evidenceStatus === 'string'
+              ? { evidenceStatus: m.evidenceStatus as EvidenceStatus }
+              : {}),
+            ...(typeof m.source === 'string' ? { source: m.source as MedicationRecord['source'] } : {}),
+            ...(typeof m.linkedPrescriptionId === 'string'
+              ? { linkedPrescriptionId: m.linkedPrescriptionId }
+              : {}),
+            ...(typeof m.linkedDocumentId === 'string' ? { linkedDocumentId: m.linkedDocumentId } : {}),
             ...(typeof m.notes === 'string' ? { notes: m.notes } : {}),
           }))
       : [],
@@ -168,12 +418,15 @@ export function isProfileNonEmpty(p: UserHealthProfile | null | undefined): bool
   return Boolean(
     p.displayName.trim() ||
       p.age.trim() ||
+      (p.weightKg && p.weightKg.trim()) ||
       p.gender.trim() ||
       p.bloodType.trim() ||
       p.emergencyContact.trim() ||
       p.notes.trim() ||
       p.allergies.length > 0 ||
       p.medications.length > 0 ||
+      (p.chronicConditions && p.chronicConditions.length > 0) ||
+      (p.medicalDocuments && p.medicalDocuments.length > 0) ||
       (p.pregnancyStatus && p.pregnancyStatus !== 'unknown') ||
       (p.renalStatus && p.renalStatus !== 'unknown') ||
       (p.hepaticStatus && p.hepaticStatus !== 'unknown')
@@ -218,9 +471,45 @@ export function mergeProfiles(primary: UserHealthProfile, secondary: UserHealthP
     }
   }
 
+  const condMap = new Map<string, ChronicConditionRecord>();
+  for (const c of primary.chronicConditions || []) {
+    condMap.set(c.id, c);
+  }
+  for (const c of secondary.chronicConditions || []) {
+    const duplicateByName = Array.from(condMap.values()).some(
+      (existing) =>
+        existing.id === c.id ||
+        existing.conditionName.trim().toLowerCase() === c.conditionName.trim().toLowerCase()
+    );
+    if (!duplicateByName) {
+      condMap.set(c.id, c);
+    }
+  }
+
+  const docMap = new Map<string, MedicalDocumentRecord>();
+  for (const d of primary.medicalDocuments || []) {
+    docMap.set(d.id, d);
+  }
+  for (const d of secondary.medicalDocuments || []) {
+    if (!docMap.has(d.id)) {
+      docMap.set(d.id, d);
+    }
+  }
+
+  const auditMap = new Map<string, PatientAuditLogEntry>();
+  for (const l of primary.patientAuditLogs || []) {
+    auditMap.set(l.id, l);
+  }
+  for (const l of secondary.patientAuditLogs || []) {
+    if (!auditMap.has(l.id)) {
+      auditMap.set(l.id, l);
+    }
+  }
+
   return normalizeProfile({
     displayName: primary.displayName.trim() || secondary.displayName.trim(),
     age: primary.age.trim() || secondary.age.trim(),
+    weightKg: (primary.weightKg || '').trim() || (secondary.weightKg || '').trim(),
     gender: primary.gender.trim() || secondary.gender.trim(),
     bloodType: primary.bloodType.trim() || secondary.bloodType.trim(),
     emergencyContact: primary.emergencyContact.trim() || secondary.emergencyContact.trim(),
@@ -239,6 +528,11 @@ export function mergeProfiles(primary: UserHealthProfile, secondary: UserHealthP
         : secondary.hepaticStatus || 'unknown',
     allergies: Array.from(allergyMap.values()),
     medications: Array.from(medMap.values()),
+    chronicConditions: Array.from(condMap.values()),
+    medicalDocuments: Array.from(docMap.values()),
+    patientAuditLogs: Array.from(auditMap.values()).sort((a, b) =>
+      (b.timestamp || '').localeCompare(a.timestamp || '')
+    ),
   });
 }
 
