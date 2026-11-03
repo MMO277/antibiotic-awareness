@@ -303,12 +303,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           icon: '👤',
           shortLabel: tr(lang, 'ملف صحتي وحساسيتي', 'Health Profile', 'Profil Santé', 'Perfil de Salud'),
         },
-        {
-          to: '/passport',
-          key: 'navPassport',
-          icon: '🪪',
-          shortLabel: tr(lang, 'البطاقة الصحية الذكية', 'Smart Passport', 'Passeport Santé', 'Pasaporte Salud'),
-        },
+
         {
           to: '/safe-disposal',
           key: 'navSafeDisposal',

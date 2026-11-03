@@ -138,6 +138,7 @@ export default function HealthProfile() {
   const [ageInput, setAgeInput] = useState(profile.age);
   const [bloodInput, setBloodInput] = useState(profile.bloodType);
   const [contactInput, setContactInput] = useState(profile.emergencyContact);
+  const [genderInput, setGenderInput] = useState(profile.gender);
 
   // Modal states
   const [showAllergyModal, setShowAllergyModal] = useState(false);
@@ -165,8 +166,9 @@ export default function HealthProfile() {
       setAgeInput(profile.age);
       setBloodInput(profile.bloodType);
       setContactInput(profile.emergencyContact);
+      setGenderInput(profile.gender);
     }
-  }, [profile.displayName, profile.age, profile.bloodType, profile.emergencyContact, editingPersonal]);
+  }, [profile.displayName, profile.age, profile.bloodType, profile.emergencyContact, profile.gender, editingPersonal]);
 
   const savePersonalInfo = (e: FormEvent) => {
     e.preventDefault();
@@ -176,6 +178,7 @@ export default function HealthProfile() {
       age: ageInput.trim(),
       bloodType: bloodInput.trim(),
       emergencyContact: contactInput.trim(),
+      gender: genderInput.trim(),
     }));
     setEditingPersonal(false);
   };
@@ -357,6 +360,16 @@ export default function HealthProfile() {
                 <input value={bloodInput} onChange={(e) => setBloodInput(e.target.value)} placeholder="A+, O+, B-..." />
               </div>
               <div className="form-group">
+                <label><b>{isAr ? 'النوع:' : 'Gender:'}</b></label>
+                <select value={genderInput} onChange={(e) => setGenderInput(e.target.value)}>
+                  <option value="">{isAr ? '— اختر —' : '— Select —'}</option>
+                  <option value="male">{isAr ? 'ذكر' : 'Male'}</option>
+                  <option value="female">{isAr ? 'أنثى' : 'Female'}</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
                 <label><b>{isAr ? 'رقم هاتف الطوارئ:' : 'Emergency Contact:'}</b></label>
                 <input value={contactInput} onChange={(e) => setContactInput(e.target.value)} placeholder="01xxxxxxxxx" />
               </div>
@@ -370,6 +383,7 @@ export default function HealthProfile() {
             <div><b>{isAr ? 'الاسم:' : 'Name:'}</b> {profile.displayName || (isAr ? 'غير مسجل' : 'Not set')}</div>
             <div><b>{isAr ? 'العمر:' : 'Age:'}</b> {profile.age || '—'}</div>
             <div><b>{isAr ? 'فصيلة الدم:' : 'Blood Type:'}</b> {profile.bloodType || '—'}</div>
+            <div><b>{isAr ? 'النوع:' : 'Gender:'}</b> {profile.gender === 'male' ? (isAr ? 'ذكر' : 'Male') : profile.gender === 'female' ? (isAr ? 'أنثى' : 'Female') : '—'}</div>
             <div><b>{isAr ? 'هاتف الطوارئ:' : 'Emergency Phone:'}</b> {profile.emergencyContact || '—'}</div>
           </div>
         )}
@@ -812,6 +826,9 @@ export default function HealthProfile() {
                 </div>
                 <div style={{ fontSize:'0.72rem', opacity:0.85, marginBottom:2 }}>
                   {isAr ? 'العمر:' : 'Age:'} <b>{profile.age || '—'}</b>
+                </div>
+                <div style={{ fontSize:'0.72rem', opacity:0.85, marginBottom:2 }}>
+                  {isAr ? 'النوع:' : 'Gender:'} <b>{profile.gender === 'male' ? (isAr ? 'ذكر' : 'Male') : profile.gender === 'female' ? (isAr ? 'أنثى' : 'Female') : '—'}</b>
                 </div>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:6 }}>
                   <span style={{ background:'#e74c3c', borderRadius:6, padding:'2px 8px', fontSize:'0.72rem', fontWeight:700 }}>

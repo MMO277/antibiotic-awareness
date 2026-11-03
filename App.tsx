@@ -16,7 +16,6 @@ import CostSaver from './CostSaver';
 import ColdShotWarning from './ColdShotWarning';
 import DailyScheduleGenerator from './DailyScheduleGenerator';
 import { Route, Routes, Link } from 'react-router-dom';
-import SmartPassport from './SmartPassport';
 import PassportView from './PassportView';
 import { configured } from './firebase';
 import { useLang } from './i18n';
@@ -197,7 +196,6 @@ export default function App() {
           <Route path="/admin" element={configured ? <Dashboard /> : <ConfigMissing />} />
           <Route path="/admin/new" element={configured ? <Editor /> : <ConfigMissing />} />
           <Route path="/admin/medicine/:id" element={configured ? <Editor /> : <ConfigMissing />} />
-          <Route path="/passport" element={<SmartPassport />} />
           <Route path="/passport/:uid" element={<PassportView />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
