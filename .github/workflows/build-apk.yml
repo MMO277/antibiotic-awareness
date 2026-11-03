@@ -26,7 +26,8 @@ jobs:
 
       - name: Initialize Capacitor Android
         run: |
-          npx cap add android || true
+          rm -rf android
+          npx cap add android
           npx cap sync android
 
       - name: Set up Java JDK 17
