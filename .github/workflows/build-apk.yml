@@ -1,0 +1,114 @@
+name: Build Android APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Ensure Capacitor Config Exists
+        run: |
+          if [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.json ]; then
+            cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.antibiotic.awareness",
+            "appName": "Antibiotic Awareness",
+            "webDir": "dist",
+            "bundledWebRuntime": false,
+            "server": {
+              "androidScheme": "https",
+              "cleartext": true
+            }
+          }
+          EOF
+          fi
+
+      - name: Install dependencies
+        run: |
+          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps @capacitor/core@^6.1.2 @capacitor/cli@^6.1.2 @capacitor/android@^6.1.2 @capacitor/local-notifications@^6.0.2
+
+      - name: Build Web Application
+        run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+
+      - name: Initialize Capacitor Android
+        run: |
+          rm -rf android
+          npx cap add android
+          npx cap sync android
+
+      - name: Configure Android Permissions for Exact Dose Alarms
+        run: |
+          python3 -c '
+          p = "android/app/src/main/AndroidManifest.xml"
+          with open(p, "r") as f:
+              xml = f.read()
+          perms = [
+              "android.permission.POST_NOTIFICATIONS",
+              "android.permission.SCHEDULE_EXACT_ALARM",
+              "android.permission.USE_EXACT_ALARM",
+              "android.permission.VIBRATE",
+              "android.permission.WAKE_LOCK",
+              "android.permission.RECEIVE_BOOT_COMPLETED"
+          ]
+          inject = "\n".join([f"    <uses-permission android:name=\"{perm}\" />" for perm in perms if perm not in xml])
+          if inject and "</manifest>" in xml:
+              xml = xml.replace("</manifest>", inject + "\n</manifest>")
+          with open(p, "w") as f:
+              f.write(xml)
+          '
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Build Android APK with Gradle
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk ../Antibiotic-Awareness.apk
+
+      - name: Upload Android APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AntibioticAwareness-Android-App
+          path: Antibiotic-Awareness.apk
+
+      - name: Publish APK to GitHub Releases
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view v1.0.0 --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release upload v1.0.0 Antibiotic-Awareness.apk --repo "${{ github.repository }}" --clobber
+          else
+            gh release create v1.0.0 Antibiotic-Awareness.apk \
+              --repo "${{ github.repository }}" \
+              --target "${{ github.sha }}" \
+              --title "تطبيق التوعية بالمضادات الحيوية للأندرويد (Official Android APK)" \
+              --notes "النسخة الرسمية لتطبيق التوعية بالمضادات الحيوية للأندرويد (.APK) جاهزة للتحميل والتثبيت المباشر." \
+              --latest
+          fi
