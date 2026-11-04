@@ -4,6 +4,7 @@ export interface CapacitorConfig {
   webDir: string;
   bundledWebRuntime?: boolean;
   server?: {
+    url?: string;
     androidScheme?: string;
     cleartext?: boolean;
   };
@@ -17,7 +18,8 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {
-    androidScheme: 'https',
+    // Live Auto-Update URL: loads latest updates instantly from GitHub Pages
+    url: 'https://mmo277.github.io/antibiotic-awareness/',
     cleartext: true,
   },
   plugins: {
