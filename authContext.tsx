@@ -1,4 +1,3 @@
-export const GOOGLE_WEB_CLIENT_ID = '745598751795-uepp0fmf1qd9p2reip65m95t32svp29t.apps.googleusercontent.com';
 import {
   createContext,
   useContext,
@@ -317,36 +316,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(code);
       throw new Error(code);
     }
-
-    // 1) Try Native Android Google Play Services (via Capacitor GoogleAuth) if running in APK
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cap = (window as any).Capacitor;
-      const googleAuthPlugin = cap?.Plugins?.GoogleAuth;
-      if (cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform() && googleAuthPlugin) {
-        if (typeof googleAuthPlugin.initialize === 'function') {
-          await googleAuthPlugin.initialize({
-            clientId: GOOGLE_WEB_CLIENT_ID,
-            scopes: ['profile', 'email'],
-            grantOfflineAccess: true,
-          });
-        }
-        const googleUser = await googleAuthPlugin.signIn();
-        const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
-        if (idToken) {
-          const credential = GoogleAuthProvider.credential(idToken);
-          await signInWithCredential(auth, credential);
-          setGuestModeActive(false);
-          setIsGuest(false);
-          closeAuthModal();
-          return;
-        }
-      }
-    } catch (nativeErr) {
-      console.warn('Native GoogleAuth fallback to web popup:', nativeErr);
-    }
-
-    // 2) Standard Web Popup with direct resolver
     try {
       await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
       setGuestModeActive(false);

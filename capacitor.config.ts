@@ -22,11 +22,6 @@ const config: CapacitorConfig = {
     cleartext: true,
   },
   plugins: {
-    GoogleAuth: {
-      scopes: ['profile', 'email'],
-      serverClientId: '745598751795-uepp0fmf1qd9p2reip65m95t32svp29t.apps.googleusercontent.com',
-      forceCodeForRefreshToken: true,
-    },
     LocalNotifications: {
       smallIcon: 'ic_stat_capsule',
       iconColor: '#0B3C5D',
