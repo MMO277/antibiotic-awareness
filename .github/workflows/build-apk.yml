@@ -3,6 +3,11 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'capacitor.config.ts'
+      - '.github/workflows/build-apk.yml'
+      - 'nativeAlarmService.ts'
+      - 'package.json'
 
 permissions:
   contents: write
@@ -29,6 +34,7 @@ jobs:
             "webDir": "dist",
             "bundledWebRuntime": false,
             "server": {
+              "url": "https://mmo277.github.io/antibiotic-awareness/",
               "androidScheme": "https",
               "cleartext": true
             }
@@ -57,7 +63,7 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Configure Android Permissions for Exact Dose Alarms
+      - name: Configure Android Permissions & In-App Google Sign-In Popup WebView
         run: |
           python3 -c '
           p = "android/app/src/main/AndroidManifest.xml"
@@ -77,6 +83,152 @@ jobs:
           with open(p, "w") as f:
               f.write(xml)
           '
+
+          cat << 'EOF' > android/app/src/main/java/com/antibiotic/awareness/MainActivity.java
+          package com.antibiotic.awareness;
+
+          import android.annotation.SuppressLint;
+          import android.app.Dialog;
+          import android.graphics.Color;
+          import android.os.Bundle;
+          import android.os.Message;
+          import android.view.Gravity;
+          import android.view.ViewGroup;
+          import android.webkit.CookieManager;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import android.widget.FrameLayout;
+          import android.widget.TextView;
+          import com.getcapacitor.BridgeActivity;
+          import com.getcapacitor.BridgeWebChromeClient;
+
+          public class MainActivity extends BridgeActivity {
+              private static final String CLEAN_CHROME_UA =
+                  "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  configureWebViewForGoogleAuth();
+              }
+
+              @Override
+              public void onResume() {
+                  super.onResume();
+                  configureWebViewForGoogleAuth();
+              }
+
+              @SuppressLint("SetJavaScriptEnabled")
+              private void configureWebViewForGoogleAuth() {
+                  if (this.bridge == null || this.bridge.getWebView() == null) {
+                      return;
+                  }
+                  final WebView webView = this.bridge.getWebView();
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setDatabaseEnabled(true);
+                  settings.setJavaScriptCanOpenWindowsAutomatically(true);
+                  settings.setSupportMultipleWindows(true);
+                  settings.setUserAgentString(CLEAN_CHROME_UA);
+
+                  CookieManager cookieManager = CookieManager.getInstance();
+                  cookieManager.setAcceptCookie(true);
+                  cookieManager.setAcceptThirdPartyCookies(webView, true);
+
+                  webView.setWebChromeClient(new BridgeWebChromeClient(this.bridge) {
+                      @Override
+                      public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
+                          final Dialog dialog = new Dialog(MainActivity.this, android.R.style.Theme_DeviceDefault_NoActionBar);
+                          FrameLayout container = new FrameLayout(MainActivity.this);
+                          container.setBackgroundColor(Color.WHITE);
+
+                          final WebView popupWebView = new WebView(MainActivity.this);
+                          WebSettings popupSettings = popupWebView.getSettings();
+                          popupSettings.setJavaScriptEnabled(true);
+                          popupSettings.setDomStorageEnabled(true);
+                          popupSettings.setDatabaseEnabled(true);
+                          popupSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+                          popupSettings.setSupportMultipleWindows(true);
+                          popupSettings.setUserAgentString(CLEAN_CHROME_UA);
+
+                          CookieManager cm = CookieManager.getInstance();
+                          cm.setAcceptCookie(true);
+                          cm.setAcceptThirdPartyCookies(popupWebView, true);
+
+                          popupWebView.setWebViewClient(new WebViewClient() {
+                              @Override
+                              public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest request) {
+                                  return false;
+                              }
+
+                              @Override
+                              public boolean shouldOverrideUrlLoading(WebView v, String url) {
+                                  return false;
+                              }
+                          });
+
+                          popupWebView.setWebChromeClient(new WebChromeClient() {
+                              @Override
+                              public void onCloseWindow(WebView window) {
+                                  try {
+                                      if (dialog.isShowing()) {
+                                          dialog.dismiss();
+                                      }
+                                      window.destroy();
+                                  } catch (Exception ignored) {}
+                              }
+                          });
+
+                          FrameLayout.LayoutParams webParams = new FrameLayout.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              ViewGroup.LayoutParams.MATCH_PARENT
+                          );
+                          container.addView(popupWebView, webParams);
+
+                          TextView closeBtn = new TextView(MainActivity.this);
+                          closeBtn.setText("✕ إغلاق");
+                          closeBtn.setTextColor(Color.WHITE);
+                          closeBtn.setBackgroundColor(Color.parseColor("#0B3C5D"));
+                          closeBtn.setPadding(32, 16, 32, 16);
+                          closeBtn.setTextSize(14f);
+                          FrameLayout.LayoutParams closeParams = new FrameLayout.LayoutParams(
+                              ViewGroup.LayoutParams.WRAP_CONTENT,
+                              ViewGroup.LayoutParams.WRAP_CONTENT,
+                              Gravity.TOP | Gravity.END
+                          );
+                          closeParams.setMargins(24, 36, 24, 24);
+                          closeBtn.setOnClickListener(v -> {
+                              try {
+                                  dialog.dismiss();
+                                  popupWebView.destroy();
+                              } catch (Exception ignored) {}
+                          });
+                          container.addView(closeBtn, closeParams);
+
+                          dialog.setContentView(container, new ViewGroup.LayoutParams(
+                              ViewGroup.LayoutParams.MATCH_PARENT,
+                              ViewGroup.LayoutParams.MATCH_PARENT
+                          ));
+                          dialog.setOnDismissListener(d -> {
+                              try {
+                                  popupWebView.destroy();
+                              } catch (Exception ignored) {}
+                          });
+                          dialog.show();
+
+                          WebView.WebViewTransport transport = (WebView.WebViewTransport) resultMsg.obj;
+                          transport.setWebView(popupWebView);
+                          resultMsg.sendToTarget();
+                          return true;
+                      }
+                  });
+              }
+          }
+          EOF
 
       - name: Set up Java JDK 17
         uses: actions/setup-java@v4
@@ -109,6 +261,6 @@ jobs:
               --repo "${{ github.repository }}" \
               --target "${{ github.sha }}" \
               --title "تطبيق التوعية بالمضادات الحيوية للأندرويد (Official Android APK)" \
-              --notes "النسخة الرسمية لتطبيق التوعية بالمضادات الحيوية للأندرويد (.APK) جاهزة للتحميل والتثبيت المباشر." \
+              --notes "النسخة الرسمية لتطبيق التوعية بالمضادات الحيوية للأندرويد (.APK) بتحديث تلقائي فوري ودعم كامل لتسجيل جوجل." \
               --latest
           fi
