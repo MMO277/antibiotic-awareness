@@ -3,7 +3,6 @@ import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, RefObject,
 import { useAuth, translateAuthError } from './authContext';
 import { useLang } from './i18n';
 import { configured } from './firebase';
-import { isNativePlatform } from './nativeAlarmService';
 
 
 /* ── Lamp intro helpers (UPDATE 49) ─────────────────────────────────────── */
@@ -155,7 +154,6 @@ export default function AuthModal() {
   } = useAuth();
   const { lang, t } = useLang();
   const isAr = lang === 'ar';
-  const isNative = isNativePlatform();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -261,14 +259,6 @@ export default function AuthModal() {
   const handleGoogleLogin = () => {
     clearError();
     setLocalValidationMsg('');
-    if (isNative) {
-      setLocalValidationMsg(
-        isAr
-          ? 'داخل تطبيق الأندرويد، يرجى تسجيل الدخول أو إنشاء حساب بالبريد الإلكتروني وكلمة المرور بالأسفل، أو الضغط على "متابعة التصفح كزائر".'
-          : 'Inside the Android app, please sign in or create an account using your Email and Password below, or continue as a guest.'
-      );
-      return;
-    }
     setGoogleSubmitting(true);
     loginWithGoogle()
       .catch((err: any) => {
@@ -276,8 +266,8 @@ export default function AuthModal() {
         if (msg.includes('missing initial state') || msg.includes('storage-partitioned') || err?.code === 'auth/popup-blocked') {
           setLocalValidationMsg(
             isAr
-              ? '⚠️ متصفحك يحظر النوافذ المنبثقة لـ Google. يرجى تسجيل الدخول بالبريد الإلكتروني وكلمة المرور أو الضغط على "متابعة كزائر".'
-              : '⚠️ Browser blocked Google popup. Please sign in with email & password or continue as guest.'
+              ? '⚠️ تعذر فتح نافذة Google المنبثقة. يرجى السماح بالنوافذ المنبثقة أو التسجيل بالبريد الإلكتروني وكلمة المرور بالأسفل.'
+              : '⚠️ Could not open Google popup. Please allow popups or sign in with email & password below.'
           );
         }
       })
@@ -413,8 +403,8 @@ export default function AuthModal() {
               </div>
             )}
 
-            {/* زرار Google — يظهر في نسخة الويب لـ login و register */}
-            {modalMode !== 'forgot' && configured && !isNative && (
+            {/* زرار Google — يظهر في الويب وتطبيق الأندرويد عبر نافذة WebView المدمجة */}
+            {modalMode !== 'forgot' && configured && (
               <>
                 <button
                   type="button"

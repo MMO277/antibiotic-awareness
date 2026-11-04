@@ -23,9 +23,12 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {
+    url: 'https://mmo277.github.io/antibiotic-awareness/',
     androidScheme: 'https',
     cleartext: true,
     allowNavigation: [
+      'mmo277.github.io',
+      '*.github.io',
       '*.firebaseapp.com',
       '*.google.com',
       '*.googleapis.com',
