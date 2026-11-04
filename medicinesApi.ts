@@ -18,8 +18,25 @@ import { SEED } from './seedData';
 import { EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 import { CATALOG_DOC_ID, startLiveCatalogSync } from './liveCatalogSync';
 
+const APPROVED_CACHE_STORAGE_KEY = 'aa_approved_medicines_cache_v2';
+const APPROVED_UPDATED_EVENT = 'aa-approved-medicines-cache-updated';
+
+// Pre-grouped commercial products by activeIngredientId for O(1) building instead of O(N*M) filtering
+function buildCommercialByIngredientMap() {
+  const map = new Map<string, typeof EGYPTIAN_COMMERCIAL_PRODUCTS>();
+  for (const p of EGYPTIAN_COMMERCIAL_PRODUCTS) {
+    const list = map.get(p.activeIngredientId);
+    if (list) {
+      list.push(p);
+    } else {
+      map.set(p.activeIngredientId, [p]);
+    }
+  }
+  return map;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function seedToMedicine(s: any): Medicine {
+function seedToMedicine(s: any, extraProducts: typeof EGYPTIAN_COMMERCIAL_PRODUCTS): Medicine {
   const m = emptyMedicine(s.id);
   for (const f of TEXT_FIELDS) {
     const v = s.fields?.[f];
@@ -27,7 +44,6 @@ function seedToMedicine(s: any): Medicine {
   }
   m.status = 'approved';
 
-  const extraProducts = EGYPTIAN_COMMERCIAL_PRODUCTS.filter((p) => p.activeIngredientId === s.id);
   const brandMap = new Map<string, Brand>();
 
   (s.brands || []).forEach((b: Brand) => {
@@ -63,19 +79,91 @@ function seedToMedicine(s: any): Medicine {
 }
 
 export function buildAllLocalMedicines(): Medicine[] {
-  return SEED.map(seedToMedicine);
+  const grouped = buildCommercialByIngredientMap();
+  return SEED.map((s) => seedToMedicine(s, grouped.get(s.id) || []));
 }
 
 export const ALL_LOCAL_MEDICINES: Medicine[] = buildAllLocalMedicines();
 
+// Fast O(1) lookup index maps (rebuilt only when catalog actually changes)
+const localByIdMap = new Map<string, Medicine>();
+const localByBarcodeMap = new Map<string, Medicine>();
+const localByProductIdMap = new Map<string, Medicine>();
+
+function rebuildFastIndexMaps(): void {
+  localByIdMap.clear();
+  localByBarcodeMap.clear();
+  localByProductIdMap.clear();
+
+  for (const m of ALL_LOCAL_MEDICINES) {
+    localByIdMap.set(m.id.toLowerCase(), m);
+    for (const bc of m.barcodes) {
+      if (bc) localByBarcodeMap.set(bc.toLowerCase(), m);
+    }
+    for (const b of m.brands) {
+      if (b.barcode) localByBarcodeMap.set(b.barcode.toLowerCase(), m);
+    }
+  }
+  for (const p of EGYPTIAN_COMMERCIAL_PRODUCTS) {
+    const parent = localByIdMap.get(p.activeIngredientId.toLowerCase());
+    if (parent) {
+      localByProductIdMap.set(p.productId.toLowerCase(), parent);
+      if (p.barcode) localByBarcodeMap.set(p.barcode.toLowerCase(), parent);
+    }
+  }
+}
+
+rebuildFastIndexMaps();
+
 function refreshLocalMedicinesArray(): void {
   const rebuilt = buildAllLocalMedicines();
   ALL_LOCAL_MEDICINES.splice(0, ALL_LOCAL_MEDICINES.length, ...rebuilt);
+  rebuildFastIndexMaps();
+}
+
+// In-memory + localStorage Stale-While-Revalidate cache for merged approved medicines
+let cachedApprovedMedicines: Medicine[] | null = null;
+let sharedFirestoreListenerStarted = false;
+
+function loadCachedApprovedFromStorage(): Medicine[] {
+  if (cachedApprovedMedicines && cachedApprovedMedicines.length > 0) {
+    return cachedApprovedMedicines;
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = localStorage.getItem(APPROVED_CACHE_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          cachedApprovedMedicines = parsed;
+          return parsed;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  cachedApprovedMedicines = [...ALL_LOCAL_MEDICINES].sort((x, y) => x.id.localeCompare(y.id));
+  return cachedApprovedMedicines;
+}
+
+function saveCachedApprovedToStorage(list: Medicine[]): void {
+  cachedApprovedMedicines = list;
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(APPROVED_CACHE_STORAGE_KEY, JSON.stringify(list));
+    } catch {
+      /* ignore quota */
+    }
+    window.dispatchEvent(new CustomEvent(APPROVED_UPDATED_EVENT));
+  }
 }
 
 if (typeof window !== 'undefined') {
   window.addEventListener('aa-live-catalog-updated', () => {
     refreshLocalMedicinesArray();
+    cachedApprovedMedicines = [...ALL_LOCAL_MEDICINES].sort((x, y) => x.id.localeCompare(y.id));
+    window.dispatchEvent(new CustomEvent(APPROVED_UPDATED_EVENT));
   });
 }
 
@@ -102,7 +190,6 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
   if (!local) return remote;
 
   const brandMap = new Map<string, Brand>();
-  // Put local brands first, then let remote brands overwrite or add new ones
   (local.brands || []).forEach((b) => {
     const key = b.barcode ? b.barcode.trim() : b.name;
     brandMap.set(key, b);
@@ -112,7 +199,6 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
     brandMap.set(key, b);
   });
 
-  // If the editor explicitly edited the brands array in Firestore, respect remote brands plus live commercial packages
   const mergedBrands =
     remote.brands && remote.brands.length > 0 ? Array.from(brandMap.values()) : local.brands;
 
@@ -146,56 +232,43 @@ function smartMerge(remote: Medicine, local?: Medicine): Medicine {
 }
 
 /**
- * Synchronously resolves any medicine ID, commercial productId, barcode, or trade name
- * from the verified database so MedicinePage never fails or shows Not Found.
+ * O(1) instant resolution of any medicine ID, commercial productId, barcode, or trade name
+ * without rebuilding the entire database array on every lookup.
  */
 export function findLocalMedicine(id: string): Medicine | null {
-  refreshLocalMedicinesArray();
   const clean = decodeURIComponent(id || '').toLowerCase().trim();
   if (!clean || clean === CATALOG_DOC_ID) return null;
 
-  // 1. Direct active ingredient ID match
-  const direct = ALL_LOCAL_MEDICINES.find((m) => m.id.toLowerCase() === clean);
+  // 1. O(1) Direct active ingredient ID match
+  const direct = localByIdMap.get(clean);
   if (direct) return direct;
 
-  // 2. Commercial productId match (e.g. EG-ABX-001)
-  const comm = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.productId.toLowerCase() === clean);
-  if (comm) {
-    const parent = ALL_LOCAL_MEDICINES.find((m) => m.id === comm.activeIngredientId);
-    if (parent) return parent;
-  }
+  // 2. O(1) Commercial productId match (e.g. EG-ABX-001)
+  const byProd = localByProductIdMap.get(clean);
+  if (byProd) return byProd;
 
-  // 3. Barcode match
-  const byCommBarcode = EGYPTIAN_COMMERCIAL_PRODUCTS.find((p) => p.barcode === clean);
-  if (byCommBarcode) {
-    const parent = ALL_LOCAL_MEDICINES.find((m) => m.id === byCommBarcode.activeIngredientId);
-    if (parent) return parent;
-  }
+  // 3. O(1) Barcode match
+  const byBc = localByBarcodeMap.get(clean);
+  if (byBc) return byBc;
 
-  const byBarcode = ALL_LOCAL_MEDICINES.find(
-    (m) => m.barcodes.includes(clean) || m.brands.some((b) => b.barcode === clean)
-  );
-  if (byBarcode) return byBarcode;
-
-  // 4. Generic or Brand name match
+  // 4. Fallback Generic or Brand name substring match
   const byName = ALL_LOCAL_MEDICINES.find(
     (m) =>
       m.genericName.en.toLowerCase() === clean ||
       m.genericName.ar === clean ||
       m.brands.some((b) => b.name.toLowerCase().includes(clean))
   );
-  if (byName) return byName;
-
-  return null;
+  return byName || null;
 }
 
 export async function fetchApproved(): Promise<Medicine[]> {
-  refreshLocalMedicinesArray();
   const out = new Map<string, Medicine>();
   ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
 
   if (!configured || !db) {
-    return Array.from(out.values()).sort((x, y) => x.id.localeCompare(y.id));
+    const sorted = Array.from(out.values()).sort((x, y) => x.id.localeCompare(y.id));
+    cachedApprovedMedicines = sorted;
+    return sorted;
   }
 
   try {
@@ -207,17 +280,19 @@ export async function fetchApproved(): Promise<Medicine[]> {
       const local = out.get(d.id);
       out.set(d.id, smartMerge(remote, local));
     });
+    const mergedList = Array.from(out.values()).sort((x, y) => x.id.localeCompare(y.id));
+    saveCachedApprovedToStorage(mergedList);
+    return mergedList;
   } catch (err) {
-    console.info('Using local verified medicines database:', err);
+    console.info('Using local cached medicines database:', err);
   }
-  return Array.from(out.values()).sort((x, y) => x.id.localeCompare(y.id));
+  return loadCachedApprovedFromStorage();
 }
 
 const isPreviewable = (status: Status, nSources: number) =>
   (status === 'draft' || status === 'pending_review') && nSources > 0;
 
 export async function fetchAll(): Promise<Medicine[]> {
-  refreshLocalMedicinesArray();
   const out = new Map<string, Medicine>();
   ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
   if (!configured || !db) {
@@ -302,66 +377,54 @@ export function validateForApproval(m: Medicine): string[] {
 export const medicineUrl = (id: string) =>
   `${window.location.origin}${window.location.pathname}#/medicine/${id}`;
 
+function ensureSharedApprovedFirestoreListener(): void {
+  if (sharedFirestoreListenerStarted || typeof window === 'undefined' || !configured || !db) {
+    return;
+  }
+  sharedFirestoreListenerStarted = true;
+  try {
+    const col = collection(db, 'medicines');
+    onSnapshot(
+      query(col, where('status', '==', 'approved')),
+      (snap) => {
+        const out = new Map<string, Medicine>();
+        ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
+        snap.docs.forEach((d) => {
+          if (d.id === CATALOG_DOC_ID) return;
+          const remote = normalize(d.id, d.data());
+          const local = out.get(d.id);
+          out.set(d.id, smartMerge(remote, local));
+        });
+        const merged = Array.from(out.values()).sort((x, y) => x.id.localeCompare(y.id));
+        saveCachedApprovedToStorage(merged);
+      },
+      () => {
+        /* ignore snapshot errors */
+      }
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
 export function useApproved() {
-  const [items, setItems] = useState<Medicine[] | null>(() => buildAllLocalMedicines());
-  const [error, setError] = useState(false);
+  const [items, setItems] = useState<Medicine[] | null>(() => loadCachedApprovedFromStorage());
+  const [error] = useState(false);
 
   useEffect(() => {
     startLiveCatalogSync();
-    let active = true;
+    ensureSharedApprovedFirestoreListener();
 
-    const refreshFromLocalAndRemote = () => {
-      fetchApproved()
-        .then((res) => {
-          if (active) setItems(res);
-        })
-        .catch(() => {
-          if (active) {
-            setError(false);
-            setItems(buildAllLocalMedicines());
-          }
-        });
+    const onUpdate = () => {
+      setItems(loadCachedApprovedFromStorage());
     };
 
-    refreshFromLocalAndRemote();
-
-    const onCatalogUpdate = () => {
-      refreshFromLocalAndRemote();
-    };
-    window.addEventListener('aa-live-catalog-updated', onCatalogUpdate);
-
-    let unsubFirestore: (() => void) | null = null;
-    if (configured && db) {
-      try {
-        const col = collection(db, 'medicines');
-        unsubFirestore = onSnapshot(
-          query(col, where('status', '==', 'approved')),
-          (snap) => {
-            if (!active) return;
-            refreshLocalMedicinesArray();
-            const out = new Map<string, Medicine>();
-            ALL_LOCAL_MEDICINES.forEach((m) => out.set(m.id, m));
-            snap.docs.forEach((d) => {
-              if (d.id === CATALOG_DOC_ID) return;
-              const remote = normalize(d.id, d.data());
-              const local = out.get(d.id);
-              out.set(d.id, smartMerge(remote, local));
-            });
-            setItems(Array.from(out.values()).sort((x, y) => x.id.localeCompare(y.id)));
-          },
-          () => {
-            /* ignore snapshot errors */
-          }
-        );
-      } catch {
-        /* ignore */
-      }
-    }
+    window.addEventListener(APPROVED_UPDATED_EVENT, onUpdate);
+    window.addEventListener('aa-live-catalog-updated', onUpdate);
 
     return () => {
-      active = false;
-      window.removeEventListener('aa-live-catalog-updated', onCatalogUpdate);
-      if (unsubFirestore) unsubFirestore();
+      window.removeEventListener(APPROVED_UPDATED_EVENT, onUpdate);
+      window.removeEventListener('aa-live-catalog-updated', onUpdate);
     };
   }, []);
 

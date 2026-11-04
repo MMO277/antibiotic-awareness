@@ -1,6 +1,6 @@
-import { SmartPersonaSwitcher, GlobalSpotlightModal, PersonaType } from './SmartPersonaAndSpotlight';
+import { SmartPersonaSwitcher, PersonaType } from './SmartPersonaAndSpotlight';
 import { PublicPartnerPlacementSection } from './PartnersDirectory';
-import { CSSProperties, FormEvent, useMemo, useState } from 'react';
+import { CSSProperties, FormEvent, lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLang } from './i18n';
 import { ARTICLES } from './articlesData';
@@ -8,7 +8,11 @@ import { pick, tr } from './types';
 import Disclaimer from './Disclaimer';
 import DidYouKnow from './DidYouKnow';
 import ResistanceCounter from './ResistanceCounter';
-import EgyptResistanceMap from './EgyptResistanceMap';
+
+const EgyptResistanceMap = lazy(() => import('./EgyptResistanceMap'));
+const GlobalSpotlightModal = lazy(() =>
+  import('./SmartPersonaAndSpotlight').then((m) => ({ default: m.GlobalSpotlightModal }))
+);
 import {
   ACTIVE_INGREDIENTS,
   EGYPTIAN_COMMERCIAL_PRODUCTS,
@@ -674,7 +678,7 @@ export default function Home() {
         <PublicPartnerPlacementSection placement="homepage_featured" />
 
         {/* Interactive Egypt Antibiotic Resistance Map Infographic */}
-        <EgyptResistanceMap />
+        <Suspense fallback={null}><EgyptResistanceMap /></Suspense>
 
         {/* Quick Access to Most Prescribed Antibiotics in Egypt */}
         <section className="card highlight-card pro-featured-section">
@@ -848,7 +852,7 @@ export default function Home() {
 
         <Disclaimer />
       </div>
-      <GlobalSpotlightModal isOpen={spotlightOpen} onClose={() => setSpotlightOpen(false)} />
+      {spotlightOpen && <Suspense fallback={null}><GlobalSpotlightModal isOpen={spotlightOpen} onClose={() => setSpotlightOpen(false)} /></Suspense>}
     </main>
   );
 }

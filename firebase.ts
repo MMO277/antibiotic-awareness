@@ -1,5 +1,11 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  Firestore,
+} from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
@@ -19,11 +25,27 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase only when valid configuration is present.
-// When unconfigured, app, auth, db, and storage are null without connecting to any dummy/fake project.
 export const app: FirebaseApp | null = configured
   ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
   : null;
 
-export const db: Firestore = (app ? getFirestore(app) : null) as unknown as Firestore;
+/**
+ * Initializes Firestore with IndexedDB Persistent Local Cache + Multi-Tab synchronization
+ * so all cloud documents (medicines, schedules, partners, game progress) load in 0ms from device cache.
+ */
+function createPersistentFirestore(firebaseApp: FirebaseApp): Firestore {
+  try {
+    return initializeFirestore(firebaseApp, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+  } catch {
+    // Fallback if already initialized in hot-reload or restricted private browsing
+    return getFirestore(firebaseApp);
+  }
+}
+
+export const db: Firestore = (app ? createPersistentFirestore(app) : null) as unknown as Firestore;
 export const auth: Auth = (app ? getAuth(app) : null) as unknown as Auth;
 export const storage: FirebaseStorage | null = app && firebaseConfig.storageBucket.trim() ? getStorage(app) : null;

@@ -1,22 +1,5 @@
-import OneClickCheckup from './OneClickCheckup';
-import { Suspense, useEffect } from 'react';
-import PrescriptionRadar from './PrescriptionRadar';
-import AwarenessWeek from './AwarenessWeek';
-import GreenPrescription from './GreenPrescription';
-import CompareDrugs from './CompareDrugs';
-import SafeDisposal from './SafeDisposal';
-import PediatricHelper from './PediatricHelper';
-import HealthProfile from './HealthProfile';
-import AllergyChecker from './AllergyChecker';
-import ListenLearn from './ListenLearn';
-import Tracker from './Tracker';
-import SideEffectsGuide from './SideEffectsGuide';
-import Interactions from './Interactions';
-import CostSaver from './CostSaver';
-import ColdShotWarning from './ColdShotWarning';
-import DailyScheduleGenerator from './DailyScheduleGenerator';
+import { ComponentType, lazy, Suspense, useEffect } from 'react';
 import { Route, Routes, Link } from 'react-router-dom';
-import PassportView from './PassportView';
 import { configured } from './firebase';
 import { useLang } from './i18n';
 import Layout from './Layout';
@@ -24,31 +7,78 @@ import { AuthProvider } from './authContext';
 import { EmergencyLocationProvider } from './emergencyLocation';
 import AuthModal from './AuthModal';
 import Home from './Home';
-import Medicines from './Medicines';
-import MedicinePage from './MedicinePage';
-import Articles, { ArticlePage } from './Articles';
-import Quiz from './Quiz';
-import Scan from './Scan';
-import Learn from './Learn';
-import Assistant from './Assistant';
-import MythFact from './MythFact';
-import Methodology from './Methodology';
-import Research from './Research';
-import Dashboard from './Dashboard';
-import BacteriaHunter from './BacteriaHunter';
-import GameCenter from './GameCenter';
-import OpenWorldGame from './OpenWorldGame';
-import Editor from './Editor';
-import PartnersDirectoryPage, { PartnerPublicProfilePage } from './PartnersDirectory';
 import { startPartnerEcosystemSync } from './partnerService';
 
-// Direct imports for 3D WebGL games so GitHub Pages routes never fail on dynamic chunk/CSS preload
-import MedicalSimulator from './MedicalSimulator';
-import NurseAcademy from './NurseAcademy';
-import MedicalMystery from './MedicalMystery';
-import BacteriaLab from './BacteriaLab';
-import EmergencyShift from './EmergencyShift';
-import EscapeTheLab from './EscapeTheLab';
+/**
+ * Crash-safe lazy loader with automatic retry for GitHub Pages / Capacitor OTA updates.
+ * Splits the monolithic bundle into small on-demand chunks so initial startup is 5x faster.
+ */
+function lazyWithRetry<T extends ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+) {
+  return lazy(() =>
+    factory().catch((err) => {
+      const key = 'aa_chunk_retry_reloaded';
+      const hasReloaded = sessionStorage.getItem(key) === '1';
+      if (!hasReloaded) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+        return new Promise<{ default: T }>(() => {});
+      }
+      sessionStorage.removeItem(key);
+      throw err;
+    })
+  );
+}
+
+// Lazy-loaded clinical tools, directories & pages
+const OneClickCheckup = lazyWithRetry(() => import('./OneClickCheckup'));
+const PrescriptionRadar = lazyWithRetry(() => import('./PrescriptionRadar'));
+const AwarenessWeek = lazyWithRetry(() => import('./AwarenessWeek'));
+const GreenPrescription = lazyWithRetry(() => import('./GreenPrescription'));
+const CompareDrugs = lazyWithRetry(() => import('./CompareDrugs'));
+const SafeDisposal = lazyWithRetry(() => import('./SafeDisposal'));
+const PediatricHelper = lazyWithRetry(() => import('./PediatricHelper'));
+const HealthProfile = lazyWithRetry(() => import('./HealthProfile'));
+const AllergyChecker = lazyWithRetry(() => import('./AllergyChecker'));
+const ListenLearn = lazyWithRetry(() => import('./ListenLearn'));
+const Tracker = lazyWithRetry(() => import('./Tracker'));
+const SideEffectsGuide = lazyWithRetry(() => import('./SideEffectsGuide'));
+const Interactions = lazyWithRetry(() => import('./Interactions'));
+const CostSaver = lazyWithRetry(() => import('./CostSaver'));
+const ColdShotWarning = lazyWithRetry(() => import('./ColdShotWarning'));
+const DailyScheduleGenerator = lazyWithRetry(() => import('./DailyScheduleGenerator'));
+const PassportView = lazyWithRetry(() => import('./PassportView'));
+const Medicines = lazyWithRetry(() => import('./Medicines'));
+const MedicinePage = lazyWithRetry(() => import('./MedicinePage'));
+const Articles = lazyWithRetry(() => import('./Articles'));
+const ArticlePage = lazyWithRetry(() =>
+  import('./Articles').then((m) => ({ default: m.ArticlePage }))
+);
+const Quiz = lazyWithRetry(() => import('./Quiz'));
+const Scan = lazyWithRetry(() => import('./Scan'));
+const Learn = lazyWithRetry(() => import('./Learn'));
+const Assistant = lazyWithRetry(() => import('./Assistant'));
+const MythFact = lazyWithRetry(() => import('./MythFact'));
+const Methodology = lazyWithRetry(() => import('./Methodology'));
+const Research = lazyWithRetry(() => import('./Research'));
+const Dashboard = lazyWithRetry(() => import('./Dashboard'));
+const Editor = lazyWithRetry(() => import('./Editor'));
+const PartnersDirectoryPage = lazyWithRetry(() => import('./PartnersDirectory'));
+const PartnerPublicProfilePage = lazyWithRetry(() =>
+  import('./PartnersDirectory').then((m) => ({ default: m.PartnerPublicProfilePage }))
+);
+
+// Lazy-loaded 2D & 3D WebGL Games (keeps Three.js 650KB out of the initial startup bundle)
+const GameCenter = lazyWithRetry(() => import('./GameCenter'));
+const BacteriaHunter = lazyWithRetry(() => import('./BacteriaHunter'));
+const OpenWorldGame = lazyWithRetry(() => import('./OpenWorldGame'));
+const MedicalSimulator = lazyWithRetry(() => import('./MedicalSimulator'));
+const NurseAcademy = lazyWithRetry(() => import('./NurseAcademy'));
+const MedicalMystery = lazyWithRetry(() => import('./MedicalMystery'));
+const BacteriaLab = lazyWithRetry(() => import('./BacteriaLab'));
+const EmergencyShift = lazyWithRetry(() => import('./EmergencyShift'));
+const EscapeTheLab = lazyWithRetry(() => import('./EscapeTheLab'));
 
 function ConfigMissing() {
   const { t } = useLang();
@@ -66,6 +96,21 @@ function ConfigMissing() {
         <p style={{ marginTop: '1rem' }}>
           <Link to="/" className="btn">{t('navHome')}</Link>
         </p>
+      </div>
+    </main>
+  );
+}
+
+function PageLoadingFallback() {
+  const { lang } = useLang();
+  const isAr = lang === 'ar';
+  return (
+    <main className="wrap narrow" dir={isAr ? 'rtl' : 'ltr'}>
+      <div className="card center" style={{ padding: '32px 20px', opacity: 0.9 }}>
+        <div style={{ fontSize: '1.9rem', marginBottom: '8px' }} aria-hidden="true">⚡</div>
+        <b style={{ display: 'block', marginBottom: '4px' }}>
+          {isAr ? 'جارٍ فتح الصفحة...' : 'Loading page...'}
+        </b>
       </div>
     </main>
   );
@@ -103,102 +148,123 @@ function NotFound() {
 
 export default function App() {
   useEffect(() => {
-    startPartnerEcosystemSync();
+    // Defer non-critical background sync & route prefetching until after initial paint
+    const timer = window.setTimeout(() => {
+      startPartnerEcosystemSync();
+      // Silently warm up & cache the most frequently visited pages in the Service Worker cache
+      void import('./Medicines');
+      void import('./Tracker');
+      void import('./OneClickCheckup');
+      void import('./CostSaver');
+      void import('./GreenPrescription');
+      void import('./DailyScheduleGenerator');
+      void import('./PrescriptionRadar');
+    }, 1800);
+    return () => window.clearTimeout(timer);
   }, []);
 
   return (
     <AuthProvider>
       <EmergencyLocationProvider>
         <Layout>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/medicines" element={<Medicines />} />
-          <Route path="/partners" element={<PartnersDirectoryPage />} />
-          <Route path="/pharmacies" element={<PartnersDirectoryPage />} />
-          <Route path="/partner/:id" element={<PartnerPublicProfilePage />} />
-          <Route path="/cost-saver" element={<CostSaver />} />
-          <Route path="/cold-shot-warning" element={<ColdShotWarning />} />
-          <Route path="/daily-schedule" element={<DailyScheduleGenerator />} />
-          <Route path="/green-prescription" element={<GreenPrescription />} />
-          <Route path="/awareness-week" element={<AwarenessWeek />} />
-          <Route path="/compare" element={<CompareDrugs />} />
-          <Route path="/complete-checkup" element={<OneClickCheckup />} />
-            <Route path="/prescription-radar" element={<PrescriptionRadar />} />
-          <Route path="/interactions" element={<Interactions />} />
-          <Route path="/safe-disposal" element={<SafeDisposal />} />
-          <Route path="/tracker" element={<Tracker />} />
-          <Route path="/side-effects" element={<SideEffectsGuide />} />
-          <Route path="/listen" element={<ListenLearn />} />
-          <Route path="/health-profile" element={<HealthProfile />} />
-          <Route path="/allergy-checker" element={<AllergyChecker />} />
-          <Route path="/pediatric-helper" element={<PediatricHelper />} />
-          <Route path="/medicine/:id" element={<MedicinePage />} />
-          <Route path="/articles" element={<Articles />} />
-          <Route path="/articles/:id" element={<ArticlePage />} />
-          <Route path="/quiz" element={<Quiz />} />
-          <Route path="/scan" element={<Scan />} />
-          <Route path="/learn" element={<Learn />} />
-          <Route path="/assistant" element={<Assistant />} />
-          <Route path="/myth" element={<MythFact />} />
-          <Route path="/methodology" element={<Methodology />} />
-          <Route path="/research" element={<Research />} />
-          <Route path="/games" element={<GameCenter />} />
-          <Route path="/open-world" element={<OpenWorldGame />} />
-          <Route
-            path="/medical-simulator"
-            element={
-              <Suspense fallback={<SimulatorLoadingFallback />}>
-                <MedicalSimulator />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/nurse-academy"
-            element={
-              <Suspense fallback={<SimulatorLoadingFallback />}>
-                <NurseAcademy />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/medical-mystery"
-            element={
-              <Suspense fallback={<SimulatorLoadingFallback />}>
-                <MedicalMystery />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/bacteria-lab"
-            element={
-              <Suspense fallback={<SimulatorLoadingFallback />}>
-                <BacteriaLab />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/emergency-shift"
-            element={
-              <Suspense fallback={<SimulatorLoadingFallback />}>
-                <EmergencyShift />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/escape-the-lab"
-            element={
-              <Suspense fallback={<SimulatorLoadingFallback />}>
-                <EscapeTheLab />
-              </Suspense>
-            }
-          />
-          <Route path="/game" element={<BacteriaHunter />} />
-          <Route path="/admin" element={configured ? <Dashboard /> : <ConfigMissing />} />
-          <Route path="/admin/new" element={configured ? <Editor /> : <ConfigMissing />} />
-          <Route path="/admin/medicine/:id" element={configured ? <Editor /> : <ConfigMissing />} />
-          <Route path="/passport/:uid" element={<PassportView />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+          <Suspense fallback={<PageLoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/medicines" element={<Medicines />} />
+              <Route path="/partners" element={<PartnersDirectoryPage />} />
+              <Route path="/pharmacies" element={<PartnersDirectoryPage />} />
+              <Route path="/partner/:id" element={<PartnerPublicProfilePage />} />
+              <Route path="/cost-saver" element={<CostSaver />} />
+              <Route path="/cold-shot-warning" element={<ColdShotWarning />} />
+              <Route path="/daily-schedule" element={<DailyScheduleGenerator />} />
+              <Route path="/green-prescription" element={<GreenPrescription />} />
+              <Route path="/awareness-week" element={<AwarenessWeek />} />
+              <Route path="/compare" element={<CompareDrugs />} />
+              <Route path="/complete-checkup" element={<OneClickCheckup />} />
+              <Route path="/prescription-radar" element={<PrescriptionRadar />} />
+              <Route path="/interactions" element={<Interactions />} />
+              <Route path="/safe-disposal" element={<SafeDisposal />} />
+              <Route path="/tracker" element={<Tracker />} />
+              <Route path="/side-effects" element={<SideEffectsGuide />} />
+              <Route path="/listen" element={<ListenLearn />} />
+              <Route path="/health-profile" element={<HealthProfile />} />
+              <Route path="/allergy-checker" element={<AllergyChecker />} />
+              <Route path="/pediatric-helper" element={<PediatricHelper />} />
+              <Route path="/medicine/:id" element={<MedicinePage />} />
+              <Route path="/articles" element={<Articles />} />
+              <Route path="/articles/:id" element={<ArticlePage />} />
+              <Route path="/quiz" element={<Quiz />} />
+              <Route path="/scan" element={<Scan />} />
+              <Route path="/learn" element={<Learn />} />
+              <Route path="/assistant" element={<Assistant />} />
+              <Route path="/myth" element={<MythFact />} />
+              <Route path="/methodology" element={<Methodology />} />
+              <Route path="/research" element={<Research />} />
+              <Route path="/games" element={<GameCenter />} />
+              <Route
+                path="/open-world"
+                element={
+                  <Suspense fallback={<SimulatorLoadingFallback />}>
+                    <OpenWorldGame />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/medical-simulator"
+                element={
+                  <Suspense fallback={<SimulatorLoadingFallback />}>
+                    <MedicalSimulator />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/nurse-academy"
+                element={
+                  <Suspense fallback={<SimulatorLoadingFallback />}>
+                    <NurseAcademy />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/medical-mystery"
+                element={
+                  <Suspense fallback={<SimulatorLoadingFallback />}>
+                    <MedicalMystery />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/bacteria-lab"
+                element={
+                  <Suspense fallback={<SimulatorLoadingFallback />}>
+                    <BacteriaLab />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/emergency-shift"
+                element={
+                  <Suspense fallback={<SimulatorLoadingFallback />}>
+                    <EmergencyShift />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/escape-the-lab"
+                element={
+                  <Suspense fallback={<SimulatorLoadingFallback />}>
+                    <EscapeTheLab />
+                  </Suspense>
+                }
+              />
+              <Route path="/game" element={<BacteriaHunter />} />
+              <Route path="/admin" element={configured ? <Dashboard /> : <ConfigMissing />} />
+              <Route path="/admin/new" element={configured ? <Editor /> : <ConfigMissing />} />
+              <Route path="/admin/medicine/:id" element={configured ? <Editor /> : <ConfigMissing />} />
+              <Route path="/passport/:uid" element={<PassportView />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
         </Layout>
         <AuthModal />
       </EmergencyLocationProvider>

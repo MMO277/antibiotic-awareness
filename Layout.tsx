@@ -1,14 +1,19 @@
-import { GlobalSpotlightModal } from './SmartPersonaAndSpotlight';
 import { GlobalPhoneAlarmOverlay } from './SmartDoseAlarmCard';
-import { ReactNode, useRef, useEffect, useState } from 'react';
+import { lazy, Suspense, ReactNode, useRef, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useLang, SUPPORTED_LANGS } from './i18n';
 import { Lang, localizeFallbackText, tr } from './types';
 import { useAuth } from './authContext';
 import Disclaimer from './Disclaimer';
-import ChatWidget from './ChatWidget';
-import LogoutModal from './LogoutModal';
 import { useEmergencyLocation } from './emergencyLocation';
+
+const GlobalSpotlightModal = lazy(() =>
+  import('./SmartPersonaAndSpotlight').then((m) => ({ default: m.GlobalSpotlightModal }))
+);
+const ChatWidget = lazy(() => import('./ChatWidget'));
+const LogoutModal = lazy(() => import('./LogoutModal'));
+
+let hasEverUsedSecondaryDomTranslation = false;
 
 // ── Safe, Zero-DOM-Mutation Universal Page TextNode & Attribute Localizer (FR / ES) ──
 const textNodeState = new WeakMap<Text, { baseEn: string; lastOut: string }>();
@@ -481,17 +486,19 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   const pageRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const el = pageRef.current;
-    if (!el) return;
-    el.classList.remove('page-enter');
-    void el.offsetWidth;
-    el.classList.add('page-enter');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   }, [pathname]);
 
-  // ── Automatic Full-Page TextNode & Attribute Localizer for ALL sub-pages when lang is FR or ES ──
+  // ── Automatic Full-Page TextNode & Attribute Localizer for ALL sub-pages when lang is FR, ES, or DE ──
   useEffect(() => {
     if (typeof document === 'undefined') return;
+    // Fast-path: completely skip DOM TreeWalker & MutationObserver overhead for AR/EN unless restoring from FR/ES/DE
+    if ((lang === 'ar' || lang === 'en') && !hasEverUsedSecondaryDomTranslation) {
+      return;
+    }
+    if (lang !== 'ar' && lang !== 'en') {
+      hasEverUsedSecondaryDomTranslation = true;
+    }
     let cancelled = false;
 
     const processSubtree = () => {
@@ -1197,20 +1204,31 @@ export default function Layout({ children }: { children: ReactNode }) {
         {children}
       </div>
 
-      <GlobalSpotlightModal isOpen={spotlightOpen} onClose={() => setSpotlightOpen(false)} />
       <GlobalPhoneAlarmOverlay />
 
-      {/* Always-on Floating AI Assistant Bubble */}
-      <ChatWidget />
+      {spotlightOpen && (
+        <Suspense fallback={null}>
+          <GlobalSpotlightModal isOpen={spotlightOpen} onClose={() => setSpotlightOpen(false)} />
+        </Suspense>
+      )}
 
-      {/* Single Logout Modal instance connected to both Layout and AuthContext */}
-      <LogoutModal
-        isOpen={showLogoutModal || authCtx.logoutModalOpen}
-        onClose={() => {
-          setShowLogoutModal(false);
-          authCtx.closeLogoutModal();
-        }}
-      />
+      {/* Lazy-loaded Floating AI Assistant Bubble */}
+      <Suspense fallback={null}>
+        <ChatWidget />
+      </Suspense>
+
+      {/* Lazy-loaded Logout Modal */}
+      {(showLogoutModal || authCtx.logoutModalOpen) && (
+        <Suspense fallback={null}>
+          <LogoutModal
+            isOpen={showLogoutModal || authCtx.logoutModalOpen}
+            onClose={() => {
+              setShowLogoutModal(false);
+              authCtx.closeLogoutModal();
+            }}
+          />
+        </Suspense>
+      )}
 
       {/* Professional Academic & Medical Footer on All Pages */}
       <footer className="pro-footer">
