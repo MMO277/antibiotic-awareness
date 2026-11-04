@@ -18,6 +18,7 @@ import {
   browserSessionPersistence,
   signInWithPopup,
   GoogleAuthProvider,
+  browserPopupRedirectResolver,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db, configured } from './firebase';
@@ -315,7 +316,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(code);
     }
     try {
-      await signInWithPopup(auth, googleProvider);
+      // Use direct browserPopupRedirectResolver to maintain transient activation without cross-origin redirect loss
+      await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
       setGuestModeActive(false);
       setIsGuest(false);
       closeAuthModal();

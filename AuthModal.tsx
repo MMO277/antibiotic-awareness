@@ -256,17 +256,24 @@ export default function AuthModal() {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     clearError();
     setLocalValidationMsg('');
     setGoogleSubmitting(true);
-    try {
-      await loginWithGoogle();
-    } catch {
-      /* error is handled in authContext */
-    } finally {
-      setGoogleSubmitting(false);
-    }
+    loginWithGoogle()
+      .catch((err: any) => {
+        const msg = err?.message || String(err);
+        if (msg.includes('missing initial state') || msg.includes('storage-partitioned') || err?.code === 'auth/popup-blocked') {
+          setLocalValidationMsg(
+            isAr
+              ? '⚠️ متصفحك يحظر النوافذ المنبثقة لـ Google (Storage Partitioning). يرجى تفعيل النوافذ المنبثقة في كروم أو الضغط على "متابعة كزائر".'
+              : '⚠️ Browser blocked Google popup due to storage partitioning. Please allow popups or continue as guest.'
+          );
+        }
+      })
+      .finally(() => {
+        setGoogleSubmitting(false);
+      });
   };
 
   const errorMessage =
