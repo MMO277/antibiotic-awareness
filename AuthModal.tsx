@@ -3,6 +3,7 @@ import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, RefObject,
 import { useAuth, translateAuthError } from './authContext';
 import { useLang } from './i18n';
 import { configured } from './firebase';
+import { isNativePlatform } from './nativeAlarmService';
 
 
 /* ── Lamp intro helpers (UPDATE 49) ─────────────────────────────────────── */
@@ -154,12 +155,13 @@ export default function AuthModal() {
   } = useAuth();
   const { lang, t } = useLang();
   const isAr = lang === 'ar';
+  const isNative = isNativePlatform();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
@@ -259,6 +261,14 @@ export default function AuthModal() {
   const handleGoogleLogin = () => {
     clearError();
     setLocalValidationMsg('');
+    if (isNative) {
+      setLocalValidationMsg(
+        isAr
+          ? 'داخل تطبيق الأندرويد، يرجى تسجيل الدخول أو إنشاء حساب بالبريد الإلكتروني وكلمة المرور بالأسفل، أو الضغط على "متابعة التصفح كزائر".'
+          : 'Inside the Android app, please sign in or create an account using your Email and Password below, or continue as a guest.'
+      );
+      return;
+    }
     setGoogleSubmitting(true);
     loginWithGoogle()
       .catch((err: any) => {
@@ -266,8 +276,8 @@ export default function AuthModal() {
         if (msg.includes('missing initial state') || msg.includes('storage-partitioned') || err?.code === 'auth/popup-blocked') {
           setLocalValidationMsg(
             isAr
-              ? '⚠️ متصفحك يحظر النوافذ المنبثقة لـ Google (Storage Partitioning). يرجى تفعيل النوافذ المنبثقة في كروم أو الضغط على "متابعة كزائر".'
-              : '⚠️ Browser blocked Google popup due to storage partitioning. Please allow popups or continue as guest.'
+              ? '⚠️ متصفحك يحظر النوافذ المنبثقة لـ Google. يرجى تسجيل الدخول بالبريد الإلكتروني وكلمة المرور أو الضغط على "متابعة كزائر".'
+              : '⚠️ Browser blocked Google popup. Please sign in with email & password or continue as guest.'
           );
         }
       })
@@ -403,8 +413,8 @@ export default function AuthModal() {
               </div>
             )}
 
-            {/* زرار Google — يظهر في login و register بس */}
-            {modalMode !== 'forgot' && configured && (
+            {/* زرار Google — يظهر في نسخة الويب لـ login و register */}
+            {modalMode !== 'forgot' && configured && !isNative && (
               <>
                 <button
                   type="button"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLang } from './i18n';
+import { isNativePlatform } from './nativeAlarmService';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -7,8 +8,11 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISS_KEY = 'pwa-install-dismissed';
+export const APK_DIRECT_DOWNLOAD_URL =
+  'https://github.com/MMO277/antibiotic-awareness/releases/latest/download/Antibiotic-Awareness.apk';
 
 function isStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
   return (
     window.matchMedia('(display-mode: standalone)').matches ||
     (navigator as unknown as { standalone?: boolean }).standalone === true
@@ -16,6 +20,7 @@ function isStandalone(): boolean {
 }
 
 function isIos(): boolean {
+  if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent;
   return /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document);
 }
@@ -39,10 +44,10 @@ export default function InstallPrompt() {
     };
   }, []);
 
-  const ios = isIos();
-  // Show only when there is something that actually works: a real install event (Android/Chrome) or iOS instructions.
-  if (installed || hidden || (!deferred && !ios)) return null;
+  // Hide inside the native Android APK or when already dismissed/installed
+  if (isNativePlatform() || installed || hidden) return null;
 
+  const ios = isIos();
   const ar = lang === 'ar';
   const dismiss = () => {
     setHidden(true);
@@ -58,25 +63,52 @@ export default function InstallPrompt() {
   return (
     <div
       role="dialog"
-      aria-label={ar ? 'تثبيت التطبيق' : 'Install app'}
+      aria-label={ar ? 'تثبيت وتحميل التطبيق' : 'Install & Download App'}
       style={{
         position: 'fixed', insetInline: 12, bottom: 'calc(12px + env(safe-area-inset-bottom))', zIndex: 9999,
         background: '#0B3C5D', color: '#fff', borderRadius: 14, padding: '12px 14px',
-        boxShadow: '0 6px 24px rgba(0,0,0,.3)', display: 'flex', gap: 10, alignItems: 'center',
-        maxWidth: 480, marginInline: 'auto', fontSize: '.92rem', lineHeight: 1.6,
+        boxShadow: '0 6px 24px rgba(0,0,0,.35)', display: 'flex', gap: 10, alignItems: 'center',
+        flexWrap: 'wrap', maxWidth: 540, marginInline: 'auto', fontSize: '.9rem', lineHeight: 1.5,
       }}
     >
-      <div style={{ flex: 1 }}>
-        {deferred
-          ? (ar ? 'ثبّت التطبيق على هاتفك لفتحه بسرعة من الشاشة الرئيسية.' : 'Install the app to open it quickly from your home screen.')
-          : (ar ? 'على iPhone/iPad: اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».' : 'On iPhone/iPad: tap Share, then “Add to Home Screen”.')}
+      <div style={{ flex: '1 1 200px' }}>
+        {ios
+          ? (ar ? 'على iPhone/iPad: اضغط زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».' : 'On iPhone/iPad: tap Share, then “Add to Home Screen”.')
+          : (ar ? '📱 حمّل تطبيق الأندرويد الرسمي (APK) لتنبيهات الجرعات والوصول السريع:' : '📱 Download the official Android App (APK) for exact dose alarms & quick access:')}
       </div>
-      {deferred && (
-        <button onClick={install} style={{ background: '#2EC4B6', color: '#0B3C5D', border: 0, borderRadius: 8, padding: '8px 14px', fontWeight: 700, cursor: 'pointer' }}>
-          {ar ? 'تثبيت' : 'Install'}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {!ios && (
+          <a
+            href={APK_DIRECT_DOWNLOAD_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: '#2EC4B6', color: '#0B3C5D', textDecoration: 'none',
+              borderRadius: 8, padding: '8px 12px', fontWeight: 800, fontSize: '.86rem', whiteSpace: 'nowrap',
+            }}
+          >
+            {ar ? '📥 تحميل APK' : '📥 Download APK'}
+          </a>
+        )}
+        {deferred && (
+          <button
+            onClick={install}
+            style={{
+              background: 'rgba(255,255,255,0.16)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)',
+              borderRadius: 8, padding: '7px 11px', fontWeight: 700, fontSize: '.84rem', cursor: 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            {ar ? 'تثبيت ويب' : 'Install Web'}
+          </button>
+        )}
+        <button
+          onClick={dismiss}
+          aria-label={ar ? 'إغلاق' : 'Close'}
+          style={{ background: 'transparent', color: '#fff', border: 0, fontSize: '1.15rem', cursor: 'pointer', paddingInline: 4 }}
+        >
+          ✕
         </button>
-      )}
-      <button onClick={dismiss} aria-label={ar ? 'إغلاق' : 'Close'} style={{ background: 'transparent', color: '#fff', border: 0, fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+      </div>
     </div>
   );
 }
