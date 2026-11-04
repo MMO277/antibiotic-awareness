@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLang } from './i18n';
 import { tr } from './types';
+import { scheduleSingleNativeDoseAlarm, triggerTestAlarm } from './nativeAlarmService';
 
 interface SmartDoseAlarmCardProps {
   medicineName?: string;
@@ -69,13 +70,22 @@ export default function SmartDoseAlarmCard({
     }
   }, [state]);
 
-  // Live countdown clock to nextDoseTime
+  // Live countdown clock to nextDoseTime + auto-chime if app is open at 00:00:00
   useEffect(() => {
+    let lastTriggeredMin = '';
     const updateTimer = () => {
       const now = new Date();
       const [hh, mm] = (state.nextDoseTime || '08:00').split(':').map((n) => parseInt(n, 10) || 0);
       const target = new Date();
       target.setHours(hh, mm, 0, 0);
+
+      // Check if current minute matches target HH:MM:00 while app is open
+      const nowKey = `${now.getHours()}:${now.getMinutes()}`;
+      if (now.getHours() === hh && now.getMinutes() === mm && now.getSeconds() <= 2 && lastTriggeredMin !== nowKey) {
+        lastTriggeredMin = nowKey;
+        playChimeAndSpeak();
+      }
+
       if (target.getTime() <= now.getTime()) {
         target.setDate(target.getDate() + 1);
       }
@@ -88,10 +98,10 @@ export default function SmartDoseAlarmCard({
     updateTimer();
     const id = window.setInterval(updateTimer, 1000);
     return () => window.clearInterval(id);
-  }, [state.nextDoseTime]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.nextDoseTime, state.medicineName]);
 
   const playChimeAndSpeak = () => {
-    // 1. Play pleasant medical chime using Web Audio API
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (AudioCtx) {
@@ -114,7 +124,6 @@ export default function SmartDoseAlarmCard({
       /* ignore audio restriction */
     }
 
-    // 2. Speak reminder aloud via Web Speech API
     if ('speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
@@ -139,34 +148,31 @@ export default function SmartDoseAlarmCard({
   };
 
   const enableBrowserNotifications = async () => {
-    if (!('Notification' in window)) {
-      setStatusBanner(
-        tr(lang, 'تم تفعيل المنبه الصوتي الداخلي بنجاح ✓', 'Internal voice alarm enabled ✓')
-      );
-      setState((prev) => ({ ...prev, notificationsEnabled: true }));
-      return;
-    }
-    try {
-      const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        new Notification(
-          isAr ? '🔔 تم تفعيل منبه المضاد الحيوي' : '🔔 Smart Antibiotic Alarm Active',
-          {
-            body: `${state.medicineName} — ${state.nextDoseTime}`,
-          }
-        );
-      }
-      setState((prev) => ({ ...prev, notificationsEnabled: true }));
-      setStatusBanner(
-        tr(
-          lang,
-          '🔔 تم تفعيل إشعارات الموبايل والتنبيه الصوتي بنجاح!',
-          '🔔 Mobile push & voice alarm notifications activated!'
-        )
-      );
-    } catch {
-      setState((prev) => ({ ...prev, notificationsEnabled: true }));
-    }
+    const res = await scheduleSingleNativeDoseAlarm(
+      state.medicineName,
+      state.doseInstruction,
+      state.nextDoseTime,
+      isAr
+    );
+    setState((prev) => ({ ...prev, notificationsEnabled: true }));
+    setStatusBanner(res.message);
+  };
+
+  const handleTimeChange = async (newTime: string) => {
+    setState((prev) => ({ ...prev, nextDoseTime: newTime, notificationsEnabled: true }));
+    const res = await scheduleSingleNativeDoseAlarm(
+      state.medicineName,
+      state.doseInstruction,
+      newTime,
+      isAr
+    );
+    setStatusBanner(res.message);
+  };
+
+  const handleTestBackgroundAlarm = async () => {
+    const res = await triggerTestAlarm(isAr);
+    setState((prev) => ({ ...prev, notificationsEnabled: true }));
+    setStatusBanner(res.message);
   };
 
   const handleDoseTaken = () => {
@@ -187,17 +193,19 @@ export default function SmartDoseAlarmCard({
     );
   };
 
-  const handleSnooze15 = () => {
+  const handleSnooze15 = async () => {
     const [hh, mm] = (state.nextDoseTime || '08:00').split(':').map((n) => parseInt(n, 10) || 0);
     const totalMin = (hh * 60 + mm + 15) % (24 * 60);
     const nh = String(Math.floor(totalMin / 60)).padStart(2, '0');
     const nm = String(totalMin % 60).padStart(2, '0');
-    setState((prev) => ({ ...prev, nextDoseTime: `${nh}:${nm}` }));
+    const newTime = `${nh}:${nm}`;
+    setState((prev) => ({ ...prev, nextDoseTime: newTime, notificationsEnabled: true }));
+    await scheduleSingleNativeDoseAlarm(state.medicineName, state.doseInstruction, newTime, isAr);
     setStatusBanner(
       tr(
         lang,
-        `⏰ تم تأجيل المنبه 15 دقيقة ليصبح في تمام ${nh}:${nm}`,
-        `⏰ Alarm snoozed by 15 minutes to ${nh}:${nm}`
+        `⏰ تم تأجيل المنبه 15 دقيقة وضبطه ليرن في تمام ${newTime} حتى لو التطبيق مقفول`,
+        `⏰ Alarm snoozed by 15 minutes and scheduled for ${newTime}`
       )
     );
   };
@@ -250,7 +258,7 @@ export default function SmartDoseAlarmCard({
             gap: '14px',
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
             <div>
               <span
                 style={{
@@ -262,7 +270,7 @@ export default function SmartDoseAlarmCard({
                   fontWeight: 800,
                 }}
               >
-                🔔 {tr(lang, 'منبه الجرعات الذكي بالصوت', 'LIVE SMART DOSE ALARM')}
+                🔔 {tr(lang, 'منبه الجرعات الذكي (يعمل والتطبيق مقفول)', 'LIVE SMART DOSE ALARM')}
               </span>
               <h3 style={{ margin: '6px 0 0', color: '#fff', fontSize: '1.25rem' }}>
                 {tr(lang, 'العد التنازلي للجرعة القادمة', 'Next Dose Countdown')}
@@ -271,7 +279,7 @@ export default function SmartDoseAlarmCard({
             <button
               type="button"
               onClick={enableBrowserNotifications}
-              title={tr(lang, 'تفعيل إشعارات الموبايل', 'Enable Push Notifications')}
+              title={tr(lang, 'ضبط وتفعيل منبه الموبايل', 'Enable Hardware Alarm')}
               style={{
                 background: state.notificationsEnabled ? '#0d9488' : '#1e293b',
                 color: '#fff',
@@ -284,8 +292,8 @@ export default function SmartDoseAlarmCard({
               }}
             >
               {state.notificationsEnabled
-                ? tr(lang, '🔔 الإشعارات مفعلة', '🔔 Alerts ON')
-                : tr(lang, '🔕 تفعيل الإشعارات', '🔕 Enable Alerts')}
+                ? tr(lang, '🔔 المنبه مفعّل', '🔔 Alarm ON')
+                : tr(lang, '🔕 تفعيل المنبه الآن', '🔕 Enable Alarm')}
             </button>
           </div>
 
@@ -352,7 +360,7 @@ export default function SmartDoseAlarmCard({
                 <input
                   type="time"
                   value={state.nextDoseTime}
-                  onChange={(e) => setState((prev) => ({ ...prev, nextDoseTime: e.target.value }))}
+                  onChange={(e) => handleTimeChange(e.target.value)}
                   style={{
                     background: '#0f172a',
                     color: '#5eead4',
@@ -366,7 +374,7 @@ export default function SmartDoseAlarmCard({
             </div>
           </div>
 
-          {/* Voice Reminder Waveform Player */}
+          {/* Voice Reminder Waveform Player + Background Alarm Test */}
           <div
             style={{
               background: 'rgba(30, 41, 59, 0.75)',
@@ -375,28 +383,46 @@ export default function SmartDoseAlarmCard({
               border: '1px solid rgba(148, 163, 184, 0.2)',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: 6 }}>
               <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#e2e8f0' }}>
-                🎙️ {tr(lang, 'التذكير الصوتي الناطق (Voice Reminder)', 'Spoken Voice Reminder')}
+                🎙️ {tr(lang, 'التذكير الصوتي ومنبه الخلفية', 'Voice & Background Alarm')}
               </span>
-              <button
-                type="button"
-                onClick={playChimeAndSpeak}
-                style={{
-                  background: isSpeaking ? '#f59e0b' : '#14b8a6',
-                  color: '#0f172a',
-                  border: 'none',
-                  borderRadius: '99px',
-                  padding: '5px 14px',
-                  fontWeight: 900,
-                  fontSize: '0.8rem',
-                  cursor: 'pointer',
-                }}
-              >
-                {isSpeaking
-                  ? tr(lang, '🔊 يتحدث الآن...', '🔊 Speaking...')
-                  : tr(lang, '▶ تجربة الجرس والصوت الآن', '▶ Test Voice Alarm')}
-              </button>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={playChimeAndSpeak}
+                  style={{
+                    background: isSpeaking ? '#f59e0b' : '#14b8a6',
+                    color: '#0f172a',
+                    border: 'none',
+                    borderRadius: '99px',
+                    padding: '5px 12px',
+                    fontWeight: 900,
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isSpeaking
+                    ? tr(lang, '🔊 يتحدث الآن...', '🔊 Speaking...')
+                    : tr(lang, '▶ سماع الصوت الآن', '▶ Play Voice')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleTestBackgroundAlarm}
+                  style={{
+                    background: '#f59e0b',
+                    color: '#0f172a',
+                    border: 'none',
+                    borderRadius: '99px',
+                    padding: '5px 12px',
+                    fontWeight: 900,
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tr(lang, '🔔 تجربة رنين والتطبيق مقفول (5 ث)', '🔔 Test Closed-App Alarm (5s)')}
+                </button>
+              </div>
             </div>
 
             {/* Animated Waveform Bars */}
