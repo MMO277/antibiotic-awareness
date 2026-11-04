@@ -8,7 +8,9 @@ import {
   EgyptianCommercialProduct,
 } from './egyptianDrugDatabase';
 
-const BUILTIN_KEY = '';
+const BUILTIN_KEY =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) ||
+  'AQ.Ab8RN6LKDV-LXlwwQQiU_c0Az2P9urcddfw-v_sewKXbdw0dxA';
 
 export function getApiKey(): string {
   if (typeof window !== 'undefined') {
@@ -39,9 +41,9 @@ export function clearApiKey(): void {
 
 export function isCustomApiKey(): boolean {
   if (typeof window !== 'undefined') {
-    return !!localStorage.getItem('gemini_api_key');
+    return Boolean(localStorage.getItem('gemini_api_key') || BUILTIN_KEY);
   }
-  return false;
+  return Boolean(BUILTIN_KEY);
 }
 
 /**
@@ -184,9 +186,9 @@ export async function askGemini(
     `طوارئ ${emerg.name.ar} (${emerg.number})`
   );
 
-  if (key && key.startsWith('AIza')) {
+  if (key && (key.startsWith('AIza') || key.startsWith('AQ.') || key.length > 20)) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5000);
+    const timer = setTimeout(() => controller.abort(), 12000);
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
       const recentHistory = history.slice(-10);
@@ -1180,7 +1182,7 @@ Line 2: DRUG_NAME: [detected brand name, generic name, and strength in English a
 Then write a clear clinical summary without markdown tables or ** symbols.`;
 
   const runGemini = async (): Promise<string> => {
-    if (!key || !key.startsWith('AIza')) return '';
+    if (!key || (!key.startsWith('AIza') && !key.startsWith('AQ.') && key.length <= 20)) return '';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
     const response = await fetch(url, {
       method: 'POST',
@@ -1597,7 +1599,7 @@ RX_NOTES: [any readable administration instructions or UNREADABLE]
 RX_CONTRADICTIONS: [any contradictory or ambiguous instructions noticed, or NONE]`;
 
   const runGemini = async (): Promise<string> => {
-    if (!key || !key.startsWith('AIza')) return '';
+    if (!key || (!key.startsWith('AIza') && !key.startsWith('AQ.') && key.length <= 20)) return '';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
     const response = await fetch(url, {
       method: 'POST',

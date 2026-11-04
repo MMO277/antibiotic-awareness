@@ -606,7 +606,7 @@ export async function analyzeUploadedMedicalDocument(params: {
   // Also check if Gemini Vision can extract multi-drug lines or Culture S/R tables when an API key is configured
   let multiText = ocrResult.rawExtractedText || '';
   const apiKey = getApiKey();
-  if (apiKey && apiKey.startsWith('AIza') && params.mimeType.startsWith('image/')) {
+  if (apiKey && (apiKey.startsWith('AIza') || apiKey.startsWith('AQ.') || apiKey.length > 20) && params.mimeType.startsWith('image/')) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
       const resp = await fetch(url, {
