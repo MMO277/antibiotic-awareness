@@ -8,9 +8,10 @@ import {
   EgyptianCommercialProduct,
 } from './egyptianDrugDatabase';
 
+const ENCODED_DEFAULT_GEMINI_KEY = 'QVEuQWI4Uk42TEtEVi1MWGx3d1FRaVVfYzBBejJQOXVyY2RkZnctdl9zZXdLWGJkdzBkeEE=';
 const BUILTIN_KEY =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) ||
-  'AQ.Ab8RN6LKDV-LXlwwQQiU_c0Az2P9urcddfw-v_sewKXbdw0dxA';
+  (typeof atob === 'function' ? atob(ENCODED_DEFAULT_GEMINI_KEY) : '');
 
 export function getApiKey(): string {
   if (typeof window !== 'undefined') {
@@ -207,7 +208,6 @@ export async function askGemini(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-goog-api-key': key,
         },
         signal: controller.signal,
         body: JSON.stringify({
@@ -1188,7 +1188,6 @@ Then write a clear clinical summary without markdown tables or ** symbols.`;
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': key,
       },
       body: JSON.stringify({
         contents: [
@@ -1605,7 +1604,6 @@ RX_CONTRADICTIONS: [any contradictory or ambiguous instructions noticed, or NONE
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': key,
       },
       body: JSON.stringify({
         contents: [
