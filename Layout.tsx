@@ -1,4 +1,5 @@
 import { GlobalSpotlightModal } from './SmartPersonaAndSpotlight';
+import { GlobalPhoneAlarmOverlay } from './SmartDoseAlarmCard';
 import { ReactNode, useRef, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useLang, SUPPORTED_LANGS } from './i18n';
@@ -1197,6 +1198,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </div>
 
       <GlobalSpotlightModal isOpen={spotlightOpen} onClose={() => setSpotlightOpen(false)} />
+      <GlobalPhoneAlarmOverlay />
 
       {/* Always-on Floating AI Assistant Bubble */}
       <ChatWidget />

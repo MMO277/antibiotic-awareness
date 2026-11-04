@@ -11,7 +11,7 @@ import {
   PrescriptionOcrExtractionResult,
 } from './geminiApi';
 import { pick } from './types';
-import { triggerTestAlarm } from './nativeAlarmService';
+import { triggerTestAlarm, openNativeSystemClockAlarm } from './nativeAlarmService';
 import {
   TreatmentSchedule,
   ScheduledDose,
@@ -982,14 +982,38 @@ export default function Tracker() {
                   <button
                     type="button"
                     className="btn-secondary small"
-                    style={{ background: '#f0fdf4', borderColor: '#16a34a', color: '#15803d', fontWeight: 600 }}
-                    onClick={async () => {
-                      const res = await triggerTestAlarm(isAr);
-                      alert(res.message);
+                    style={{ background: '#eff6ff', borderColor: '#0284c7', color: '#0369a1', fontWeight: 700 }}
+                    onClick={() => {
+                      const firstTime = sch.doseTimes?.[0] || sch.firstDoseTime || '08:00';
+                      const res = openNativeSystemClockAlarm(
+                        sch.medicineName,
+                        `${sch.prescribedDose}${sch.notes ? ` — ${sch.notes}` : ''}`,
+                        firstTime,
+                        isAr
+                      );
+                      setDoseFeedbackBanner({ type: 'success', text: res.message });
                     }}
-                    title={isAr ? 'تجربة رنين المنبه بعد 5 ثواني' : 'Test alarm sound in 5s'}
+                    title={isAr ? 'ضبط في تطبيق الساعة/المنبه الأصلي للموبايل' : 'Set in native Phone Clock app'}
                   >
-                    🔔 {isAr ? 'تجربة رنين المنبه' : 'Test Alarm'}
+                    ⏰ {isAr ? 'ضبط في منبه الموبايل' : 'Set Phone Clock'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-secondary small"
+                    style={{ background: '#f0fdf4', borderColor: '#16a34a', color: '#15803d', fontWeight: 700 }}
+                    onClick={async () => {
+                      const firstTime = sch.doseTimes?.[0] || sch.firstDoseTime || '08:00';
+                      const res = await triggerTestAlarm(isAr, {
+                        immediate: true,
+                        medicineName: sch.medicineName,
+                        doseInstruction: `${sch.prescribedDose}${sch.notes ? ` — ${sch.notes}` : ''}`,
+                        timeHHMM: firstTime,
+                      });
+                      setDoseFeedbackBanner({ type: 'success', text: res.message });
+                    }}
+                    title={isAr ? 'تجربة شاشة ورنين منبه الموبايل الآن' : 'Launch full-screen phone alarm now'}
+                  >
+                    🚨 {isAr ? 'تجربة شاشة المنبه الآن' : 'Test Phone Alarm'}
                   </button>
                   <button type="button" className="btn-secondary" onClick={() => openEdit(sch)}>
                     ✏️ {isAr ? 'تعديل' : 'Edit'}

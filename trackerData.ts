@@ -3,7 +3,7 @@ import { doc, getDoc, onSnapshot, runTransaction, serverTimestamp, setDoc } from
 import { auth, db, configured } from './firebase';
 import { useAuth } from './authContext';
 import { AllergyRecord, checkDrugAllergySafety } from './allergyData';
-import { syncNativeAlarmsWithSchedules } from './nativeAlarmService';
+import { syncNativeAlarmsWithSchedules, fireLoudBackgroundAlarmNow, triggerTestAlarm } from './nativeAlarmService';
 
 export type DoseStatus = 'upcoming' | 'taken' | 'missed' | 'unconfirmed';
 
@@ -1599,14 +1599,20 @@ export function useDoseReminderNotifications(schedules: TreatmentSchedule[], isA
               ? `⏰ حان الآن موعد جرعة: ${sch.medicineName} (${sch.prescribedDose}) — الساعة ${formatTime12Hour(dHHMM, true)}`
               : `⏰ Time for your dose: ${sch.medicineName} (${sch.prescribedDose}) — ${formatTime12Hour(dHHMM, false)}`;
             setActiveDueBanner(alertText);
-            if (notifSupported && notifPermission === 'granted') {
-              void fireSystemNotificationSafely(
-                isAr ? `⏰ موعد جرعة الدواء: ${sch.medicineName}` : `⏰ Dose Reminder: ${sch.medicineName}`,
-                isAr
-                  ? `الجرعة الموصوفة: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, true)}). يرجى تأكيد الجرعة في المتابع العلاجي.`
-                  : `Prescribed dose: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, false)}). Please confirm in your tracker.`
-              );
-            }
+            fireLoudBackgroundAlarmNow(
+              isAr ? `⏰ موعد جرعة الدواء: ${sch.medicineName}` : `⏰ Dose Alarm: ${sch.medicineName}`,
+              isAr
+                ? `الجرعة الموصوفة: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, true)}). يرجى تأكيد الجرعة.`
+                : `Prescribed dose: ${sch.prescribedDose} (${formatTime12Hour(dHHMM, false)}). Please confirm your dose.`,
+              isAr,
+              {
+                medicineName: sch.medicineName,
+                doseInstruction: `${sch.prescribedDose}${sch.notes ? ` — ${sch.notes}` : ''}`,
+                timeHHMM: dHHMM,
+                scheduleId: sch.id,
+                doseId: d.id,
+              }
+            );
           }
         });
       });
@@ -1680,17 +1686,9 @@ export function useDoseReminderNotifications(schedules: TreatmentSchedule[], isA
 
   const sendTestNotification = useCallback(async () => {
     setNotifError(null);
-    const sampleMsg = isAr
-      ? '🔔 اختبار تنبيه الجرعة: التنبيهات داخل التطبيق تعمل بنجاح بينما الصفحة مفتوحة.'
-      : '🔔 Test Dose Reminder: In-app dose alerts are working while this page is open.';
-    setActiveDueBanner(sampleMsg);
-    if (notifSupported && notifPermission === 'granted') {
-      await fireSystemNotificationSafely(
-        isAr ? '🔔 اختبار تنبيه الجرعة' : '🔔 Dose Reminder Test',
-        sampleMsg
-      );
-    }
-  }, [notifSupported, notifPermission, isAr]);
+    const res = await triggerTestAlarm(isAr, { immediate: true });
+    setActiveDueBanner(res.message);
+  }, [isAr]);
 
   return {
     notifSupported,
@@ -2497,6 +2495,11 @@ export function useSyncedSchedules() {
             detail: { uid, schedules: next, treatmentEvents: nextEvents },
           })
         );
+        try {
+          void syncNativeAlarmsWithSchedules(next);
+        } catch {
+          // non-blocking alarm sync
+        }
       } catch (err) {
         console.error('Failed to save schedules locally:', err);
       }

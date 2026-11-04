@@ -1,7 +1,24 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLang } from './i18n';
 import { tr } from './types';
-import { scheduleSingleNativeDoseAlarm, triggerTestAlarm } from './nativeAlarmService';
+import {
+  ActivePhoneAlarmPayload,
+  AlarmPreferences,
+  AlarmRingtoneId,
+  confirmDoseTakenFromAlarm,
+  loadAlarmPreferences,
+  onAlarmDoseConfirmed,
+  openNativeSystemClockAlarm,
+  previewAlarmRingtone,
+  saveAlarmPreferences,
+  scheduleSingleNativeDoseAlarm,
+  snoozeActivePhoneAlarm,
+  startGlobalPhoneAlarmWatcher,
+  stopContinuousPhoneAlarm,
+  subscribeToActivePhoneAlarm,
+  triggerTestAlarm,
+} from './nativeAlarmService';
 
 interface SmartDoseAlarmCardProps {
   medicineName?: string;
@@ -18,6 +35,387 @@ interface StoredAlarmState {
   nextDoseTime: string;
   completedDays: boolean[];
   notificationsEnabled: boolean;
+}
+
+const RINGTONE_OPTIONS: { id: AlarmRingtoneId; labelAr: string; labelEn: string }[] = [
+  {
+    id: 'classic_phone',
+    labelAr: '🚨 منبه الموبايل الكلاسيكي العالي (Classic Phone Alarm)',
+    labelEn: '🚨 Classic Loud Smartphone Alarm',
+  },
+  {
+    id: 'medical_intensive',
+    labelAr: '🏥 جرس الطوارئ الطبي المكثف (Medical ICU Beep)',
+    labelEn: '🏥 Intensive Medical ICU Alarm',
+  },
+  {
+    id: 'bell_chime',
+    labelAr: '🔔 رنين جرس الساعة الرنان (Twin-Bell Clock)',
+    labelEn: '🔔 Resonant Twin-Bell Alarm Clock',
+  },
+  {
+    id: 'crescendo_melody',
+    labelAr: '🎵 نغمة تصاعدية ذكية (Crescendo Melody)',
+    labelEn: '🎵 Escalating Crescendo Melody',
+  },
+];
+
+/**
+ * Global Full-Screen Incoming Phone Alarm Clock Overlay.
+ * Mounted globally in Layout.tsx so it pops up over ANY screen in the app when an alarm time arrives.
+ */
+export function GlobalPhoneAlarmOverlay() {
+  const { lang } = useLang();
+  const isAr = lang === 'ar';
+  const [activeAlarm, setActiveAlarm] = useState<ActivePhoneAlarmPayload | null>(null);
+  const [nowClock, setNowClock] = useState<Date>(() => new Date());
+  const [pulseTick, setPulseTick] = useState(0);
+
+  useEffect(() => {
+    startGlobalPhoneAlarmWatcher(() => lang === 'ar');
+  }, [lang]);
+
+  useEffect(() => {
+    const unsub = subscribeToActivePhoneAlarm((alarm) => {
+      setActiveAlarm(alarm);
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (!activeAlarm) return;
+    const id = window.setInterval(() => {
+      setNowClock(new Date());
+      setPulseTick((t) => (t + 1) % 24);
+    }, 350);
+    return () => window.clearInterval(id);
+  }, [activeAlarm]);
+
+  if (!activeAlarm || typeof document === 'undefined') return null;
+
+  const h24 = nowClock.getHours();
+  const mStr = String(nowClock.getMinutes()).padStart(2, '0');
+  const sStr = String(nowClock.getSeconds()).padStart(2, '0');
+  const h12 = String(h24 % 12 === 0 ? 12 : h24 % 12).padStart(2, '0');
+  const periodLabel = isAr ? (h24 < 12 ? 'صباحاً' : 'مساءً') : h24 < 12 ? 'AM' : 'PM';
+
+  const handleConfirmDoseAndStop = () => {
+    // Also mark scheduled dose as taken in localStorage if linked to a schedule
+    if (activeAlarm.scheduleId && activeAlarm.doseId) {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (!k || !k.startsWith('antibiotic_treatment_tracker_schedules')) continue;
+          const raw = localStorage.getItem(k);
+          if (!raw) continue;
+          const list = JSON.parse(raw);
+          if (!Array.isArray(list)) continue;
+          let changed = false;
+          const nowIso = new Date().toISOString();
+          const updated = list.map((sch) => {
+            if (sch.id !== activeAlarm.scheduleId || !Array.isArray(sch.doses)) return sch;
+            return {
+              ...sch,
+              updatedAt: nowIso,
+              doses: sch.doses.map((d: { id: string; status: string }) => {
+                if (d.id !== activeAlarm.doseId) return d;
+                changed = true;
+                return {
+                  ...d,
+                  status: 'taken',
+                  takenAt: nowIso,
+                  statusUpdatedAt: nowIso,
+                  documentedOutcome: 'taken_on_time',
+                };
+              }),
+            };
+          });
+          if (changed) {
+            localStorage.setItem(k, JSON.stringify(updated));
+            window.dispatchEvent(new Event('storage'));
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    confirmDoseTakenFromAlarm();
+  };
+
+  const handleSnooze = async (mins: number) => {
+    const newTime = await snoozeActivePhoneAlarm(mins);
+    try {
+      const raw = localStorage.getItem(ALARM_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        parsed.nextDoseTime = newTime;
+        parsed.notificationsEnabled = true;
+        localStorage.setItem(ALARM_STORAGE_KEY, JSON.stringify(parsed));
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  return createPortal(
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-label={activeAlarm.title}
+      dir={isAr ? 'rtl' : 'ltr'}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 999999,
+        background:
+          'radial-gradient(circle at 50% 22%, rgba(20, 184, 166, 0.35) 0%, rgba(15, 23, 42, 0.97) 55%, #020617 100%)',
+        backdropFilter: 'blur(16px)',
+        color: '#f8fafc',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '28px 20px 32px',
+        overflowY: 'auto',
+        fontFamily: 'system-ui, -apple-system, sans-serif',
+      }}
+    >
+      {/* Top Status Pill */}
+      <div style={{ textAlign: 'center', width: '100%', maxWidth: '480px' }}>
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(239, 68, 68, 0.22)',
+            border: '1.5px solid #f87171',
+            color: '#fecaca',
+            padding: '6px 16px',
+            borderRadius: '999px',
+            fontWeight: 900,
+            fontSize: '0.86rem',
+            letterSpacing: '0.4px',
+            boxShadow: '0 0 24px rgba(239, 68, 68, 0.4)',
+          }}
+        >
+          <span
+            style={{
+              display: 'inline-block',
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              background: '#ef4444',
+              boxShadow: '0 0 10px #ef4444',
+            }}
+          />
+          {tr(lang, 'منبه الدواء يرن الآن • رنين متواصل', 'PHONE DOSE ALARM RINGING')}
+        </div>
+      </div>
+
+      {/* Center Clock + Shaking Bell + Medication Card */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%',
+          maxWidth: '480px',
+          gap: '18px',
+          margin: '12px 0',
+        }}
+      >
+        {/* Pulsing Phone Alarm Bell Circle */}
+        <div
+          style={{
+            width: '116px',
+            height: '116px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(20, 184, 166, 0.35) 0%, rgba(15, 23, 42, 0.9) 75%)',
+            border: '3px solid #2dd4bf',
+            boxShadow:
+              pulseTick % 2 === 0
+                ? '0 0 0 14px rgba(45, 212, 191, 0.18), 0 0 45px rgba(20, 184, 166, 0.7)'
+                : '0 0 0 4px rgba(45, 212, 191, 0.08), 0 0 20px rgba(20, 184, 166, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '3.4rem',
+            transform: pulseTick % 2 === 0 ? 'rotate(-10deg) scale(1.06)' : 'rotate(10deg) scale(0.98)',
+            transition: 'all 0.28s ease-in-out',
+          }}
+        >
+          ⏰
+        </div>
+
+        {/* Big Phone Clock Display */}
+        <div style={{ textAlign: 'center', direction: 'ltr' }}>
+          <div
+            style={{
+              fontSize: 'clamp(3.2rem, 11vw, 4.6rem)',
+              fontWeight: 900,
+              lineHeight: 1,
+              color: '#ffffff',
+              textShadow: '0 4px 28px rgba(45, 212, 191, 0.45)',
+              letterSpacing: '2px',
+            }}
+          >
+            {h12}:{mStr}
+            <span style={{ fontSize: '1.35rem', color: '#5eead4', marginLeft: '6px', fontWeight: 800 }}>
+              :{sStr}
+            </span>
+          </div>
+          <div style={{ fontSize: '1.05rem', color: '#94a3b8', fontWeight: 700, marginTop: '6px' }}>
+            {periodLabel} • {tr(lang, `موعد الجرعة المجدول: ${activeAlarm.timeHHMM}`, `Scheduled Dose: ${activeAlarm.timeHHMM}`)}
+          </div>
+        </div>
+
+        {/* Medication Details Box */}
+        <div
+          style={{
+            width: '100%',
+            background: 'rgba(15, 23, 42, 0.88)',
+            border: '2px solid rgba(45, 212, 191, 0.5)',
+            borderRadius: '22px',
+            padding: '20px',
+            textAlign: 'center',
+            boxShadow: '0 18px 40px rgba(0, 0, 0, 0.45)',
+          }}
+        >
+          <div style={{ fontSize: '0.85rem', color: '#5eead4', fontWeight: 800, marginBottom: '6px' }}>
+            💊 {tr(lang, 'حان الآن موعد جرعة المضاد الحيوي:', 'TIME FOR YOUR ANTIBIOTIC DOSE:')}
+          </div>
+          <h2 style={{ margin: '0 0 8px', fontSize: '1.55rem', color: '#ffffff', fontWeight: 900 }}>
+            {activeAlarm.medicineName}
+          </h2>
+          <p
+            style={{
+              margin: '0 0 14px',
+              fontSize: '1rem',
+              color: '#cbd5e1',
+              lineHeight: 1.5,
+              background: 'rgba(30, 41, 59, 0.7)',
+              padding: '10px 14px',
+              borderRadius: '12px',
+            }}
+          >
+            {activeAlarm.doseInstruction}
+          </p>
+
+          {/* Animated Sound Wave Visualizer */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              height: '28px',
+            }}
+          >
+            {[10, 22, 14, 26, 18, 28, 12, 24, 20, 14, 26, 16, 22, 12, 24, 18, 10, 20].map((baseH, idx) => {
+              const dynamicH = ((baseH + ((pulseTick * 5 + idx * 7) % 16)) % 26) + 6;
+              return (
+                <div
+                  key={idx}
+                  style={{
+                    width: '5px',
+                    height: `${dynamicH}px`,
+                    background: idx % 2 === 0 ? '#2dd4bf' : '#f59e0b',
+                    borderRadius: '99px',
+                    transition: 'height 0.2s ease',
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Phone Alarm Action Controls */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '480px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+        }}
+      >
+        {/* Big Green "Dose Taken & Stop Alarm" Button */}
+        <button
+          type="button"
+          onClick={handleConfirmDoseAndStop}
+          style={{
+            width: '100%',
+            background: 'linear-gradient(90deg, #059669 0%, #10b981 50%, #0d9488 100%)',
+            color: '#ffffff',
+            border: '2px solid #6ee7b7',
+            borderRadius: '999px',
+            padding: '16px 22px',
+            fontSize: '1.12rem',
+            fontWeight: 900,
+            cursor: 'pointer',
+            boxShadow: '0 12px 30px rgba(16, 185, 129, 0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+          }}
+        >
+          <span>✅</span>
+          <span>
+            {tr(
+              lang,
+              'تم أخذ الجرعة — إيقاف المنبه الآن',
+              'Dose Taken — Stop Alarm Now'
+            )}
+          </span>
+        </button>
+
+        {/* Snooze Options Row (5m / 10m / 15m) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          {[5, 10, 15].map((mins) => (
+            <button
+              key={mins}
+              type="button"
+              onClick={() => handleSnooze(mins)}
+              style={{
+                background: 'rgba(30, 41, 59, 0.9)',
+                color: '#fde68a',
+                border: '1.5px solid rgba(245, 158, 11, 0.55)',
+                borderRadius: '14px',
+                padding: '11px 8px',
+                fontSize: '0.86rem',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              💤 {tr(lang, `غفوة ${mins} د`, `Snooze ${mins}m`)}
+            </button>
+          ))}
+        </div>
+
+        {/* Dismiss Ringing Without Logging Dose */}
+        <button
+          type="button"
+          onClick={() => stopContinuousPhoneAlarm()}
+          style={{
+            width: '100%',
+            background: 'rgba(239, 68, 68, 0.16)',
+            color: '#fca5a5',
+            border: '1px solid rgba(248, 113, 113, 0.45)',
+            borderRadius: '14px',
+            padding: '10px',
+            fontSize: '0.88rem',
+            fontWeight: 800,
+            cursor: 'pointer',
+          }}
+        >
+          🔕 {tr(lang, 'إيقاف صوت المنبه فقط', 'Stop Ringing Only (Dismiss)')}
+        </button>
+      </div>
+    </div>,
+    document.body
+  );
 }
 
 export default function SmartDoseAlarmCard({
@@ -48,10 +446,11 @@ export default function SmartDoseAlarmCard({
           : 'Take after a meal with a full glass of water'),
       nextDoseTime: propNextTime || '08:00',
       completedDays: [true, true, true, true, true, false, false],
-      notificationsEnabled: false,
+      notificationsEnabled: true,
     };
   });
 
+  const [prefs, setPrefs] = useState<AlarmPreferences>(() => loadAlarmPreferences());
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [countdownText, setCountdownText] = useState('02:14:35');
   const [statusBanner, setStatusBanner] = useState<string | null>(null);
@@ -70,7 +469,28 @@ export default function SmartDoseAlarmCard({
     }
   }, [state]);
 
-  // Live countdown clock to nextDoseTime + auto-chime if app is open at 00:00:00
+  // Listen for dose confirmation from the Full-Screen Phone Alarm Modal
+  useEffect(() => {
+    return onAlarmDoseConfirmed(() => {
+      setState((prev) => {
+        const nextDays = [...prev.completedDays];
+        const firstUnchecked = nextDays.findIndex((d) => !d);
+        if (firstUnchecked !== -1) {
+          nextDays[firstUnchecked] = true;
+        }
+        return { ...prev, completedDays: nextDays };
+      });
+      setStatusBanner(
+        tr(
+          lang,
+          '✅ تم إيقاف المنبه وتسجيل أخذ الجرعة بنجاح في شريط الالتزام!',
+          '✅ Alarm stopped and dose logged in your completion streak!'
+        )
+      );
+    });
+  }, [lang]);
+
+  // Live countdown clock to nextDoseTime + launches Full-Screen Phone Alarm at 00:00:00
   useEffect(() => {
     let lastTriggeredMin = '';
     const updateTimer = () => {
@@ -79,11 +499,16 @@ export default function SmartDoseAlarmCard({
       const target = new Date();
       target.setHours(hh, mm, 0, 0);
 
-      // Check if current minute matches target HH:MM:00 while app is open
+      // Launch full-screen continuous phone alarm if current minute matches target HH:MM:00
       const nowKey = `${now.getHours()}:${now.getMinutes()}`;
       if (now.getHours() === hh && now.getMinutes() === mm && now.getSeconds() <= 2 && lastTriggeredMin !== nowKey) {
         lastTriggeredMin = nowKey;
-        playChimeAndSpeak();
+        void triggerTestAlarm(isAr, {
+          immediate: true,
+          medicineName: state.medicineName,
+          doseInstruction: state.doseInstruction,
+          timeHHMM: state.nextDoseTime,
+        });
       }
 
       if (target.getTime() <= now.getTime()) {
@@ -99,30 +524,10 @@ export default function SmartDoseAlarmCard({
     const id = window.setInterval(updateTimer, 1000);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.nextDoseTime, state.medicineName]);
+  }, [state.nextDoseTime, state.medicineName, state.doseInstruction, isAr]);
 
   const playChimeAndSpeak = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) {
-        const ctx = new AudioCtx();
-        const notes = [523.25, 659.25, 783.99, 1046.5];
-        notes.forEach((freq, idx) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.14);
-          gain.gain.setValueAtTime(0.16, ctx.currentTime + idx * 0.14);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.14 + 0.35);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(ctx.currentTime + idx * 0.14);
-          osc.stop(ctx.currentTime + idx * 0.14 + 0.36);
-        });
-      }
-    } catch {
-      /* ignore audio restriction */
-    }
+    previewAlarmRingtone(prefs.ringtoneId);
 
     if ('speechSynthesis' in window) {
       try {
@@ -147,7 +552,7 @@ export default function SmartDoseAlarmCard({
     }
   };
 
-  const enableBrowserNotifications = async () => {
+  const enablePhoneAlarmNow = async () => {
     const res = await scheduleSingleNativeDoseAlarm(
       state.medicineName,
       state.doseInstruction,
@@ -169,13 +574,52 @@ export default function SmartDoseAlarmCard({
     setStatusBanner(res.message);
   };
 
-  const handleTestBackgroundAlarm = async () => {
-    const res = await triggerTestAlarm(isAr);
+  const handleRingtoneChange = (newTone: AlarmRingtoneId) => {
+    const updated = saveAlarmPreferences({ ringtoneId: newTone });
+    setPrefs(updated);
+    previewAlarmRingtone(newTone);
+  };
+
+  const handleTogglePref = (key: 'voiceReadoutEnabled' | 'vibrationEnabled') => {
+    const updated = saveAlarmPreferences({ [key]: !prefs[key] });
+    setPrefs(updated);
+  };
+
+  const handleLaunchImmediatePhoneAlarm = async () => {
+    const res = await triggerTestAlarm(isAr, {
+      immediate: true,
+      medicineName: state.medicineName,
+      doseInstruction: state.doseInstruction,
+      timeHHMM: state.nextDoseTime,
+    });
+    setState((prev) => ({ ...prev, notificationsEnabled: true }));
+    setStatusBanner(res.message);
+  };
+
+  const handleTestClosedAppAlarm = async () => {
+    const res = await triggerTestAlarm(isAr, {
+      immediate: false,
+      medicineName: state.medicineName,
+      doseInstruction: state.doseInstruction,
+      timeHHMM: state.nextDoseTime,
+    });
+    setState((prev) => ({ ...prev, notificationsEnabled: true }));
+    setStatusBanner(res.message);
+  };
+
+  const handleOpenSystemClockApp = () => {
+    const res = openNativeSystemClockAlarm(
+      state.medicineName,
+      state.doseInstruction,
+      state.nextDoseTime,
+      isAr
+    );
     setState((prev) => ({ ...prev, notificationsEnabled: true }));
     setStatusBanner(res.message);
   };
 
   const handleDoseTaken = () => {
+    stopContinuousPhoneAlarm();
     setState((prev) => {
       const nextDays = [...prev.completedDays];
       const firstUnchecked = nextDays.findIndex((d) => !d);
@@ -194,6 +638,7 @@ export default function SmartDoseAlarmCard({
   };
 
   const handleSnooze15 = async () => {
+    stopContinuousPhoneAlarm();
     const [hh, mm] = (state.nextDoseTime || '08:00').split(':').map((n) => parseInt(n, 10) || 0);
     const totalMin = (hh * 60 + mm + 15) % (24 * 60);
     const nh = String(Math.floor(totalMin / 60)).padStart(2, '0');
@@ -204,8 +649,8 @@ export default function SmartDoseAlarmCard({
     setStatusBanner(
       tr(
         lang,
-        `⏰ تم تأجيل المنبه 15 دقيقة وضبطه ليرن في تمام ${newTime} حتى لو التطبيق مقفول`,
-        `⏰ Alarm snoozed by 15 minutes and scheduled for ${newTime}`
+        `⏰ تم تأجيل المنبه (غفوة 15 دقيقة) وضبطه ليرن في تمام ${newTime} حتى لو الشاشة مقفولة`,
+        `⏰ Alarm snoozed by 15 minutes and scheduled to ring at ${newTime}`
       )
     );
   };
@@ -245,7 +690,7 @@ export default function SmartDoseAlarmCard({
           alignItems: 'stretch',
         }}
       >
-        {/* Left Card: Mobile Smart Dose Alarm & Voice Player */}
+        {/* Left Card: Mobile Phone-Style Dose Alarm Clock */}
         <div
           style={{
             background: 'rgba(15, 23, 42, 0.78)',
@@ -270,16 +715,16 @@ export default function SmartDoseAlarmCard({
                   fontWeight: 800,
                 }}
               >
-                🔔 {tr(lang, 'منبه الجرعات الذكي (يعمل والتطبيق مقفول)', 'LIVE SMART DOSE ALARM')}
+                ⏰ {tr(lang, 'منبه موبايل حقيقي بشاشة رنين كاملة وغفوة', 'FULL-SCREEN PHONE ALARM CLOCK')}
               </span>
               <h3 style={{ margin: '6px 0 0', color: '#fff', fontSize: '1.25rem' }}>
-                {tr(lang, 'العد التنازلي للجرعة القادمة', 'Next Dose Countdown')}
+                {tr(lang, 'منبه الجرعة القادم (مثل منبه الهاتف)', 'Next Dose Phone Alarm')}
               </h3>
             </div>
             <button
               type="button"
-              onClick={enableBrowserNotifications}
-              title={tr(lang, 'ضبط وتفعيل منبه الموبايل', 'Enable Hardware Alarm')}
+              onClick={enablePhoneAlarmNow}
+              title={tr(lang, 'تفعيل منبه الموبايل المستمر', 'Arm Continuous Phone Alarm')}
               style={{
                 background: state.notificationsEnabled ? '#0d9488' : '#1e293b',
                 color: '#fff',
@@ -292,8 +737,8 @@ export default function SmartDoseAlarmCard({
               }}
             >
               {state.notificationsEnabled
-                ? tr(lang, '🔔 المنبه مفعّل', '🔔 Alarm ON')
-                : tr(lang, '🔕 تفعيل المنبه الآن', '🔕 Enable Alarm')}
+                ? tr(lang, '⏰ المنبه مفعّل', '⏰ Phone Alarm ON')
+                : tr(lang, '🔕 تفعيل المنبه الآن', '🔕 Arm Alarm')}
             </button>
           </div>
 
@@ -335,7 +780,7 @@ export default function SmartDoseAlarmCard({
 
             <div style={{ flex: 1, minWidth: '160px' }}>
               <label className="small" style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
-                {tr(lang, 'الدواء وموعد الجرعة:', 'Medication & Alarm Time:')}
+                {tr(lang, 'الدواء وموعد رنين المنبه:', 'Medication & Alarm Time:')}
               </label>
               <input
                 type="text"
@@ -353,9 +798,9 @@ export default function SmartDoseAlarmCard({
                   marginBottom: '6px',
                 }}
               />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <span className="small" style={{ color: '#cbd5e1' }}>
-                  {tr(lang, 'تغيير الساعة:', 'Set Time:')}
+                  {tr(lang, 'ضبط الساعة:', 'Alarm Time:')}
                 </span>
                 <input
                   type="time"
@@ -370,89 +815,148 @@ export default function SmartDoseAlarmCard({
                     fontWeight: 800,
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={handleOpenSystemClockApp}
+                  style={{
+                    background: 'rgba(56, 189, 248, 0.16)',
+                    color: '#7dd3fc',
+                    border: '1px solid rgba(56, 189, 248, 0.45)',
+                    borderRadius: '8px',
+                    padding: '4px 9px',
+                    fontWeight: 800,
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                  }}
+                  title={tr(
+                    lang,
+                    'إضافة الموعد مباشرة في تطبيق الساعة/المنبه الأصلي للهاتف',
+                    'Set directly in your phone native Clock app'
+                  )}
+                >
+                  📱 {tr(lang, 'ضبط في ساعة الهاتف', 'Set in Phone Clock')}
+                </button>
               </div>
             </div>
           </div>
 
-          {/* Voice Reminder Waveform Player + Background Alarm Test */}
+          {/* Phone Ringtone Selector + Voice & Vibration Settings */}
           <div
             style={{
               background: 'rgba(30, 41, 59, 0.75)',
               borderRadius: '14px',
               padding: '12px 14px',
               border: '1px solid rgba(148, 163, 184, 0.2)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: 6 }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#e2e8f0' }}>
-                🎙️ {tr(lang, 'التذكير الصوتي ومنبه الخلفية', 'Voice & Background Alarm')}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+              <span style={{ fontSize: '0.84rem', fontWeight: 800, color: '#e2e8f0' }}>
+                🎵 {tr(lang, 'نغمة رنين المنبه وإعدادات الصوت:', 'Phone Alarm Ringtone & Sound:')}
               </span>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  onClick={playChimeAndSpeak}
-                  style={{
-                    background: isSpeaking ? '#f59e0b' : '#14b8a6',
-                    color: '#0f172a',
-                    border: 'none',
-                    borderRadius: '99px',
-                    padding: '5px 12px',
-                    fontWeight: 900,
-                    fontSize: '0.78rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {isSpeaking
-                    ? tr(lang, '🔊 يتحدث الآن...', '🔊 Speaking...')
-                    : tr(lang, '▶ سماع الصوت الآن', '▶ Play Voice')}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleTestBackgroundAlarm}
-                  style={{
-                    background: '#f59e0b',
-                    color: '#0f172a',
-                    border: 'none',
-                    borderRadius: '99px',
-                    padding: '5px 12px',
-                    fontWeight: 900,
-                    fontSize: '0.78rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {tr(lang, '🔔 تجربة رنين والتطبيق مقفول (5 ث)', '🔔 Test Closed-App Alarm (5s)')}
-                </button>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', fontSize: '0.76rem' }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#cbd5e1' }}>
+                  <input
+                    type="checkbox"
+                    checked={prefs.voiceReadoutEnabled}
+                    onChange={() => handleTogglePref('voiceReadoutEnabled')}
+                  />
+                  {tr(lang, 'نطق اسم الدواء', 'Voice Readout')}
+                </label>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: '#cbd5e1' }}>
+                  <input
+                    type="checkbox"
+                    checked={prefs.vibrationEnabled}
+                    onChange={() => handleTogglePref('vibrationEnabled')}
+                  />
+                  {tr(lang, 'اهتزاز متواصل', 'Vibration')}
+                </label>
               </div>
             </div>
 
-            {/* Animated Waveform Bars */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px',
-                height: '26px',
-                padding: '4px 8px',
-                background: '#0f172a',
-                borderRadius: '8px',
-              }}
-            >
-              {[8, 14, 20, 12, 24, 18, 10, 22, 26, 16, 12, 20, 14, 22, 18, 10, 16, 24, 14, 8, 18, 12, 16, 10].map(
-                (h, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      flex: 1,
-                      height: isSpeaking ? `${Math.max(6, (h + (i * 7) % 14))}px` : `${Math.round(h * 0.6)}px`,
-                      background: i < 14 ? '#14b8a6' : '#475569',
-                      borderRadius: '99px',
-                      transition: 'height 0.15s ease',
-                    }}
-                  />
-                )
-              )}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select
+                value={prefs.ringtoneId}
+                onChange={(e) => handleRingtoneChange(e.target.value as AlarmRingtoneId)}
+                style={{
+                  flex: 1,
+                  minWidth: '180px',
+                  background: '#0f172a',
+                  color: '#f8fafc',
+                  border: '1px solid #334155',
+                  borderRadius: '8px',
+                  padding: '7px 10px',
+                  fontWeight: 700,
+                  fontSize: '0.82rem',
+                }}
+              >
+                {RINGTONE_OPTIONS.map((opt) => (
+                  <option key={opt.id} value={opt.id}>
+                    {isAr ? opt.labelAr : opt.labelEn}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={playChimeAndSpeak}
+                style={{
+                  background: isSpeaking ? '#f59e0b' : '#14b8a6',
+                  color: '#0f172a',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '7px 12px',
+                  fontWeight: 900,
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                }}
+              >
+                {isSpeaking
+                  ? tr(lang, '🔊 يتحدث...', '🔊 Speaking...')
+                  : tr(lang, '▶ سماع النغمة والصوت', '▶ Preview Tone')}
+              </button>
             </div>
-            <div className="small" style={{ color: '#94a3b8', marginTop: '6px' }}>
+
+            {/* Test Full-Screen Phone Alarm Now vs In 5 Seconds */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
+              <button
+                type="button"
+                onClick={handleLaunchImmediatePhoneAlarm}
+                style={{
+                  background: 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '9px 12px',
+                  fontWeight: 900,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 6px 16px rgba(239, 68, 68, 0.3)',
+                }}
+              >
+                🚨 {tr(lang, 'تجربة شاشة منبه الموبايل الآن', 'Launch Phone Alarm Screen Now')}
+              </button>
+              <button
+                type="button"
+                onClick={handleTestClosedAppAlarm}
+                style={{
+                  background: '#f59e0b',
+                  color: '#0f172a',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '9px 12px',
+                  fontWeight: 900,
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                }}
+              >
+                🔒 {tr(lang, 'تجربة الرنين والشاشة مقفولة (5 ث)', 'Test Locked-Screen Alarm (5s)')}
+              </button>
+            </div>
+
+            <div className="small" style={{ color: '#94a3b8' }}>
               “{state.doseInstruction}”
             </div>
           </div>
@@ -490,7 +994,7 @@ export default function SmartDoseAlarmCard({
                 cursor: 'pointer',
               }}
             >
-              🕓 {tr(lang, 'تأجيل 15 د', 'Snooze 15m')}
+              💤 {tr(lang, 'غفوة 15 د', 'Snooze 15m')}
             </button>
           </div>
         </div>
