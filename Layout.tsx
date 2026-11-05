@@ -879,8 +879,27 @@ export default function Layout({ children }: { children: ReactNode }) {
                   to="/health-profile"
                   className="chip header-user-chip"
                   title={user.email || ''}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}
                 >
-                  <span aria-hidden="true">👤</span>
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt=""
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                      style={{
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '50%',
+                        objectFit: 'cover',
+                        border: '1.5px solid #2dd4bf',
+                        flexShrink: 0,
+                      }}
+                    />
+                  ) : (
+                    <span aria-hidden="true">👤</span>
+                  )}
                   <span className="header-username">{user.displayName || user.email?.split('@')[0]}</span>
                 </Link>
               </div>
