@@ -7,6 +7,8 @@ on:
       - 'capacitor.config.ts'
       - '.github/workflows/build-apk.yml'
       - 'nativeAlarmService.ts'
+      - 'authContext.tsx'
+      - 'AuthModal.tsx'
       - 'package.json'
 
 permissions:
@@ -309,6 +311,44 @@ jobs:
                   } catch (Throwable ignored) {}
               }
 
+              private void requestGoogleOAuthTokenForAccount(final String email) {
+                  try {
+                      final AccountManager am = AccountManager.get(MainActivity.this);
+                      final android.accounts.Account account = new android.accounts.Account(email, "com.google");
+                      final String scope = "oauth2:https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
+                      am.getAuthToken(
+                          account,
+                          scope,
+                          null,
+                          MainActivity.this,
+                          future -> {
+                              new Thread(() -> {
+                                  try {
+                                      android.os.Bundle bundle = future.getResult();
+                                      String token = bundle.getString(AccountManager.KEY_AUTHTOKEN);
+                                      if (token != null && !token.isEmpty()) {
+                                          am.invalidateAuthToken("com.google", token);
+                                          android.os.Bundle freshBundle = am.getAuthToken(
+                                              account, scope, null, MainActivity.this, null, null
+                                          ).getResult();
+                                          String freshToken = freshBundle.getString(AccountManager.KEY_AUTHTOKEN);
+                                          if (freshToken != null && !freshToken.isEmpty()) {
+                                              token = freshToken;
+                                          }
+                                          notifyJsGoogleAccountResult(email + "|" + token);
+                                          return;
+                                      }
+                                  } catch (Throwable ignored) {}
+                                  notifyJsGoogleAccountResult(email);
+                              }).start();
+                          },
+                          null
+                      );
+                  } catch (Throwable t) {
+                      notifyJsGoogleAccountResult(email);
+                  }
+              }
+
               @Override
               protected void onActivityResult(int requestCode, int resultCode, Intent data) {
                   super.onActivityResult(requestCode, resultCode, data);
@@ -316,7 +356,7 @@ jobs:
                       if (resultCode == Activity.RESULT_OK && data != null) {
                           String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
                           if (accountName != null && !accountName.isEmpty()) {
-                              notifyJsGoogleAccountResult(accountName);
+                              requestGoogleOAuthTokenForAccount(accountName);
                               return;
                           }
                       }
@@ -373,6 +413,17 @@ jobs:
                                   notifyJsGoogleAccountResult("__CANCELLED__");
                               }
                           });
+                          return true;
+                      } catch (Throwable t) {
+                          return false;
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public boolean getGoogleTokenForEmail(final String email) {
+                      if (email == null || email.trim().isEmpty()) return false;
+                      try {
+                          runOnUiThread(() -> requestGoogleOAuthTokenForAccount(email.trim()));
                           return true;
                       } catch (Throwable t) {
                           return false;
