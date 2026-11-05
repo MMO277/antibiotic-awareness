@@ -75,7 +75,7 @@ jobs:
           npx cap add android
           npx cap sync android
 
-      - name: Configure Hybrid Smart Boot (Live OTA Online + Instant Cold-Start Offline) & Alarm Receiver
+      - name: Configure Hybrid Smart Boot, Native Google Account Picker & Alarm Receiver
         run: |
           python3 -c '
           p = "android/app/src/main/AndroidManifest.xml"
@@ -243,7 +243,9 @@ jobs:
           cat << 'EOF' > android/app/src/main/java/com/antibiotic/awareness/MainActivity.java
           package com.antibiotic.awareness;
 
+          import android.accounts.AccountManager;
           import android.annotation.SuppressLint;
+          import android.app.Activity;
           import android.app.AlarmManager;
           import android.app.Dialog;
           import android.app.PendingIntent;
@@ -291,6 +293,37 @@ jobs:
                   }
               }
 
+              private void notifyJsGoogleAccountResult(final String email) {
+                  try {
+                      runOnUiThread(() -> {
+                          try {
+                              if (this.bridge != null && this.bridge.getWebView() != null) {
+                                  String safe = email == null ? "" : email.replace("'", "").replace("\"", "");
+                                  this.bridge.getWebView().evaluateJavascript(
+                                      "if(window.__onAndroidGoogleAccountPicked){window.__onAndroidGoogleAccountPicked('" + safe + "');}",
+                                      null
+                                  );
+                              }
+                          } catch (Throwable ignored) {}
+                      });
+                  } catch (Throwable ignored) {}
+              }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if (requestCode == 9001) {
+                      if (resultCode == Activity.RESULT_OK && data != null) {
+                          String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+                          if (accountName != null && !accountName.isEmpty()) {
+                              notifyJsGoogleAccountResult(accountName);
+                              return;
+                          }
+                      }
+                      notifyJsGoogleAccountResult("__CANCELLED__");
+                  }
+              }
+
               @Override
               public void onResume() {
                   super.onResume();
@@ -319,6 +352,31 @@ jobs:
                   @JavascriptInterface
                   public void requestPermissions() {
                       runOnUiThread(() -> requestNotificationPermissionIfNeeded());
+                  }
+
+                  @JavascriptInterface
+                  public boolean pickGoogleAccount() {
+                      try {
+                          runOnUiThread(() -> {
+                              try {
+                                  Intent intent = AccountManager.newChooseAccountIntent(
+                                      null,
+                                      null,
+                                      new String[]{"com.google"},
+                                      null,
+                                      null,
+                                      null,
+                                      null
+                                  );
+                                  startActivityForResult(intent, 9001);
+                              } catch (Throwable t) {
+                                  notifyJsGoogleAccountResult("__CANCELLED__");
+                              }
+                          });
+                          return true;
+                      } catch (Throwable t) {
+                          return false;
+                      }
                   }
 
                   @JavascriptInterface
@@ -406,9 +464,6 @@ jobs:
                       final WebViewClient capacitorWebViewClient =
                           (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? webView.getWebViewClient() : null;
 
-                      // Hybrid Smart Boot:
-                      // - If online on cold start: load LIVE_OTA_URL so patient gets all website updates automatically!
-                      // - If offline on cold start (or if network drops): stay on / fallback to LOCAL_OFFLINE_URL (https://localhost) inside APK!
                       webView.setWebViewClient(new WebViewClient() {
                           @Override
                           public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
@@ -600,6 +655,6 @@ jobs:
               --repo "${{ github.repository }}" \
               --target "${{ github.sha }}" \
               --title "تطبيق التوعية بالمضادات الحيوية للأندرويد (Official Android APK)" \
-              --notes "النسخة الرسمية الهجينة لتطبيق التوعية بالمضادات الحيوية (.APK): تفتح أوفلاين من الصفر بدون نت وتستقبل تحديثات الموقع أونلاين تلقائياً بدون إعادة تثبيت." \
+              --notes "النسخة الرسمية الهجينة لتطبيق التوعية بالمضادات الحيوية (.APK): تسجيل جوجل بضغطة واحدة من حسابات الهاتف، وجولة تعريفية، وتشغيل أوفلاين من الصفر." \
               --latest
           fi
