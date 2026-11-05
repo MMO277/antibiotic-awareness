@@ -19,7 +19,6 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   browserPopupRedirectResolver,
-  signInWithCredential,
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db, configured } from './firebase';
@@ -29,11 +28,22 @@ export type Role = 'owner' | 'admin' | 'reviewer' | 'editor' | 'viewer';
 export const ROLES: Role[] = ['owner', 'admin', 'reviewer', 'editor', 'viewer'];
 
 export const GUEST_MODE_KEY = 'aa_guest_mode';
+const ROLE_CACHE_PREFIX = 'aa_cached_role_';
 
 export function isGuestModeActive(): boolean {
   if (typeof window === 'undefined') return false;
   try {
-    return sessionStorage.getItem(GUEST_MODE_KEY) === '1';
+    if (
+      sessionStorage.getItem(GUEST_MODE_KEY) === '1' ||
+      localStorage.getItem(GUEST_MODE_KEY) === '1'
+    ) {
+      return true;
+    }
+    // If opening the app offline without an active session, auto-enable offline guest access for 0ms startup
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -44,8 +54,10 @@ export function setGuestModeActive(active: boolean): void {
   try {
     if (active) {
       sessionStorage.setItem(GUEST_MODE_KEY, '1');
+      localStorage.setItem(GUEST_MODE_KEY, '1');
     } else {
       sessionStorage.removeItem(GUEST_MODE_KEY);
+      localStorage.removeItem(GUEST_MODE_KEY);
     }
   } catch {}
 }
@@ -120,7 +132,7 @@ export function translateAuthError(errCode: string, isAr = true): string {
     case 'auth/too-many-requests':
       return isAr ? 'تم حظر المحاولات مؤقتاً لتكرار المحاولات الخاطئة. انتظر دقيقة ثم أعد المحاولة.' : 'Too many unsuccessful attempts. Please wait a minute and try again.';
     case 'auth/network-request-failed':
-      return isAr ? 'تعذر الاتصال بالخادم. يرجى التحقق من اتصالك بالإنترنت.' : 'Network connection failed. Please check your internet connection.';
+      return isAr ? 'أنت الآن في وضع الأوفلاين (بدون إنترنت). يمكنك الضغط على "متابعة التصفح كزائر" لاستخدام كافة أدوات التطبيق فوراً بدون إنترنت!' : 'You are currently offline. Tap "Continue as Guest" to use all platform features offline immediately!';
     case 'auth/requires-recent-login':
       return isAr ? 'يجب إعادة تسجيل الدخول لتنفيذ هذا الإجراء الأمني.' : 'Please log in again to confirm this sensitive action.';
     case 'auth/popup-closed-by-user':
@@ -138,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [roleStatus, setRoleStatus] = useState<string>('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState<boolean>(() => isGuestModeActive());
   const [modalOpen, setModalOpen] = useState<boolean>(() => !isGuestModeActive());
@@ -158,7 +170,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     let cancelled = false;
-    setLoading(true);
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (cancelled) return;
       setUser(currentUser);
@@ -166,16 +177,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setGuestModeActive(false);
         setIsGuest(false);
         setModalOpen(false);
+        setLoading(false);
+
+        // 1. Load cached role in 0ms for instant UI rendering offline & online
+        try {
+          const cachedR = localStorage.getItem(ROLE_CACHE_PREFIX + currentUser.uid) as Role | null;
+          if (cachedR && ROLES.includes(cachedR)) {
+            setRole(cachedR);
+            setRoleStatus('ok');
+          }
+        } catch {}
+
+        // 2. Refresh role asynchronously in background when online
         if (db) {
           try {
-            // Check custom claims first if present, then Firestore roles/{uid}
             const tokenResult = await currentUser.getIdTokenResult().catch(() => null);
             const claimRole = tokenResult?.claims?.role;
             if (typeof claimRole === 'string' && ROLES.includes(claimRole.trim().toLowerCase() as Role)) {
+              const r = claimRole.trim().toLowerCase() as Role;
               if (!cancelled) {
-                setRole(claimRole.trim().toLowerCase() as Role);
+                setRole(r);
                 setRoleStatus('ok');
-                setLoading(false);
+                try { localStorage.setItem(ROLE_CACHE_PREFIX + currentUser.uid, r); } catch {}
               }
               return;
             }
@@ -191,6 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               if (r && ROLES.includes(r)) {
                 setRole(r);
                 setRoleStatus('ok');
+                try { localStorage.setItem(ROLE_CACHE_PREFIX + currentUser.uid, r); } catch {}
               } else {
                 setRole(null);
                 setRoleStatus(`invalid:${String(raw)}`);
@@ -198,22 +222,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } catch (e) {
             if (cancelled) return;
-            setRole(null);
-            setRoleStatus(`error:${(e as { code?: string }).code ?? 'unknown'}`);
+            setRoleStatus(`error:${(e as { code?: string }).code ?? 'offline'}`);
           }
-        } else {
-          setRole(null);
-          setRoleStatus('');
         }
       } else {
         setRole(null);
         setRoleStatus('');
+        setLoading(false);
         if (!isGuestModeActive()) {
           setModalOpen(true);
         }
-      }
-      if (!cancelled) {
-        setLoading(false);
       }
     });
     return () => {
@@ -238,7 +256,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const exitGuestMode = () => {
-    // Return to lamp entry screen without calling Firebase sign-out
     setGuestModeActive(false);
     setIsGuest(false);
     try {
@@ -265,7 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLogoutModalOpen(false);
   };
 
-  const login = async (email: string, password: string, rememberMe = false) => {
+  const login = async (email: string, password: string, rememberMe = true) => {
     setError(null);
     if (!configured || !auth) {
       const code = 'auth/unconfigured';
@@ -285,7 +302,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (email: string, password: string, displayName = '', rememberMe = false) => {
+  const register = async (email: string, password: string, displayName = '', rememberMe = true) => {
     setError(null);
     if (!configured || !auth) {
       const code = 'auth/unconfigured';

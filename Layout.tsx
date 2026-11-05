@@ -143,6 +143,68 @@ function isRouteMatchingItem(itemTo: string, currentPath: string): boolean {
   return currentPath === itemTo || currentPath.startsWith(`${itemTo}/`);
 }
 
+
+function SmartOfflineStatusBanner({ lang }: { lang: string }) {
+  const [isOnline, setIsOnline] = useState<boolean>(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine !== false : true
+  );
+  const [justReconnected, setJustReconnected] = useState(false);
+
+  useEffect(() => {
+    const onOffline = () => {
+      setIsOnline(false);
+      setJustReconnected(false);
+    };
+    const onOnline = () => {
+      setIsOnline(true);
+      setJustReconnected(true);
+      window.setTimeout(() => setJustReconnected(false), 3500);
+    };
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online', onOnline);
+    return () => {
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('online', onOnline);
+    };
+  }, []);
+
+  if (isOnline && !justReconnected) return null;
+  const isAr = lang === 'ar';
+
+  return (
+    <div
+      role="status"
+      dir={isAr ? 'rtl' : 'ltr'}
+      style={{
+        background: isOnline
+          ? 'linear-gradient(90deg, #059669 0%, #0d9488 100%)'
+          : 'linear-gradient(90deg, #0f172a 0%, #1e293b 100%)',
+        color: '#fff',
+        borderBottom: isOnline ? '1px solid #34d399' : '1px solid #14b8a6',
+        padding: '8px 14px',
+        fontSize: '0.84rem',
+        fontWeight: 700,
+        textAlign: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        zIndex: 90,
+      }}
+    >
+      {isOnline ? (
+        <span>
+          🌐 {isAr ? 'عاد الاتصال بالإنترنت — تمت المزامنة السحابية تلقائياً ✓' : 'Back online — Cloud sync restored automatically ✓'}
+        </span>
+      ) : (
+        <span>
+          ⚡ {isAr ? 'وضع الأوفلاين الفوري نشط — جميع الأدوات وقاعدة الأدوية (206) والمنبهات تعمل بكامل سرعتها بدون إنترنت' : 'Instant Offline Mode Active — All 206 medicines, clinical tools & alarms work at full speed offline'}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function Layout({ children }: { children: ReactNode }) {
   const { t, lang, setLang } = useLang();
   const { emergency, countryName } = useEmergencyLocation();
@@ -1200,6 +1262,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       )}
 
       {/* Page Content */}
+      <SmartOfflineStatusBanner lang={lang} />
       <div ref={pageRef} className="page-enter">
         {children}
       </div>

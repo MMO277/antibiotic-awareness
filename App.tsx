@@ -10,22 +10,25 @@ import Home from './Home';
 import { startPartnerEcosystemSync } from './partnerService';
 
 /**
- * Crash-safe lazy loader with automatic retry for GitHub Pages / Capacitor OTA updates.
- * Splits the monolithic bundle into small on-demand chunks so initial startup is 5x faster.
+ * Offline-safe & OTA-safe lazy loader.
+ * Splits the bundle into small chunks for 5x faster initial startup while avoiding infinite reload loops when offline.
  */
 function lazyWithRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>
 ) {
   return lazy(() =>
     factory().catch((err) => {
-      const key = 'aa_chunk_retry_reloaded';
-      const hasReloaded = sessionStorage.getItem(key) === '1';
-      if (!hasReloaded) {
-        sessionStorage.setItem(key, '1');
-        window.location.reload();
-        return new Promise<{ default: T }>(() => {});
+      // Only reload once if online and a newly deployed chunk hash changed
+      if (typeof navigator !== 'undefined' && navigator.onLine !== false) {
+        const key = 'aa_chunk_retry_reloaded';
+        const hasReloaded = sessionStorage.getItem(key) === '1';
+        if (!hasReloaded) {
+          sessionStorage.setItem(key, '1');
+          window.location.reload();
+          return new Promise<{ default: T }>(() => {});
+        }
+        sessionStorage.removeItem(key);
       }
-      sessionStorage.removeItem(key);
       throw err;
     })
   );
@@ -148,19 +151,50 @@ function NotFound() {
 
 export default function App() {
   useEffect(() => {
-    // Defer non-critical background sync & route prefetching until after initial paint
-    const timer = window.setTimeout(() => {
+    // Stage 1 (1.2s after paint): Pre-warm primary clinical tools & Service Worker full-offline cache
+    const timer1 = window.setTimeout(() => {
       startPartnerEcosystemSync();
-      // Silently warm up & cache the most frequently visited pages in the Service Worker cache
+      try {
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: 'WARMUP_OFFLINE_CACHE' });
+        }
+      } catch {
+        /* ignore */
+      }
       void import('./Medicines');
+      void import('./MedicinePage');
       void import('./Tracker');
       void import('./OneClickCheckup');
       void import('./CostSaver');
       void import('./GreenPrescription');
       void import('./DailyScheduleGenerator');
       void import('./PrescriptionRadar');
-    }, 1800);
-    return () => window.clearTimeout(timer);
+      void import('./Assistant');
+    }, 1200);
+
+    // Stage 2 (3.2s after paint): Pre-warm remaining clinical & educational pages into memory for 0ms offline navigation
+    const timer2 = window.setTimeout(() => {
+      void import('./Interactions');
+      void import('./AllergyChecker');
+      void import('./PediatricHelper');
+      void import('./HealthProfile');
+      void import('./CompareDrugs');
+      void import('./ColdShotWarning');
+      void import('./SideEffectsGuide');
+      void import('./SafeDisposal');
+      void import('./Scan');
+      void import('./Quiz');
+      void import('./Articles');
+      void import('./Learn');
+      void import('./MythFact');
+      void import('./ListenLearn');
+      void import('./PartnersDirectory');
+    }, 3200);
+
+    return () => {
+      window.clearTimeout(timer1);
+      window.clearTimeout(timer2);
+    };
   }, []);
 
   return (
