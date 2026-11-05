@@ -1,15 +1,14 @@
-/* Antibiotic Awareness — Ultra-Fast Full Offline Service Worker (v3).
-   - Automatically reads ./precache-manifest.json generated at build time and caches 100% of
-     compiled JS & CSS chunks so EVERY clinical tool, page, drug directory, dose tracker, and
-     assistant opens in 0ms offline (Airplane Mode) even if never visited before.
-   - App Shell & Navigations: Stale-While-Revalidate (opens in 0ms from cache while refreshing in background).
+/* Antibiotic Awareness — Ultra-Fast Network-First Shell & Full Offline Service Worker (v4).
+   - App Shell & Navigations (index.html): Network-First when online so every GitHub deployment
+     appears IMMEDIATELY on first open (never stuck on an old cached login screen!), with instant
+     0ms fallback to SHELL_CACHE when offline (Airplane Mode).
    - Hashed Build Assets (/assets/*): Cache-First Immutable (0ms disk load).
    - Google Fonts & Static Media (icons, images, audio): Cache-First with background refresh. */
 
 const CACHE_PREFIX = 'aa-speed-cache-';
-const STATIC_CACHE = CACHE_PREFIX + 'static-v3';
-const SHELL_CACHE = CACHE_PREFIX + 'shell-v3';
-const MEDIA_FONT_CACHE = CACHE_PREFIX + 'media-fonts-v3';
+const STATIC_CACHE = CACHE_PREFIX + 'static-v4';
+const SHELL_CACHE = CACHE_PREFIX + 'shell-v4';
+const MEDIA_FONT_CACHE = CACHE_PREFIX + 'media-fonts-v4';
 const ACTIVE_CACHES = [STATIC_CACHE, SHELL_CACHE, MEDIA_FONT_CACHE];
 
 const OFFLINE_URL = './offline.html';
@@ -32,7 +31,6 @@ async function warmupFromPrecacheManifest() {
     const staticCache = await caches.open(STATIC_CACHE);
 
     const coreAssets = Array.isArray(manifest.coreAssets) ? manifest.coreAssets : [];
-    // Batch-cache all core clinical JS & CSS chunks for instant 0ms offline navigation
     await Promise.allSettled(
       coreAssets.map(async (assetUrl) => {
         const existing = await staticCache.match(assetUrl);
@@ -45,7 +43,6 @@ async function warmupFromPrecacheManifest() {
       })
     );
 
-    // Then warm up 3D game chunks in low-priority background pass
     const deferred3D = Array.isArray(manifest.deferred3DAssets) ? manifest.deferred3DAssets : [];
     for (const assetUrl of deferred3D) {
       try {
@@ -133,29 +130,28 @@ self.addEventListener('fetch', (event) => {
 
   // Never intercept cross-origin APIs or live version check manifests
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.endsWith("app-version.json") || url.pathname.endsWith("precache-manifest.json")) return;
+  if (url.pathname.endsWith('app-version.json') || url.pathname.endsWith('precache-manifest.json')) return;
 
-  // 2. Page Navigations (index.html / App Shell): Stale-While-Revalidate for instant 0ms offline startup
+  // 2. Page Navigations (index.html / App Shell): NETWORK-FIRST so new deployments apply immediately!
+  //    Falls back to cached index.html in 0ms when offline.
   if (req.mode === 'navigate') {
     event.respondWith(
       caches.open(SHELL_CACHE).then(async (cache) => {
-        const cachedShell =
+        try {
+          const freshRes = await fetch(req, { cache: 'no-cache' });
+          if (freshRes && freshRes.status === 200 && freshRes.type === 'basic') {
+            cache.put('./index.html', freshRes.clone());
+            return freshRes;
+          }
+        } catch {
+          /* Offline — serve cached shell immediately below */
+        }
+        return (
           (await cache.match('./index.html')) ||
           (await cache.match('./')) ||
-          (await caches.match('./index.html'));
-
-        const networkPromise = fetch(req)
-          .then((res) => {
-            if (res && res.status === 200 && res.type === 'basic') {
-              cache.put('./index.html', res.clone());
-            }
-            return res;
-          })
-          .catch(async () => {
-            return cachedShell || (await cache.match(OFFLINE_URL));
-          });
-
-        return cachedShell || networkPromise;
+          (await caches.match('./index.html')) ||
+          (await cache.match(OFFLINE_URL))
+        );
       })
     );
     return;
