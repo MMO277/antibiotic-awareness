@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: 20
 
-      - name: Write Clean Capacitor Config with Live OTA Support
+      - name: Write Hybrid OTA + Offline Bundled Capacitor Config
         run: |
           cat << 'EOF' > capacitor.config.ts
           const config = {
@@ -33,15 +33,21 @@ jobs:
             webDir: 'dist',
             bundledWebRuntime: false,
             server: {
-              url: 'https://mmo277.github.io/antibiotic-awareness/',
               androidScheme: 'https',
               cleartext: true,
+              allowNavigation: [
+                'mmo277.github.io',
+                '*.github.io',
+                '*.firebaseapp.com',
+                '*.google.com',
+                '*.googleapis.com',
+                '*.gstatic.com'
+              ]
             },
             plugins: {
               LocalNotifications: {
-                smallIcon: 'ic_stat_capsule',
+                smallIcon: 'ic_launcher',
                 iconColor: '#0B3C5D',
-                sound: 'alarm_chime.wav',
               },
             },
           };
@@ -63,39 +69,190 @@ jobs:
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
 
-      - name: Initialize Capacitor Android
+      - name: Initialize Capacitor Android (Bundles Offline Copy + Enables Live OTA)
         run: |
           rm -rf android
           npx cap add android
           npx cap sync android
 
-      - name: Configure Android Permissions & Crash-Safe Google Sign-In Popup WebView
+      - name: Configure Hybrid Smart Boot (Live OTA Online + Instant Cold-Start Offline) & Alarm Receiver
         run: |
           python3 -c '
           p = "android/app/src/main/AndroidManifest.xml"
           with open(p, "r") as f:
               xml = f.read()
           perms = [
+              "android.permission.ACCESS_NETWORK_STATE",
               "android.permission.POST_NOTIFICATIONS",
               "android.permission.SCHEDULE_EXACT_ALARM",
               "android.permission.USE_EXACT_ALARM",
+              "android.permission.USE_FULL_SCREEN_INTENT",
               "android.permission.VIBRATE",
               "android.permission.WAKE_LOCK",
               "android.permission.RECEIVE_BOOT_COMPLETED"
           ]
-          inject = "\n".join([f"    <uses-permission android:name=\"{perm}\" />" for perm in perms if perm not in xml])
-          if inject and "</manifest>" in xml:
-              xml = xml.replace("</manifest>", inject + "\n</manifest>")
+          inject_perms = "\n".join([f"    <uses-permission android:name=\"{perm}\" />" for perm in perms if perm not in xml])
+          if inject_perms and "</manifest>" in xml:
+              xml = xml.replace("</manifest>", inject_perms + "\n</manifest>")
+          receiver_tag = "        <receiver android:name=\".DoseAlarmReceiver\" android:enabled=\"true\" android:exported=\"true\" />\n    </application>"
+          if ".DoseAlarmReceiver" not in xml and "</application>" in xml:
+              xml = xml.replace("</application>", receiver_tag)
           with open(p, "w") as f:
               f.write(xml)
           '
+
+          cat << 'EOF' > android/app/src/main/java/com/antibiotic/awareness/DoseAlarmReceiver.java
+          package com.antibiotic.awareness;
+
+          import android.app.Notification;
+          import android.app.NotificationChannel;
+          import android.app.NotificationManager;
+          import android.app.PendingIntent;
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.media.AudioAttributes;
+          import android.media.Ringtone;
+          import android.media.RingtoneManager;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Handler;
+          import android.os.Looper;
+          import android.os.PowerManager;
+          import android.os.VibrationEffect;
+          import android.os.Vibrator;
+
+          public class DoseAlarmReceiver extends BroadcastReceiver {
+              public static final String CHANNEL_ID = "med_alarm_clock_v3";
+
+              @Override
+              public void onReceive(Context context, Intent intent) {
+                  try {
+                      PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                      if (pm != null) {
+                          PowerManager.WakeLock wl = pm.newWakeLock(
+                              PowerManager.PARTIAL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
+                              "AntibioticAwareness:DoseAlarmWakeLock"
+                          );
+                          wl.acquire(15000L);
+                      }
+                  } catch (Throwable ignored) {}
+
+                  String title = intent != null ? intent.getStringExtra("title") : null;
+                  String body = intent != null ? intent.getStringExtra("body") : null;
+                  int id = intent != null ? intent.getIntExtra("id", 99999) : 99999;
+
+                  if (title == null || title.isEmpty()) {
+                      title = "💊 موعد جرعة الدواء الآن!";
+                  }
+                  if (body == null || body.isEmpty()) {
+                      body = "حان الآن موعد أخذ جرعة المضاد الحيوي في ميعادها.";
+                  }
+
+                  Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                  if (alarmUri == null) {
+                      alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+                  }
+
+                  try {
+                      NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                      if (nm != null) {
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                              NotificationChannel channel = new NotificationChannel(
+                                  CHANNEL_ID,
+                                  "منبه مواعيد الجرعات الدوائية",
+                                  NotificationManager.IMPORTANCE_HIGH
+                              );
+                              channel.setDescription("يرن في مواعيد جرعات الأدوية حتى والتطبيق مغلق");
+                              channel.enableVibration(true);
+                              channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+                              if (alarmUri != null) {
+                                  AudioAttributes attrs = new AudioAttributes.Builder()
+                                      .setUsage(AudioAttributes.USAGE_ALARM)
+                                      .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                      .build();
+                                  channel.setSound(alarmUri, attrs);
+                              }
+                              nm.createNotificationChannel(channel);
+                          }
+
+                          Intent launchIntent = new Intent(context, MainActivity.class);
+                          launchIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                          int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                              flags |= PendingIntent.FLAG_IMMUTABLE;
+                          }
+                          PendingIntent contentIntent = PendingIntent.getActivity(context, id, launchIntent, flags);
+
+                          Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                              ? new Notification.Builder(context, CHANNEL_ID)
+                              : new Notification.Builder(context);
+
+                          builder.setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                              .setContentTitle(title)
+                              .setContentText(body)
+                              .setStyle(new Notification.BigTextStyle().bigText(body))
+                              .setPriority(Notification.PRIORITY_MAX)
+                              .setCategory(Notification.CATEGORY_ALARM)
+                              .setVisibility(Notification.VISIBILITY_PUBLIC)
+                              .setAutoCancel(true)
+                              .setContentIntent(contentIntent);
+
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                              builder.setFullScreenIntent(contentIntent, true);
+                          }
+
+                          nm.notify(id, builder.build());
+                      }
+                  } catch (Throwable ignored) {}
+
+                  try {
+                      Vibrator vib = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+                      if (vib != null && vib.hasVibrator()) {
+                          long[] pattern = new long[]{0, 600, 300, 600, 300, 800, 300, 800};
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                              vib.vibrate(VibrationEffect.createWaveform(pattern, -1));
+                          } else {
+                              vib.vibrate(pattern, -1);
+                          }
+                      }
+                  } catch (Throwable ignored) {}
+
+                  try {
+                      if (alarmUri != null) {
+                          final Ringtone ringtone = RingtoneManager.getRingtone(context.getApplicationContext(), alarmUri);
+                          if (ringtone != null) {
+                              if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                                  ringtone.setLooping(false);
+                              }
+                              ringtone.play();
+                              new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                  try {
+                                      if (ringtone.isPlaying()) {
+                                          ringtone.stop();
+                                      }
+                                  } catch (Throwable ignored) {}
+                              }, 10000L);
+                          }
+                      }
+                  } catch (Throwable ignored) {}
+              }
+          }
+          EOF
 
           cat << 'EOF' > android/app/src/main/java/com/antibiotic/awareness/MainActivity.java
           package com.antibiotic.awareness;
 
           import android.annotation.SuppressLint;
+          import android.app.AlarmManager;
           import android.app.Dialog;
+          import android.app.PendingIntent;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.pm.PackageManager;
           import android.graphics.Color;
+          import android.net.ConnectivityManager;
+          import android.net.NetworkInfo;
           import android.net.Uri;
           import android.os.Build;
           import android.os.Bundle;
@@ -103,9 +260,11 @@ jobs:
           import android.view.Gravity;
           import android.view.ViewGroup;
           import android.webkit.CookieManager;
+          import android.webkit.JavascriptInterface;
           import android.webkit.PermissionRequest;
           import android.webkit.ValueCallback;
           import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceError;
           import android.webkit.WebResourceRequest;
           import android.webkit.WebSettings;
           import android.webkit.WebView;
@@ -115,9 +274,22 @@ jobs:
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
+              private static final String LIVE_OTA_URL = "https://mmo277.github.io/antibiotic-awareness/";
+              private static final String LOCAL_OFFLINE_URL = "https://localhost";
               private static final String CLEAN_CHROME_UA =
                   "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36";
               private boolean isWebViewConfigured = false;
+
+              private boolean isDeviceOnline() {
+                  try {
+                      ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                      if (cm == null) return false;
+                      NetworkInfo info = cm.getActiveNetworkInfo();
+                      return info != null && info.isConnected();
+                  } catch (Throwable t) {
+                      return false;
+                  }
+              }
 
               @Override
               public void onResume() {
@@ -128,9 +300,91 @@ jobs:
                   }
               }
 
-              @SuppressLint("SetJavaScriptEnabled")
+              private void requestNotificationPermissionIfNeeded() {
+                  try {
+                      if (Build.VERSION.SDK_INT >= 33) {
+                          if (checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+                              requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 101);
+                          }
+                      }
+                  } catch (Throwable ignored) {}
+              }
+
+              public class AndroidAlarmBridge {
+                  @JavascriptInterface
+                  public boolean isAvailable() {
+                      return true;
+                  }
+
+                  @JavascriptInterface
+                  public void requestPermissions() {
+                      runOnUiThread(() -> requestNotificationPermissionIfNeeded());
+                  }
+
+                  @JavascriptInterface
+                  public boolean scheduleExactAlarm(int id, double triggerAtMillisDouble, String title, String body) {
+                      try {
+                          runOnUiThread(() -> requestNotificationPermissionIfNeeded());
+                          long triggerAtMillis = (long) triggerAtMillisDouble;
+                          if (triggerAtMillis <= System.currentTimeMillis()) {
+                              triggerAtMillis = System.currentTimeMillis() + 3000L;
+                          }
+                          Context ctx = getApplicationContext();
+                          AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+                          if (am == null) return false;
+
+                          Intent intent = new Intent(ctx, DoseAlarmReceiver.class);
+                          intent.setAction("com.antibiotic.awareness.DOSE_ALARM_" + id);
+                          intent.putExtra("id", id);
+                          intent.putExtra("title", title);
+                          intent.putExtra("body", body);
+
+                          int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                              flags |= PendingIntent.FLAG_IMMUTABLE;
+                          }
+                          PendingIntent pi = PendingIntent.getBroadcast(ctx, id, intent, flags);
+
+                          Intent showIntent = new Intent(ctx, MainActivity.class);
+                          PendingIntent showPi = PendingIntent.getActivity(ctx, id, showIntent, flags);
+
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                              AlarmManager.AlarmClockInfo clockInfo = new AlarmManager.AlarmClockInfo(triggerAtMillis, showPi);
+                              am.setAlarmClock(clockInfo, pi);
+                          } else {
+                              am.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pi);
+                          }
+                          return true;
+                      } catch (Throwable t) {
+                          return false;
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public boolean cancelAlarm(int id) {
+                      try {
+                          Context ctx = getApplicationContext();
+                          AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+                          if (am == null) return false;
+                          Intent intent = new Intent(ctx, DoseAlarmReceiver.class);
+                          intent.setAction("com.antibiotic.awareness.DOSE_ALARM_" + id);
+                          int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                              flags |= PendingIntent.FLAG_IMMUTABLE;
+                          }
+                          PendingIntent pi = PendingIntent.getBroadcast(ctx, id, intent, flags);
+                          am.cancel(pi);
+                          return true;
+                      } catch (Throwable t) {
+                          return false;
+                      }
+                  }
+              }
+
+              @SuppressLint({"SetJavaScriptEnabled", "JavascriptInterface"})
               private void configureWebViewSafely() {
                   try {
+                      requestNotificationPermissionIfNeeded();
                       if (this.bridge == null || this.bridge.getWebView() == null) {
                           return;
                       }
@@ -143,9 +397,55 @@ jobs:
                       settings.setSupportMultipleWindows(true);
                       settings.setUserAgentString(CLEAN_CHROME_UA);
 
+                      webView.addJavascriptInterface(new AndroidAlarmBridge(), "AndroidAlarmBridge");
+
                       CookieManager cookieManager = CookieManager.getInstance();
                       cookieManager.setAcceptCookie(true);
                       cookieManager.setAcceptThirdPartyCookies(webView, true);
+
+                      final WebViewClient capacitorWebViewClient =
+                          (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? webView.getWebViewClient() : null;
+
+                      // Hybrid Smart Boot:
+                      // - If online on cold start: load LIVE_OTA_URL so patient gets all website updates automatically!
+                      // - If offline on cold start (or if network drops): stay on / fallback to LOCAL_OFFLINE_URL (https://localhost) inside APK!
+                      webView.setWebViewClient(new WebViewClient() {
+                          @Override
+                          public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                              if (capacitorWebViewClient != null) {
+                                  return capacitorWebViewClient.shouldInterceptRequest(view, request);
+                              }
+                              return super.shouldInterceptRequest(view, request);
+                          }
+
+                          @Override
+                          public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                              return false;
+                          }
+
+                          @Override
+                          public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                              return false;
+                          }
+
+                          @Override
+                          public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                              try {
+                                  if (request != null && request.isForMainFrame()) {
+                                      view.loadUrl(LOCAL_OFFLINE_URL);
+                                      return;
+                                  }
+                              } catch (Throwable ignored) {}
+                              super.onReceivedError(view, request, error);
+                          }
+                      });
+
+                      if (isDeviceOnline()) {
+                          settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+                          webView.loadUrl(LIVE_OTA_URL);
+                      } else {
+                          settings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
+                      }
 
                       final WebChromeClient defaultClient =
                           (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ? webView.getWebChromeClient() : null;
@@ -300,6 +600,6 @@ jobs:
               --repo "${{ github.repository }}" \
               --target "${{ github.sha }}" \
               --title "تطبيق التوعية بالمضادات الحيوية للأندرويد (Official Android APK)" \
-              --notes "النسخة الرسمية لتطبيق التوعية بالمضادات الحيوية للأندرويد (.APK) بتحديث تلقائي فوري ودعم كامل لتسجيل جوجل." \
+              --notes "النسخة الرسمية الهجينة لتطبيق التوعية بالمضادات الحيوية (.APK): تفتح أوفلاين من الصفر بدون نت وتستقبل تحديثات الموقع أونلاين تلقائياً بدون إعادة تثبيت." \
               --latest
           fi
