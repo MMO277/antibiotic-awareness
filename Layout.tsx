@@ -1,3 +1,4 @@
+import AppUpdateManager, { triggerUpdateCheckerManually } from "./AppUpdateManager";
 import OnboardingTour, { triggerOnboardingTourManually } from "./OnboardingTour";
 import { GlobalPhoneAlarmOverlay } from './SmartDoseAlarmCard';
 import { lazy, Suspense, ReactNode, useRef, useEffect, useState } from 'react';
@@ -1224,6 +1225,20 @@ export default function Layout({ children }: { children: ReactNode }) {
                 </span>
                 <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
               </button>
+              <button
+                type="button"
+                className="drawer-item"
+                onClick={() => {
+                  closeDrawer(false);
+                  triggerUpdateCheckerManually();
+                }}
+              >
+                <span className="item-icon" aria-hidden="true">🔄</span>
+                <span className="item-title">
+                  {tr(lang, 'فحص وتثبيت تحديثات التطبيق', 'Check for In-App Updates')}
+                </span>
+                <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
+              </button>
               <NavLink
                 to="/admin"
                 onClick={() => closeDrawer(false)}
@@ -1284,6 +1299,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       <GlobalPhoneAlarmOverlay />
       <OnboardingTour />
+      <AppUpdateManager />
 
       {spotlightOpen && (
         <Suspense fallback={null}>
