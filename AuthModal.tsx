@@ -12,6 +12,7 @@ import {
   useAuth,
   translateAuthError,
   getSavedDeviceGoogleAccounts,
+  fetchCloudSyncedGoogleAccounts,
   removeSavedDeviceGoogleAccount,
   resolveGoogleAvatarUrl,
   formatDisplayNameFromEmail,
@@ -270,6 +271,8 @@ export default function AuthModal() {
     register,
     loginWithGoogle,
     loginWithNativeGoogleAccount,
+    activateAppBridgeNow,
+    needsAppBridgeActivation,
     hasNativeGoogleAccountPicker,
     triggerNativeGoogleAccountPicker,
     resetPassword,
@@ -291,6 +294,7 @@ export default function AuthModal() {
   const [savedGoogleAccounts, setSavedGoogleAccounts] = useState<SavedGoogleAccount[]>([]);
   const [pendingBridgeEmail, setPendingBridgeEmail] = useState<string | null>(null);
   const [urlBridgeTargetEmail, setUrlBridgeTargetEmail] = useState<string | null>(null);
+  const [bridgeSuccessDone, setBridgeSuccessDone] = useState(false);
 
   // Lamp intro state (UPDATE 49): purely visual — never touches auth logic.
   const [stage, setStage] = useState<Stage>('dark');
@@ -307,29 +311,29 @@ export default function AuthModal() {
       markLampSeen();
       setInstant(true);
       setStage('lit');
-      if (!user) {
-        openAuthModal('login');
-      }
     }
-  }, [user, openAuthModal]);
+  }, []);
 
   useEffect(() => {
-    if (!modalOpen) return;
+    if (!modalOpen && !urlBridgeTargetEmail) return;
     const skip = lampSeen() || prefersReducedMotion() || Boolean(urlBridgeTargetEmail);
     setInstant(skip);
     setStage(skip ? 'lit' : 'dark');
     setSavedGoogleAccounts(getSavedDeviceGoogleAccounts());
     setPendingBridgeEmail(null);
+    void fetchCloudSyncedGoogleAccounts().then((cloudList) => {
+      setSavedGoogleAccounts(cloudList);
+    });
   }, [modalOpen, urlBridgeTargetEmail]);
 
-  // Background auto-polling when waiting for 1-time Website-to-App account bridge
+  // Background auto-polling in the App when waiting for 1-time Website-to-App account bridge
   useEffect(() => {
     if (!pendingBridgeEmail || !modalOpen) return;
     const timer = window.setInterval(() => {
       loginWithNativeGoogleAccount({ email: pendingBridgeEmail }).catch(() => {
         /* still waiting for 1-time link */
       });
-    }, 2500);
+    }, 2200);
     return () => window.clearInterval(timer);
   }, [pendingBridgeEmail, modalOpen, loginWithNativeGoogleAccount]);
 
@@ -361,6 +365,214 @@ export default function AuthModal() {
     setInstant(true);
     setStage('lit');
   };
+
+  /**
+   * Special Overlay when Chrome opens with `?auto_bridge_email=...` OR when the user is already
+   * logged in on the Website and needs 1-tap activation to sync their session with the Android App!
+   * Works EVEN WHEN `modalOpen` is false (because `user` is already logged in on Chrome!).
+   */
+  if (urlBridgeTargetEmail || (user && needsAppBridgeActivation && !hasNativeGoogleAccountPicker())) {
+    const targetEmail = urlBridgeTargetEmail || user?.email || '';
+    const targetName = user?.displayName || formatDisplayNameFromEmail(targetEmail);
+    const targetPhoto = user?.photoURL || resolveGoogleAvatarUrl(targetEmail);
+
+    const handleConfirmOneTapSync = async () => {
+      setGoogleSubmitting(true);
+      const ok = await activateAppBridgeNow(targetEmail);
+      setGoogleSubmitting(false);
+      if (ok) {
+        setBridgeSuccessDone(true);
+        // Clean URL parameter
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, document.title, cleanUrl);
+        if (urlBridgeTargetEmail) {
+          setTimeout(() => {
+            setUrlBridgeTargetEmail(null);
+          }, 2500);
+        }
+      }
+    };
+
+    if (urlBridgeTargetEmail) {
+      return (
+        <div
+          role="dialog"
+          aria-modal="true"
+          dir={isAr ? 'rtl' : 'ltr'}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000020,
+            background: 'rgba(6, 15, 28, 0.92)',
+            backdropFilter: 'blur(12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              background: '#0f172a',
+              border: '2px solid #14b8a6',
+              borderRadius: '24px',
+              padding: '24px 20px',
+              textAlign: 'center',
+              color: '#fff',
+              boxShadow: '0 24px 60px rgba(0,0,0,0.65)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+              <GoogleAccountAvatar
+                email={targetEmail}
+                photoURL={targetPhoto}
+                displayName={targetName}
+                size={64}
+              />
+            </div>
+            <h2 style={{ margin: '0 0 6px', fontSize: '1.25rem', color: '#fff' }}>
+              {bridgeSuccessDone
+                ? isAr
+                  ? '✅ تم ربط حسابك بالتطبيق بنجاح!'
+                  : '✅ Account Linked to App!'
+                : isAr
+                  ? 'تأكيد تشغيل حسابك على التطبيق'
+                  : 'Confirm Account for Mobile App'}
+            </h2>
+            <p style={{ margin: '0 0 16px', color: '#5eead4', fontWeight: 800, direction: 'ltr' }}>
+              {targetEmail}
+            </p>
+            {bridgeSuccessDone ? (
+              <p style={{ fontSize: '0.9rem', color: '#d1fae5', lineHeight: 1.6 }}>
+                {isAr
+                  ? 'ارجع الآن لتطبيق الموبايل المفتوح عندك — ستجده دخل تلقائياً بنفس حسابك وصلاحياتك!'
+                  : 'Return to your mobile app now — it is automatically signing you into your exact account!'}
+              </p>
+            ) : (
+              <>
+                <p style={{ fontSize: '0.85rem', color: '#cbd5e1', marginBottom: '16px', lineHeight: 1.6 }}>
+                  {isAr
+                    ? 'اضغط الزر بالأسفل لتأكيد حسابك في Google لمرة واحدة فقط، وسيتم فتح نفس حسابك بكل بياناته وصلاحياته داخل التطبيق فوراً بدون أي باسورد:'
+                    : 'Tap the button below once to authorize your Google account, and your mobile app will sign into this exact account immediately:'}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleConfirmOneTapSync}
+                  disabled={googleSubmitting}
+                  style={{
+                    width: '100%',
+                    background: 'linear-gradient(90deg, #059669 0%, #0d9488 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '14px',
+                    padding: '14px',
+                    fontWeight: 900,
+                    fontSize: '0.96rem',
+                    cursor: 'pointer',
+                    marginBottom: '10px',
+                  }}
+                >
+                  {googleSubmitting
+                    ? isAr
+                      ? 'جاري تأكيد الحساب...'
+                      : 'Confirming Account...'
+                    : isAr
+                      ? '✅ تأكيد وتشغيل الحساب في التطبيق الآن'
+                      : '✅ Confirm & Activate in App Now'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUrlBridgeTargetEmail(null)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#94a3b8',
+                    fontSize: '0.82rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isAr ? 'إغلاق' : 'Close'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Floating 1-Tap Banner on the Website when user is logged in from an old session
+    if (!modalOpen) {
+      return (
+        <div
+          dir={isAr ? 'rtl' : 'ltr'}
+          style={{
+            position: 'fixed',
+            bottom: '16px',
+            insetInline: '16px',
+            maxWidth: '520px',
+            marginInline: 'auto',
+            zIndex: 9999,
+            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+            border: '2px solid #14b8a6',
+            borderRadius: '16px',
+            padding: '12px 16px',
+            color: '#fff',
+            boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+            <GoogleAccountAvatar
+              email={targetEmail}
+              photoURL={targetPhoto}
+              displayName={targetName}
+              size={38}
+            />
+            <div style={{ fontSize: '0.8rem', lineHeight: 1.4 }}>
+              <strong style={{ display: 'block', color: '#5eead4' }}>
+                📱 {isAr ? 'مزامنة حسابك مع تطبيق الأندرويد' : 'Sync Account with Android App'}
+              </strong>
+              <span style={{ color: '#cbd5e1' }}>
+                {isAr
+                  ? 'اضغط لتفعيل الدخول المباشر بنفس حسابك في التطبيق بدون باسورد'
+                  : 'Tap once to enable 1-tap passwordless sign-in on the mobile app'}
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleConfirmOneTapSync}
+            disabled={googleSubmitting}
+            style={{
+              background: '#0d9488',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '10px',
+              padding: '8px 14px',
+              fontWeight: 900,
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {googleSubmitting
+              ? isAr
+                ? 'جاري الربط...'
+                : 'Syncing...'
+              : isAr
+                ? 'تفعيل للتطبيق ✓'
+                : 'Enable for App ✓'}
+          </button>
+        </div>
+      );
+    }
+  }
 
   if (!modalOpen) return null;
 
@@ -419,7 +631,6 @@ export default function AuthModal() {
     setGoogleSubmitting(true);
     try {
       let targetHint = hintEmail;
-      // If running in APK with native account picker and no specific hint was passed yet, let user pick their phone's Google account first
       if (!targetHint && hasNativeGoogleAccountPicker()) {
         const picked = await triggerNativeGoogleAccountPicker();
         if (!picked) {
@@ -551,60 +762,12 @@ export default function AuthModal() {
               </h2>
               <p>
                 {modalMode === 'login'
-                  ? isAr ? 'سجّل دخولك بحساب Google الموحد بين الموقع والتطبيق بضغطة واحدة' : 'Sign in with your unified Google account across Web and App in 1 tap'
+                  ? isAr ? 'اختر حساب Google الخاص بك للدخول الفوري بنفس حساب الموقع بدون باسورد' : 'Select your Google account for instant 1-tap sign-in with your website account'
                   : modalMode === 'register'
                   ? isAr ? 'احفظ بياناتك الصحية وجداول جرعاتك بمزامنة سحابية آمنة' : 'Securely sync your health profile and doses'
                   : isAr ? 'أدخل بريدك الإلكتروني وسنرسل لك رابط استعادة الحساب' : 'Enter your email to receive a password reset link'}
               </p>
             </div>
-
-            {/* 1-Tap Chrome-to-App Bridge Banner (when opened with ?auto_bridge_email=...) */}
-            {urlBridgeTargetEmail && (
-              <div
-                style={{
-                  background: 'rgba(16, 185, 129, 0.16)',
-                  border: '2px solid #10b981',
-                  borderRadius: '16px',
-                  padding: '14px',
-                  marginBottom: '12px',
-                  textAlign: 'center',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '10px' }}>
-                  <GoogleAccountAvatar
-                    email={urlBridgeTargetEmail}
-                    displayName={formatDisplayNameFromEmail(urlBridgeTargetEmail)}
-                    size={44}
-                  />
-                  <div style={{ textAlign: isAr ? 'right' : 'left' }}>
-                    <strong style={{ color: '#fff', display: 'block', fontSize: '0.92rem' }}>
-                      {isAr ? 'ربط حسابك بتطبيق الموبايل' : 'Link Account to Mobile App'}
-                    </strong>
-                    <span style={{ color: '#6ee7b7', fontSize: '0.78rem', direction: 'ltr' }}>
-                      {urlBridgeTargetEmail}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleGoogleLogin()}
-                  disabled={googleSubmitting}
-                  style={{
-                    width: '100%',
-                    background: 'linear-gradient(90deg, #059669 0%, #0d9488 100%)',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '12px',
-                    padding: '11px 16px',
-                    fontWeight: 900,
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                  }}
-                >
-                  ✅ {isAr ? 'اضغط هنا لتأكيد الحساب وتشغيله في التطبيق فوراً' : 'Tap Here to Confirm & Activate in App Now'}
-                </button>
-              </div>
-            )}
 
             {/* Guest Mode Notice when Firebase is not configured */}
             {!configured && (
@@ -652,8 +815,8 @@ export default function AuthModal() {
               <>
                 {savedGoogleAccounts.length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
-                    <div style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700 }}>
-                      {isAr ? 'حسابات Google المحفوظة على هذا الجهاز (دخول بضغطة واحدة بدون باسورد):' : 'Your Google accounts on this device (1-Tap Instant Sign-In):'}
+                    <div style={{ fontSize: '0.78rem', color: '#5eead4', fontWeight: 800 }}>
+                      ✨ {isAr ? 'اختر حساب Google للدخول الفوري (نفس حساب الموقع بالصورة والبيانات):' : 'Select your Google account (Unified Website & App Account):'}
                     </div>
                     {savedGoogleAccounts.map((acc) => (
                       <div
@@ -672,8 +835,8 @@ export default function AuthModal() {
                           alignItems: 'center',
                           gap: '10px',
                           width: '100%',
-                          background: 'rgba(30, 41, 59, 0.92)',
-                          border: '1.5px solid rgba(20, 184, 166, 0.45)',
+                          background: 'rgba(30, 41, 59, 0.94)',
+                          border: '1.5px solid rgba(20, 184, 166, 0.5)',
                           borderRadius: '14px',
                           padding: '10px 12px',
                           color: '#fff',
@@ -685,10 +848,10 @@ export default function AuthModal() {
                           email={acc.email}
                           photoURL={acc.photoURL}
                           displayName={acc.displayName}
-                          size={42}
+                          size={44}
                         />
                         <div style={{ flex: 1, overflow: 'hidden' }}>
-                          <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#f8fafc' }}>
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: '#f8fafc' }}>
                             {acc.displayName}
                           </div>
                           <div
@@ -704,7 +867,16 @@ export default function AuthModal() {
                             {acc.email}
                           </div>
                         </div>
-                        <span style={{ color: '#2dd4bf', fontSize: '0.8rem', fontWeight: 800 }}>
+                        <span
+                          style={{
+                            background: 'rgba(20, 184, 166, 0.2)',
+                            color: '#2dd4bf',
+                            padding: '5px 10px',
+                            borderRadius: '99px',
+                            fontSize: '0.76rem',
+                            fontWeight: 900,
+                          }}
+                        >
                           {isAr ? 'دخول فوري ←' : 'Sign In →'}
                         </span>
                         <button
@@ -727,12 +899,12 @@ export default function AuthModal() {
                   </div>
                 )}
 
-                {/* One-Time Website-to-App Account Sync Card (if this Google account was created on the Website before this update) */}
+                {/* One-Time Website-to-App Account Sync Card */}
                 {pendingBridgeEmail && (
                   <div
                     style={{
-                      background: 'rgba(15, 23, 42, 0.95)',
-                      border: '2px solid #14b8a6',
+                      background: 'rgba(15, 23, 42, 0.96)',
+                      border: '2px solid #10b981',
                       borderRadius: '16px',
                       padding: '14px',
                       marginBottom: '12px',
@@ -748,15 +920,15 @@ export default function AuthModal() {
                         <strong style={{ color: '#fff', fontSize: '0.9rem', display: 'block' }}>
                           {formatDisplayNameFromEmail(pendingBridgeEmail)}
                         </strong>
-                        <span style={{ color: '#5eead4', fontSize: '0.77rem', direction: 'ltr', display: 'block' }}>
+                        <span style={{ color: '#6ee7b7', fontSize: '0.77rem', direction: 'ltr', display: 'block' }}>
                           {pendingBridgeEmail}
                         </span>
                       </div>
                     </div>
                     <p style={{ fontSize: '0.8rem', color: '#cbd5e1', margin: '0 0 10px', lineHeight: 1.55 }}>
                       {isAr
-                        ? 'هذا الحساب مسجل مسبقاً على الموقع! لتشغيل نفس حساب الموقع (بكل بياناته وصلاحيات الأدمن) داخل التطبيق بدون كتابة باسورد، اضغط الزر بالأسفل لتأكيده لمرة واحدة فقط من متصفح الهاتف (Chrome):'
-                        : 'This account is already registered on the website! Tap below once to sync your exact website account & admin role with the app without typing a password:'}
+                        ? 'لتشغيل نفس حسابك المسجل على الموقع داخل التطبيق بكامل صلاحياته وبياناته بدون كتابة باسورد، اضغط الزر الأخضر بالأسفل لتأكيده بضغطة واحدة فقط:'
+                        : 'To activate your exact website account & admin permissions inside the app without a password, tap the green button below once:'}
                     </p>
                     <button
                       type="button"
@@ -767,13 +939,13 @@ export default function AuthModal() {
                         color: '#fff',
                         border: 'none',
                         borderRadius: '12px',
-                        padding: '11px 14px',
+                        padding: '12px 14px',
                         fontWeight: 900,
-                        fontSize: '0.86rem',
+                        fontSize: '0.88rem',
                         cursor: 'pointer',
                       }}
                     >
-                      🔗 {isAr ? 'تفعيل ومزامنة حساب الموقع بضغطة واحدة (Chrome)' : '1-Tap Sync Website Account via Chrome'}
+                      ✅ {isAr ? 'تأكيد وتشغيل حساب الموقع بضغطة واحدة' : '1-Tap Confirm Website Account'}
                     </button>
                   </div>
                 )}
