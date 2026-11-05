@@ -131,8 +131,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Never intercept cross-origin APIs (Firebase, Firestore, Auth, Gemini)
+  // Never intercept cross-origin APIs or live version check manifests
   if (url.origin !== self.location.origin) return;
+  if (url.pathname.endsWith("app-version.json") || url.pathname.endsWith("precache-manifest.json")) return;
 
   // 2. Page Navigations (index.html / App Shell): Stale-While-Revalidate for instant 0ms offline startup
   if (req.mode === 'navigate') {
