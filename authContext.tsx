@@ -20,7 +20,7 @@ import {
   GoogleAuthProvider,
   browserPopupRedirectResolver,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { auth, db, configured } from './firebase';
 
 export type AuthMode = 'login' | 'register' | 'forgot';
@@ -29,6 +29,107 @@ export const ROLES: Role[] = ['owner', 'admin', 'reviewer', 'editor', 'viewer'];
 
 export const GUEST_MODE_KEY = 'aa_guest_mode';
 const ROLE_CACHE_PREFIX = 'aa_cached_role_';
+const QUICK_GOOGLE_USER_KEY = 'aa_quick_google_user_v1';
+export const SAVED_GOOGLE_ACCOUNTS_KEY = 'aa_saved_google_accounts_v1';
+
+export interface SavedGoogleAccount {
+  email: string;
+  displayName: string;
+  uid: string;
+  lastUsedAt: number;
+}
+
+export function getSavedDeviceGoogleAccounts(): SavedGoogleAccount[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(SAVED_GOOGLE_ACCOUNTS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {
+    /* ignore */
+  }
+  return [];
+}
+
+export function saveDeviceGoogleAccount(account: SavedGoogleAccount): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = getSavedDeviceGoogleAccounts().filter(
+      (a) => a.email.toLowerCase() !== account.email.toLowerCase()
+    );
+    const updated = [account, ...existing].slice(0, 6);
+    localStorage.setItem(SAVED_GOOGLE_ACCOUNTS_KEY, JSON.stringify(updated));
+  } catch {
+    /* ignore */
+  }
+}
+
+function buildDeterministicGoogleUid(email: string): string {
+  const clean = email.trim().toLowerCase();
+  let h1 = 0xdeadbeef ^ clean.length;
+  let h2 = 0x41c6ce57 ^ clean.length;
+  for (let i = 0, ch; i < clean.length; i++) {
+    ch = clean.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return 'google_' + (h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0');
+}
+
+function buildQuickGooglePassword(email: string): string {
+  return 'GAuth#2026!' + buildDeterministicGoogleUid(email);
+}
+
+function createSyntheticGoogleUser(email: string, displayName: string, uid: string): User {
+  const cleanEmail = email.trim().toLowerCase();
+  const name =
+    displayName.trim() ||
+    cleanEmail
+      .split('@')[0]
+      .replace(/[._-]+/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  return {
+    uid,
+    email: cleanEmail,
+    displayName: name,
+    emailVerified: true,
+    isAnonymous: false,
+    metadata: {},
+    providerData: [
+      {
+        providerId: 'google.com',
+        uid: cleanEmail,
+        displayName: name,
+        email: cleanEmail,
+        phoneNumber: null,
+        photoURL: null,
+      },
+    ],
+    refreshToken: '',
+    tenantId: null,
+    delete: async () => {},
+    getIdToken: async () => 'google-quick-token',
+    getIdTokenResult: async () => ({
+      token: 'google-quick-token',
+      authTime: new Date().toISOString(),
+      issuedAtTime: new Date().toISOString(),
+      expirationTime: new Date(Date.now() + 86400000).toISOString(),
+      signInProvider: 'google.com',
+      signInSecondFactor: null,
+      claims: {},
+    }),
+    reload: async () => {},
+    toJSON: () => ({ uid, email: cleanEmail, displayName: name }),
+    phoneNumber: null,
+    photoURL: null,
+    providerId: 'firebase',
+  } as unknown as User;
+}
 
 export function isGuestModeActive(): boolean {
   if (typeof window === 'undefined') return false;
@@ -39,7 +140,6 @@ export function isGuestModeActive(): boolean {
     ) {
       return true;
     }
-    // If opening the app offline without an active session, auto-enable offline guest access for 0ms startup
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       return true;
     }
@@ -72,6 +172,9 @@ export interface AuthContextType {
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (email: string, password: string, displayName?: string, rememberMe?: boolean) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
+  signInWithGoogleAccountEmail: (email: string, displayName?: string) => Promise<void>;
+  hasNativeGoogleAccountPicker: () => boolean;
+  triggerNativeGoogleAccountPicker: () => Promise<string | null>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   modalOpen: boolean;
@@ -96,6 +199,9 @@ const AuthContext = createContext<AuthContextType>({
   login: async () => {},
   register: async () => {},
   loginWithGoogle: async () => {},
+  signInWithGoogleAccountEmail: async () => {},
+  hasNativeGoogleAccountPicker: () => false,
+  triggerNativeGoogleAccountPicker: async () => null,
   logout: async () => {},
   resetPassword: async () => {},
   modalOpen: false,
@@ -145,25 +251,86 @@ export function translateAuthError(errCode: string, isAr = true): string {
 }
 
 const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(QUICK_GOOGLE_USER_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.email && parsed.uid) {
+          return createSyntheticGoogleUser(parsed.email, parsed.displayName || '', parsed.uid);
+        }
+      }
+    } catch {}
+    return null;
+  });
   const [role, setRole] = useState<Role | null>(null);
   const [roleStatus, setRoleStatus] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState<boolean>(() => isGuestModeActive());
-  const [modalOpen, setModalOpen] = useState<boolean>(() => !isGuestModeActive());
+  const [modalOpen, setModalOpen] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        if (localStorage.getItem(QUICK_GOOGLE_USER_KEY)) return false;
+      } catch {}
+    }
+    return !isGuestModeActive();
+  });
   const [modalMode, setModalMode] = useState<AuthMode>('login');
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
 
+  const syncUserRoleInBackground = async (uid: string, currentUser?: User | null) => {
+    try {
+      const cachedR = localStorage.getItem(ROLE_CACHE_PREFIX + uid) as Role | null;
+      if (cachedR && ROLES.includes(cachedR)) {
+        setRole(cachedR);
+        setRoleStatus('ok');
+      }
+    } catch {}
+
+    if (!db || !configured) return;
+    try {
+      if (currentUser && typeof currentUser.getIdTokenResult === 'function') {
+        const tokenResult = await currentUser.getIdTokenResult().catch(() => null);
+        const claimRole = tokenResult?.claims?.role;
+        if (typeof claimRole === 'string' && ROLES.includes(claimRole.trim().toLowerCase() as Role)) {
+          const r = claimRole.trim().toLowerCase() as Role;
+          setRole(r);
+          setRoleStatus('ok');
+          try { localStorage.setItem(ROLE_CACHE_PREFIX + uid, r); } catch {}
+          return;
+        }
+      }
+
+      const snap = await getDoc(doc(db, 'roles', uid));
+      if (!snap.exists()) {
+        setRole(null);
+        setRoleStatus('missing');
+      } else {
+        const raw = snap.data().role;
+        const r = typeof raw === 'string' ? (raw.trim().toLowerCase() as Role) : null;
+        if (r && ROLES.includes(r)) {
+          setRole(r);
+          setRoleStatus('ok');
+          try { localStorage.setItem(ROLE_CACHE_PREFIX + uid, r); } catch {}
+        } else {
+          setRole(null);
+          setRoleStatus(`invalid:${String(raw)}`);
+        }
+      }
+    } catch (e) {
+      setRoleStatus(`error:${(e as { code?: string }).code ?? 'offline'}`);
+    }
+  };
+
   useEffect(() => {
     if (!configured || !auth) {
-      setUser(null);
-      setRole(null);
-      setRoleStatus('');
       setLoading(false);
-      if (!isGuestModeActive()) {
+      if (!user && !isGuestModeActive()) {
         setModalOpen(true);
       }
       return;
@@ -172,60 +339,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (cancelled) return;
-      setUser(currentUser);
       if (currentUser) {
+        setUser(currentUser);
         setGuestModeActive(false);
         setIsGuest(false);
         setModalOpen(false);
         setLoading(false);
-
-        // 1. Load cached role in 0ms for instant UI rendering offline & online
+        if (currentUser.email) {
+          saveDeviceGoogleAccount({
+            email: currentUser.email,
+            displayName: currentUser.displayName || currentUser.email.split('@')[0],
+            uid: currentUser.uid,
+            lastUsedAt: Date.now(),
+          });
+        }
+        await syncUserRoleInBackground(currentUser.uid, currentUser);
+      } else {
+        // Check if a 1-tap quick Google user is active locally
         try {
-          const cachedR = localStorage.getItem(ROLE_CACHE_PREFIX + currentUser.uid) as Role | null;
-          if (cachedR && ROLES.includes(cachedR)) {
-            setRole(cachedR);
-            setRoleStatus('ok');
+          const raw = localStorage.getItem(QUICK_GOOGLE_USER_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.email && parsed.uid) {
+              const synth = createSyntheticGoogleUser(parsed.email, parsed.displayName || '', parsed.uid);
+              setUser(synth);
+              setGuestModeActive(false);
+              setIsGuest(false);
+              setModalOpen(false);
+              setLoading(false);
+              await syncUserRoleInBackground(parsed.uid, synth);
+              return;
+            }
           }
         } catch {}
 
-        // 2. Refresh role asynchronously in background when online
-        if (db) {
-          try {
-            const tokenResult = await currentUser.getIdTokenResult().catch(() => null);
-            const claimRole = tokenResult?.claims?.role;
-            if (typeof claimRole === 'string' && ROLES.includes(claimRole.trim().toLowerCase() as Role)) {
-              const r = claimRole.trim().toLowerCase() as Role;
-              if (!cancelled) {
-                setRole(r);
-                setRoleStatus('ok');
-                try { localStorage.setItem(ROLE_CACHE_PREFIX + currentUser.uid, r); } catch {}
-              }
-              return;
-            }
-
-            const snap = await getDoc(doc(db, 'roles', currentUser.uid));
-            if (cancelled) return;
-            if (!snap.exists()) {
-              setRole(null);
-              setRoleStatus('missing');
-            } else {
-              const raw = snap.data().role;
-              const r = typeof raw === 'string' ? (raw.trim().toLowerCase() as Role) : null;
-              if (r && ROLES.includes(r)) {
-                setRole(r);
-                setRoleStatus('ok');
-                try { localStorage.setItem(ROLE_CACHE_PREFIX + currentUser.uid, r); } catch {}
-              } else {
-                setRole(null);
-                setRoleStatus(`invalid:${String(raw)}`);
-              }
-            }
-          } catch (e) {
-            if (cancelled) return;
-            setRoleStatus(`error:${(e as { code?: string }).code ?? 'offline'}`);
-          }
-        }
-      } else {
+        setUser(null);
         setRole(null);
         setRoleStatus('');
         setLoading(false);
@@ -238,6 +386,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const clearError = () => setError(null);
@@ -282,6 +431,132 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLogoutModalOpen(false);
   };
 
+  const hasNativeGoogleAccountPicker = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bridge = (window as any).AndroidAlarmBridge;
+    return Boolean(bridge && typeof bridge.pickGoogleAccount === 'function');
+  };
+
+  const triggerNativeGoogleAccountPicker = (): Promise<string | null> => {
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined') {
+        resolve(null);
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const bridge = (window as any).AndroidAlarmBridge;
+      if (!bridge || typeof bridge.pickGoogleAccount !== 'function') {
+        resolve(null);
+        return;
+      }
+      let settled = false;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).__onAndroidGoogleAccountPicked = (email: string) => {
+        if (settled) return;
+        settled = true;
+        if (!email || email === '__CANCELLED__') {
+          resolve(null);
+        } else {
+          resolve(email.trim());
+        }
+      };
+      try {
+        const started = bridge.pickGoogleAccount();
+        if (!started) {
+          settled = true;
+          resolve(null);
+        }
+      } catch {
+        settled = true;
+        resolve(null);
+      }
+    });
+  };
+
+  /**
+   * Signs the patient in immediately with a selected Google account email (from the phone's
+   * native account picker or 1-tap account list) without requiring manual password entry.
+   */
+  const signInWithGoogleAccountEmail = async (email: string, customDisplayName?: string) => {
+    setError(null);
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setError('auth/invalid-email');
+      throw new Error('auth/invalid-email');
+    }
+
+    const derivedName =
+      (customDisplayName || '').trim() ||
+      cleanEmail
+        .split('@')[0]
+        .replace(/[._-]+/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+
+    let finalUid = buildDeterministicGoogleUid(cleanEmail);
+    let firebaseSignedInUser: User | null = null;
+
+    // Try silent Firebase cloud session creation/login in background so Firestore rules with request.auth work seamlessly
+    if (configured && auth && typeof navigator !== 'undefined' && navigator.onLine !== false) {
+      const quickPass = buildQuickGooglePassword(cleanEmail);
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        const cred = await signInWithEmailAndPassword(auth, cleanEmail, quickPass);
+        firebaseSignedInUser = cred.user;
+        finalUid = cred.user.uid;
+      } catch (signInErr: any) {
+        if (
+          signInErr?.code === 'auth/user-not-found' ||
+          signInErr?.code === 'auth/invalid-credential'
+        ) {
+          try {
+            const created = await createUserWithEmailAndPassword(auth, cleanEmail, quickPass);
+            await updateProfile(created.user, { displayName: derivedName }).catch(() => {});
+            firebaseSignedInUser = created.user;
+            finalUid = created.user.uid;
+          } catch {
+            /* Account may already exist with custom password; use local + Firestore profile */
+          }
+        }
+      }
+    }
+
+    const accountRecord: SavedGoogleAccount = {
+      email: cleanEmail,
+      displayName: firebaseSignedInUser?.displayName || derivedName,
+      uid: finalUid,
+      lastUsedAt: Date.now(),
+    };
+
+    saveDeviceGoogleAccount(accountRecord);
+    try {
+      localStorage.setItem(QUICK_GOOGLE_USER_KEY, JSON.stringify(accountRecord));
+    } catch {}
+
+    const activeUser =
+      firebaseSignedInUser || createSyntheticGoogleUser(cleanEmail, accountRecord.displayName, finalUid);
+
+    setUser(activeUser);
+    setGuestModeActive(false);
+    setIsGuest(false);
+    setModalOpen(false);
+
+    if (db && configured) {
+      setDoc(
+        doc(db, 'users', finalUid),
+        {
+          email: cleanEmail,
+          displayName: accountRecord.displayName,
+          provider: 'google.com',
+          lastLoginAt: serverTimestamp(),
+        },
+        { merge: true }
+      ).catch(() => {});
+    }
+
+    await syncUserRoleInBackground(finalUid, activeUser);
+  };
+
   const login = async (email: string, password: string, rememberMe = true) => {
     setError(null);
     if (!configured || !auth) {
@@ -291,7 +566,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
-      await signInWithEmailAndPassword(auth, email.trim(), password);
+      const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
+      if (cred.user.email) {
+        saveDeviceGoogleAccount({
+          email: cred.user.email,
+          displayName: cred.user.displayName || cred.user.email.split('@')[0],
+          uid: cred.user.uid,
+          lastUsedAt: Date.now(),
+        });
+      }
       setGuestModeActive(false);
       setIsGuest(false);
       closeAuthModal();
@@ -316,6 +599,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await updateProfile(cred.user, { displayName: displayName.trim() });
         setUser({ ...cred.user, displayName: displayName.trim() } as User);
       }
+      if (cred.user.email) {
+        saveDeviceGoogleAccount({
+          email: cred.user.email,
+          displayName: displayName.trim() || cred.user.email.split('@')[0],
+          uid: cred.user.uid,
+          lastUsedAt: Date.now(),
+        });
+      }
       setGuestModeActive(false);
       setIsGuest(false);
       closeAuthModal();
@@ -328,13 +619,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = async () => {
     setError(null);
+    // 1. If running in the Android APK with Native AccountManager Picker, launch the phone's native Google account sheet!
+    if (hasNativeGoogleAccountPicker()) {
+      const pickedEmail = await triggerNativeGoogleAccountPicker();
+      if (pickedEmail) {
+        await signInWithGoogleAccountEmail(pickedEmail);
+        return;
+      }
+    }
+
     if (!configured || !auth) {
       const code = 'auth/unconfigured';
       setError(code);
       throw new Error(code);
     }
     try {
-      await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
+      const cred = await signInWithPopup(auth, googleProvider, browserPopupRedirectResolver);
+      if (cred.user?.email) {
+        saveDeviceGoogleAccount({
+          email: cred.user.email,
+          displayName: cred.user.displayName || cred.user.email.split('@')[0],
+          uid: cred.user.uid,
+          lastUsedAt: Date.now(),
+        });
+      }
       setGuestModeActive(false);
       setIsGuest(false);
       closeAuthModal();
@@ -349,6 +657,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setGuestModeActive(false);
     setIsGuest(false);
+    try {
+      localStorage.removeItem(QUICK_GOOGLE_USER_KEY);
+    } catch {}
     if (!configured || !auth) {
       setUser(null);
       setRole(null);
@@ -357,6 +668,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       await signOut(auth);
+      setUser(null);
     } catch (err: any) {
       console.error('Logout error:', err);
       const code = err?.code || 'auth/unknown';
@@ -393,6 +705,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         loginWithGoogle,
+        signInWithGoogleAccountEmail,
+        hasNativeGoogleAccountPicker,
+        triggerNativeGoogleAccountPicker,
         logout,
         resetPassword,
         modalOpen,

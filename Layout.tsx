@@ -1,3 +1,4 @@
+import OnboardingTour, { triggerOnboardingTourManually } from "./OnboardingTour";
 import { GlobalPhoneAlarmOverlay } from './SmartDoseAlarmCard';
 import { lazy, Suspense, ReactNode, useRef, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
@@ -1209,6 +1210,20 @@ export default function Layout({ children }: { children: ReactNode }) {
 
               <div className="drawer-divider"></div>
 
+              <button
+                type="button"
+                className="drawer-item"
+                onClick={() => {
+                  closeDrawer(false);
+                  triggerOnboardingTourManually();
+                }}
+              >
+                <span className="item-icon" aria-hidden="true">🧭</span>
+                <span className="item-title">
+                  {tr(lang, 'جولة تعريفية سريعة بالتطبيق', 'Quick App Walkthrough Tour')}
+                </span>
+                <span className="item-arrow" aria-hidden="true">{pageDir === 'rtl' ? '←' : '→'}</span>
+              </button>
               <NavLink
                 to="/admin"
                 onClick={() => closeDrawer(false)}
@@ -1268,6 +1283,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </div>
 
       <GlobalPhoneAlarmOverlay />
+      <OnboardingTour />
 
       {spotlightOpen && (
         <Suspense fallback={null}>

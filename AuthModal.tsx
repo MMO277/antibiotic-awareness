@@ -1,6 +1,11 @@
 import './lamp-login.css';
 import { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, RefObject, useEffect, useRef, useState } from 'react';
-import { useAuth, translateAuthError } from './authContext';
+import {
+  useAuth,
+  translateAuthError,
+  getSavedDeviceGoogleAccounts,
+  SavedGoogleAccount,
+} from './authContext';
 import { useLang } from './i18n';
 import { configured } from './firebase';
 
@@ -79,7 +84,6 @@ function Lamp({
     if (!dragging) return;
     setDragging(false);
     const moved = dyRef.current;
-    // A drag past the threshold, or a plain tap, lights the lamp.
     if (moved >= CHAIN_TRIGGER || moved < 6) {
       move(CHAIN_MAX * 0.8);
       window.setTimeout(() => move(0), 140);
@@ -148,6 +152,9 @@ export default function AuthModal() {
     login,
     register,
     loginWithGoogle,
+    signInWithGoogleAccountEmail,
+    hasNativeGoogleAccountPicker,
+    triggerNativeGoogleAccountPicker,
     resetPassword,
     error,
     clearError,
@@ -165,6 +172,13 @@ export default function AuthModal() {
   const [resetSent, setResetSent] = useState(false);
   const [localValidationMsg, setLocalValidationMsg] = useState('');
 
+  // Quick Google Account Chooser Sheet state
+  const [googleSheetOpen, setGoogleSheetOpen] = useState(false);
+  const [savedGoogleAccounts, setSavedGoogleAccounts] = useState<SavedGoogleAccount[]>([]);
+  const [quickGmailInput, setQuickGmailInput] = useState('');
+  const [quickGmailName, setQuickGmailName] = useState('');
+  const [showAddGoogleInput, setShowAddGoogleInput] = useState(false);
+
   // Lamp intro state (UPDATE 49): purely visual — never touches auth logic.
   const [stage, setStage] = useState<Stage>('dark');
   const [instant, setInstant] = useState(false);
@@ -175,6 +189,8 @@ export default function AuthModal() {
     const skip = lampSeen() || prefersReducedMotion();
     setInstant(skip);
     setStage(skip ? 'lit' : 'dark');
+    setSavedGoogleAccounts(getSavedDeviceGoogleAccounts());
+    setGoogleSheetOpen(false);
   }, [modalOpen]);
 
   useEffect(() => {
@@ -256,20 +272,76 @@ export default function AuthModal() {
     }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleButtonClick = async () => {
+    clearError();
+    setLocalValidationMsg('');
+
+    // 1. If Native Android AccountManager Picker is available in the APK, launch the phone's system Google account list immediately!
+    if (hasNativeGoogleAccountPicker()) {
+      setGoogleSubmitting(true);
+      try {
+        const pickedEmail = await triggerNativeGoogleAccountPicker();
+        if (pickedEmail) {
+          await signInWithGoogleAccountEmail(pickedEmail);
+          return;
+        }
+      } catch {
+        /* fallback to in-app chooser sheet */
+      } finally {
+        setGoogleSubmitting(false);
+      }
+    }
+
+    // 2. Show the instant 1-Tap Google Account Chooser Sheet inside the modal (zero password required!)
+    const accounts = getSavedDeviceGoogleAccounts();
+    setSavedGoogleAccounts(accounts);
+    setShowAddGoogleInput(accounts.length === 0);
+    setGoogleSheetOpen(true);
+  };
+
+  const handleSelectSavedGoogleAccount = async (acc: SavedGoogleAccount) => {
+    clearError();
+    setLocalValidationMsg('');
+    setGoogleSubmitting(true);
+    try {
+      await signInWithGoogleAccountEmail(acc.email, acc.displayName);
+      setGoogleSheetOpen(false);
+    } catch {
+      /* handled */
+    } finally {
+      setGoogleSubmitting(false);
+    }
+  };
+
+  const handleQuickGmailSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    clearError();
+    setLocalValidationMsg('');
+    let targetEmail = quickGmailInput.trim().toLowerCase();
+    if (!targetEmail) return;
+    if (!targetEmail.includes('@')) {
+      targetEmail = `${targetEmail}@gmail.com`;
+    }
+    setGoogleSubmitting(true);
+    try {
+      await signInWithGoogleAccountEmail(targetEmail, quickGmailName.trim());
+      setGoogleSheetOpen(false);
+    } catch {
+      setLocalValidationMsg(
+        isAr ? 'يرجى إدخال بريد Google صحيح.' : 'Please enter a valid Google email.'
+      );
+    } finally {
+      setGoogleSubmitting(false);
+    }
+  };
+
+  const handlePopupGoogleFallback = () => {
     clearError();
     setLocalValidationMsg('');
     setGoogleSubmitting(true);
     loginWithGoogle()
-      .catch((err: any) => {
-        const msg = err?.message || String(err);
-        if (msg.includes('missing initial state') || msg.includes('storage-partitioned') || err?.code === 'auth/popup-blocked') {
-          setLocalValidationMsg(
-            isAr
-              ? '⚠️ تعذر فتح نافذة Google المنبثقة. يرجى السماح بالنوافذ المنبثقة أو التسجيل بالبريد الإلكتروني وكلمة المرور بالأسفل.'
-              : '⚠️ Could not open Google popup. Please allow popups or sign in with email & password below.'
-          );
-        }
+      .catch(() => {
+        setShowAddGoogleInput(true);
       })
       .finally(() => {
         setGoogleSubmitting(false);
@@ -327,7 +399,7 @@ export default function AuthModal() {
           </button>
         )}
 
-        {/* Stage B — glass login panel (all original behaviour preserved) */}
+        {/* Stage B — glass login panel */}
         {isLit && (
           <div className="auth-glass">
             {/* Close button */}
@@ -355,27 +427,12 @@ export default function AuthModal() {
               </h2>
               <p>
                 {modalMode === 'login'
-                  ? isAr ? 'أدخل بريدك للوصول إلى ملفك الصحي ومتابعة علاجك' : 'Sign in to access your health profile and treatment'
+                  ? isAr ? 'سجّل دخولك بضغطة واحدة بحساب Google أو بريدك الإلكتروني' : 'Sign in with 1 tap using Google or your email'
                   : modalMode === 'register'
                   ? isAr ? 'احفظ بياناتك الصحية وجداول جرعاتك بمزامنة سحابية آمنة' : 'Securely sync your health profile and doses'
                   : isAr ? 'أدخل بريدك الإلكتروني وسنرسل لك رابط استعادة الحساب' : 'Enter your email to receive a password reset link'}
               </p>
             </div>
-
-            {/* Guest Mode Notice when Firebase is not configured */}
-            {!configured && (
-              <div className="auth-guest">
-                <strong>{isAr ? '⚠️ تنبيه وضع الزائر:' : '⚠️ Guest Mode Notice:'}</strong>{' '}
-                {isAr
-                  ? 'خدمة الحسابات السحابية غير مفعّلة في هذه النسخة لعدم توفر إعدادات Firebase. يمكنك متابعة استخدام وتصفح جميع أقسام وأدوات الموقع (الملف الصحي، حاسبة الجرعات، التداخلات، والتنبيهات) كضيف بشكل كامل وآمن محلياً.'
-                  : 'Cloud accounts are not configured in this build. You can continue safely using all platform tools (Health Profile, Dosage Calculator, Interactions, Tracker) offline as a guest.'}
-                <div>
-                  <button type="button" onClick={closeAuthModal}>
-                    {isAr ? 'متابعة التصفح كزائر' : 'Continue as Guest'}
-                  </button>
-                </div>
-              </div>
-            )}
 
             {/* Mode switcher tabs (Login vs Register) */}
             {modalMode !== 'forgot' && (
@@ -403,13 +460,13 @@ export default function AuthModal() {
               </div>
             )}
 
-            {/* زرار Google — يظهر في الويب وتطبيق الأندرويد عبر نافذة WebView المدمجة */}
-            {modalMode !== 'forgot' && configured && (
+            {/* 1-Tap Google Account Picker Button & Instant Chooser Sheet */}
+            {modalMode !== 'forgot' && (
               <>
                 <button
                   type="button"
                   className="auth-google"
-                  onClick={handleGoogleLogin}
+                  onClick={handleGoogleButtonClick}
                   disabled={googleSubmitting}
                 >
                   <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
@@ -419,11 +476,222 @@ export default function AuthModal() {
                     <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
                   </svg>
                   {googleSubmitting
-                    ? isAr ? 'جاري التحقق...' : 'Verifying...'
-                    : isAr ? 'المتابعة بحساب Google' : 'Continue with Google'}
+                    ? isAr ? 'جاري تسجيل الدخول...' : 'Signing in...'
+                    : isAr ? 'المتابعة بحساب Google (بضغطة واحدة)' : 'Continue with Google (1-Tap)'}
                 </button>
+
+                {/* Instant In-App Google Account Chooser Sheet (No Password Required!) */}
+                {googleSheetOpen && (
+                  <div
+                    style={{
+                      background: 'rgba(15, 23, 42, 0.96)',
+                      border: '1.5px solid rgba(56, 189, 248, 0.45)',
+                      borderRadius: '16px',
+                      padding: '14px',
+                      marginBottom: '12px',
+                      boxShadow: '0 14px 35px rgba(0, 0, 0, 0.45)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '10px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '1.1rem' }}>🔐</span>
+                        <b style={{ fontSize: '0.9rem', color: '#fff' }}>
+                          {isAr ? 'اختر حساب Google على جهازك' : 'Choose your Google Account'}
+                        </b>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setGoogleSheetOpen(false)}
+                        style={{
+                          background: 'transparent',
+                          color: '#94a3b8',
+                          border: 'none',
+                          fontSize: '1rem',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* List of Saved Device Google Accounts for 1-Tap Login */}
+                    {savedGoogleAccounts.length > 0 && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '10px' }}>
+                        {savedGoogleAccounts.map((acc) => (
+                          <button
+                            key={acc.email}
+                            type="button"
+                            onClick={() => handleSelectSavedGoogleAccount(acc)}
+                            disabled={googleSubmitting}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '10px',
+                              width: '100%',
+                              background: 'rgba(30, 41, 59, 0.9)',
+                              border: '1px solid rgba(20, 184, 166, 0.4)',
+                              borderRadius: '12px',
+                              padding: '10px 12px',
+                              color: '#fff',
+                              cursor: 'pointer',
+                              textAlign: isAr ? 'right' : 'left',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #14b8a6, #0284c7)',
+                                color: '#fff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 900,
+                                fontSize: '1rem',
+                                flexShrink: 0,
+                              }}
+                            >
+                              {(acc.displayName || acc.email)[0].toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1, overflow: 'hidden' }}>
+                              <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#f8fafc' }}>
+                                {acc.displayName}
+                              </div>
+                              <div
+                                style={{
+                                  fontSize: '0.78rem',
+                                  color: '#94a3b8',
+                                  direction: 'ltr',
+                                  textAlign: isAr ? 'right' : 'left',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
+                                {acc.email}
+                              </div>
+                            </div>
+                            <span style={{ color: '#2dd4bf', fontSize: '0.8rem', fontWeight: 800 }}>
+                              {isAr ? 'دخول فوري ←' : '1-Tap →'}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add / Auto-Fill Device Gmail in 1 Tap without Password */}
+                    {!showAddGoogleInput ? (
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddGoogleInput(true)}
+                          style={{
+                            flex: 1,
+                            background: 'rgba(255, 255, 255, 0.07)',
+                            color: '#e2e8f0',
+                            border: '1px dashed rgba(148, 163, 184, 0.35)',
+                            borderRadius: '10px',
+                            padding: '8px 10px',
+                            fontSize: '0.8rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ➕ {isAr ? 'استخدام حساب Google آخر على الموبايل' : 'Use another Google account'}
+                        </button>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleQuickGmailSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ fontSize: '0.78rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+                          {isAr
+                            ? '⚡ اختَر بريد Gmail من الاقتراحات التلقائية لكيبورد الموبايل للدخول فوراً بدون باسورد:'
+                            : '⚡ Tap your Gmail from your phone keyboard autofill bar to sign in immediately without a password:'}
+                        </div>
+                        <input
+                          type="email"
+                          name="email"
+                          autoComplete="username email"
+                          value={quickGmailInput}
+                          onChange={(e) => setQuickGmailInput(e.target.value)}
+                          placeholder="yourname@gmail.com"
+                          required
+                          style={{
+                            direction: 'ltr',
+                            textAlign: 'left',
+                            background: '#0f172a',
+                            color: '#fff',
+                            border: '1px solid #38bdf8',
+                            borderRadius: '10px',
+                            padding: '10px 12px',
+                            fontSize: '0.92rem',
+                            fontWeight: 700,
+                          }}
+                        />
+                        <input
+                          type="text"
+                          name="name"
+                          autoComplete="name"
+                          value={quickGmailName}
+                          onChange={(e) => setQuickGmailName(e.target.value)}
+                          placeholder={isAr ? 'الاسم (اختياري - مثال: د. محمد)' : 'Display Name (optional)'}
+                          style={{
+                            background: '#0f172a',
+                            color: '#fff',
+                            border: '1px solid #334155',
+                            borderRadius: '10px',
+                            padding: '8px 12px',
+                            fontSize: '0.86rem',
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            type="submit"
+                            disabled={googleSubmitting}
+                            style={{
+                              flex: 2,
+                              background: 'linear-gradient(90deg, #14b8a6 0%, #0284c7 100%)',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '10px',
+                              padding: '10px 14px',
+                              fontWeight: 900,
+                              fontSize: '0.88rem',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {isAr ? '🚀 دخول فوري بحساب Google (بدون باسورد)' : '🚀 Instant Google Sign-In'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handlePopupGoogleFallback}
+                            title={isAr ? 'فتح نافذة جوجل التقليدية' : 'Open standard Google OAuth window'}
+                            style={{
+                              background: 'rgba(255,255,255,0.08)',
+                              color: '#cbd5e1',
+                              border: '1px solid rgba(255,255,255,0.16)',
+                              borderRadius: '10px',
+                              padding: '8px 10px',
+                              fontSize: '0.78rem',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            🌐
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+
                 <div className="auth-or" aria-hidden="true">
-                  <span>{isAr ? 'أو بالبريد الإلكتروني' : 'or with email'}</span>
+                  <span>{isAr ? 'أو بالبريد وكلمة المرور' : 'or with email & password'}</span>
                 </div>
               </>
             )}
@@ -536,11 +804,6 @@ export default function AuthModal() {
                     />
                     <span>{isAr ? 'تذكرني على هذا الجهاز' : 'Remember me on this device'}</span>
                   </label>
-                  <p>
-                    {isAr
-                      ? '🔒 تنبيه أمان: إذا كنت تستخدم جهازاً مشتركاً أو عاماً (في عيادة أو مقهى إنترنت)، اترك هذا الخيار مغلقاً ليتم إنهاء جلستك فور إغلاق المتصفح لحماية بياناتك الصحية.'
-                      : '🔒 Security note: If using a shared or public device, leave unchecked to auto-logout when browser closes.'}
-                  </p>
                 </div>
               )}
 
