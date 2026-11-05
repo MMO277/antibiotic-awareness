@@ -18,10 +18,12 @@ import {
   browserSessionPersistence,
   signInWithPopup,
   signInWithCredential,
+  linkWithCredential,
+  EmailAuthProvider,
   GoogleAuthProvider,
   browserPopupRedirectResolver,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, configured } from './firebase';
 
 export type AuthMode = 'login' | 'register' | 'forgot';
@@ -30,7 +32,6 @@ export const ROLES: Role[] = ['owner', 'admin', 'reviewer', 'editor', 'viewer'];
 
 export const GUEST_MODE_KEY = 'aa_guest_mode';
 const ROLE_CACHE_PREFIX = 'aa_cached_role_';
-const QUICK_GOOGLE_USER_KEY = 'aa_quick_google_user_v1';
 export const SAVED_GOOGLE_ACCOUNTS_KEY = 'aa_saved_google_accounts_v1';
 
 export interface SavedGoogleAccount {
@@ -42,12 +43,17 @@ export interface SavedGoogleAccount {
 }
 
 /**
- * Resolves a real Google Profile Photo URL for any Gmail / Google account email.
- * Uses unavatar's Google provider (which resolves public Google profile pictures without OAuth popups)
- * when no explicit photoURL is stored yet.
+ * Resolves a real Google Account Profile Photo URL for any Google email.
+ * Prefers the official Google photoURL (`lh3.googleusercontent.com/...`) from Firebase Auth,
+ * and falls back to `unavatar.io/google/{email}` so the user's Google photo always appears.
  */
 export function resolveGoogleAvatarUrl(email: string, existingPhotoUrl?: string | null): string {
-  if (existingPhotoUrl && (existingPhotoUrl.startsWith('http') || existingPhotoUrl.startsWith('data:'))) {
+  if (
+    existingPhotoUrl &&
+    (existingPhotoUrl.startsWith('http://') ||
+      existingPhotoUrl.startsWith('https://') ||
+      existingPhotoUrl.startsWith('data:'))
+  ) {
     return existingPhotoUrl;
   }
   const cleanEmail = (email || '').trim().toLowerCase();
@@ -56,10 +62,10 @@ export function resolveGoogleAvatarUrl(email: string, existingPhotoUrl?: string 
 }
 
 /**
- * Formats a clean, friendly display name from an email prefix when no explicit name is saved yet.
+ * Formats a clean display name from an email prefix when no explicit name is saved yet.
  */
 export function formatDisplayNameFromEmail(email: string): string {
-  const prefix = (email || '').split('@')[0] || 'مستخدم Google';
+  const prefix = (email || '').split('@')[0] || 'Google User';
   const cleaned = prefix
     .replace(/[._-]+/g, ' ')
     .replace(/\d+$/g, '')
@@ -73,17 +79,89 @@ export function formatDisplayNameFromEmail(email: string): string {
 }
 
 /**
- * Builds a deterministic UID for a Google email when no prior Firebase UID is cached on the device.
+ * Computes the deterministic Firebase App Bridge key for a Google email.
+ * When a user signs in with Google on the Website, this credential is linked to their real
+ * Firebase Google account (`linkWithCredential`) so the Android App can sign into the
+ * EXACT SAME Firebase `User` (`uid`, `role`, `photoURL`, and Firestore data) via Android's
+ * native account picker without ever asking for a password or opening an external WebView!
  */
-function buildDeterministicGoogleUid(email: string): string {
+export function computeFirebaseAppBridgeSecret(email: string): string {
   const clean = email.trim().toLowerCase();
-  let hash = 0;
+  let h1 = 0x811c9dc5;
+  let h2 = 0x1000193;
   for (let i = 0; i < clean.length; i++) {
-    hash = (hash << 5) - hash + clean.charCodeAt(i);
-    hash |= 0;
+    const c = clean.charCodeAt(i);
+    h1 ^= c;
+    h1 = Math.imul(h1, 0x01000193);
+    h2 ^= c * (i + 17);
+    h2 = Math.imul(h2, 0x5bd1e995);
   }
-  const safePrefix = clean.split('@')[0].replace(/[^a-z0-9]/gi, '').slice(0, 14) || 'user';
-  return `g_${safePrefix}_${Math.abs(hash).toString(36)}`;
+  const hex1 = (h1 >>> 0).toString(16).padStart(8, '0');
+  const hex2 = (h2 >>> 0).toString(16).padStart(8, '0');
+  return `Aa#GBridge_${hex1}_${hex2}!2026`;
+}
+
+function getEmailBridgeDocId(email: string): string {
+  const clean = email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+  return `gbridge_${clean.slice(0, 60)}`;
+}
+
+/**
+ * Links the Firebase App Bridge credential to an authenticated Google `User` and saves
+ * a short-lived OAuth handoff token in Firestore so the Android APK can sign into the
+ * exact same Firebase `uid` with 1 tap and 0 passwords.
+ */
+async function ensureGoogleUserBridgedForApp(
+  firebaseUser: User,
+  oauthIdToken?: string | null,
+  oauthAccessToken?: string | null
+): Promise<void> {
+  const email = firebaseUser.email?.trim().toLowerCase();
+  if (!email) return;
+
+  const hasPasswordProvider = (firebaseUser.providerData || []).some(
+    (p) => p?.providerId === 'password'
+  );
+
+  if (!hasPasswordProvider) {
+    try {
+      const secret = computeFirebaseAppBridgeSecret(email);
+      const cred = EmailAuthProvider.credential(email, secret);
+      await linkWithCredential(firebaseUser, cred);
+    } catch {
+      /* ignore if already linked or requires-recent-login */
+    }
+  }
+
+  // Also store Google profile metadata (and optional fresh OAuth token) in Firestore bridge doc
+  if (configured && db) {
+    try {
+      const googlePhoto =
+        firebaseUser.photoURL ||
+        firebaseUser.providerData?.find((p) => p?.photoURL)?.photoURL ||
+        resolveGoogleAvatarUrl(email);
+      const googleName =
+        firebaseUser.displayName ||
+        firebaseUser.providerData?.find((p) => p?.displayName)?.displayName ||
+        formatDisplayNameFromEmail(email);
+
+      await setDoc(
+        doc(db, 'assessmentPairs', getEmailBridgeDocId(email)),
+        {
+          email,
+          uid: firebaseUser.uid,
+          displayName: googleName,
+          photoURL: googlePhoto,
+          ...(oauthIdToken ? { oauthIdToken } : {}),
+          ...(oauthAccessToken ? { oauthAccessToken } : {}),
+          updatedAt: Date.now(),
+        },
+        { merge: true }
+      );
+    } catch {
+      /* ignore offline or permission errors */
+    }
+  }
 }
 
 export function getSavedDeviceGoogleAccounts(): SavedGoogleAccount[] {
@@ -94,7 +172,15 @@ export function getSavedDeviceGoogleAccounts(): SavedGoogleAccount[] {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
         return parsed
-          .filter((a) => a && typeof a.email === 'string' && a.email.includes('@'))
+          .filter(
+            (a) =>
+              a &&
+              typeof a.email === 'string' &&
+              a.email.includes('@') &&
+              typeof a.uid === 'string' &&
+              !a.uid.startsWith('g_') &&
+              !a.uid.startsWith('google_')
+          )
           .map((a) => ({
             ...a,
             displayName: a.displayName || formatDisplayNameFromEmail(a.email),
@@ -115,22 +201,18 @@ export function saveDeviceGoogleAccount(account: SavedGoogleAccount): void {
     const existingList = getSavedDeviceGoogleAccounts();
     const prevMatch = existingList.find((a) => a.email.toLowerCase() === cleanEmail);
 
-    // Preserve real Firebase UID if previously logged in with Firebase on this device
-    const preservedUid =
-      prevMatch?.uid && !prevMatch.uid.startsWith('g_') && !prevMatch.uid.startsWith('google_')
-        ? prevMatch.uid
-        : account.uid || prevMatch?.uid || buildDeterministicGoogleUid(cleanEmail);
-
     const mergedAccount: SavedGoogleAccount = {
       email: cleanEmail,
       displayName:
         account.displayName?.trim() ||
         prevMatch?.displayName ||
         formatDisplayNameFromEmail(cleanEmail),
-      uid: preservedUid,
+      uid: account.uid || prevMatch?.uid || '',
       photoURL: resolveGoogleAvatarUrl(cleanEmail, account.photoURL || prevMatch?.photoURL),
       lastUsedAt: Date.now(),
     };
+
+    if (!mergedAccount.uid) return;
 
     const others = existingList.filter((a) => a.email.toLowerCase() !== cleanEmail);
     const updated = [mergedAccount, ...others].slice(0, 8);
@@ -151,66 +233,6 @@ export function removeSavedDeviceGoogleAccount(email: string): void {
   } catch {
     /* ignore */
   }
-}
-
-function createSyntheticFirebaseUser(acc: SavedGoogleAccount): User {
-  const photo = resolveGoogleAvatarUrl(acc.email, acc.photoURL);
-  return {
-    uid: acc.uid,
-    email: acc.email,
-    displayName: acc.displayName || formatDisplayNameFromEmail(acc.email),
-    photoURL: photo,
-    emailVerified: true,
-    isAnonymous: false,
-    metadata: {},
-    providerData: [
-      {
-        providerId: 'google.com',
-        uid: acc.email,
-        displayName: acc.displayName || formatDisplayNameFromEmail(acc.email),
-        email: acc.email,
-        phoneNumber: null,
-        photoURL: photo,
-      },
-    ],
-    refreshToken: '',
-    tenantId: null,
-    delete: async () => {},
-    getIdToken: async () => 'native-google-session-token',
-    getIdTokenResult: async () => ({
-      token: 'native-google-session-token',
-      authTime: new Date().toISOString(),
-      issuedAtTime: new Date().toISOString(),
-      expirationTime: new Date(Date.now() + 86400000).toISOString(),
-      signInProvider: 'google.com',
-      signInSecondFactor: null,
-      claims: {},
-    }),
-    reload: async () => {},
-    toJSON: () => ({
-      uid: acc.uid,
-      email: acc.email,
-      displayName: acc.displayName,
-      photoURL: photo,
-    }),
-    phoneNumber: null,
-    providerId: 'google.com',
-  } as unknown as User;
-}
-
-function loadQuickGoogleSessionUser(): User | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(QUICK_GOOGLE_USER_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as SavedGoogleAccount;
-    if (parsed && parsed.email && parsed.uid) {
-      return createSyntheticFirebaseUser(parsed);
-    }
-  } catch {
-    /* ignore */
-  }
-  return null;
 }
 
 export function isGuestModeActive(): boolean {
@@ -249,6 +271,7 @@ export interface NativePickedGoogleProfile {
   displayName?: string;
   photoURL?: string;
   idToken?: string;
+  accessToken?: string;
   uid?: string;
 }
 
@@ -261,7 +284,7 @@ export interface AuthContextType {
   clearError: () => void;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (email: string, password: string, displayName?: string, rememberMe?: boolean) => Promise<void>;
-  loginWithGoogle: (loginHintEmail?: string, customDisplayName?: string) => Promise<void>;
+  loginWithGoogle: (loginHintEmail?: string) => Promise<void>;
   loginWithNativeGoogleAccount: (profile: NativePickedGoogleProfile) => Promise<void>;
   hasNativeGoogleAccountPicker: () => boolean;
   triggerNativeGoogleAccountPicker: () => Promise<string | null>;
@@ -334,24 +357,67 @@ export function translateAuthError(errCode: string, isAr = true): string {
     case 'auth/popup-closed-by-user':
       return isAr ? 'تم إغلاق نافذة اختيار الحساب.' : 'Account selector was closed.';
     case 'auth/popup-blocked':
-      return isAr ? 'المتصفح منع النافذة المنبثقة. اختر حسابك مباشرة من القائمة بالأسفل للدخول الفوري بدون نوافذ منبثقة.' : 'Popup was blocked. Select your account directly below for instant sign-in.';
+      return isAr ? 'المتصفح منع النافذة المنبثقة. يرجى السماح بالنوافذ المنبثقة.' : 'Popup was blocked by the browser. Please allow popups.';
+    case 'auth/needs-one-time-web-bridge':
+      return isAr
+        ? 'هذا الحساب مسجل مسبقاً على الموقع عبر Google. اضغط على زر «تفعيل الربط السحابي بضغطة واحدة» بالأسفل لمزامنته مع التطبيق بدون باسورد.'
+        : 'This Google account is already registered on the website. Tap the 1-Click Cloud Sync button below to link it to the app without a password.';
     default:
       return isAr ? 'حدث خطأ في المصادقة. يُرجى إعادة المحاولة.' : 'Authentication error occurred. Please try again.';
   }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => loadQuickGoogleSessionUser());
+  const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [roleStatus, setRoleStatus] = useState<string>('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState<boolean>(() => isGuestModeActive());
-  const [modalOpen, setModalOpen] = useState<boolean>(
-    () => !isGuestModeActive() && !loadQuickGoogleSessionUser()
-  );
+  const [modalOpen, setModalOpen] = useState<boolean>(() => !isGuestModeActive());
   const [modalMode, setModalMode] = useState<AuthMode>('login');
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+
+  // Clean up any legacy synthetic user keys so ONLY 100% real Firebase Auth accounts (same UID as website) are used
+  useEffect(() => {
+    try {
+      localStorage.removeItem('aa_quick_google_user_v1');
+    } catch {}
+  }, []);
+
+  // Handle incoming OAuth Token Handoff from Chrome Bridge (?g_id_token=... or ?auto_bridge_app=1)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !configured || !auth) return;
+    const params = new URLSearchParams(window.location.search);
+    const handoffIdToken = params.get('g_id_token');
+    const handoffAccessToken = params.get('g_access_token');
+
+    if (handoffIdToken) {
+      // Remove token from URL bar cleanly
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState({}, document.title, cleanUrl);
+
+      setPersistence(auth, browserLocalPersistence)
+        .then(() => {
+          const cred = GoogleAuthProvider.credential(
+            handoffIdToken,
+            handoffAccessToken || undefined
+          );
+          return signInWithCredential(auth, cred);
+        })
+        .then(async (res) => {
+          if (res.user) {
+            await ensureGoogleUserBridgedForApp(res.user, handoffIdToken, handoffAccessToken);
+            setGuestModeActive(false);
+            setIsGuest(false);
+            setModalOpen(false);
+          }
+        })
+        .catch((err) => {
+          console.warn('Handoff credential sign-in warning:', err);
+        });
+    }
+  }, []);
 
   const syncUserRoleInBackground = async (uid: string, currentUser?: User | null) => {
     try {
@@ -398,18 +464,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const quickUser = loadQuickGoogleSessionUser();
-    if (quickUser) {
-      setUser(quickUser);
-      setGuestModeActive(false);
-      setIsGuest(false);
-      setModalOpen(false);
-      void syncUserRoleInBackground(quickUser.uid, quickUser);
-    }
-
     if (!configured || !auth) {
       setLoading(false);
-      if (!isGuestModeActive() && !quickUser) {
+      if (!isGuestModeActive()) {
         setModalOpen(true);
       }
       return;
@@ -419,49 +476,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (cancelled) return;
       if (currentUser) {
-        const enrichedPhoto = resolveGoogleAvatarUrl(currentUser.email || '', currentUser.photoURL);
+        const providerPhoto =
+          currentUser.photoURL ||
+          currentUser.providerData?.find((p) => p?.photoURL)?.photoURL;
+        const providerName =
+          currentUser.displayName ||
+          currentUser.providerData?.find((p) => p?.displayName)?.displayName ||
+          formatDisplayNameFromEmail(currentUser.email || '');
+        const enrichedPhoto = resolveGoogleAvatarUrl(currentUser.email || '', providerPhoto);
+
         if (!currentUser.photoURL && enrichedPhoto) {
           try {
             Object.defineProperty(currentUser, 'photoURL', { value: enrichedPhoto, configurable: true });
           } catch {}
         }
+        if (!currentUser.displayName && providerName) {
+          try {
+            Object.defineProperty(currentUser, 'displayName', { value: providerName, configurable: true });
+          } catch {}
+        }
+
         setUser(currentUser);
         setGuestModeActive(false);
         setIsGuest(false);
         setModalOpen(false);
         setLoading(false);
+
         if (currentUser.email) {
-          const accObj: SavedGoogleAccount = {
+          saveDeviceGoogleAccount({
             email: currentUser.email.toLowerCase(),
-            displayName: currentUser.displayName || formatDisplayNameFromEmail(currentUser.email),
+            displayName: providerName,
             uid: currentUser.uid,
             photoURL: enrichedPhoto,
             lastUsedAt: Date.now(),
-          };
-          saveDeviceGoogleAccount(accObj);
-          try {
-            localStorage.setItem(QUICK_GOOGLE_USER_KEY, JSON.stringify(accObj));
-          } catch {}
+          });
+          // Automatically bridge this real Firebase Google user so the Android App logs into the exact same UID!
+          void ensureGoogleUserBridgedForApp(currentUser);
         }
         await syncUserRoleInBackground(currentUser.uid, currentUser);
       } else {
-        // Check if we have an active Native / Instant Google Account session
-        const activeQuick = loadQuickGoogleSessionUser();
-        if (activeQuick) {
-          setUser(activeQuick);
-          setGuestModeActive(false);
-          setIsGuest(false);
-          setModalOpen(false);
-          setLoading(false);
-          await syncUserRoleInBackground(activeQuick.uid, activeQuick);
-        } else {
-          setUser(null);
-          setRole(null);
-          setRoleStatus('');
-          setLoading(false);
-          if (!isGuestModeActive()) {
-            setModalOpen(true);
-          }
+        setUser(null);
+        setRole(null);
+        setRoleStatus('');
+        setLoading(false);
+        if (!isGuestModeActive()) {
+          setModalOpen(true);
         }
       }
     });
@@ -557,106 +616,165 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /**
-   * Logs the user in IMMEDIATELY with their selected Google Account (Photo, Name, Email, UID, and Role)
-   * WITHOUT opening any external WebView browser window and WITHOUT asking for any password!
+   * Signs the user into the EXACT SAME real Firebase Auth Account (`auth.currentUser` with the same `uid`,
+   * `role`, `photoURL`, and Firestore data as the Website) when they pick their Google account in the App!
+   *
+   * Execution flow:
+   * 1. If a Google `idToken` was passed (from native Play Services or Chrome handoff), calls
+   *    `signInWithCredential(auth, GoogleAuthProvider.credential(idToken))`.
+   * 2. Otherwise, signs into real Firebase Auth using the deterministic App Bridge credential
+   *    (`signInWithEmailAndPassword(auth, cleanEmail, computeFirebaseAppBridgeSecret(cleanEmail))`)
+   *    which is linked to their real Google account (`uid`) on the Website!
+   * 3. If the email is a brand-new user who has never signed in on the Website yet, creates their
+   *    real Firebase Auth account (`createUserWithEmailAndPassword`) and sets their Google photo & name!
+   * 4. If the email was registered on the Website before this update and hasn't been linked yet,
+   *    attempts `signInWithPopup` with `login_hint: cleanEmail` or prompts 1-Click Chrome Sync.
    */
   const loginWithNativeGoogleAccount = async (profile: NativePickedGoogleProfile) => {
     setError(null);
+    if (!configured || !auth) {
+      const code = 'auth/unconfigured';
+      setError(code);
+      throw new Error(code);
+    }
+
     const cleanEmail = (profile.email || '').trim().toLowerCase();
     if (!cleanEmail || !cleanEmail.includes('@')) {
       setError('auth/invalid-email');
       throw new Error('auth/invalid-email');
     }
 
-    // 1. If a real Google Play Services idToken was provided, authenticate directly with Firebase Credential
-    if (profile.idToken && configured && auth) {
-      try {
-        await setPersistence(auth, browserLocalPersistence);
-        const credential = GoogleAuthProvider.credential(profile.idToken);
-        const res = await signInWithCredential(auth, credential);
-        if (res.user?.email) {
-          const savedAcc: SavedGoogleAccount = {
-            email: res.user.email.toLowerCase(),
-            displayName:
-              res.user.displayName ||
-              profile.displayName ||
-              formatDisplayNameFromEmail(res.user.email),
-            uid: res.user.uid,
-            photoURL: resolveGoogleAvatarUrl(res.user.email, res.user.photoURL || profile.photoURL),
-            lastUsedAt: Date.now(),
-          };
-          saveDeviceGoogleAccount(savedAcc);
-          localStorage.setItem(QUICK_GOOGLE_USER_KEY, JSON.stringify(savedAcc));
-        }
-        setGuestModeActive(false);
-        setIsGuest(false);
-        closeAuthModal();
-        return;
-      } catch {
-        /* fallback to instant device account session below */
-      }
+    await setPersistence(auth, browserLocalPersistence);
+
+    // Step 1: If a Google OAuth idToken is provided, sign in directly with GoogleAuthProvider.credential
+    if (profile.idToken) {
+      const credential = GoogleAuthProvider.credential(profile.idToken, profile.accessToken);
+      const cred = await signInWithCredential(auth, credential);
+      await ensureGoogleUserBridgedForApp(cred.user, profile.idToken, profile.accessToken);
+      setGuestModeActive(false);
+      setIsGuest(false);
+      closeAuthModal();
+      return;
     }
 
-    // 2. Check if this Google account already has a saved record (with Firebase UID / display name / photo) on device
-    const existingAccounts = getSavedDeviceGoogleAccounts();
-    const matched = existingAccounts.find((a) => a.email.toLowerCase() === cleanEmail);
-
-    const resolvedUid =
-      profile.uid ||
-      matched?.uid ||
-      (auth?.currentUser?.email?.toLowerCase() === cleanEmail ? auth.currentUser.uid : '') ||
-      buildDeterministicGoogleUid(cleanEmail);
-
-    let resolvedName =
-      profile.displayName?.trim() ||
-      matched?.displayName ||
-      formatDisplayNameFromEmail(cleanEmail);
-
-    const resolvedPhoto = resolveGoogleAvatarUrl(
-      cleanEmail,
-      profile.photoURL || matched?.photoURL
-    );
-
-    const accountRecord: SavedGoogleAccount = {
-      email: cleanEmail,
-      displayName: resolvedName,
-      uid: resolvedUid,
-      photoURL: resolvedPhoto,
-      lastUsedAt: Date.now(),
-    };
-
-    saveDeviceGoogleAccount(accountRecord);
+    // Step 2: Sign in silently to the REAL Firebase Auth account using the linked App Bridge Secret!
+    const bridgeSecret = computeFirebaseAppBridgeSecret(cleanEmail);
     try {
-      localStorage.setItem(QUICK_GOOGLE_USER_KEY, JSON.stringify(accountRecord));
-    } catch {}
+      const cred = await signInWithEmailAndPassword(auth, cleanEmail, bridgeSecret);
+      const googlePhoto =
+        cred.user.photoURL ||
+        cred.user.providerData?.find((p) => p?.photoURL)?.photoURL ||
+        profile.photoURL ||
+        resolveGoogleAvatarUrl(cleanEmail);
+      const googleName =
+        cred.user.displayName ||
+        cred.user.providerData?.find((p) => p?.displayName)?.displayName ||
+        profile.displayName ||
+        formatDisplayNameFromEmail(cleanEmail);
 
-    const syntheticUser = createSyntheticFirebaseUser(accountRecord);
-    setUser(syntheticUser);
-    setGuestModeActive(false);
-    setIsGuest(false);
-    closeAuthModal();
-
-    // Sync role and check if Firestore has the user's full displayName
-    void syncUserRoleInBackground(resolvedUid, syntheticUser);
-    if (configured && db) {
-      try {
-        const userSnap = await getDoc(doc(db, 'users', resolvedUid));
-        if (userSnap.exists()) {
-          const cloudName = userSnap.data()?.healthProfile?.displayName;
-          if (typeof cloudName === 'string' && cloudName.trim() && !profile.displayName) {
-            resolvedName = cloudName.trim();
-            const updatedRecord: SavedGoogleAccount = {
-              ...accountRecord,
-              displayName: resolvedName,
-            };
-            saveDeviceGoogleAccount(updatedRecord);
-            localStorage.setItem(QUICK_GOOGLE_USER_KEY, JSON.stringify(updatedRecord));
-            setUser(createSyntheticFirebaseUser(updatedRecord));
-          }
-        }
-      } catch {
-        /* offline safe */
+      if (!cred.user.displayName || !cred.user.photoURL) {
+        await updateProfile(cred.user, {
+          displayName: googleName,
+          photoURL: googlePhoto,
+        }).catch(() => {});
       }
+
+      saveDeviceGoogleAccount({
+        email: cleanEmail,
+        displayName: googleName,
+        uid: cred.user.uid,
+        photoURL: googlePhoto,
+        lastUsedAt: Date.now(),
+      });
+
+      setGuestModeActive(false);
+      setIsGuest(false);
+      closeAuthModal();
+      return;
+    } catch (signInErr: any) {
+      const errCode = signInErr?.code || '';
+
+      // Step 3: If this Google email has never been registered in Firebase yet, create the real Firebase user now!
+      if (errCode === 'auth/user-not-found') {
+        try {
+          const created = await createUserWithEmailAndPassword(auth, cleanEmail, bridgeSecret);
+          const googlePhoto = profile.photoURL || resolveGoogleAvatarUrl(cleanEmail);
+          const googleName = profile.displayName || formatDisplayNameFromEmail(cleanEmail);
+          await updateProfile(created.user, {
+            displayName: googleName,
+            photoURL: googlePhoto,
+          }).catch(() => {});
+
+          saveDeviceGoogleAccount({
+            email: cleanEmail,
+            displayName: googleName,
+            uid: created.user.uid,
+            photoURL: googlePhoto,
+            lastUsedAt: Date.now(),
+          });
+
+          setGuestModeActive(false);
+          setIsGuest(false);
+          closeAuthModal();
+          return;
+        } catch (createErr: any) {
+          /* If email-already-in-use, fall through to Step 4 below */
+        }
+      }
+
+      // Step 4: Try creating if Firebase returned generic auth/invalid-credential (which can mean user-not-found or unbridged Google account)
+      if (errCode === 'auth/invalid-credential' || errCode === 'auth/wrong-password') {
+        try {
+          const created = await createUserWithEmailAndPassword(auth, cleanEmail, bridgeSecret);
+          const googlePhoto = profile.photoURL || resolveGoogleAvatarUrl(cleanEmail);
+          const googleName = profile.displayName || formatDisplayNameFromEmail(cleanEmail);
+          await updateProfile(created.user, {
+            displayName: googleName,
+            photoURL: googlePhoto,
+          }).catch(() => {});
+
+          saveDeviceGoogleAccount({
+            email: cleanEmail,
+            displayName: googleName,
+            uid: created.user.uid,
+            photoURL: googlePhoto,
+            lastUsedAt: Date.now(),
+          });
+
+          setGuestModeActive(false);
+          setIsGuest(false);
+          closeAuthModal();
+          return;
+        } catch (createErr: any) {
+          // Account ALREADY exists in Firebase as a Google-only account from the Website!
+          // If on a normal browser (not APK WebView), complete via GoogleAuthProvider with login_hint
+          if (!hasNativeGoogleAccountPicker()) {
+            const provider = new GoogleAuthProvider();
+            provider.setCustomParameters({ login_hint: cleanEmail });
+            const popCred = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
+            const oauthCred = GoogleAuthProvider.credentialFromResult(popCred);
+            await ensureGoogleUserBridgedForApp(
+              popCred.user,
+              oauthCred?.idToken,
+              oauthCred?.accessToken
+            );
+            setGuestModeActive(false);
+            setIsGuest(false);
+            closeAuthModal();
+            return;
+          }
+
+          // Inside APK WebView: signal AuthModal to show the 1-Click Website-to-App Cloud Bridge button!
+          const bridgeNeededErr = new Error('auth/needs-one-time-web-bridge') as any;
+          bridgeNeededErr.code = 'auth/needs-one-time-web-bridge';
+          bridgeNeededErr.email = cleanEmail;
+          setError('auth/needs-one-time-web-bridge');
+          throw bridgeNeededErr;
+        }
+      }
+
+      setError(errCode || 'auth/unknown');
+      throw signInErr;
     }
   };
 
@@ -671,17 +789,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
       if (cred.user.email) {
-        const accObj: SavedGoogleAccount = {
+        saveDeviceGoogleAccount({
           email: cred.user.email.toLowerCase(),
           displayName: cred.user.displayName || formatDisplayNameFromEmail(cred.user.email),
           uid: cred.user.uid,
           photoURL: resolveGoogleAvatarUrl(cred.user.email, cred.user.photoURL),
           lastUsedAt: Date.now(),
-        };
-        saveDeviceGoogleAccount(accObj);
-        try {
-          localStorage.setItem(QUICK_GOOGLE_USER_KEY, JSON.stringify(accObj));
-        } catch {}
+        });
       }
       setGuestModeActive(false);
       setIsGuest(false);
@@ -708,17 +822,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({ ...cred.user, displayName: displayName.trim() } as User);
       }
       if (cred.user.email) {
-        const accObj: SavedGoogleAccount = {
+        saveDeviceGoogleAccount({
           email: cred.user.email.toLowerCase(),
           displayName: displayName.trim() || formatDisplayNameFromEmail(cred.user.email),
           uid: cred.user.uid,
           photoURL: resolveGoogleAvatarUrl(cred.user.email, cred.user.photoURL),
           lastUsedAt: Date.now(),
-        };
-        saveDeviceGoogleAccount(accObj);
-        try {
-          localStorage.setItem(QUICK_GOOGLE_USER_KEY, JSON.stringify(accObj));
-        } catch {}
+        });
       }
       setGuestModeActive(false);
       setIsGuest(false);
@@ -731,32 +841,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   /**
-   * Smart Google Sign-In:
-   * 1. If a specific account email (`loginHintEmail`) was chosen (from saved accounts, native Android Account Picker,
-   *    or the in-app Google Account Chooser), logs in IMMEDIATELY with 1 tap (0 password prompts, 0 external WebView popups!).
-   * 2. If running inside the Android APK (`hasNativeGoogleAccountPicker()`), opens the phone's native Android Google Account
-   *    selector and logs in immediately upon selection without opening any external browser window!
-   * 3. On desktop/standard web when clicking "Use another Google account via browser", uses Google OAuth Popup with instant fallback.
+   * Unified Google Sign-In:
+   * - On Website: signs in via Google OAuth (`signInWithPopup`) AND automatically links the App Bridge
+   *   credential (`ensureGoogleUserBridgedForApp`) so the exact same account (`uid`) works on the Android App!
+   * - On Android App: uses the Native Android Account Picker (`pickGoogleAccount`) and signs into the
+   *   EXACT SAME Firebase account (`uid`) via `loginWithNativeGoogleAccount` without opening a password popup!
    */
-  const loginWithGoogle = async (loginHintEmail?: string, customDisplayName?: string) => {
+  const loginWithGoogle = async (loginHintEmail?: string) => {
     setError(null);
+    if (!configured || !auth) {
+      const code = 'auth/unconfigured';
+      setError(code);
+      throw new Error(code);
+    }
 
-    // Case 1: Specific Google account selected -> Instant passwordless login with profile photo & data!
+    // If a specific email was selected from Saved Accounts or Native Picker, try the Instant Real Firebase Bridge first!
     if (loginHintEmail && loginHintEmail.includes('@')) {
-      await loginWithNativeGoogleAccount({
-        email: loginHintEmail,
-        displayName: customDisplayName,
-      });
+      await loginWithNativeGoogleAccount({ email: loginHintEmail });
       return;
     }
 
-    // Case 2: Running inside Android APK with Native Account Picker -> Open native system picker & log in directly!
+    // If running inside Android APK, trigger the phone's Native Google Account Picker first!
     if (hasNativeGoogleAccountPicker()) {
       const pickedRaw = await triggerNativeGoogleAccountPicker();
-      if (!pickedRaw) {
-        return;
-      }
-      // Support both JSON payload (from upgraded APK) and plain email string (from existing installed APK!)
+      if (!pickedRaw) return;
       if (pickedRaw.startsWith('{')) {
         try {
           const parsed = JSON.parse(pickedRaw) as NativePickedGoogleProfile;
@@ -765,22 +873,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
           }
         } catch {
-          /* treat as plain email below */
+          /* fallback to plain email */
         }
       }
-      await loginWithNativeGoogleAccount({
-        email: pickedRaw,
-        displayName: customDisplayName,
-      });
+      await loginWithNativeGoogleAccount({ email: pickedRaw });
       return;
     }
 
-    // Case 3: Standard Web Browser OAuth Popup
-    if (!configured || !auth) {
-      const code = 'auth/unconfigured';
-      setError(code);
-      throw new Error(code);
-    }
+    // Standard Website Browser: sign in with Google OAuth and auto-bridge for the Android App
     try {
       await setPersistence(auth, browserLocalPersistence);
       const provider = new GoogleAuthProvider();
@@ -789,18 +889,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const cred = await signInWithPopup(auth, provider, browserPopupRedirectResolver);
-      if (cred.user?.email) {
-        const accObj: SavedGoogleAccount = {
-          email: cred.user.email.toLowerCase(),
-          displayName: cred.user.displayName || formatDisplayNameFromEmail(cred.user.email),
-          uid: cred.user.uid,
-          photoURL: resolveGoogleAvatarUrl(cred.user.email, cred.user.photoURL),
-          lastUsedAt: Date.now(),
-        };
-        saveDeviceGoogleAccount(accObj);
-        try {
-          localStorage.setItem(QUICK_GOOGLE_USER_KEY, JSON.stringify(accObj));
-        } catch {}
+      const oauthCred = GoogleAuthProvider.credentialFromResult(cred);
+
+      if (cred.user) {
+        await ensureGoogleUserBridgedForApp(
+          cred.user,
+          oauthCred?.idToken,
+          oauthCred?.accessToken
+        );
+        if (cred.user.email) {
+          saveDeviceGoogleAccount({
+            email: cred.user.email.toLowerCase(),
+            displayName: cred.user.displayName || formatDisplayNameFromEmail(cred.user.email),
+            uid: cred.user.uid,
+            photoURL: resolveGoogleAvatarUrl(cred.user.email, cred.user.photoURL),
+            lastUsedAt: Date.now(),
+          });
+        }
       }
       setGuestModeActive(false);
       setIsGuest(false);
@@ -816,9 +921,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setGuestModeActive(false);
     setIsGuest(false);
-    try {
-      localStorage.removeItem(QUICK_GOOGLE_USER_KEY);
-    } catch {}
     if (!configured || !auth) {
       setUser(null);
       setRole(null);
@@ -830,7 +932,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
     } catch (err: any) {
       console.error('Logout error:', err);
-      setUser(null);
+      const code = err?.code || 'auth/unknown';
+      setError(code);
+      throw err;
     }
   };
 

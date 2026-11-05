@@ -363,7 +363,7 @@ export default function AppUpdateManager() {
       )}
 
       {/* In-App Update Modal (Supports Optional & Mandatory Modes) */}
-      {updateModalOpen && !modalOpen && (
+      {updateModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
@@ -372,7 +372,7 @@ export default function AppUpdateManager() {
           style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 10080,
+            zIndex: 1000010,
             background: 'rgba(6, 15, 28, 0.86)',
             backdropFilter: 'blur(9px)',
             display: 'flex',
