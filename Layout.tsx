@@ -1425,6 +1425,172 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </footer>
+      {/* Fixed Mobile Bottom Navigation Bar (Thumb-Friendly App Bar matching UI Design) */}
+      <style>{`
+        .mobile-bottom-nav {
+          display: none;
+        }
+        @media (max-width: 860px) {
+          .guest-indicator {
+            display: none !important;
+          }
+          .app {
+            padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)) !important;
+          }
+          .floating-fab-stack {
+            bottom: calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+          }
+          .mobile-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            inset-inline: 0;
+            height: calc(66px + env(safe-area-inset-bottom, 0px));
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-top: 1px solid rgba(148, 163, 184, 0.25);
+            box-shadow: 0 -8px 26px rgba(15, 23, 42, 0.08);
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            align-items: center;
+            z-index: 9050;
+          }
+          [data-theme="dark"] .mobile-bottom-nav {
+            background: rgba(15, 23, 42, 0.95);
+            border-top-color: rgba(51, 65, 85, 0.6);
+            box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.45);
+          }
+          .mb-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            text-decoration: none;
+            color: #64748b;
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 6px 2px;
+            position: relative;
+            transition: color 0.18s ease;
+          }
+          [data-theme="dark"] .mb-nav-item {
+            color: #94a3b8;
+          }
+          .mb-nav-item.active {
+            color: #0d9488;
+          }
+          [data-theme="dark"] .mb-nav-item.active {
+            color: #2dd4bf;
+          }
+          .mb-nav-item.active::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            width: 28px;
+            height: 3px;
+            border-radius: 99px;
+            background: #0d9488;
+          }
+          .mb-nav-icon {
+            font-size: 1.22rem;
+            line-height: 1;
+          }
+          .mb-nav-center-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            margin-top: -22px;
+          }
+          .mb-nav-center-circle {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #14b8a6 0%, #0b3c5d 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.45rem;
+            box-shadow: 0 8px 22px rgba(13, 148, 136, 0.45);
+            border: 3px solid #ffffff;
+            transition: transform 0.2s ease;
+          }
+          [data-theme="dark"] .mb-nav-center-circle {
+            border-color: #0f172a;
+          }
+          .mb-nav-center-wrap:active .mb-nav-center-circle {
+            transform: scale(0.95);
+          }
+          .mb-nav-center-label {
+            font-size: 0.68rem;
+            font-weight: 900;
+            color: #0d9488;
+            margin-top: 3px;
+            white-space: nowrap;
+          }
+          [data-theme="dark"] .mb-nav-center-label {
+            color: #2dd4bf;
+          }
+        }
+        @media print {
+          .mobile-bottom-nav {
+            display: none !important;
+          }
+        }
+      `}</style>
+
+      <nav
+        className="mobile-bottom-nav"
+        aria-label={tr(lang, 'شريط التنقل السفلي السريع', 'Quick bottom navigation')}
+      >
+        <NavLink
+          to="/"
+          end
+          className={({ isActive }) => `mb-nav-item${isActive ? ' active' : ''}`}
+        >
+          <span className="mb-nav-icon" aria-hidden="true">🏠</span>
+          <span>{tr(lang, 'الرئيسية', 'Home')}</span>
+        </NavLink>
+
+        <NavLink
+          to="/medicines"
+          className={({ isActive }) =>
+            `mb-nav-item${isActive || pathname.startsWith('/medicine/') ? ' active' : ''}`
+          }
+        >
+          <span className="mb-nav-icon" aria-hidden="true">💊</span>
+          <span>{tr(lang, 'الأدوية', 'Drugs')}</span>
+        </NavLink>
+
+        <NavLink to="/complete-checkup" className="mb-nav-center-wrap">
+          <div className="mb-nav-center-circle" aria-hidden="true">
+            ⚡
+          </div>
+          <span className="mb-nav-center-label">
+            {tr(lang, 'افحص روشتتك', 'Check Rx')}
+          </span>
+        </NavLink>
+
+        <NavLink
+          to="/tracker"
+          className={({ isActive }) => `mb-nav-item${isActive ? ' active' : ''}`}
+        >
+          <span className="mb-nav-icon" aria-hidden="true">🔔</span>
+          <span>{tr(lang, 'منبه الجرعات', 'Alarms')}</span>
+        </NavLink>
+
+        <NavLink
+          to="/health-profile"
+          className={({ isActive }) => `mb-nav-item${isActive ? ' active' : ''}`}
+        >
+          <span className="mb-nav-icon" aria-hidden="true">👤</span>
+          <span>{tr(lang, 'ملفي الصحي', 'Profile')}</span>
+        </NavLink>
+      </nav>
     </div>
   );
 }

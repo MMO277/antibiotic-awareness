@@ -124,21 +124,9 @@ export default function OnboardingTour() {
   const [isOpen, setIsOpen] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
 
-  // Show automatically ONLY ONCE for first-time patients after login/guest modal closes
+  // Do not auto-block first-time visitors; tour remains available anytime from the side menu (☰)
   useEffect(() => {
-    if (modalOpen) return;
-    try {
-      const alreadyDone = localStorage.getItem(ONBOARDING_COMPLETED_KEY) === '1';
-      if (!alreadyDone) {
-        const timer = window.setTimeout(() => {
-          setStepIdx(0);
-          setIsOpen(true);
-        }, 650);
-        return () => window.clearTimeout(timer);
-      }
-    } catch {
-      /* ignore storage errors */
-    }
+    if (modalOpen) setIsOpen(false);
   }, [modalOpen]);
 
   // Listen for manual replay trigger from Side Drawer

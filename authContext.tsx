@@ -318,8 +318,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roleStatus, setRoleStatus] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isGuest, setIsGuest] = useState<boolean>(() => isGuestModeActive());
-  const [modalOpen, setModalOpen] = useState<boolean>(() => !isGuestModeActive());
+  const [isGuest, setIsGuest] = useState<boolean>(() => true);
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [modalMode, setModalMode] = useState<AuthMode>('login');
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [needsAppBridgeActivation, setNeedsAppBridgeActivation] = useState(false);
@@ -476,9 +476,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!configured || !auth) {
       setLoading(false);
-      if (!isGuestModeActive()) {
-        setModalOpen(true);
-      }
+      setGuestModeActive(true);
+      setIsGuest(true);
       return;
     }
 
@@ -530,9 +529,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(null);
         setRoleStatus('');
         setLoading(false);
-        if (!isGuestModeActive()) {
-          setModalOpen(true);
-        }
+        setGuestModeActive(true);
+        setIsGuest(true);
       }
     });
     return () => {

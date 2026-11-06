@@ -297,8 +297,8 @@ export default function AuthModal() {
   const [bridgeSuccessDone, setBridgeSuccessDone] = useState(false);
 
   // Lamp intro state (UPDATE 49): purely visual — never touches auth logic.
-  const [stage, setStage] = useState<Stage>('dark');
-  const [instant, setInstant] = useState(false);
+  const [stage, setStage] = useState<Stage>('lit');
+  const [instant, setInstant] = useState(true);
   const pullRef = useRef<HTMLButtonElement>(null);
 
   // Detect if opened in Chrome with ?auto_bridge_email=... from the Android App
@@ -316,9 +316,9 @@ export default function AuthModal() {
 
   useEffect(() => {
     if (!modalOpen && !urlBridgeTargetEmail) return;
-    const skip = lampSeen() || prefersReducedMotion() || Boolean(urlBridgeTargetEmail);
-    setInstant(skip);
-    setStage(skip ? 'lit' : 'dark');
+    markLampSeen();
+    setInstant(true);
+    setStage('lit');
     setSavedGoogleAccounts(getSavedDeviceGoogleAccounts());
     setPendingBridgeEmail(null);
     void fetchCloudSyncedGoogleAccounts().then((cloudList) => {
@@ -358,7 +358,8 @@ export default function AuthModal() {
 
   const lightUp = () => {
     markLampSeen();
-    setStage((s) => (s === 'dark' ? 'lighting' : s));
+    setInstant(false);
+    setStage((s) => (s === 'dark' ? 'lighting' : 'dark'));
   };
   const skipIntro = () => {
     markLampSeen();
@@ -701,7 +702,7 @@ export default function AuthModal() {
     >
       <div className="auth-stage">
         <div className="auth-lamp">
-          <Lamp isAr={isAr} interactive={stage === 'dark'} onPull={lightUp} handleRef={pullRef} />
+          <Lamp isAr={isAr} interactive={true} onPull={lightUp} handleRef={pullRef} />
         </div>
 
         {/* Stage A — dark screen prompt */}
