@@ -402,23 +402,7 @@ export default function Assistant() {
                 .map((h) => ({ to: h.link || '/', label: h.title }))
             : undefined;
 
-    // If our contextual engine matched a medical condition, medicine, or follow-up question from site data,
-    // reply IMMEDIATELY (<10ms) unless the user configured a custom Gemini API key!
-    const isAnalyticalOrOpenQuestion = /(ليه |لماذا |ازاي بيشتغل|إزاي بيشتغل|اشرحلي |فسرلي |هل لو |ايه علاقه |إيه علاقة |تاريخ |معلومات عن |كلمني عن |من هو |مين هو |ما هو |ما هي |عاصمه |عاصمة |طريقه عمل |طريقة عمل |سعر الدولار|الطقس|مواعيد الصلاه|مواعيد الصلاة)/.test(text);
-    if (contextualResult.handledFast && !isCustomApiKey() && !isAnalyticalOrOpenQuestion) {
-      const fastMsg: EnhancedChatUiMessage = {
-        id: `msg-${Date.now()}-fast`,
-        who: 'bot',
-        text: contextualResult.replyText,
-        date,
-        isAi: true,
-        ...(matchedLinks && matchedLinks.length > 0 ? { links: matchedLinks } : {}),
-      };
-      setMsgs((m) => [...m, fastMsg]);
-      setLoading(false);
-      if (shouldSpeakReply) speakText(contextualResult.replyText, lang);
-      return;
-    }
+    // Always route through the Live Internet + Cloud AI Engine first (no canned short-circuiting!)
 
     // 3) Call Conversational AI (speaks Egyptian Colloquial Arabic + can emit [[ACTION_CALL: ...]] for any free-form command!)
     try {

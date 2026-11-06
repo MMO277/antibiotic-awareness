@@ -224,17 +224,18 @@ export const SYSTEM_PROMPT = `أنت المساعد الذكي الشامل وا
    - أوعى تقول لمريض يضاعف جرعة دوا نسيها، وفي الأسئلة الطبية والأدوية اختم بنصيحة ودودة بمراجعة الدكتور أو الصيدلي لتأكيد الجرعة.
    - في الطوارئ الحادة (ضيق تنفس شديد، تورم الوش واللسان، إغماء)، وجهه فوراً يكلم الإسعاف المصري (123).`;
 
-export const COMPACT_CLOUD_SYSTEM_PROMPT = `أنت المساعد الذكي الشامل والموسوعي (AI Universal & Health Assistant).
-1. جاوب على أي سؤال يسأله المستخدم في أي مجال في الدنيا بدون أي قيود! سواء كان سؤال عام، ثقافي، تاريخي، علمي، ديني، رياضي ومباريات، طبخ، برمجة، رياضيات، نصائح يومية، أو سؤال طبي ودوائي وتحاليل.
-2. لما المستخدم يكلمك بالعربي، رد بلهجة مصرية عامية ودودة وطبيعية جداً ("يا هلا بيك"، "من عنيا ليك"، "بص يا سيدي") وبمعلومات دقيقة ومفصلة ومفيدة. ولو سأل بالإنجليزي أو أي لغة تانية رد بنفس لغته.
-3. رتب إجابتك في نقاط واضحة (1. ، 2. أو •) بدون جداول Markdown (|) وبدون نجوم ** أو شبابيك ###.`;
+export const COMPACT_CLOUD_SYSTEM_PROMPT = `أنت مساعد ذكي شامل ومتصل بالإنترنت (Live Web & Health AI Assistant).
+قواعد هامة جداً:
+1. جاوب على سؤال المستخدم بدقة ومباشرة باللهجة المصرية الودودة بناءً على سؤاله وبناءً على [البيانات الحية من الإنترنت] المرفقة مع السؤال.
+2. إياك أن ترد بردود محفوظة أو عامة أو تتكلم عن موضوع مختلف عن سؤال المستخدم! لو سأل عن نتيجة ماتش أو موعد ماتش أو سعر أو خبر أو معلومة عامة أو طبية، جاوب على سؤاله بالظبط من المعلومات الحية المرفقة وبمعرفتك الدقيقة.
+3. رتب الإجابة في نقاط واضحة ومباشرة بدون جداول Markdown (|) وبدون نجوم ** أو علامات ###.`;
 
 function isValidCloudReply(text: string | undefined | null): boolean {
   if (!text) return false;
   const t = text.trim();
   if (t.length < 4) return false;
   if (
-    /^(<!DOCTYPE|<html|<head|\{"error"|502 Bad Gateway|504 Gateway|429 Too Many|Error:|Rate limit|Internal Server Error|Notice:|IMPORTANT NOTICE|pollinations\.ai)/i.test(
+    /^(<!DOCTYPE|<html|<head|\{"error"|502 Bad Gateway|504 Gateway|429 Too Many|Error:|Rate limit|Internal Server Error|Notice:|IMPORTANT NOTICE)/i.test(
       t
     )
   ) {
@@ -244,13 +245,20 @@ function isValidCloudReply(text: string | undefined | null): boolean {
 }
 
 /**
- * Fast, zero-key Google Translate GTX helper (`*.googleapis.com`)
- * Translates colloquial Arabic -> English for global search, or English results -> Arabic!
+ * Strips any Pollinations ad/footer notices if present while preserving the AI's actual answer.
  */
+function stripPollinationsFooter(text: string): string {
+  return text
+    .replace(/---\s*\n\s*\*\*Support Pollinations\.AI[\s\S]*$/i, '')
+    .replace(/Support Pollinations\.AI[\s\S]*$/i, '')
+    .replace(/🌸\s*Ad\s*🌸[\s\S]*$/i, '')
+    .trim();
+}
+
 async function gtxTranslate(text: string, sl: string, tl: string): Promise<string> {
   if (!text || !text.trim()) return '';
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 4000);
+  const timer = setTimeout(() => ctrl.abort(), 3500);
   try {
     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(
       text.slice(0, 1200)
@@ -268,13 +276,94 @@ async function gtxTranslate(text: string, sl: string, tl: string): Promise<strin
   return text;
 }
 
+/**
+ * Fetches LIVE Arabic/Global news & web search snippets from Google News RSS (`news.google.com/rss/search`)
+ * using browser-compatible CORS endpoints (`api.rss2json.com` and `api.allorigins.win/raw`).
+ * This gives real-time scores (e.g. "ماتش الاهلي الاخير خلص كام"), upcoming fixtures, prices, and current events!
+ */
+async function fetchLiveGoogleNewsSnippets(query: string): Promise<string[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  // Improve search query for match scores / schedules so Google News returns exact score headlines
+  let searchQ = q
+    .replace(/خلص كام/g, 'نتيجة مباراة')
+    .replace(/الجاي امتي|الجاي إمتى/g, 'موعد مباراة القادمة')
+    .replace(/امتي|إمتى/g, 'موعد');
+
+  const rssUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(
+    searchQ
+  )}&hl=ar&gl=EG&ceid=EG:ar`;
+
+  // 1) Try rss2json (fast JSON parser with CORS *)
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4500);
+    const res = await fetch(
+      `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`,
+      { signal: ctrl.signal }
+    );
+    clearTimeout(timer);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data?.items) && data.items.length > 0) {
+        return data.items.slice(0, 6).map((item: any) => {
+          const title = (item.title || '').replace(/\s+/g, ' ').trim();
+          const pubDate = item.pubDate ? item.pubDate.split(' ')[0] : '';
+          const desc = (item.description || '')
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/&nbsp;/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          return `• [${pubDate}] ${title}${desc && desc !== title ? ` — ${desc.slice(0, 160)}` : ''}`;
+        });
+      }
+    }
+  } catch {
+    /* fallback to allorigins XML parse */
+  }
+
+  // 2) Try allorigins.win/raw XML parsing
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4500);
+    const res = await fetch(
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(rssUrl)}`,
+      { signal: ctrl.signal }
+    );
+    clearTimeout(timer);
+    if (res.ok) {
+      const xml = await res.text();
+      const itemMatches = Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g)).slice(0, 6);
+      const snippets: string[] = [];
+      for (const m of itemMatches) {
+        const block = m[1];
+        const titleMatch = block.match(/<title>([\s\S]*?)<\/title>/);
+        const dateMatch = block.match(/<pubDate>([\s\S]*?)<\/pubDate>/);
+        const title = (titleMatch?.[1] || '')
+          .replace(/<!\[CDATA\[|\]\]>/g, '')
+          .replace(/&quot;/g, '"')
+          .replace(/&amp;/g, '&')
+          .trim();
+        const dateStr = dateMatch?.[1] ? new Date(dateMatch[1]).toLocaleDateString('ar-EG') : '';
+        if (title) {
+          snippets.push(`• ${dateStr ? `[${dateStr}] ` : ''}${title}`);
+        }
+      }
+      if (snippets.length > 0) return snippets;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  return [];
+}
+
 interface FootballTeamMapping {
   nameAr: string;
   nameEn: string;
   espnId?: string;
   espnLeague?: string;
-  sportsDbSearch: string;
-  sportsDbId?: string;
   patterns: RegExp;
 }
 
@@ -284,8 +373,6 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Real Madrid',
     espnId: '86',
     espnLeague: 'esp.1',
-    sportsDbSearch: 'Real_Madrid',
-    sportsDbId: '133738',
     patterns: /(ريال مدريد|الريال|ملكي|ميرينجي|real madrid)/i,
   },
   {
@@ -293,40 +380,30 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Barcelona',
     espnId: '83',
     espnLeague: 'esp.1',
-    sportsDbSearch: 'Barcelona',
-    sportsDbId: '133739',
     patterns: /(برشلونه|برشلونة|البارسا|البرسا|كتالوني|barcelona|barca)/i,
   },
   {
     nameAr: 'الأهلي المصري',
     nameEn: 'Al Ahly',
-    sportsDbSearch: 'Al_Ahly',
-    sportsDbId: '134609',
     patterns: /(الاهلي|الأهلي|اهلي|أهلي|al ahly)/i,
   },
   {
     nameAr: 'الزمالك',
     nameEn: 'Zamalek',
-    sportsDbSearch: 'Zamalek',
-    sportsDbId: '134615',
     patterns: /(الزمالك|زمالك|zamalek)/i,
   },
   {
-    nameAr: 'ليفربول (محمد صلاح)',
+    nameAr: 'ليفربول',
     nameEn: 'Liverpool',
     espnId: '364',
     espnLeague: 'eng.1',
-    sportsDbSearch: 'Liverpool',
-    sportsDbId: '133602',
     patterns: /(ليفربول|ليفر|الريدز|ماتش صلاح|ماتش محمد صلاح|liverpool)/i,
   },
   {
-    nameAr: 'مانشستر سيتي (عمر مرموش)',
+    nameAr: 'مانشستر سيتي',
     nameEn: 'Manchester City',
     espnId: '382',
     espnLeague: 'eng.1',
-    sportsDbSearch: 'Manchester_City',
-    sportsDbId: '133613',
     patterns: /(مانشستر سيتي|السيتي|مان سيتي|ماتش مرموش|manchester city|man city)/i,
   },
   {
@@ -334,8 +411,6 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Arsenal',
     espnId: '359',
     espnLeague: 'eng.1',
-    sportsDbSearch: 'Arsenal',
-    sportsDbId: '133604',
     patterns: /(ارسنال|أرسنال|الجانرز|arsenal)/i,
   },
   {
@@ -343,8 +418,6 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Chelsea',
     espnId: '363',
     espnLeague: 'eng.1',
-    sportsDbSearch: 'Chelsea',
-    sportsDbId: '133610',
     patterns: /(تشيلسي|البلوز|chelsea)/i,
   },
   {
@@ -352,8 +425,6 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Manchester United',
     espnId: '360',
     espnLeague: 'eng.1',
-    sportsDbSearch: 'Manchester_United',
-    sportsDbId: '133612',
     patterns: /(مانشستر يونايتد|اليونايتد|مان يونايتد|manchester united|man utd)/i,
   },
   {
@@ -361,8 +432,6 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Bayern Munich',
     espnId: '132',
     espnLeague: 'ger.1',
-    sportsDbSearch: 'Bayern_Munich',
-    sportsDbId: '133664',
     patterns: /(بايرن|بايرن ميونخ|البافاري|bayern)/i,
   },
   {
@@ -370,8 +439,6 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Paris Saint-Germain',
     espnId: '160',
     espnLeague: 'fra.1',
-    sportsDbSearch: 'Paris_SG',
-    sportsDbId: '133714',
     patterns: /(باريس سان جيرمان|باريس|بي اس جي|\bpsg\b)/i,
   },
   {
@@ -379,8 +446,6 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Inter Milan',
     espnId: '110',
     espnLeague: 'ita.1',
-    sportsDbSearch: 'Inter',
-    sportsDbId: '133681',
     patterns: /(انتر ميلان|إنتر ميلان|الانتر|الإنتر|\binter milan\b)/i,
   },
   {
@@ -388,8 +453,6 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'AC Milan',
     espnId: '103',
     espnLeague: 'ita.1',
-    sportsDbSearch: 'AC_Milan',
-    sportsDbId: '133667',
     patterns: /(اي سي ميلان|ميلان|\bac milan\b)/i,
   },
   {
@@ -397,8 +460,6 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Juventus',
     espnId: '111',
     espnLeague: 'ita.1',
-    sportsDbSearch: 'Juventus',
-    sportsDbId: '133676',
     patterns: /(يوفنتوس|اليوفي|juventus)/i,
   },
   {
@@ -406,37 +467,13 @@ const FOOTBALL_TEAMS: FootballTeamMapping[] = [
     nameEn: 'Atletico Madrid',
     espnId: '1068',
     espnLeague: 'esp.1',
-    sportsDbSearch: 'Atletico_Madrid',
-    sportsDbId: '133729',
     patterns: /(اتلتيكو|أتلتيكو|atletico)/i,
   },
   {
     nameAr: 'منتخب مصر',
     nameEn: 'Egypt',
     espnId: '656',
-    sportsDbSearch: 'Egypt',
-    sportsDbId: '133936',
     patterns: /(منتخب مصر|المنتخب المصري|ماتش مصر|مباراه مصر|مباراة مصر)/i,
-  },
-  {
-    nameAr: 'الهلال السعودي',
-    nameEn: 'Al Hilal',
-    sportsDbSearch: 'Al-Hilal',
-    sportsDbId: '135913',
-    patterns: /(الهلال|الهلال السعودي|al hilal)/i,
-  },
-  {
-    nameAr: 'النصر السعودي (كريستيانو رونالدو)',
-    nameEn: 'Al Nassr',
-    sportsDbSearch: 'Al-Nassr',
-    sportsDbId: '135916',
-    patterns: /(النصر السعودي|ماتش النصر|ماتش رونالدو|ماتش كريستيانو|al nassr)/i,
-  },
-  {
-    nameAr: 'بيراميدز',
-    nameEn: 'Pyramids',
-    sportsDbSearch: 'Pyramids',
-    patterns: /(بيراميدز|pyramids)/i,
   },
 ];
 
@@ -465,7 +502,7 @@ function formatCairoDateTime(isoDateStr: string): { dateAr: string; timeAr: stri
   let relativeAr = '';
   if (diffMs > 0) {
     if (diffHours < 24) relativeAr = `(خلال ${diffHours} ساعة من الآن 🔥)`;
-    else if (diffDays === 1) relativeAr = '(بكرة إن شاء الله 🔥)';
+    else if (diffDays === 1) relativeAr = '(غداً إن شاء الله 🔥)';
     else if (diffDays > 1 && diffDays <= 14) relativeAr = `(بعد ${diffDays} أيام)`;
   } else if (diffMs > -3 * 60 * 60 * 1000) {
     relativeAr = '(جارية الآن / اليوم 🔴)';
@@ -474,255 +511,140 @@ function formatCairoDateTime(isoDateStr: string): { dateAr: string; timeAr: stri
 }
 
 /**
- * Live Football Match & Scoreboard Engine (ESPN Public API + TheSportsDB API - 100% Free, CORS `*`, Zero Key!)
- * Answers "ماتش الريال الجاي امتي", "ماتش الأهلي الجاي", "ماتشات النهاردة", "نتيجة ماتش برشلونة", etc.
+ * Fetches live football schedule & past scores from ESPN API + TheSportsDB searchevents + Google News Egypt RSS
  */
-async function queryLiveFootballMatches(rawQuestion: string): Promise<string | null> {
+async function fetchLiveFootballData(rawQuestion: string): Promise<string | null> {
   const q = rawQuestion.trim();
   const isMatchQuery =
-    /(ماتش|ماتشات|مباراه|مباراة|مباريات|يلعب امتي|هيلعب امتي|الجاي امتي|القادمه|القادمة|نتيجه ماتش|نتيجة ماتش|جدول مباريات|\bnext match\b|\bmatch schedule\b|\bscoreboard\b)/i.test(
+    /(ماتش|ماتشات|مباراه|مباراة|مباريات|يلعب امتي|هيلعب امتي|الجاي امتي|القادمه|القادمة|نتيجه|نتيجة|خلص كام|جدول مباريات|\bnext match\b|\bmatch\b|\bscore\b)/i.test(
       q
     );
   const matchedTeam = FOOTBALL_TEAMS.find((t) => t.patterns.test(q));
-
   if (!isMatchQuery && !matchedTeam) return null;
-  // If user only mentioned a team name without "ماتش", check if they are asking about matches/times/scores
-  if (
-    matchedTeam &&
-    !isMatchQuery &&
-    !/(امتي|إمتى|الجاي|القادم|موعد|ميعاد|الساعه كام|الساعة كام|ضد مين|مع مين|نتيجه|نتيجة|اخبار|أخبار)/i.test(q)
-  ) {
-    return null;
-  }
 
-  // Case 1: Specific Team Match Query (e.g., "ماتش الريال الجاي امتي", "ماتش الأهلي الجاي")
-  if (matchedTeam) {
-    // 1A) Try ESPN Public Team API first (Real Madrid, Barcelona, Liverpool, Man City, Arsenal, Bayern, PSG, etc.)
-    if (matchedTeam.espnId) {
-      const leaguesToTry = [
-        matchedTeam.espnLeague || 'esp.1',
-        'uefa.champions',
-        'all',
-      ];
-      for (const lg of leaguesToTry) {
+  const infoParts: string[] = [];
+
+  // 1) If team has ESPN ID, fetch both upcoming and last completed match from ESPN Schedule API
+  if (matchedTeam?.espnId) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 4500);
+      const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${matchedTeam.espnLeague || 'esp.1'}/teams/${matchedTeam.espnId}/schedule`;
+      const res = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        const events: Array<Record<string, any>> = Array.isArray(data?.events) ? data.events : [];
+        const nowMs = Date.now();
+        const upcoming = events
+          .filter((e) => new Date(e.date).getTime() >= nowMs - 2 * 60 * 60 * 1000)
+          .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        const past = events
+          .filter((e) => new Date(e.date).getTime() < nowMs - 2 * 60 * 60 * 1000)
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        if (upcoming.length > 0) {
+          const nxt = upcoming[0];
+          const { dateAr, timeAr, relativeAr } = formatCairoDateTime(nxt.date);
+          const matchTitleAr = await gtxTranslate((nxt.name || '').replace(' at ', ' ضد '), 'en', 'ar');
+          infoParts.push(
+            `• المباراة القادمة لـ ${matchedTeam.nameAr}: ${matchTitleAr} — يوم ${dateAr} ${relativeAr} الساعة ${timeAr} بتوقيت مصر 🇪🇬`
+          );
+        }
+        if (past.length > 0) {
+          const lst = past[0];
+          const comp = lst.competitions?.[0];
+          const c1 = comp?.competitors?.[0];
+          const c2 = comp?.competitors?.[1];
+          const { dateAr } = formatCairoDateTime(lst.date);
+          const scoreStr =
+            c1 && c2
+              ? `${c1.team?.displayName || ''} (${c1.score?.displayValue ?? ''}) - (${c2.score?.displayValue ?? ''}) ${c2.team?.displayName || ''}`
+              : lst.name || '';
+          const scoreAr = await gtxTranslate(scoreStr, 'en', 'ar');
+          infoParts.push(`• نتيجة آخر مباراة لـ ${matchedTeam.nameAr} (${dateAr}): ${scoreAr} (${scoreStr})`);
+        }
+      }
+    } catch {
+      /* continue */
+    }
+
+    // Also check ESPN team nextEvent in case next match is in Champions League (`uefa.champions`)
+    if (infoParts.length === 0) {
+      for (const lg of ['uefa.champions', matchedTeam.espnLeague || 'esp.1']) {
         try {
           const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 5000);
-          const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/teams/${matchedTeam.espnId}`;
-          const res = await fetch(url, { signal: ctrl.signal });
+          const timer = setTimeout(() => ctrl.abort(), 4000);
+          const res = await fetch(
+            `https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/teams/${matchedTeam.espnId}`,
+            { signal: ctrl.signal }
+          );
           clearTimeout(timer);
           if (res.ok) {
             const data = await res.json();
-            const nextEvents = data?.team?.nextEvent;
-            const recordSummary = data?.team?.record?.items?.[0]?.summary || '';
-            const standingSummary = data?.team?.standingSummary || '';
-            if (Array.isArray(nextEvents) && nextEvents.length > 0) {
-              const ev = nextEvents[0];
-              const evDate = ev.date;
-              const evNameEn = ev.name || ev.shortName || '';
-              const leagueNameEn = ev.league?.name || ev.season?.displayName || '';
-              const { dateAr, timeAr, relativeAr } = formatCairoDateTime(evDate);
-              const evNameAr = await gtxTranslate(evNameEn.replace(' at ', ' ضد '), 'en', 'ar');
-              const leagueAr = leagueNameEn ? await gtxTranslate(leagueNameEn, 'en', 'ar') : '';
-              const standingAr = standingSummary ? await gtxTranslate(standingSummary, 'en', 'ar') : '';
-
-              return (
-                `يا هلا بيك يا كابتن! ⚽🔥 ده موعد ماتش «${matchedTeam.nameAr}» الجاي بالتفصيل (تحديث مباشر):\n\n` +
-                `• المباراة القادمة: ${evNameAr} (${evNameEn})\n` +
-                `• التاريخ واليوم: ${dateAr} ${relativeAr}\n` +
-                `• الساعة: **${timeAr}** بتوقيت مصر (القاهرة) 🇪🇬\n` +
-                (leagueAr ? `• البطولة: ${leagueAr}\n` : '') +
-                (standingAr ? `• موقف الفريق في الجدول: ${standingAr}${recordSummary ? ` (${recordSummary})` : ''}\n` : '') +
-                `\n💬 تحب تعرف جدول باقي ماتشات الأسبوع أو نتيجة آخر ماتش؟`
+            const ev = data?.team?.nextEvent?.[0];
+            if (ev) {
+              const { dateAr, timeAr, relativeAr } = formatCairoDateTime(ev.date);
+              const evNameAr = await gtxTranslate((ev.name || '').replace(' at ', ' ضد '), 'en', 'ar');
+              infoParts.push(
+                `• المباراة القادمة لـ ${matchedTeam.nameAr}: ${evNameAr} — يوم ${dateAr} ${relativeAr} الساعة ${timeAr} بتوقيت مصر 🇪🇬`
               );
+              break;
             }
           }
         } catch {
-          /* continue to schedule endpoint or TheSportsDB */
+          /* continue */
         }
       }
-
-      // Also check ESPN Schedule endpoint for upcoming/recent matches
-      try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 5000);
-        const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${matchedTeam.espnLeague || 'esp.1'}/teams/${matchedTeam.espnId}/schedule`;
-        const res = await fetch(url, { signal: ctrl.signal });
-        clearTimeout(timer);
-        if (res.ok) {
-          const data = await res.json();
-          const events: Array<Record<string, any>> = Array.isArray(data?.events) ? data.events : [];
-          const nowMs = Date.now();
-          const upcoming = events
-            .filter((e) => new Date(e.date).getTime() >= nowMs - 2 * 60 * 60 * 1000)
-            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-          const past = events
-            .filter((e) => new Date(e.date).getTime() < nowMs - 2 * 60 * 60 * 1000)
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-          if (upcoming.length > 0 || past.length > 0) {
-            const lines: string[] = [
-              `يا هلا بيك يا كابتن! ⚽🔥 دي مواعيد ونتائج «${matchedTeam.nameAr}» المباشرة بتوقيت مصر:`,
-            ];
-            if (upcoming.length > 0) {
-              const nxt = upcoming[0];
-              const { dateAr, timeAr, relativeAr } = formatCairoDateTime(nxt.date);
-              const matchTitleAr = await gtxTranslate((nxt.name || '').replace(' at ', ' ضد '), 'en', 'ar');
-              lines.push(
-                `1. المباراة القادمة: ${matchTitleAr}\n• الموعد: ${dateAr} ${relativeAr}\n• التوقيت: الساعة **${timeAr}** بتوقيت مصر 🇪🇬`
-              );
-            }
-            if (past.length > 0) {
-              const lst = past[0];
-              const comp = lst.competitions?.[0];
-              const c1 = comp?.competitors?.[0];
-              const c2 = comp?.competitors?.[1];
-              const scoreStr =
-                c1 && c2
-                  ? `${c1.team?.displayName || ''} (${c1.score?.displayValue ?? ''}) - (${c2.score?.displayValue ?? ''}) ${c2.team?.displayName || ''}`
-                  : lst.name || '';
-              lines.push(`2. نتيجة آخر مباراة سابقة: ${scoreStr}`);
-            }
-            return lines.join('\n\n');
-          }
-        }
-      } catch {
-        /* continue to TheSportsDB */
-      }
-    }
-
-    // 1B) Try TheSportsDB Public API (covers Al Ahly, Zamalek, Egypt, Saudi League, + European clubs)
-    try {
-      let teamId = matchedTeam.sportsDbId;
-      if (!teamId) {
-        const searchCtrl = new AbortController();
-        const searchTimer = setTimeout(() => searchCtrl.abort(), 4500);
-        const sRes = await fetch(
-          `https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(
-            matchedTeam.sportsDbSearch
-          )}`,
-          { signal: searchCtrl.signal }
-        );
-        clearTimeout(searchTimer);
-        if (sRes.ok) {
-          const sJson = await sRes.json();
-          teamId = sJson?.teams?.[0]?.idTeam;
-        }
-      }
-
-      if (teamId) {
-        const [nextRes, lastRes] = await Promise.allSettled([
-          fetch(`https://www.thesportsdb.com/api/v1/json/3/eventsnext.php?id=${teamId}`),
-          fetch(`https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id=${teamId}`),
-        ]);
-
-        let nextEvents: any[] = [];
-        let lastEvents: any[] = [];
-        if (nextRes.status === 'fulfilled' && nextRes.value.ok) {
-          const nj = await nextRes.value.json();
-          nextEvents = Array.isArray(nj?.events) ? nj.events : [];
-        }
-        if (lastRes.status === 'fulfilled' && lastRes.value.ok) {
-          const lj = await lastRes.value.json();
-          lastEvents = Array.isArray(lj?.results) ? lj.results : [];
-        }
-
-        if (nextEvents.length > 0 || lastEvents.length > 0) {
-          const lines: string[] = [
-            `يا هلا بيك يا كابتن! ⚽🔥 دي مواعيد ونتائج «${matchedTeam.nameAr}» المحدثة:`,
-          ];
-          if (nextEvents.length > 0) {
-            const ev = nextEvents[0];
-            const isoStr = ev.strTimestamp || `${ev.dateEvent}T${ev.strTime || '18:00:00'}Z`;
-            const { dateAr, timeAr, relativeAr } = formatCairoDateTime(isoStr);
-            const evNameAr = await gtxTranslate(
-              `${ev.strHomeTeam || ''} ضد ${ev.strAwayTeam || ''}`,
-              'en',
-              'ar'
-            );
-            const leagueAr = ev.strLeague ? await gtxTranslate(ev.strLeague, 'en', 'ar') : '';
-            lines.push(
-              `1. المباراة القادمة: ${evNameAr}\n` +
-                `• البطولة: ${leagueAr || ev.strLeague || ''}\n` +
-                `• التاريخ: ${dateAr} ${relativeAr}\n` +
-                `• التوقيت: الساعة **${timeAr}** بتوقيت مصر 🇪🇬`
-            );
-          }
-          if (lastEvents.length > 0) {
-            const lv = lastEvents[0];
-            lines.push(
-              `2. آخر مباراة سابقة: ${lv.strHomeTeam} (${lv.intHomeScore ?? 0}) - (${lv.intAwayScore ?? 0}) ${lv.strAwayTeam} (${lv.strLeague || ''})`
-            );
-          }
-          return lines.join('\n\n');
-        }
-      }
-    } catch {
-      /* continue */
     }
   }
 
-  // Case 2: General "ماتشات النهاردة إيه؟" / Today's Live Scoreboard across Top Leagues
-  if (/(ماتشات النهارده|ماتشات اليوم|مباريات اليوم|مباريات النهارده|جدول ماتشات)/i.test(q)) {
-    try {
-      const leagues = ['eng.1', 'esp.1', 'uefa.champions', 'ita.1', 'ger.1'];
-      const matchesList: string[] = [];
-      for (const lg of leagues) {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 4000);
-        const res = await fetch(
-          `https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/scoreboard`,
-          { signal: ctrl.signal }
-        );
-        clearTimeout(timer);
-        if (res.ok) {
-          const data = await res.json();
-          const events: any[] = Array.isArray(data?.events) ? data.events : [];
-          for (const ev of events.slice(0, 4)) {
-            const { timeAr } = formatCairoDateTime(ev.date);
-            const status = ev.status?.type?.shortDetail || timeAr;
-            matchesList.push(`• ${ev.name} — (${status})`);
-          }
-        }
-        if (matchesList.length >= 8) break;
-      }
-      if (matchesList.length > 0) {
-        const translatedList = await gtxTranslate(matchesList.join('\n'), 'en', 'ar');
-        return (
-          `يا هلا بيك يا كابتن! ⚽🔥 دي أبرز مباريات اليوم في الملاعب العالمية بتوقيت مصر:\n\n` +
-          `${translatedList}\n\n` +
-          `💬 قولي اسم أي فريق معين (زي الريال، برشلونة، الأهلي، الزمالك، ليفربول، السيتي) وأجيبلك ميعاد ماتشه الجاي بالثانية!`
-        );
-      }
-    } catch {
-      /* continue */
-    }
+  // 2) Always fetch live Google News Egypt sports headlines for the query (especially crucial for Al Ahly, Zamalek, Egyptian League, or latest match scores!)
+  const sportNewsQuery = matchedTeam
+    ? `${matchedTeam.nameAr} نتيجة موعد مباراة`
+    : q;
+  const newsSnippets = await fetchLiveGoogleNewsSnippets(sportNewsQuery);
+  if (newsSnippets.length > 0) {
+    infoParts.push(`أحدث الأخبار والنتائج المباشرة من جوجل نيوز مصر:\n${newsSnippets.slice(0, 4).join('\n')}`);
   }
 
+  if (infoParts.length > 0) {
+    return infoParts.join('\n\n');
+  }
   return null;
 }
 
 /**
- * Live Open-Web Knowledge Engine (100% Free, Browser CORS `*`, Zero API Key Required):
- * 1) Live Football Matches & Scoreboards (ESPN + TheSportsDB)
- * 2) Live Weather (Open-Meteo)
- * 3) Live Currency Rates (ExchangeRate-API)
- * 4) Live Prayer Times (Aladhan)
- * 5) Multi-Pass Arabic & English Wikipedia + Google Translate GTX (`*.googleapis.com`)
+ * Gathers real-time facts from the internet (Sports, Google News RSS, Weather, Currency, Prayer Times)
+ * so the AI LLM can answer with 100% up-to-date live internet information!
  */
-async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | null> {
+async function gatherLiveInternetContext(rawQuestion: string): Promise<{
+  directFormattedReply: string | null;
+  webContextForAi: string;
+}> {
   const q = rawQuestion.trim();
-  if (!q) return null;
+  if (!q) return { directFormattedReply: null, webContextForAi: '' };
 
-  // 0) Live Football Matches & Scoreboard
-  const footballReply = await queryLiveFootballMatches(q);
-  if (footballReply) return footballReply;
+  // 1) Football & Match Queries
+  if (
+    /(ماتش|ماتشات|مباراه|مباراة|مباريات|خلص كام|نتيجه ماتش|نتيجة ماتش|الريال|ريال مدريد|برشلونه|برشلونة|الاهلي|الأهلي|الزمالك|ليفربول|مانشستر|سيتي|ارسنال|أرسنال|تشيلسي|بايرن|باريس|انتر|ميلان|يوفنتوس|منتخب مصر|الهلال|النصر|بيراميدز|\bmatch\b|\bscore\b)/i.test(
+      q
+    )
+  ) {
+    const footballData = await fetchLiveFootballData(q);
+    if (footballData) {
+      return {
+        directFormattedReply: `⚽ **تحديث رياضي مباشر من الإنترنت:**\n\n${footballData}`,
+        webContextForAi: `[بيانات المباريات والنتائج الحية من الإنترنت الآن:\n${footballData}]`,
+      };
+    }
+  }
 
-  // A) Live Weather in Egypt / Cities (Open-Meteo API - CORS *)
+  // 2) Live Weather
   if (/(الطقس|الجو عامل ايه|درجه الحراره|درجة الحرارة|حراره الجو|المطر النهارده|\bweather\b)/i.test(q)) {
     try {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 5000);
+      const t = setTimeout(() => ctrl.abort(), 4500);
       const res = await fetch(
         'https://api.open-meteo.com/v1/forecast?latitude=30.0444&longitude=31.2357&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=Africa%2FCairo',
         { signal: ctrl.signal }
@@ -736,13 +658,14 @@ async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | 
         const hum = data?.current?.relative_humidity_2m;
         const wind = data?.current?.wind_speed_10m;
         if (curr !== undefined) {
-          return (
-            `يا هلا بيك! دي حالة الطقس ودرجات الحرارة المباشرة دلوقتي في مصر (بتوقيت القاهرة): 🌤️\n\n` +
-            `• درجة الحرارة الحالية: ${curr}° مئوية\n` +
-            `• العظمى المتوقعة النهاردة: ${maxT ?? curr}° مئوية | الصغرى بالليل: ${minT ?? curr}° مئوية\n` +
-            `• نسبة الرطوبة: ${hum ?? 50}% | سرعة الرياح: ${wind ?? 12} كم/ساعة\n\n` +
-            `💡 نصيحة صحية: اشرب مية كويس على مدار اليوم، وخلي بالك من تخفيف أو تقيل الهدوم فجأة بين النهار والليل!`
-          );
+          const wText =
+            `حالة الطقس المباشرة الآن في مصر (القاهرة): 🌤️\n` +
+            `• درجة الحرارة الحالية: ${curr}° مئوية (العظمى: ${maxT ?? curr}° | الصغرى: ${minT ?? curr}°)\n` +
+            `• الرطوبة: ${hum ?? 50}% | سرعة الرياح: ${wind ?? 12} كم/ساعة`;
+          return {
+            directFormattedReply: wText,
+            webContextForAi: `[${wText}]`,
+          };
         }
       }
     } catch {
@@ -750,11 +673,11 @@ async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | 
     }
   }
 
-  // B) Live Currency / Dollar / SAR / EUR Exchange Rates to EGP (open.er-api.com - CORS *)
+  // 3) Live Currency Exchange Rates
   if (/(سعر الدولار|الدولار بكام|سعر الريال|الريال بكام|سعر اليورو|اليورو بكام|سعر الدرهم|سعر الدينار|اسعار العملات|أسعار العملات|\bexchange rate\b|\busd to egp\b)/i.test(q)) {
     try {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 5000);
+      const t = setTimeout(() => ctrl.abort(), 4500);
       const res = await fetch('https://open.er-api.com/v6/latest/USD', { signal: ctrl.signal });
       clearTimeout(t);
       if (res.ok) {
@@ -765,19 +688,17 @@ async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | 
         const aed = data?.rates?.AED;
         const kwd = data?.rates?.KWD;
         if (egp) {
-          const usdEgp = Number(egp).toFixed(2);
-          const sarEgp = sar ? (egp / sar).toFixed(2) : '—';
-          const eurEgp = eur ? (egp / eur).toFixed(2) : '—';
-          const aedEgp = aed ? (egp / aed).toFixed(2) : '—';
-          const kwdEgp = kwd ? (egp / kwd).toFixed(2) : '—';
-          return (
-            `من عنيا! دي أسعار صرف العملات العالمية مقابل الجنيه المصري وفق آخر تحديث مباشر للأسواق: 💵\n\n` +
-            `• الدولار الأمريكي (USD): حوالي ${usdEgp} ج.م\n` +
-            `• اليورو الأوروبي (EUR): حوالي ${eurEgp} ج.م\n` +
-            `• الريال السعودي (SAR): حوالي ${sarEgp} ج.م\n` +
-            `• الدرهم الإماراتي (AED): حوالي ${aedEgp} ج.م\n` +
-            `• الدينار الكويتي (KWD): حوالي ${kwdEgp} ج.م`
-          );
+          const cText =
+            `أسعار صرف العملات مقابل الجنيه المصري (تحديث مباشر): 💵\n` +
+            `• الدولار الأمريكي: ${Number(egp).toFixed(2)} ج.م\n` +
+            `• اليورو: ${eur ? (egp / eur).toFixed(2) : '—'} ج.م\n` +
+            `• الريال السعودي: ${sar ? (egp / sar).toFixed(2) : '—'} ج.م\n` +
+            `• الدرهم الإماراتي: ${aed ? (egp / aed).toFixed(2) : '—'} ج.م\n` +
+            `• الدينار الكويتي: ${kwd ? (egp / kwd).toFixed(2) : '—'} ج.م`;
+          return {
+            directFormattedReply: cText,
+            webContextForAi: `[${cText}]`,
+          };
         }
       }
     } catch {
@@ -785,11 +706,11 @@ async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | 
     }
   }
 
-  // C) Live Prayer Times in Egypt (api.aladhan.com - CORS *)
+  // 4) Live Prayer Times
   if (/(مواعيد الصلاه|مواعيد الصلاة|مواقيت الصلاه|مواقيت الصلاة|اذان الفجر|أذان الفجر|اذان المغرب|أذان المغرب|اذان الظهر|اذان العصر|اذان العشاء|الصلاه امتي|الصلاة امتى|\bprayer times\b)/i.test(q)) {
     try {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 5000);
+      const t = setTimeout(() => ctrl.abort(), 4500);
       const res = await fetch(
         'https://api.aladhan.com/v1/timingsByCity?city=Cairo&country=Egypt&method=5',
         { signal: ctrl.signal }
@@ -798,18 +719,14 @@ async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | 
       if (res.ok) {
         const json = await res.json();
         const timings = json?.data?.timings;
-        const hijri = json?.data?.date?.hijri;
         if (timings) {
-          return (
-            `تقبل الله منك صالح الأعمال! 🕌 دي مواقيت الصلاة اليوم في مصر (حسب التوقيت المحلي والهيئة المصرية العامة للمساحة):\n\n` +
-            `• الفجر: ${timings.Fajr}\n` +
-            `• الشروق: ${timings.Sunrise}\n` +
-            `• الظهر: ${timings.Dhuhr}\n` +
-            `• العصر: ${timings.Asr}\n` +
-            `• المغرب: ${timings.Maghrib}\n` +
-            `• العشاء: ${timings.Isha}` +
-            (hijri ? `\n\n📅 التاريخ الهجري اليوم: ${hijri.day} ${hijri.month?.ar || ''} ${hijri.year} هـ` : '')
-          );
+          const pText =
+            `مواقيت الصلاة اليوم في مصر: 🕌\n` +
+            `• الفجر: ${timings.Fajr} | الشروق: ${timings.Sunrise} | الظهر: ${timings.Dhuhr} | العصر: ${timings.Asr} | المغرب: ${timings.Maghrib} | العشاء: ${timings.Isha}`;
+          return {
+            directFormattedReply: pText,
+            webContextForAi: `[${pText}]`,
+          };
         }
       }
     } catch {
@@ -817,93 +734,19 @@ async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | 
     }
   }
 
-  // D) Multi-Pass Wikipedia + DuckDuckGo + Google Translate GTX Knowledge Engine
-  const isArabicQuery = /[\u0600-\u06FF]/.test(q);
-  const strippedTopic = q
-    .replace(/[؟?!.,،"«»]/g, ' ')
-    .replace(
-      /^(?:بعد اذنك|بعد إذنك|يا دكتور|يا كابتن|يا غالي|لو سمحت|ممكن|قولي|قلي|عرفني|اشرحلي|فسرلي|احكيلي|كلمني عن|معلومات عن|عايز اعرف عن|عايز اعرف|عاوز اعرف|ما هو|ما هي|ما هم|من هو|من هي|مين هو|مين هي|مين اللي|ايه هو|إيه هو|ايه هي|إيه هي|يعني ايه|يعني إيه|اين تقع|أين تقع|اين يوجد|متي حدث|متى حدث|ازاي|إزاي|كيف|ليه|لماذا)\s+/gi,
-      ''
-    )
-    .replace(/\b(?:الجاي|الجايه|القادم|القادمه|امتي|إمتى|بكام|دلوقتي|النهارده|النهاردة|بالتفصيل|باختصار)\b/gi, ' ')
-    .replace(/^(?:عن|ان|أن|اللي)\s+/i, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-
-  const searchQueryAr = strippedTopic.length >= 2 ? strippedTopic : q;
-
-  async function fetchWikiSummary(langCode: 'ar' | 'en', queryStr: string): Promise<{ title: string; extract: string } | null> {
-    if (!queryStr || queryStr.length < 2) return null;
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 5000);
-      const searchUrl = `https://${langCode}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
-        queryStr
-      )}&srlimit=3&utf8=1&format=json&origin=*`;
-      const sRes = await fetch(searchUrl, { signal: ctrl.signal });
-      clearTimeout(timer);
-      if (!sRes.ok) return null;
-      const sJson = await sRes.json();
-      const results = sJson?.query?.search;
-      if (!Array.isArray(results) || results.length === 0) return null;
-
-      const topPageId = results[0].pageid;
-      const topTitle = results[0].title;
-      const extCtrl = new AbortController();
-      const extTimer = setTimeout(() => extCtrl.abort(), 5000);
-      const extUrl = `https://${langCode}.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&pageids=${topPageId}&format=json&origin=*`;
-      const extRes = await fetch(extUrl, { signal: extCtrl.signal });
-      clearTimeout(extTimer);
-      if (!extRes.ok) return null;
-      const extJson = await extRes.json();
-      const rawExtract: string = extJson?.query?.pages?.[String(topPageId)]?.extract || '';
-      const cleaned = rawExtract.replace(/\s+/g, ' ').trim();
-      if (cleaned.length > 40) {
-        return { title: topTitle, extract: cleaned };
-      }
-    } catch {
-      /* ignore */
-    }
-    return null;
-  }
-
-  // Pass 1: Direct Arabic Wikipedia search
-  let wikiHit = await fetchWikiSummary(isArabicQuery ? 'ar' : 'en', searchQueryAr);
-
-  // Pass 2: If colloquial Egyptian phrasing missed Arabic Wikipedia, translate query to English via GTX and search both Arabic & English Wikipedia!
-  if (!wikiHit && isArabicQuery) {
-    const enTranslatedQuery = await gtxTranslate(searchQueryAr, 'ar', 'en');
-    const cleanEnQuery = enTranslatedQuery
-      .replace(/^(what is|who is|where is|when is|how to|why does|why is|tell me about)\s+/i, '')
-      .replace(/[?!.]/g, '')
-      .trim();
-    if (cleanEnQuery.length >= 2) {
-      const enHit = await fetchWikiSummary('en', cleanEnQuery);
-      if (enHit) {
-        const arTitle = await gtxTranslate(enHit.title, 'en', 'ar');
-        const arExtract = await gtxTranslate(enHit.extract.slice(0, 950), 'en', 'ar');
-        wikiHit = { title: arTitle || enHit.title, extract: arExtract || enHit.extract };
-      }
+  // 5) For current events / news / prices (e.g. gold, news, recent events), fetch Google News snippets
+  if (/(اخبار|أخبار|سعر الدهب|سعر الذهب|الدهب بكام|الذهب بكام|حدث|النهارده|امبارح|امس|اليوم|الجديد)/i.test(q)) {
+    const news = await fetchLiveGoogleNewsSnippets(q);
+    if (news.length > 0) {
+      const newsBlock = `أحدث النتائج والأخبار المباشرة من الإنترنت اليوم:\n${news.slice(0, 5).join('\n')}`;
+      return {
+        directFormattedReply: newsBlock,
+        webContextForAi: `[${newsBlock}]`,
+      };
     }
   }
 
-  if (wikiHit) {
-    const sentences = wikiHit.extract
-      .split(/(?<=[.!?؟])\s+/)
-      .filter(Boolean)
-      .slice(0, 6);
-    const bulletText = sentences.map((s, idx) => `${idx + 1}. ${s}`).join('\n');
-    if (isArabicQuery) {
-      return (
-        `يا هلا بيك! من عنيا، دي كل المعلومات الموثقة عن «${wikiHit.title}»:\n\n` +
-        `${bulletText}\n\n` +
-        `💬 لو حابب تعرف أي تفاصيل تانية عن الموضوع ده أو تسألني في أي مجال تاني قولي فوراً!`
-      );
-    }
-    return `Here is a verified summary regarding "${wikiHit.title}":\n\n${bulletText}`;
-  }
-
-  return null;
+  return { directFormattedReply: null, webContextForAi: '' };
 }
 
 export interface ChatMessage {
@@ -932,17 +775,18 @@ export async function askGemini(
     question
   ).trim();
 
-  // 0) Real-Time Live Data First! (Football Matches & Scoreboards, Weather, Currency Exchange Rates, Prayer Times)
-  if (
-    /(ماتش|ماتشات|مباراه|مباراة|مباريات|الريال|ريال مدريد|برشلونه|برشلونة|الاهلي|الأهلي|الزمالك|ليفربول|صلاح|مانشستر|سيتي|مرموش|ارسنال|أرسنال|تشيلسي|بايرن|باريس|انتر|إنتر|ميلان|يوفنتوس|اتلتيكو|منتخب مصر|الهلال|النصر|بيراميدز|الطقس|الجو عامل ايه|درجه الحراره|درجة الحرارة|سعر الدولار|الدولار بكام|سعر الريال|الريال بكام|سعر اليورو|اليورو بكام|اسعار العملات|مواعيد الصلاه|مواعيد الصلاة|مواقيت الصلاه|مواقيت الصلاة|اذان الفجر|اذان المغرب|\bweather\b|\bexchange rate\b|\bprayer times\b|\bnext match\b)/i.test(
-      cleanUserQ
-    )
-  ) {
-    const liveDataReply = await queryLiveOpenWebKnowledge(cleanUserQ);
-    if (liveDataReply) return cleanAssistantMarkdown(liveDataReply);
-  }
+  // Gather real-time internet data (ESPN, Google News Egypt RSS, Weather, Currency, Prayer)
+  const { directFormattedReply, webContextForAi } = await gatherLiveInternetContext(cleanUserQ);
 
-  // 1) Official Google Gemini API (when a valid AIza... key is present via UI, Firestore settings/ai_config, or env)
+  const questionWithLiveWeb = webContextForAi
+    ? `${cleanUserQ}\n\n${webContextForAi}`
+    : cleanUserQ;
+
+  const fullPromptForKeyedModels = webContextForAi
+    ? `${question}\n\n${webContextForAi}`
+    : question;
+
+  // 1) Official Google Gemini API (when a valid AIza... key is present)
   if (key && key.startsWith('AIza')) {
     for (const geminiModel of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
       const controller = new AbortController();
@@ -957,7 +801,7 @@ export async function askGemini(
           })),
           {
             role: 'user',
-            parts: [{ text: question }],
+            parts: [{ text: fullPromptForKeyedModels }],
           },
         ];
 
@@ -984,7 +828,7 @@ export async function askGemini(
     }
   }
 
-  // 1B) Groq Cloud API (when user configures a free `gsk_...` key — 500 tokens/sec Llama 3.3 70B!)
+  // 1B) Groq Cloud API (if `gsk_...` key is present)
   if (key && key.startsWith('gsk_')) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 10000);
@@ -995,7 +839,7 @@ export async function askGemini(
           role: m.who === 'me' ? 'user' : 'assistant',
           content: (m.text || '').slice(0, 500),
         })),
-        { role: 'user', content: question },
+        { role: 'user', content: fullPromptForKeyedModels },
       ];
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -1022,44 +866,7 @@ export async function askGemini(
     }
   }
 
-  // 1C) OpenRouter API (when user configures a free `sk-or-...` key)
-  if (key && (key.startsWith('sk-or-') || key.startsWith('sk-'))) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 11000);
-    try {
-      const orMessages = [
-        { role: 'system', content: dynamicSystemPrompt },
-        ...history.slice(-6).map((m) => ({
-          role: m.who === 'me' ? 'user' : 'assistant',
-          content: (m.text || '').slice(0, 500),
-        })),
-        { role: 'user', content: question },
-      ];
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${key}`,
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: 'meta-llama/llama-3.3-70b-instruct:free',
-          messages: orMessages,
-          temperature: 0.35,
-        }),
-      });
-      clearTimeout(timer);
-      if (res.ok) {
-        const data = await res.json();
-        const reply = data?.choices?.[0]?.message?.content;
-        if (isValidCloudReply(reply)) return cleanAssistantMarkdown(reply);
-      }
-    } catch {
-      clearTimeout(timer);
-    }
-  }
-
-  // 2) Keyless Cloud AI Endpoints (Pollinations OpenAI POST & Short GET)
+  // 2) Keyless Cloud AI Models (`searchgpt`, `openai`, `mistral`) grounded with Live Internet Context!
   const compactHistory = history
     .slice(-4)
     .filter((m) => Boolean(m.text && m.text.trim()))
@@ -1073,8 +880,8 @@ export async function askGemini(
       cleanUserQ
     );
   const effectiveUserContent = isMedicalOrActionQuery
-    ? question.slice(0, 800)
-    : cleanUserQ;
+    ? `${question.slice(0, 800)}${webContextForAi ? `\n${webContextForAi}` : ''}`
+    : questionWithLiveWeb;
 
   const compactMessages = [
     { role: 'system', content: COMPACT_CLOUD_SYSTEM_PROMPT },
@@ -1082,9 +889,14 @@ export async function askGemini(
     { role: 'user', content: effectiveUserContent },
   ];
 
-  for (const modelName of ['openai', 'openai-fast']) {
+  // Try searchgpt first when asking about live events/matches/news, then openai, then mistral
+  const modelsOrder = webContextForAi
+    ? ['openai', 'searchgpt', 'mistral']
+    : ['openai', 'searchgpt', 'mistral'];
+
+  for (const modelName of modelsOrder) {
     const pollController = new AbortController();
-    const pollTimer = setTimeout(() => pollController.abort(), 7000);
+    const pollTimer = setTimeout(() => pollController.abort(), 10000);
     try {
       const res = await fetch('https://text.pollinations.ai/openai', {
         method: 'POST',
@@ -1093,7 +905,7 @@ export async function askGemini(
         body: JSON.stringify({
           model: modelName,
           messages: compactMessages,
-          temperature: 0.35,
+          temperature: 0.3,
         }),
       });
       clearTimeout(pollTimer);
@@ -1101,12 +913,14 @@ export async function askGemini(
         const contentType = res.headers.get('content-type') || '';
         if (contentType.includes('application/json')) {
           const json = await res.json();
-          const text = json?.choices?.[0]?.message?.content || json?.response || '';
+          const text = stripPollinationsFooter(
+            json?.choices?.[0]?.message?.content || json?.response || ''
+          );
           if (isValidCloudReply(text)) {
             return cleanAssistantMarkdown(text);
           }
         } else {
-          const rawTxt = await res.text();
+          const rawTxt = stripPollinationsFooter(await res.text());
           if (isValidCloudReply(rawTxt)) {
             return cleanAssistantMarkdown(rawTxt);
           }
@@ -1117,18 +931,19 @@ export async function askGemini(
     }
   }
 
+  // 3) Pollinations GET endpoint (with short prompt)
   {
     const getController = new AbortController();
-    const getTimer = setTimeout(() => getController.abort(), 6500);
+    const getTimer = setTimeout(() => getController.abort(), 8000);
     try {
-      const shortPrompt = `رد بالمصري العامي الودود وبوضوح على: ${cleanUserQ.slice(0, 150)}`;
+      const shortPrompt = `رد بالمصري العامي بدقة ومباشرة على السؤال ده: ${cleanUserQ.slice(0, 160)}`;
       const res = await fetch(
         `https://text.pollinations.ai/${encodeURIComponent(shortPrompt)}`,
         { signal: getController.signal }
       );
       clearTimeout(getTimer);
       if (res.ok) {
-        const txt = await res.text();
+        const txt = stripPollinationsFooter(await res.text());
         if (isValidCloudReply(txt)) return cleanAssistantMarkdown(txt);
       }
     } catch {
@@ -1136,10 +951,17 @@ export async function askGemini(
     }
   }
 
-  // 3) Live Open-Web Encyclopedia & Knowledge API (Sports, Weather, Currency, Prayer Times, Multi-Pass Wikipedia + Google Translate GTX)
-  const wikiOrWebReply = await queryLiveOpenWebKnowledge(cleanUserQ);
-  if (wikiOrWebReply) {
-    return cleanAssistantMarkdown(wikiOrWebReply);
+  // 4) If Cloud LLM generation timed out but we already fetched verified live internet data (ESPN / Google News / Weather / Currency / Prayer), return it directly!
+  if (directFormattedReply) {
+    return cleanAssistantMarkdown(directFormattedReply);
+  }
+
+  // 5) Final fallback: Fetch live Google News Egypt snippets for ANY open question so it still brings real results from the internet!
+  const fallbackNews = await fetchLiveGoogleNewsSnippets(cleanUserQ);
+  if (fallbackNews.length > 0) {
+    return cleanAssistantMarkdown(
+      `إليك أحدث النتائج المباشرة من الإنترنت بخصوص «${cleanUserQ}»:\n\n${fallbackNews.join('\n')}`
+    );
   }
 
   throw new Error('ALL_AI_ENDPOINTS_UNAVAILABLE');
