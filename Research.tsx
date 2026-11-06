@@ -22,7 +22,7 @@ export default function Research() {
   const { t, lang } = useLang();
   const isAr = lang === 'ar';
   const { user, role } = useAuth();
-  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const canEditLive = role === 'owner' || role === 'admin' || role === 'reviewer' || role === 'editor';
   const { questions, surveyConfig: liveSurveyCfg } = useLiveQuizQuestions();
 
   const [cfg, setCfg] = useState<Cfg | null | undefined>(() =>

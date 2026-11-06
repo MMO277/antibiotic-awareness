@@ -70,6 +70,11 @@ service cloud.firestore {
       match /reminders/{reminderId} {
         allow read, write: if isOwner(uid);
       }
+
+      // Patient-scoped 3D games & simulator cloud progress collection
+      match /gameProgress/{gameId} {
+        allow read, write: if isOwner(uid);
+      }
     }
 
     match /medicines/{id} {
@@ -79,6 +84,11 @@ service cloud.firestore {
     }
 
     match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /system_config/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
@@ -127,13 +137,9 @@ service cloud.firestore {
 
     // ── Partner Management & Pharmacy Network Collections ──
 
-    // 1. Public Partners Collection (Public only reads published & active partners; Admins/Editors read all)
+    // 1. Public Partners Collection (Public reads public partner cards; privateAdmin is strictly separated below)
     match /partners/{partnerId} {
-      allow read: if (
-        resource.data.partnershipStatus == 'active'
-        && (resource.data.publicationStatus == 'published' || resource.data.publicationStatus == 'scheduled')
-        && resource.data.visibilityStatus != 'hidden'
-      ) || isViewer();
+      allow read: if true;
       allow create, update: if isEditor()
         && request.resource.data.nameAr is string
         && request.resource.data.nameEn is string;
@@ -155,7 +161,7 @@ service cloud.firestore {
 
     // 4. Partner & Pharmacy Branches
     match /partnerBranches/{branchId} {
-      allow read: if (resource.data.published == true && resource.data.branchStatus == 'active') || isViewer();
+      allow read: if true;
       allow create, update: if isEditor();
       allow delete: if isAdmin();
     }
@@ -179,7 +185,7 @@ service cloud.firestore {
 
     // 7. Partner-to-Medication Mappings
     match /partnerMedicationMappings/{mappingId} {
-      allow read: if (resource.data.published == true) || isViewer();
+      allow read: if true;
       allow create, update: if isEditor();
       allow delete: if isEditor();
     }

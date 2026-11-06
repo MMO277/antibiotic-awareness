@@ -184,7 +184,7 @@
 /* Fullscreen & Responsive Mobile Landscape Layout */
 .ow-page:fullscreen{position:relative;width:100vw;height:100dvh;min-height:100dvh;padding:0;overflow:hidden;border-radius:0;background:#061326}
 .ow-page:fullscreen .ow-header{position:absolute;z-index:25;top:max(8px,env(safe-area-inset-top,0px));right:max(8px,env(safe-area-inset-right,0px));margin:0}
-.ow-page:fullscreen .ow-header>:not(.ow-fullscreen){display:none !important}
+.ow-page:fullscreen .ow-header>:not(.ow-fullscreen):not(.ow-back){display:none !important}
 .ow-page:fullscreen .ow-fullscreen{width:40px;height:38px;justify-content:center;padding:0;background:#061a31d9}
 .ow-page:fullscreen .ow-fullscreen span{display:none}
 .ow-page:fullscreen .ow-layout{display:block;position:relative;width:100%;height:100dvh;min-height:0}
@@ -223,7 +223,8 @@
     z-index: 12000 !important;
   }
   .ow-page .ow-header { position: absolute !important; z-index: 25; top: 8px; right: 8px; margin: 0 !important; }
-  .ow-page .ow-header > :not(.ow-fullscreen) { display: none !important; }
+  .ow-page .ow-header > :not(.ow-fullscreen):not(.ow-back) { display: none !important; }
+  .ow-page .ow-back { padding: 6px 10px; font-size: 0.75rem; background: #061a31d9; }
   .ow-page .ow-fullscreen { width: 40px; height: 38px; justify-content: center; padding: 0; background: #061a31d9; }
   .ow-page .ow-fullscreen span { display: none; }
   .ow-page .ow-layout { display: block !important; position: relative; width: 100%; height: 100%; min-height: 0; }

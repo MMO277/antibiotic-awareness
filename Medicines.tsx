@@ -33,7 +33,7 @@ export default function Medicines() {
   const isAr = lang === 'ar';
   const { isProMode, setProMode } = useClinicalProMode();
   const { user, role } = useAuth();
-  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const canEditLive = role === 'owner' || role === 'admin' || role === 'reviewer' || role === 'editor';
   const { products: liveCatalogProducts } = useLiveDrugCatalog();
   const [editingCatalogProd, setEditingCatalogProd] = useState<EgyptianCommercialProduct | null>(null);
   const [addingCatalogProd, setAddingCatalogProd] = useState(false);

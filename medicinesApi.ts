@@ -9,7 +9,6 @@ import {
   query,
   serverTimestamp,
   setDoc,
-  updateDoc,
   where,
 } from 'firebase/firestore';
 import { db, configured } from './firebase';
@@ -342,12 +341,20 @@ export async function saveMedicine(m: Medicine, uid: string): Promise<void> {
 }
 
 export async function setStatus(m: Medicine, status: Status, uid: string): Promise<void> {
-  await updateDoc(doc(db, 'medicines', m.id), {
-    status,
-    previewPublic: isPreviewable(status, m.sources.length),
-    updatedAt: serverTimestamp(),
-    updatedBy: uid,
-  });
+  const { id, ...rest } = m;
+  const barcodes = m.brands.filter((b) => b.verified && b.barcode.trim()).map((b) => b.barcode.trim());
+  await setDoc(
+    doc(db, 'medicines', id),
+    {
+      ...rest,
+      barcodes,
+      status,
+      previewPublic: isPreviewable(status, m.sources.length),
+      updatedAt: serverTimestamp(),
+      updatedBy: uid,
+    },
+    { merge: true }
+  );
 }
 
 export async function removeMedicine(id: string): Promise<void> {

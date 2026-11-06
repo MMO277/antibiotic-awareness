@@ -144,7 +144,7 @@ export default function Quiz() {
   const { t, lang } = useLang();
   const isAr = lang === 'ar';
   const { user, role } = useAuth();
-  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const canEditLive = role === 'owner' || role === 'admin' || role === 'reviewer' || role === 'editor';
   const { questions: liveAllQuestions } = useLiveQuizQuestions();
   const [editingGlobalIdx, setEditingGlobalIdx] = useState<number | null>(null);
   const [addingNewQ, setAddingNewQ] = useState(false);

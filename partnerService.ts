@@ -528,9 +528,10 @@ export async function fetchAdminAuditLogs(): Promise<AdminAuditLogRecord[]> {
 export async function fetchAllPartnersForAdmin(): Promise<PartnerFullAdminRecord[]> {
   if (configured && db) {
     try {
-      const [pubSnap, privSnap] = await Promise.all([
+      const [pubSnap, privSnap, ordSnap] = await Promise.all([
         getDocs(collection(db, COL_PARTNERS)),
         getDocs(collection(db, COL_PARTNER_PRIVATE)).catch(() => null),
+        getDocs(collection(db, COL_PARTNER_ORDERS)).catch(() => null),
       ]);
 
       const pubList: PartnerPublicRecord[] = [];
@@ -545,6 +546,19 @@ export async function fetchAllPartnersForAdmin(): Promise<PartnerFullAdminRecord
           if (pData) memPrivateMap[d.id] = { ...pData, partnerId: d.id };
         });
         safeWriteJson(CACHE_PRIVATE_KEY, memPrivateMap);
+      }
+
+      if (ordSnap) {
+        const ordList: PartnerOrderRecord[] = [];
+        ordSnap.forEach((d) => {
+          const oData = d.data() as PartnerOrderRecord;
+          if (oData) ordList.push({ ...oData, id: d.id });
+        });
+        if (ordList.length > 0) {
+          memOrders = ordList.sort((a, b) => b.createdAtIso.localeCompare(a.createdAtIso));
+          safeWriteJson(CACHE_ORDERS_KEY, memOrders);
+          emitPartnerUpdate();
+        }
       }
 
       if (pubList.length > 0 || memPartners.length === 0) {
@@ -718,8 +732,12 @@ export async function uploadPartnerAssetToStorage(
   const storagePath = `partner_assets/${partnerId}/${assetType}_${Date.now()}.${safeExt}`;
   const storageRef = ref(storage, storagePath);
   await uploadBytes(storageRef, file, { contentType: file.type || 'image/png' });
-  const downloadUrl = await getDownloadURL(storageRef);
-  return downloadUrl;
+  try {
+    const downloadUrl = await getDownloadURL(storageRef);
+    return downloadUrl;
+  } catch {
+    return `storage://${storagePath}`;
+  }
 }
 
 // ============================================================================

@@ -40,19 +40,23 @@ function SeverityBadge({ s }: { s: string }) {
 }
 
 // ─── عرض الملف الصحي الكامل ──────────────────────────────────────────────────
-function HealthView({ profile, uid, isAr }: { profile: UserHealthProfile; uid: string; isAr: boolean }) {
+function HealthView({ profile, uid, isAr, sharePhotoUrl }: { profile: UserHealthProfile; uid: string; isAr: boolean; sharePhotoUrl?: string }) {
   const chronicList: string[] = (() => {
+    if (Array.isArray(profile.chronicConditions) && profile.chronicConditions.length > 0) {
+      return profile.chronicConditions.map((c) => c.conditionName).filter(Boolean);
+    }
     try {
       const n = profile.notes || '';
       const idx = n.indexOf('CHRONIC:');
       if (idx === -1) return [];
-      return JSON.parse(n.slice(idx + 8).split('|')[0]);
+      const rawJson = n.slice(idx + 8).split('||')[0].split('|')[0];
+      return JSON.parse(rawJson);
     } catch { return []; }
   })();
 
-  const photoUrl = profile.notes?.includes('PHOTO:')
+  const photoUrl = sharePhotoUrl || (profile.notes?.includes('PHOTO:')
     ? profile.notes.slice(profile.notes.indexOf('PHOTO:') + 6).split('|')[0]
-    : '';
+    : '');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -206,6 +210,7 @@ export default function PassportView() {
   const [step, setStep] = useState<'pin' | 'loading' | 'view' | 'error' | 'expired'>('pin');
   const [pinInput, setPinInput] = useState('');
   const [profile, setProfile] = useState<UserHealthProfile | null>(null);
+  const [sharePhotoUrl, setSharePhotoUrl] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async () => {
@@ -233,11 +238,21 @@ export default function PassportView() {
         return;
       }
 
-      // 3. جيب الملف الصحي
-      const userDoc = await getDoc(doc(db, 'users', uid));
-      const raw = userDoc.exists() ? userDoc.data()?.healthProfile : null;
-      const p = normalizeProfile(raw);
+      // 3. جيب الملف الصحي من النسخة المشاركة (أو من مستند المريض إذا كان صاحب الحساب)
+      let rawProfile = share.sharedProfile || null;
+      if (!rawProfile && db) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', uid));
+          if (userDoc.exists()) {
+            rawProfile = userDoc.data()?.healthProfile || null;
+          }
+        } catch {
+          /* guest/doctor relies on share.sharedProfile */
+        }
+      }
+      const p = normalizeProfile(rawProfile);
       setProfile(p);
+      setSharePhotoUrl(share.photoUrl || '');
 
       // 4. سجّل الوصول
       await logPassportAccess(uid);
@@ -330,7 +345,7 @@ export default function PassportView() {
               ✅ {isAr ? 'تم التحقق بنجاح' : 'Access Verified'}
             </span>
           </div>
-          <HealthView profile={profile} uid={uid} isAr={isAr} />
+          <HealthView profile={profile} uid={uid} isAr={isAr} sharePhotoUrl={sharePhotoUrl} />
         </>
       )}
     </main>

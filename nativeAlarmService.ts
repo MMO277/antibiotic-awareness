@@ -1157,8 +1157,10 @@ export async function triggerTestAlarm(
  * - Any scheduled dose in `TreatmentSchedule` (`antibiotic_treatment_tracker_schedules*`) arrives.
  */
 let globalWatcherStarted = false;
+let latestGetIsAr: () => boolean = () => true;
 
 export function startGlobalPhoneAlarmWatcher(getIsAr: () => boolean): void {
+  latestGetIsAr = getIsAr;
   if (typeof window === 'undefined' || globalWatcherStarted) return;
   globalWatcherStarted = true;
 
@@ -1181,7 +1183,7 @@ export function startGlobalPhoneAlarmWatcher(getIsAr: () => boolean): void {
   // Listen for native Android hardware alarm wake-up event from MainActivity.java
   window.addEventListener('native-hardware-alarm-fired', (ev: Event) => {
     const detail = (ev as CustomEvent)?.detail || {};
-    const isAr = getIsAr();
+    const isAr = latestGetIsAr();
     const title = detail.title || (isAr ? '⏰ موعد جرعة المضاد الحيوي' : '⏰ Medication Dose Alarm');
     const body = detail.body || (isAr ? 'حان الآن موعد أخذ الجرعة الموصوفة' : 'It is time for your scheduled dose');
     fireLoudBackgroundAlarmNow(title, body, isAr);
@@ -1211,14 +1213,14 @@ export function startGlobalPhoneAlarmWatcher(getIsAr: () => boolean): void {
     }
     if (lastFired === minuteStamp) return;
 
-    const isAr = getIsAr();
+    const isAr = latestGetIsAr();
 
     // 1. Check SmartDoseAlarmCard saved alarm
     try {
       const smartRaw = localStorage.getItem('aa_smart_dose_alarm_v1');
       if (smartRaw) {
         const smart = JSON.parse(smartRaw);
-        if (smart && smart.nextDoseTime === currentHHMM) {
+        if (smart && smart.notificationsEnabled && smart.nextDoseTime === currentHHMM) {
           localStorage.setItem(ALARM_LAST_FIRED_MINUTE_KEY, minuteStamp);
           const medName = smart.medicineName || (isAr ? 'جرعة المضاد الحيوي' : 'Antibiotic Dose');
           const instr = smart.doseInstruction || '';

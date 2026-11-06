@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, configured } from './firebase';
 import {
   createInitialPatientStates,
   EquipmentId,
@@ -370,7 +370,7 @@ export async function loadOpenWorldProgressForUser(
   uid?: string | null,
 ): Promise<{ state: OpenWorldSavedState; fromCloud: boolean }> {
   const local = readLocalOpenWorldState(uid);
-  if (!uid) {
+  if (!uid || !configured || !db) {
     return { state: local ?? createDefaultOpenWorldState(), fromCloud: false };
   }
 
@@ -401,6 +401,7 @@ export async function saveOpenWorldProgressToCloud(
     updatedAt: new Date().toISOString(),
   };
   writeLocalOpenWorldState(uid, payload);
+  if (!configured || !db) return false;
 
   try {
     const ref = doc(db, 'users', uid, 'gameProgress', 'openWorld');

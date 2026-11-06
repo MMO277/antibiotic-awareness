@@ -8,16 +8,14 @@ import {
   EgyptianCommercialProduct,
 } from './egyptianDrugDatabase';
 
-const ENCODED_DEFAULT_GEMINI_KEY = 'QVEuQWI4Uk42TEtEVi1MWGx3d1FRaVVfYzBBejJQOXVyY2RkZnctdl9zZXdLWGJkdzBkeEE=';
-const BUILTIN_KEY =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) ||
-  (typeof atob === 'function' ? atob(ENCODED_DEFAULT_GEMINI_KEY) : '');
+const ENV_GEMINI_KEY =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || '';
 
 export function getApiKey(): string {
   if (typeof window !== 'undefined') {
-    return (localStorage.getItem('gemini_api_key') || BUILTIN_KEY).trim();
+    return (localStorage.getItem('gemini_api_key') || ENV_GEMINI_KEY).trim();
   }
-  return BUILTIN_KEY;
+  return ENV_GEMINI_KEY.trim();
 }
 
 export function hasApiKey(): boolean {
@@ -41,10 +39,8 @@ export function clearApiKey(): void {
 }
 
 export function isCustomApiKey(): boolean {
-  if (typeof window !== 'undefined') {
-    return Boolean(localStorage.getItem('gemini_api_key') || BUILTIN_KEY);
-  }
-  return Boolean(BUILTIN_KEY);
+  const k = getApiKey();
+  return Boolean(k && k.startsWith('AIza'));
 }
 
 /**
@@ -187,11 +183,11 @@ export async function askGemini(
     `طوارئ ${emerg.name.ar} (${emerg.number})`
   );
 
-  if (key && (key.startsWith('AIza') || key.startsWith('AQ.') || key.length > 20)) {
+  if (key && key.startsWith('AIza')) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12000);
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
       const recentHistory = history.slice(-10);
       const contents = [
         ...recentHistory.map((m) => ({
@@ -1182,8 +1178,8 @@ Line 2: DRUG_NAME: [detected brand name, generic name, and strength in English a
 Then write a clear clinical summary without markdown tables or ** symbols.`;
 
   const runGemini = async (): Promise<string> => {
-    if (!key || (!key.startsWith('AIza') && !key.startsWith('AQ.') && key.length <= 20)) return '';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+    if (!key || !key.startsWith('AIza')) return '';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -1598,8 +1594,8 @@ RX_NOTES: [any readable administration instructions or UNREADABLE]
 RX_CONTRADICTIONS: [any contradictory or ambiguous instructions noticed, or NONE]`;
 
   const runGemini = async (): Promise<string> => {
-    if (!key || (!key.startsWith('AIza') && !key.startsWith('AQ.') && key.length <= 20)) return '';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+    if (!key || !key.startsWith('AIza')) return '';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
     const response = await fetch(url, {
       method: 'POST',
       headers: {

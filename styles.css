@@ -4595,10 +4595,7 @@ html.bh-gaming, html.bh-gaming body { overflow: hidden; overscroll-behavior: non
     min-width: auto !important;
     white-space: nowrap;
   }
-  :root[dir="rtl"] .hamburger-btn::after,
-  [dir="rtl"] .hamburger-btn::after { content: "القائمة"; font-size: .88rem; font-weight: 700; }
-  :root[dir="ltr"] .hamburger-btn::after,
-  [dir="ltr"] .hamburger-btn::after { content: "Menu"; font-size: .88rem; font-weight: 700; }
+  /* Removed duplicate ::after text since .hamburger-text already renders inside .hamburger-btn */
   .header-user-chip { max-width: 94px; }
   .header-auth-group { min-width: 0; }
 }
@@ -6142,9 +6139,7 @@ html.bh-gaming .ms-wrapper.ms-immersive .ms-action-zone { position: absolute !im
     border-radius: 8px !important;
   }
 
-  /* 3. Cards & Grids on mobile (2 columns for compact cards and tiles) */
-  .med-cards-stack,
-  .grid,
+  /* 3. Compact Sub-Grids on mobile (keep main .grid and .med-cards-stack 1-column so full cards don't overflow) */
   .rc-grid,
   .categories-grid,
   .steps-cards-grid,

@@ -57,7 +57,7 @@ export default function MedicinePage() {
   const { profile } = useSyncedHealthProfile();
   const { isProMode, setProMode } = useClinicalProMode();
   const { user, role } = useAuth();
-  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const canEditLive = role === 'owner' || role === 'admin' || role === 'reviewer' || role === 'editor';
   const { products: liveCatalogProducts } = useLiveDrugCatalog();
   const [editingPkg, setEditingPkg] = useState<EgyptianCommercialProduct | null>(null);
   const [addingPkg, setAddingPkg] = useState(false);

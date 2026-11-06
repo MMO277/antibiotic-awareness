@@ -446,7 +446,7 @@ export default function SmartDoseAlarmCard({
           : 'Take after a meal with a full glass of water'),
       nextDoseTime: propNextTime || '08:00',
       completedDays: [true, true, true, true, true, false, false],
-      notificationsEnabled: true,
+      notificationsEnabled: false,
     };
   });
 
@@ -501,7 +501,7 @@ export default function SmartDoseAlarmCard({
 
       // Launch full-screen continuous phone alarm if current minute matches target HH:MM:00
       const nowKey = `${now.getHours()}:${now.getMinutes()}`;
-      if (now.getHours() === hh && now.getMinutes() === mm && now.getSeconds() <= 2 && lastTriggeredMin !== nowKey) {
+      if (state.notificationsEnabled && now.getHours() === hh && now.getMinutes() === mm && now.getSeconds() <= 2 && lastTriggeredMin !== nowKey) {
         lastTriggeredMin = nowKey;
         void triggerTestAlarm(isAr, {
           immediate: true,

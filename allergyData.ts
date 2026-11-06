@@ -656,6 +656,8 @@ export function useSyncedHealthProfile() {
   const uid = user?.uid ?? null;
 
   const [profile, setProfileState] = useState<UserHealthProfile>(() => loadProfile(uid));
+  const profileRef = useRef<UserHealthProfile>(profile);
+  profileRef.current = profile;
   const [syncing, setSyncing] = useState<boolean>(false);
   const hydratedUidRef = useRef<string | null>(null);
 
@@ -814,29 +816,29 @@ export function useSyncedHealthProfile() {
 
   const updateProfile = useCallback(
     (updater: UserHealthProfile | ((prev: UserHealthProfile) => UserHealthProfile)) => {
-      setProfileState((prev) => {
-        const nextRaw = typeof updater === 'function' ? updater(prev) : updater;
-        const next = stripUndefined(normalizeProfile(nextRaw));
-        try {
-          localStorage.setItem(getProfileStorageKey(uid), JSON.stringify(next));
-          window.dispatchEvent(new CustomEvent(PROFILE_EVENT, { detail: { uid, profile: next } }));
-        } catch (err) {
-          console.error('Failed to save profile locally:', err);
-        }
-        if (uid && configured && db) {
-          setDoc(
-            doc(db, 'users', uid),
-            {
-              healthProfile: next,
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-          ).catch((err) => {
-            console.error('Failed to save health profile to Firestore:', err);
-          });
-        }
-        return next;
-      });
+      const prev = profileRef.current;
+      const nextRaw = typeof updater === 'function' ? updater(prev) : updater;
+      const next = stripUndefined(normalizeProfile(nextRaw));
+      profileRef.current = next;
+      setProfileState(next);
+      try {
+        localStorage.setItem(getProfileStorageKey(uid), JSON.stringify(next));
+        window.dispatchEvent(new CustomEvent(PROFILE_EVENT, { detail: { uid, profile: next } }));
+      } catch (err) {
+        console.error('Failed to save profile locally:', err);
+      }
+      if (uid && configured && db) {
+        setDoc(
+          doc(db, 'users', uid),
+          {
+            healthProfile: next,
+            updatedAt: serverTimestamp(),
+          },
+          { merge: true }
+        ).catch((err) => {
+          console.error('Failed to save health profile to Firestore:', err);
+        });
+      }
     },
     [uid]
   );

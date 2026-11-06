@@ -24,7 +24,7 @@ import {
   GoogleAuthProvider,
   browserPopupRedirectResolver,
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { auth, db, configured } from './firebase';
 
 export type AuthMode = 'login' | 'register' | 'forgot';
@@ -172,28 +172,7 @@ export function removeSavedDeviceGoogleAccount(email: string): void {
  * the user's Website Google account with its real Profile Photo & Name even on first open!
  */
 export async function fetchCloudSyncedGoogleAccounts(): Promise<SavedGoogleAccount[]> {
-  if (!configured || !db) return getSavedDeviceGoogleAccounts();
-  try {
-    const snap = await getDoc(doc(db, 'settings', 'google_app_accounts_list'));
-    if (snap.exists()) {
-      const list = snap.data()?.accounts;
-      if (Array.isArray(list)) {
-        for (const item of list) {
-          if (item && typeof item.email === 'string' && typeof item.uid === 'string') {
-            saveDeviceGoogleAccount({
-              email: item.email,
-              displayName: item.displayName || formatDisplayNameFromEmail(item.email),
-              uid: item.uid,
-              photoURL: resolveGoogleAvatarUrl(item.email, item.photoURL),
-              lastUsedAt: item.lastUsedAt || Date.now(),
-            });
-          }
-        }
-      }
-    }
-  } catch {
-    /* offline safe */
-  }
+  // Strictly return accounts saved on THIS device only (never leak global accounts across visitors)
   return getSavedDeviceGoogleAccounts();
 }
 
@@ -397,50 +376,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsAppBridgeActivation(false);
     }
 
-    if (configured && db) {
-      const bridgePayload = {
-        email,
-        uid: firebaseUser.uid,
-        displayName: googleName,
-        photoURL: googlePhoto,
-        linkedPasswordBridge: linkedOk,
-        ...(oauthIdToken ? { oauthIdToken } : {}),
-        ...(oauthAccessToken ? { oauthAccessToken } : {}),
-        updatedAt: Date.now(),
-        expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
-      };
-
-      // 1. Write to passportShares/{uid} (allowed for any owner in firestore.rules, readable by anyone with expiresAt > 0)
-      try {
-        await setDoc(doc(db, 'passportShares', firebaseUser.uid), bridgePayload, { merge: true });
-      } catch {}
-
-      // 2. Write to settings/{docId} (allowed for Admin/Owner, readable by `allow read: if true`)
-      try {
-        await setDoc(doc(db, 'settings', getEmailBridgeDocId(email)), bridgePayload, { merge: true });
-
-        const listRef = doc(db, 'settings', 'google_app_accounts_list');
-        const listSnap = await getDoc(listRef).catch(() => null);
-        const existingAccounts: SavedGoogleAccount[] = Array.isArray(listSnap?.data()?.accounts)
-          ? listSnap!.data()!.accounts
-          : [];
-        const filtered = existingAccounts.filter(
-          (a) => a && typeof a.email === 'string' && a.email.toLowerCase() !== email
-        );
-        const nextAccounts = [
-          {
-            email,
-            displayName: googleName,
-            uid: firebaseUser.uid,
-            photoURL: googlePhoto,
-            lastUsedAt: Date.now(),
-          },
-          ...filtered,
-        ].slice(0, 10);
-
-        await setDoc(listRef, { accounts: nextAccounts, updatedAt: Date.now() }, { merge: true });
-      } catch {}
-    }
+    // Save account metadata locally on this device only (never overwrite passportShares or public settings)
+    saveDeviceGoogleAccount({
+      email,
+      displayName: googleName,
+      uid: firebaseUser.uid,
+      photoURL: googlePhoto,
+      lastUsedAt: Date.now(),
+    });
 
     return linkedOk || Boolean(oauthIdToken || oauthAccessToken);
   };

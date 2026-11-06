@@ -150,7 +150,7 @@ export default function HealthProfile() {
   const handleSavePin = async () => {
     if (!user || pinInput.length < 4) return;
     setPinSaving(true);
-    await sharePassport(user.uid, pinInput, 0);
+    await sharePassport(user.uid, pinInput, 0, profile);
     setSavedPin(pinInput);
     setPinInput('');
     setShowPinSetup(false);
@@ -161,7 +161,7 @@ export default function HealthProfile() {
   const handlePassportShare = async () => {
     if (!user || !savedPin) return;
     setPassportSharing(true);
-    await sharePassport(user.uid, savedPin, passportHours);
+    await sharePassport(user.uid, savedPin, passportHours, profile);
     const s = await getPassportShare(user.uid);
     setPassportShare(s);
     setPassportSharing(false);
@@ -322,7 +322,7 @@ export default function HealthProfile() {
   const passportQrSrc = user
     ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(passportUrl)}&margin=8&color=0b3c5d`
     : '';
-  const passportIsActive = passportShare && passportShare.expiresAt > 0 && Date.now() < passportShare.expiresAt;
+  const passportIsActive = Boolean(passportShare && passportShare.pin && passportShare.expiresAt > 0 && Date.now() < passportShare.expiresAt);
   const passportRemaining = passportShare ? Math.max(0, Math.round((passportShare.expiresAt - Date.now()) / 60000)) : 0;
 
   // Personal info edit state

@@ -36,7 +36,7 @@ export default function CostSaver() {
   const [searchQuery, setSearchQuery] = useState('');
   const [packCount, setPackCount] = useState<number>(1);
   const { user, role } = useAuth();
-  const canEditLive = role === 'editor' || role === 'reviewer' || role === 'admin';
+  const canEditLive = role === 'owner' || role === 'admin' || role === 'reviewer' || role === 'editor';
   const { products: liveCatalogProducts } = useLiveDrugCatalog();
   const [editingProd, setEditingProd] = useState<EgyptianCommercialProduct | null>(null);
 

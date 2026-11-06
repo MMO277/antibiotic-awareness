@@ -32,7 +32,7 @@ export default function Editor() {
   }, [id, role]);
 
   if (loading) return <main className="wrap"><p>{t('loading')}</p></main>;
-  if (!user || !role) return <Navigate to="/admin" replace />;
+  if (!user || !role || role === 'viewer') return <Navigate to="/admin" replace />;
   if (m === undefined) return <main className="wrap"><p>{t('loading')}</p></main>;
   if (m === null) return <main className="wrap"><p>{t('notFound')}</p></main>;
 

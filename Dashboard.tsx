@@ -73,7 +73,7 @@ function MedsTab({ role, uid }: { role: Role; uid: string }) {
   async function saveShowUn(v: boolean) {
     setShowUn(v);
     try {
-      await setDoc(doc(db, 'settings', 'public'), { showUnreviewed: v });
+      await setDoc(doc(db, 'settings', 'public'), { showUnreviewed: v }, { merge: true });
     } catch {
       setShowUn(!v);
       alert(t('actionFailed'));
@@ -210,18 +210,20 @@ export default function Dashboard() {
           paddingBottom: '10px',
         }}
       >
-        <button
-          className={tab === 'users' ? 'on' : ''}
-          onClick={() => setTab('users')}
-          style={{
-            borderRadius: '10px',
-            border: tab === 'users' ? '2px solid var(--teal)' : '1px solid var(--line)',
-            background: tab === 'users' ? 'var(--tint)' : 'var(--card-bg)',
-            padding: '8px 12px',
-          }}
-        >
-          👥 {tr(lang, 'المستخدمون والصلاحيات (Admin / Editor)', 'Users & Roles (Admin / Editor)', 'Utilisateurs & Rôles', 'Usuarios y Roles', 'Benutzer & Rollen')}
-        </button>
+        {(role === 'owner' || role === 'admin') && (
+          <button
+            className={tab === 'users' ? 'on' : ''}
+            onClick={() => setTab('users')}
+            style={{
+              borderRadius: '10px',
+              border: tab === 'users' ? '2px solid var(--teal)' : '1px solid var(--line)',
+              background: tab === 'users' ? 'var(--tint)' : 'var(--card-bg)',
+              padding: '8px 12px',
+            }}
+          >
+            👥 {tr(lang, 'المستخدمون والصلاحيات (Admin / Editor)', 'Users & Roles (Admin / Editor)', 'Utilisateurs & Rôles', 'Usuarios y Roles', 'Benutzer & Rollen')}
+          </button>
+        )}
 
         <button
           className={tab === 'partners' ? 'on' : ''}
@@ -323,7 +325,7 @@ export default function Dashboard() {
       </div>
 
       {tab === 'partners' && <PartnerManagementCenter adminUid={user.uid} adminRole={role} />}
-      {tab === 'users' && <UsersTab myUid={user.uid} />}
+      {tab === 'users' && (role === 'owner' || role === 'admin') && <UsersTab myUid={user.uid} />}
       {tab === 'catalog' && <CommercialCatalogTab uid={user.uid} />}
       {tab === 'meds' && <MedsTab role={role} uid={user.uid} />}
       {tab === 'survey_bank' && <SurveyQuizManagerTab uid={user.uid} />}

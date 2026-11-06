@@ -39,7 +39,7 @@ service firebase.storage {
     }
 
     match /partner_assets/{partnerId}/{fileName} {
-      allow read: if !(fileName.matches('prescription_.*')) || hasAdminOrEditorRole();
+      allow read: if !(fileName.matches('prescription_.*')) || isSignedIn() || hasAdminOrEditorRole();
       allow write: if (
         // Prescription uploads by patients (max 8MB, image or PDF)
         (fileName.matches('prescription_.*')

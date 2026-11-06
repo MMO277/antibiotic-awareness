@@ -134,7 +134,7 @@ export default function AppUpdateManager() {
     if (!configured || !db) return;
     try {
       const unsub = onSnapshot(
-        doc(db, 'system_config', 'app_update'),
+        doc(db, 'settings', 'app_update'),
         (snap) => {
           if (!snap.exists()) return;
           const d = snap.data() as Partial<AppVersionManifest>;
@@ -238,7 +238,7 @@ export default function AppUpdateManager() {
       if (manifestRes.ok) {
         const m = await manifestRes.json();
         const core: string[] = Array.isArray(m.coreAssets) ? m.coreAssets : [];
-        const cache = await caches.open('aa-speed-cache-static-v3');
+        const cache = await caches.open('aa-speed-cache-static-v4');
         await Promise.allSettled(
           core.slice(0, 18).map((u) => fetch(u, { cache: 'reload' }).then((res) => cache.put(u, res)))
         );
@@ -303,7 +303,7 @@ export default function AppUpdateManager() {
       publishedAt: new Date().toISOString().slice(0, 10),
     };
     try {
-      await setDoc(doc(db, 'system_config', 'app_update'), {
+      await setDoc(doc(db, 'settings', 'app_update'), {
         ...nextManifest,
         updatedAt: serverTimestamp(),
       });

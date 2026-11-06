@@ -4,7 +4,8 @@
  */
 
 import { doc, getDoc, setDoc, collection, addDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, configured } from './firebase';
+import type { UserHealthProfile } from './allergyData';
 
 
 /**
@@ -62,6 +63,8 @@ export interface PassportShare {
   pin: string;
   expiresAt: number;
   createdAt: number;
+  photoUrl?: string;
+  sharedProfile?: Partial<UserHealthProfile> | null;
 }
 
 export interface PassportAccessLog {
@@ -70,37 +73,71 @@ export interface PassportAccessLog {
 }
 
 export async function getPassportShare(uid: string): Promise<PassportShare | null> {
-  if (!db) return null;
+  if (!configured || !db) return null;
   try {
     const snap = await getDoc(doc(db, 'passportShares', uid));
     if (!snap.exists()) return null;
     const d = snap.data();
-    if (!d.pin && !d.expiresAt) return null;
-    return { pin: d.pin || '', expiresAt: d.expiresAt || 0, createdAt: d.createdAt || 0 };
+    const cleanPin = typeof d.pin === 'string' ? d.pin.trim() : '';
+    // Ignore legacy/corrupted documents that have no PIN set
+    if (!cleanPin) return null;
+    return {
+      pin: cleanPin,
+      expiresAt: typeof d.expiresAt === 'number' ? d.expiresAt : 0,
+      createdAt: typeof d.createdAt === 'number' ? d.createdAt : 0,
+      photoUrl: typeof d.photoUrl === 'string' ? d.photoUrl : '',
+      sharedProfile: d.sharedProfile || null,
+    };
   } catch { return null; }
 }
 
-export async function sharePassport(uid: string, pin: string, hours: number): Promise<void> {
-  if (!db) return;
+export async function sharePassport(
+  uid: string,
+  pin: string,
+  hours: number,
+  profileSnapshot?: UserHealthProfile
+): Promise<void> {
+  if (!configured || !db) return;
   const now = Date.now();
-  await setDoc(doc(db, 'passportShares', uid), {
-    pin,
-    expiresAt: now + hours * 60 * 60 * 1000,
+  const payload: Record<string, unknown> = {
+    pin: pin.trim(),
+    expiresAt: hours > 0 ? now + hours * 60 * 60 * 1000 : 0,
     createdAt: now,
-  }, { merge: true });
+  };
+  if (profileSnapshot) {
+    payload.sharedProfile = {
+      displayName: profileSnapshot.displayName || '',
+      age: profileSnapshot.age || '',
+      weightKg: profileSnapshot.weightKg || '',
+      gender: profileSnapshot.gender || '',
+      bloodType: profileSnapshot.bloodType || '',
+      emergencyContact: profileSnapshot.emergencyContact || '',
+      pregnancyStatus: profileSnapshot.pregnancyStatus || 'unknown',
+      renalStatus: profileSnapshot.renalStatus || 'unknown',
+      hepaticStatus: profileSnapshot.hepaticStatus || 'unknown',
+      notes: profileSnapshot.notes || '',
+      allergies: Array.isArray(profileSnapshot.allergies) ? profileSnapshot.allergies : [],
+      medications: Array.isArray(profileSnapshot.medications) ? profileSnapshot.medications : [],
+      chronicConditions: Array.isArray(profileSnapshot.chronicConditions)
+        ? profileSnapshot.chronicConditions
+        : [],
+    };
+  }
+  await setDoc(doc(db, 'passportShares', uid), payload, { merge: true });
 }
 
 export async function revokePassport(uid: string): Promise<void> {
-  if (!db) return;
+  if (!configured || !db) return;
   await setDoc(doc(db, 'passportShares', uid), {
-    pin: '', expiresAt: 0, createdAt: 0,
+    expiresAt: 0,
+    sharedProfile: null,
   }, { merge: true });
 }
 
 export function isPassportValid(share: PassportShare | null, enteredPin: string): boolean {
-  if (!share) return false;
-  if (Date.now() > share.expiresAt) return false;
-  return share.pin === enteredPin;
+  if (!share || !share.pin) return false;
+  if (share.expiresAt <= 0 || Date.now() > share.expiresAt) return false;
+  return share.pin === enteredPin.trim();
 }
 
 export async function logPassportAccess(uid: string): Promise<void> {
