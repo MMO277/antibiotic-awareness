@@ -391,16 +391,11 @@ export default function Assistant() {
       localReply,
     });
 
+    // Only show medicine chips when the user's question explicitly matched a medical condition or drug!
     const matchedLinks =
-      contextualResult.links && contextualResult.links.length > 0
+      contextualResult.handledFast && contextualResult.links && contextualResult.links.length > 0
         ? contextualResult.links
-        : localReply.kind === 'text' && localReply.links
-          ? localReply.links
-          : localReply.kind === 'answer'
-            ? localReply.hits
-                .filter((h) => Boolean(h.link))
-                .map((h) => ({ to: h.link || '/', label: h.title }))
-            : undefined;
+        : undefined;
 
     // Always route through the Live Internet + Cloud AI Engine first (no canned short-circuiting!)
 
@@ -410,14 +405,21 @@ export default function Assistant() {
         who: m.who,
         text: extractAnswerPlainText(m, lang),
       }));
-      const patientContext = buildPermittedPatientContextPrompt({
-        profile,
-        schedules,
-        prescriptions,
-        lang,
-        localVerifiedReply: isDirectVerifiedMatch(localReply) ? localReply : null,
-        topicMemory: contextualResult.topicMemory,
-      });
+      const isMedicalQuestion =
+        contextualResult.handledFast ||
+        /(دوا|دواء|مضاد|جرعه|جرعة|مرض|حساسيه|حساسية|سجل|ضيف|منبه|روشته|روشتة|تحليل|مزرعه|مزرعة|ملفي|الم|وجع|كحه|كحة|سخونيه|سخونية|صداع|مغص|اسهال|إسهال|امساك|إمساك|حموضه|حموضة|ضغط|سكر|حمل|حامل|رضاعه|رضاعة|طفل|ابني|بنتي|كيلو|التهاب|عدوي|عدوى|بكتيريا|فيروس|برشام|حقنه|حقنة|شراب|مرهم|كريم|قطره|قطرة|فيتامين|انيميا|أنيميا)/i.test(
+          text
+        );
+      const patientContext = isMedicalQuestion
+        ? buildPermittedPatientContextPrompt({
+            profile,
+            schedules,
+            prescriptions,
+            lang,
+            localVerifiedReply: isDirectVerifiedMatch(localReply) ? localReply : null,
+            topicMemory: contextualResult.topicMemory,
+          })
+        : '';
       const enrichedQuestion = patientContext ? `${text}\n\n${patientContext}` : text;
 
       const rawAiResponse = await askGemini(enrichedQuestion, history, text);

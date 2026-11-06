@@ -107,7 +107,10 @@ export function isCustomApiKey(): boolean {
 export function cleanAssistantMarkdown(raw: string): string {
   if (!raw) return '';
   let preservedActionTag = '';
-  let workingRaw = raw;
+  let workingRaw = raw
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<\/?think>/gi, '')
+    .trim();
   const actionMatch = workingRaw.match(/\[\[ACTION_CALL:\s*\{[\s\S]*?\}\s*\]\]/i);
   if (actionMatch) {
     preservedActionTag = actionMatch[0];
@@ -226,13 +229,16 @@ export const SYSTEM_PROMPT = `أنت المساعد الذكي الشامل وا
 
 export const COMPACT_CLOUD_SYSTEM_PROMPT = `أنت مساعد ذكي شامل ومتصل بالإنترنت (Live Web & Health AI Assistant).
 قواعد هامة جداً:
-1. جاوب على سؤال المستخدم بدقة ومباشرة باللهجة المصرية الودودة بناءً على سؤاله وبناءً على [البيانات الحية من الإنترنت] المرفقة مع السؤال.
-2. إياك أن ترد بردود محفوظة أو عامة أو تتكلم عن موضوع مختلف عن سؤال المستخدم! لو سأل عن نتيجة ماتش أو موعد ماتش أو سعر أو خبر أو معلومة عامة أو طبية، جاوب على سؤاله بالظبط من المعلومات الحية المرفقة وبمعرفتك الدقيقة.
-3. رتب الإجابة في نقاط واضحة ومباشرة بدون جداول Markdown (|) وبدون نجوم ** أو علامات ###.`;
+1. جاوب على سؤال المستخدم فوراً وبدقة ومباشرة باللهجة المصرية الودودة ("يا هلا بيك"، "بص يا سيدي"، "من عنيا").
+2. لو مرفق مع السؤال [بيانات حية ومباشرة من الإنترنت الآن]، اعتمد عليها في إجابتك (مثل مواعيد ونتائج المباريات اليوم، الطقس، أسعار العملات، والأخبار الجارية).
+3. جاوب على قد السؤال بالظبط في صلب الموضوع، وإياك ترد بردود عامة أو تتكلم عن موضوع مختلف عن سؤال المستخدم.
+4. رتب الإجابة في نقاط واضحة بدون جداول Markdown (|) وبدون نجوم ** أو علامات ###.`;
 
 function isValidCloudReply(text: string | undefined | null): boolean {
   if (!text) return false;
-  const t = text.trim();
+  const t = text
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .trim();
   if (t.length < 4) return false;
   if (
     /^(<!DOCTYPE|<html|<head|\{"error"|502 Bad Gateway|504 Gateway|429 Too Many|Error:|Rate limit|Internal Server Error|Notice:|IMPORTANT NOTICE)/i.test(
@@ -242,17 +248,6 @@ function isValidCloudReply(text: string | undefined | null): boolean {
     return false;
   }
   return true;
-}
-
-/**
- * Strips any Pollinations ad/footer notices if present while preserving the AI's actual answer.
- */
-function stripPollinationsFooter(text: string): string {
-  return text
-    .replace(/---\s*\n\s*\*\*Support Pollinations\.AI[\s\S]*$/i, '')
-    .replace(/Support Pollinations\.AI[\s\S]*$/i, '')
-    .replace(/🌸\s*Ad\s*🌸[\s\S]*$/i, '')
-    .trim();
 }
 
 async function gtxTranslate(text: string, sl: string, tl: string): Promise<string> {
@@ -277,16 +272,79 @@ async function gtxTranslate(text: string, sl: string, tl: string): Promise<strin
 }
 
 /**
- * Fetches LIVE Arabic/Global news & web search snippets from Google News RSS (`news.google.com/rss/search`)
- * using browser-compatible CORS endpoints (`api.rss2json.com` and `api.allorigins.win/raw`).
- * This gives real-time scores (e.g. "ماتش الاهلي الاخير خلص كام"), upcoming fixtures, prices, and current events!
+ * Calls an OpenAI-compatible `/chat/completions` endpoint directly first,
+ * and if the browser blocks it due to CORS (`TypeError`), retries automatically via `corsproxy.io`!
  */
-async function fetchLiveGoogleNewsSnippets(query: string): Promise<string[]> {
+async function callOpenAiCompatibleEndpoint(params: {
+  url: string;
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  apiKey?: string;
+  timeoutMs?: number;
+}): Promise<string | null> {
+  const { url, model, messages, apiKey, timeoutMs = 9500 } = params;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+  }
+  const bodyStr = JSON.stringify({
+    model,
+    messages,
+    temperature: 0.35,
+    max_tokens: 800,
+    stream: false,
+  });
+
+  const urlsToTry = [
+    url,
+    `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  ];
+
+  for (const targetUrl of urlsToTry) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(targetUrl, {
+        method: 'POST',
+        headers,
+        body: bodyStr,
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        const reply =
+          data?.choices?.[0]?.message?.content ||
+          data?.choices?.[0]?.text ||
+          data?.response ||
+          '';
+        if (isValidCloudReply(reply)) {
+          return cleanAssistantMarkdown(reply);
+        }
+      } else if (res.status >= 400 && res.status < 500) {
+        // HTTP 4xx from upstream server means CORS worked but model/route rejected; no need to retry via proxy
+        break;
+      }
+    } catch {
+      clearTimeout(timer);
+      // Network/CORS error on direct URL -> loop continues to corsproxy.io
+    }
+  }
+  return null;
+}
+
+/**
+ * Fetches FRESH Arabic/Global news snippets from Google News RSS (`news.google.com/rss/search`)
+ * Strictly filters out stale articles when asking about today/recent events!
+ */
+async function fetchLiveGoogleNewsSnippets(query: string, maxAgeDays = 30): Promise<string[]> {
   const q = query.trim();
   if (!q) return [];
 
-  // Improve search query for match scores / schedules so Google News returns exact score headlines
   let searchQ = q
+    .replace(/مين هيلعب انهارده|مين هيلعب النهارده|مين بيلعب النهارده/g, 'مواعيد مباريات اليوم')
     .replace(/خلص كام/g, 'نتيجة مباراة')
     .replace(/الجاي امتي|الجاي إمتى/g, 'موعد مباراة القادمة')
     .replace(/امتي|إمتى/g, 'موعد');
@@ -295,7 +353,10 @@ async function fetchLiveGoogleNewsSnippets(query: string): Promise<string[]> {
     searchQ
   )}&hl=ar&gl=EG&ceid=EG:ar`;
 
-  // 1) Try rss2json (fast JSON parser with CORS *)
+  const nowMs = Date.now();
+  const maxAgeMs = maxAgeDays * 24 * 60 * 60 * 1000;
+
+  // 1) Try rss2json
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 4500);
@@ -307,20 +368,21 @@ async function fetchLiveGoogleNewsSnippets(query: string): Promise<string[]> {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data?.items) && data.items.length > 0) {
-        return data.items.slice(0, 6).map((item: any) => {
+        const freshItems = data.items.filter((item: any) => {
+          if (!item.pubDate) return true;
+          const dt = new Date(item.pubDate).getTime();
+          return Number.isNaN(dt) || nowMs - dt <= maxAgeMs;
+        });
+        const chosen = (freshItems.length > 0 ? freshItems : data.items).slice(0, 5);
+        return chosen.map((item: any) => {
           const title = (item.title || '').replace(/\s+/g, ' ').trim();
           const pubDate = item.pubDate ? item.pubDate.split(' ')[0] : '';
-          const desc = (item.description || '')
-            .replace(/<[^>]+>/g, ' ')
-            .replace(/&nbsp;/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim();
-          return `• [${pubDate}] ${title}${desc && desc !== title ? ` — ${desc.slice(0, 160)}` : ''}`;
+          return `• ${pubDate ? `[${pubDate}] ` : ''}${title}`;
         });
       }
     }
   } catch {
-    /* fallback to allorigins XML parse */
+    /* fallback to allorigins */
   }
 
   // 2) Try allorigins.win/raw XML parsing
@@ -334,7 +396,7 @@ async function fetchLiveGoogleNewsSnippets(query: string): Promise<string[]> {
     clearTimeout(timer);
     if (res.ok) {
       const xml = await res.text();
-      const itemMatches = Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g)).slice(0, 6);
+      const itemMatches = Array.from(xml.matchAll(/<item>([\s\S]*?)<\/item>/g)).slice(0, 8);
       const snippets: string[] = [];
       for (const m of itemMatches) {
         const block = m[1];
@@ -345,10 +407,14 @@ async function fetchLiveGoogleNewsSnippets(query: string): Promise<string[]> {
           .replace(/&quot;/g, '"')
           .replace(/&amp;/g, '&')
           .trim();
-        const dateStr = dateMatch?.[1] ? new Date(dateMatch[1]).toLocaleDateString('ar-EG') : '';
+        const rawDate = dateMatch?.[1] || '';
+        const dtMs = rawDate ? new Date(rawDate).getTime() : NaN;
+        if (!Number.isNaN(dtMs) && nowMs - dtMs > maxAgeMs) continue;
+        const dateStr = !Number.isNaN(dtMs) ? new Date(dtMs).toLocaleDateString('ar-EG') : '';
         if (title) {
           snippets.push(`• ${dateStr ? `[${dateStr}] ` : ''}${title}`);
         }
+        if (snippets.length >= 5) break;
       }
       if (snippets.length > 0) return snippets;
     }
@@ -511,12 +577,17 @@ function formatCairoDateTime(isoDateStr: string): { dateAr: string; timeAr: stri
 }
 
 /**
- * Fetches live football schedule & past scores from ESPN API + TheSportsDB searchevents + Google News Egypt RSS
+ * Fetches Today's Live Scoreboard across major leagues OR a specific team's upcoming & last match!
  */
 async function fetchLiveFootballData(rawQuestion: string): Promise<string | null> {
   const q = rawQuestion.trim();
+  const isTodayMatchesQuery =
+    /(مين هيلعب|مين بيلعب|مين يلعب|مين اللي هيلعب|في ماتشات ايه|فيه ماتشات ايه|ماتشات النهارده|ماتشات النهاردة|ماتشات انهارده|ماتشات انهاردة|ماتشات اليوم|مباريات اليوم|مباريات النهارده|مباريات انهارده|جدول ماتشات|جدول مباريات)/i.test(
+      q
+    );
   const isMatchQuery =
-    /(ماتش|ماتشات|مباراه|مباراة|مباريات|يلعب امتي|هيلعب امتي|الجاي امتي|القادمه|القادمة|نتيجه|نتيجة|خلص كام|جدول مباريات|\bnext match\b|\bmatch\b|\bscore\b)/i.test(
+    isTodayMatchesQuery ||
+    /(ماتش|ماتشات|مباراه|مباراة|مباريات|هيلعب امتي|يلعب امتي|الجاي امتي|القادمه|القادمة|نتيجه|نتيجة|خلص كام|\bnext match\b|\bmatch\b|\bscore\b)/i.test(
       q
     );
   const matchedTeam = FOOTBALL_TEAMS.find((t) => t.patterns.test(q));
@@ -524,7 +595,77 @@ async function fetchLiveFootballData(rawQuestion: string): Promise<string | null
 
   const infoParts: string[] = [];
 
-  // 1) If team has ESPN ID, fetch both upcoming and last completed match from ESPN Schedule API
+  // CASE A: User asks "مين هيلعب انهارده يعني" / "ماتشات النهاردة إيه" (without naming a single team)
+  if (isTodayMatchesQuery && !matchedTeam) {
+    try {
+      const leagues = [
+        { code: 'uefa.champions', labelAr: 'دوري أبطال أوروبا' },
+        { code: 'uefa.europa', labelAr: 'الدوري الأوروبي' },
+        { code: 'eng.1', labelAr: 'الدوري الإنجليزي' },
+        { code: 'esp.1', labelAr: 'الدوري الإسباني' },
+        { code: 'ita.1', labelAr: 'الدوري الإيطالي' },
+        { code: 'ger.1', labelAr: 'الدوري الألماني' },
+        { code: 'fra.1', labelAr: 'الدوري الفرنسي' },
+        { code: 'ksa.1', labelAr: 'الدوري السعودي' },
+        { code: 'caf.champions', labelAr: 'دوري أبطال أفريقيا' },
+      ];
+      const resultsWithLeague = await Promise.allSettled(
+        leagues.map(async (lg) => {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 4000);
+          const res = await fetch(
+            `https://site.api.espn.com/apis/site/v2/sports/soccer/${lg.code}/scoreboard`,
+            { signal: ctrl.signal }
+          );
+          clearTimeout(timer);
+          if (!res.ok) return [];
+          const data = await res.json();
+          const events: any[] = Array.isArray(data?.events) ? data.events : [];
+          return events.slice(0, 5).map((ev) => {
+            const { timeAr } = formatCairoDateTime(ev.date);
+            const comp = ev.competitions?.[0];
+            const c1 = comp?.competitors?.[0];
+            const c2 = comp?.competitors?.[1];
+            const state = ev.status?.type?.state; // 'pre', 'in', 'post'
+            const matchLine =
+              c1 && c2
+                ? state === 'pre'
+                  ? `${c1.team?.displayName} ضد ${c2.team?.displayName} — الساعة ${timeAr} بتوقيت مصر`
+                  : `${c1.team?.displayName} (${c1.score?.displayValue ?? 0}) - (${c2.score?.displayValue ?? 0}) ${c2.team?.displayName} [${ev.status?.type?.shortDetail || 'انتهت'}]`
+                : `${ev.name} — الساعة ${timeAr}`;
+            return `• [${lg.labelAr}] ${matchLine}`;
+          });
+        })
+      );
+
+      const allMatchLines: string[] = [];
+      for (const r of resultsWithLeague) {
+        if (r.status === 'fulfilled' && r.value.length > 0) {
+          allMatchLines.push(...r.value);
+        }
+      }
+
+      if (allMatchLines.length > 0) {
+        const translatedMatches = await gtxTranslate(allMatchLines.slice(0, 12).join('\n'), 'en', 'ar');
+        infoParts.push(
+          `⚽ جدول أبرز مباريات اليوم في الملاعب العالمية (بتوقيت مصر 🇪🇬):\n${translatedMatches}`
+        );
+      }
+    } catch {
+      /* continue */
+    }
+
+    const todayNews = await fetchLiveGoogleNewsSnippets('مواعيد مباريات اليوم والقنوات الناقلة الدوري المصري', 3);
+    if (todayNews.length > 0) {
+      infoParts.push(`أبرز عناوين مباريات اليوم في مصر:\n${todayNews.slice(0, 4).join('\n')}`);
+    }
+
+    if (infoParts.length > 0) {
+      return infoParts.join('\n\n');
+    }
+  }
+
+  // CASE B: Specific Team Query (e.g., "ماتش الريال الجاي امتي", "ماتش الاهلي الاخير خلص كام")
   if (matchedTeam?.espnId) {
     try {
       const ctrl = new AbortController();
@@ -568,44 +709,14 @@ async function fetchLiveFootballData(rawQuestion: string): Promise<string | null
     } catch {
       /* continue */
     }
-
-    // Also check ESPN team nextEvent in case next match is in Champions League (`uefa.champions`)
-    if (infoParts.length === 0) {
-      for (const lg of ['uefa.champions', matchedTeam.espnLeague || 'esp.1']) {
-        try {
-          const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), 4000);
-          const res = await fetch(
-            `https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/teams/${matchedTeam.espnId}`,
-            { signal: ctrl.signal }
-          );
-          clearTimeout(timer);
-          if (res.ok) {
-            const data = await res.json();
-            const ev = data?.team?.nextEvent?.[0];
-            if (ev) {
-              const { dateAr, timeAr, relativeAr } = formatCairoDateTime(ev.date);
-              const evNameAr = await gtxTranslate((ev.name || '').replace(' at ', ' ضد '), 'en', 'ar');
-              infoParts.push(
-                `• المباراة القادمة لـ ${matchedTeam.nameAr}: ${evNameAr} — يوم ${dateAr} ${relativeAr} الساعة ${timeAr} بتوقيت مصر 🇪🇬`
-              );
-              break;
-            }
-          }
-        } catch {
-          /* continue */
-        }
-      }
-    }
   }
 
-  // 2) Always fetch live Google News Egypt sports headlines for the query (especially crucial for Al Ahly, Zamalek, Egyptian League, or latest match scores!)
   const sportNewsQuery = matchedTeam
     ? `${matchedTeam.nameAr} نتيجة موعد مباراة`
     : q;
-  const newsSnippets = await fetchLiveGoogleNewsSnippets(sportNewsQuery);
+  const newsSnippets = await fetchLiveGoogleNewsSnippets(sportNewsQuery, 14);
   if (newsSnippets.length > 0) {
-    infoParts.push(`أحدث الأخبار والنتائج المباشرة من جوجل نيوز مصر:\n${newsSnippets.slice(0, 4).join('\n')}`);
+    infoParts.push(`أحدث الأخبار والنتائج المباشرة:\n${newsSnippets.slice(0, 4).join('\n')}`);
   }
 
   if (infoParts.length > 0) {
@@ -625,16 +736,16 @@ async function gatherLiveInternetContext(rawQuestion: string): Promise<{
   const q = rawQuestion.trim();
   if (!q) return { directFormattedReply: null, webContextForAi: '' };
 
-  // 1) Football & Match Queries
+  // 1) Football & Match Queries (including "مين هيلعب انهارده يعني")
   if (
-    /(ماتش|ماتشات|مباراه|مباراة|مباريات|خلص كام|نتيجه ماتش|نتيجة ماتش|الريال|ريال مدريد|برشلونه|برشلونة|الاهلي|الأهلي|الزمالك|ليفربول|مانشستر|سيتي|ارسنال|أرسنال|تشيلسي|بايرن|باريس|انتر|ميلان|يوفنتوس|منتخب مصر|الهلال|النصر|بيراميدز|\bmatch\b|\bscore\b)/i.test(
+    /(مين هيلعب|مين بيلعب|مين يلعب|ماتش|ماتشات|مباراه|مباراة|مباريات|خلص كام|نتيجه ماتش|نتيجة ماتش|الريال|ريال مدريد|برشلونه|برشلونة|الاهلي|الأهلي|الزمالك|ليفربول|مانشستر|سيتي|ارسنال|أرسنال|تشيلسي|بايرن|باريس|انتر|ميلان|يوفنتوس|منتخب مصر|الهلال|النصر|بيراميدز|\bmatch\b|\bscore\b)/i.test(
       q
     )
   ) {
     const footballData = await fetchLiveFootballData(q);
     if (footballData) {
       return {
-        directFormattedReply: `⚽ **تحديث رياضي مباشر من الإنترنت:**\n\n${footballData}`,
+        directFormattedReply: footballData,
         webContextForAi: `[بيانات المباريات والنتائج الحية من الإنترنت الآن:\n${footballData}]`,
       };
     }
@@ -734,11 +845,11 @@ async function gatherLiveInternetContext(rawQuestion: string): Promise<{
     }
   }
 
-  // 5) For current events / news / prices (e.g. gold, news, recent events), fetch Google News snippets
-  if (/(اخبار|أخبار|سعر الدهب|سعر الذهب|الدهب بكام|الذهب بكام|حدث|النهارده|امبارح|امس|اليوم|الجديد)/i.test(q)) {
-    const news = await fetchLiveGoogleNewsSnippets(q);
+  // 5) Current News / Gold Prices
+  if (/(اخبار|أخبار|سعر الدهب|سعر الذهب|الدهب بكام|الذهب بكام)/i.test(q)) {
+    const news = await fetchLiveGoogleNewsSnippets(q, 7);
     if (news.length > 0) {
-      const newsBlock = `أحدث النتائج والأخبار المباشرة من الإنترنت اليوم:\n${news.slice(0, 5).join('\n')}`;
+      const newsBlock = `أحدث الأخبار المباشرة من الإنترنت اليوم:\n${news.slice(0, 4).join('\n')}`;
       return {
         directFormattedReply: newsBlock,
         webContextForAi: `[${newsBlock}]`,
@@ -775,7 +886,7 @@ export async function askGemini(
     question
   ).trim();
 
-  // Gather real-time internet data (ESPN, Google News Egypt RSS, Weather, Currency, Prayer)
+  // Gather real-time internet data (ESPN Scoreboard, Google News Egypt RSS, Weather, Currency, Prayer)
   const { directFormattedReply, webContextForAi } = await gatherLiveInternetContext(cleanUserQ);
 
   const questionWithLiveWeb = webContextForAi
@@ -788,16 +899,16 @@ export async function askGemini(
 
   // 1) Official Google Gemini API (when a valid AIza... key is present)
   if (key && key.startsWith('AIza')) {
-    for (const geminiModel of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
+    for (const geminiModel of ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 11000);
+      const timer = setTimeout(() => controller.abort(), 10000);
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
-        const recentHistory = history.slice(-8);
+        const recentHistory = history.slice(-6);
         const contents = [
           ...recentHistory.map((m) => ({
             role: m.who === 'me' ? 'user' : 'model',
-            parts: [{ text: (m.text || '').slice(0, 600) }],
+            parts: [{ text: (m.text || '').slice(0, 500) }],
           })),
           {
             role: 'user',
@@ -830,43 +941,23 @@ export async function askGemini(
 
   // 1B) Groq Cloud API (if `gsk_...` key is present)
   if (key && key.startsWith('gsk_')) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
-    try {
-      const groqMessages = [
+    const groqReply = await callOpenAiCompatibleEndpoint({
+      url: 'https://api.groq.com/openai/v1/chat/completions',
+      model: 'llama-3.3-70b-versatile',
+      apiKey: key,
+      messages: [
         { role: 'system', content: dynamicSystemPrompt },
         ...history.slice(-6).map((m) => ({
           role: m.who === 'me' ? 'user' : 'assistant',
-          content: (m.text || '').slice(0, 500),
+          content: (m.text || '').slice(0, 400),
         })),
         { role: 'user', content: fullPromptForKeyedModels },
-      ];
-      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${key}`,
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: groqMessages,
-          temperature: 0.35,
-          max_tokens: 850,
-        }),
-      });
-      clearTimeout(timer);
-      if (res.ok) {
-        const data = await res.json();
-        const reply = data?.choices?.[0]?.message?.content;
-        if (isValidCloudReply(reply)) return cleanAssistantMarkdown(reply);
-      }
-    } catch {
-      clearTimeout(timer);
-    }
+      ],
+    });
+    if (groqReply) return groqReply;
   }
 
-  // 2) Keyless Cloud AI Models (`searchgpt`, `openai`, `mistral`) grounded with Live Internet Context!
+  // Build concise message history for the Keyless Anonymous LLM Gateways
   const compactHistory = history
     .slice(-4)
     .filter((m) => Boolean(m.text && m.text.trim()))
@@ -889,79 +980,51 @@ export async function askGemini(
     { role: 'user', content: effectiveUserContent },
   ];
 
-  // Try searchgpt first when asking about live events/matches/news, then openai, then mistral
-  const modelsOrder = webContextForAi
-    ? ['openai', 'searchgpt', 'mistral']
-    : ['openai', 'searchgpt', 'mistral'];
-
-  for (const modelName of modelsOrder) {
-    const pollController = new AbortController();
-    const pollTimer = setTimeout(() => pollController.abort(), 10000);
-    try {
-      const res = await fetch('https://text.pollinations.ai/openai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: pollController.signal,
-        body: JSON.stringify({
-          model: modelName,
-          messages: compactMessages,
-          temperature: 0.3,
-        }),
-      });
-      clearTimeout(pollTimer);
-      if (res.ok) {
-        const contentType = res.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-          const json = await res.json();
-          const text = stripPollinationsFooter(
-            json?.choices?.[0]?.message?.content || json?.response || ''
-          );
-          if (isValidCloudReply(text)) {
-            return cleanAssistantMarkdown(text);
-          }
-        } else {
-          const rawTxt = stripPollinationsFooter(await res.text());
-          if (isValidCloudReply(rawTxt)) {
-            return cleanAssistantMarkdown(rawTxt);
-          }
-        }
-      }
-    } catch {
-      clearTimeout(pollTimer);
-    }
+  // 2) KEYLESS PROVIDER A: OVHcloud Anonymous AI Endpoints (Llama 3.3 70B, GPT-OSS 120B, Qwen 3.8 27B - No API Key Required!)
+  for (const ovhModel of [
+    'Meta-Llama-3_3-70B-Instruct',
+    'gpt-oss-120b',
+    'Qwen3.8-27B',
+    'Mistral-Small-3.2-24B-Instruct',
+  ]) {
+    const ovhReply = await callOpenAiCompatibleEndpoint({
+      url: 'https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions',
+      model: ovhModel,
+      messages: compactMessages,
+      timeoutMs: 9500,
+    });
+    if (ovhReply) return ovhReply;
   }
 
-  // 3) Pollinations GET endpoint (with short prompt)
-  {
-    const getController = new AbortController();
-    const getTimer = setTimeout(() => getController.abort(), 8000);
-    try {
-      const shortPrompt = `رد بالمصري العامي بدقة ومباشرة على السؤال ده: ${cleanUserQ.slice(0, 160)}`;
-      const res = await fetch(
-        `https://text.pollinations.ai/${encodeURIComponent(shortPrompt)}`,
-        { signal: getController.signal }
-      );
-      clearTimeout(getTimer);
-      if (res.ok) {
-        const txt = stripPollinationsFooter(await res.text());
-        if (isValidCloudReply(txt)) return cleanAssistantMarkdown(txt);
-      }
-    } catch {
-      clearTimeout(getTimer);
-    }
+  // 3) KEYLESS PROVIDER B: Kilo Code Free AI Gateway (`kilo-auto/free`, `openrouter/free` - 200 req/hr per IP, No API Key Required!)
+  for (const kiloModel of [
+    'kilo-auto/free',
+    'openrouter/free',
+    'nvidia/nemotron-3.5-lightning:free',
+  ]) {
+    const kiloReply = await callOpenAiCompatibleEndpoint({
+      url: 'https://api.kilo.ai/api/gateway/chat/completions',
+      model: kiloModel,
+      messages: compactMessages,
+      timeoutMs: 9500,
+    });
+    if (kiloReply) return kiloReply;
   }
 
-  // 4) If Cloud LLM generation timed out but we already fetched verified live internet data (ESPN / Google News / Weather / Currency / Prayer), return it directly!
+  // 4) KEYLESS PROVIDER C: LLM7.io Anonymous Turbo Gateway (`gpt-oss:20b`, `mistral-Nemo-Instruct-2407` - No API Key Required!)
+  for (const llm7Model of ['gpt-oss:20b', 'mistral-Nemo-Instruct-2407', 'default']) {
+    const llm7Reply = await callOpenAiCompatibleEndpoint({
+      url: 'https://api.llm7.io/v1/chat/completions',
+      model: llm7Model,
+      messages: compactMessages,
+      timeoutMs: 9000,
+    });
+    if (llm7Reply) return llm7Reply;
+  }
+
+  // 5) If we already fetched verified live internet data (Today's ESPN Matches / Team Schedule / Weather / Currency / Prayer), return it cleanly!
   if (directFormattedReply) {
     return cleanAssistantMarkdown(directFormattedReply);
-  }
-
-  // 5) Final fallback: Fetch live Google News Egypt snippets for ANY open question so it still brings real results from the internet!
-  const fallbackNews = await fetchLiveGoogleNewsSnippets(cleanUserQ);
-  if (fallbackNews.length > 0) {
-    return cleanAssistantMarkdown(
-      `إليك أحدث النتائج المباشرة من الإنترنت بخصوص «${cleanUserQ}»:\n\n${fallbackNews.join('\n')}`
-    );
   }
 
   throw new Error('ALL_AI_ENDPOINTS_UNAVAILABLE');
