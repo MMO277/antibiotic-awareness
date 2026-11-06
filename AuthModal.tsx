@@ -47,12 +47,24 @@ const prefersReducedMotion = (): boolean =>
 /* Exact logo mark copied unchanged from the header in Layout.tsx. */
 function BrandMark({ size }: { size: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
-      <g transform="rotate(-40 16 16)">
-        <rect x="3" y="10" width="26" height="12" rx="6" fill="#fff" />
-        <path d="M16 10h7a6 6 0 0 1 0 12h-7z" fill="#17B8C4" />
-      </g>
-    </svg>
+    <img
+      src={`${import.meta.env.BASE_URL}favicon-192.png`}
+      alt=""
+      aria-hidden="true"
+      onError={(e) => {
+        const img = e.currentTarget;
+        if (!img.src.endsWith('favicon.svg')) {
+          img.src = `${import.meta.env.BASE_URL}favicon.svg`;
+        }
+      }}
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: `${Math.round(size * 0.24)}px`,
+        objectFit: 'cover',
+        display: 'block',
+      }}
+    />
   );
 }
 

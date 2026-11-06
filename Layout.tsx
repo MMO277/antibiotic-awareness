@@ -553,6 +553,17 @@ export default function Layout({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, [pathname]);
 
+  // Dynamically keep browser tab title & apple-mobile-web-app-title synced with t('appName')
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const currentAppName = t('appName');
+    if (currentAppName) {
+      document.title = currentAppName;
+      const appleMeta = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (appleMeta) appleMeta.setAttribute('content', currentAppName);
+    }
+  }, [lang, t]);
+
   // ── Automatic Full-Page TextNode & Attribute Localizer for ALL sub-pages when lang is FR, ES, or DE ──
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -826,13 +837,24 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="wrap bar">
           <div className="brand-group">
             <Link to="/" className="brand">
-              <div className="brand-logo-circle">
-                <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
-                  <g transform="rotate(-40 16 16)">
-                    <rect x="3" y="10" width="26" height="12" rx="6" fill="#fff" />
-                    <path d="M16 10h7a6 6 0 0 1 0 12h-7z" fill="#17B8C4" />
-                  </g>
-                </svg>
+              <div className="brand-logo-circle" style={{ overflow: 'hidden', padding: 0 }}>
+                <img
+                  src={`${import.meta.env.BASE_URL}favicon-192.png`}
+                  alt={t('appName')}
+                  onError={(e) => {
+                    const img = e.currentTarget;
+                    if (!img.src.endsWith('favicon.svg')) {
+                      img.src = `${import.meta.env.BASE_URL}favicon.svg`;
+                    }
+                  }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: 'inherit',
+                    display: 'block',
+                  }}
+                />
               </div>
               <span className="brand-title-wrap">
                 <b>{t('appName')}</b>
@@ -1104,7 +1126,12 @@ export default function Layout({ children }: { children: ReactNode }) {
           >
             <div className="drawer-header">
               <div className="drawer-brand">
-                <span className="drawer-logo" aria-hidden="true">💊</span>
+                <img
+                  src={`${import.meta.env.BASE_URL}favicon-192.png`}
+                  alt=""
+                  aria-hidden="true"
+                  style={{ width: '34px', height: '34px', borderRadius: '9px', objectFit: 'cover', flexShrink: 0 }}
+                />
                 <div className="drawer-brand-text">
                   <b>{tr(lang, 'أقسام المنصة السريرية', 'Clinical Portal Menu', 'Menu du Portail Clinique', 'Menú del Portal Clínico')}</b>
                   <small className="drawer-subtitle">
@@ -1349,7 +1376,12 @@ export default function Layout({ children }: { children: ReactNode }) {
         <div className="wrap pro-footer-grid">
           <div>
             <div className="row" style={{ gap: '10px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '1.6rem' }}>💊</span>
+              <img
+                src={`${import.meta.env.BASE_URL}favicon-192.png`}
+                alt=""
+                aria-hidden="true"
+                style={{ width: '36px', height: '36px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0 }}
+              />
               <div>
                 <b style={{ fontSize: '1.05rem', color: '#fff' }}>{t('appName')}</b>
               </div>
