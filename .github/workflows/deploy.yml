@@ -21,6 +21,46 @@ jobs:
       - run: npm install
       - name: TypeScript validation
         run: npm run typecheck
+      - name: Auto-Sync Website Icon Sizes & App Name
+        run: |
+          pip install --quiet Pillow || true
+          python3 - << 'PYEOF'
+          import os, re, json
+          try:
+              from PIL import Image
+              app_name_ar = "الوعي بالمضادات الحيوية"
+              if os.path.exists("i18n.tsx"):
+                  with open("i18n.tsx", "r", encoding="utf-8") as f:
+                      m = re.search(r"appName:\s*['\"]([^'\"]+)['\"]", f.read())
+                      if m: app_name_ar = m.group(1).strip()
+              if os.path.exists("public/manifest.webmanifest"):
+                  with open("public/manifest.webmanifest", "r", encoding="utf-8") as f:
+                      manifest = json.load(f)
+                  manifest["name"] = app_name_ar
+                  manifest["short_name"] = app_name_ar
+                  with open("public/manifest.webmanifest", "w", encoding="utf-8") as f:
+                      json.dump(manifest, f, ensure_ascii=False, indent=2)
+              candidates = ["icon.png", "logo.png", "favicon-192.png", "apple-touch-icon.png", "public/pwa-512.png", "public/favicon-192.png"]
+              existing = [p for p in candidates if os.path.exists(p)]
+              if existing:
+                  existing.sort(key=lambda p: (os.path.getmtime(p), "512" in p), reverse=True)
+                  im = Image.open(existing[0]).convert("RGBA")
+                  os.makedirs("public", exist_ok=True)
+                  for dest, sz in {
+                      "public/pwa-512.png": (512, 512),
+                      "public/pwa-maskable-512.png": (512, 512),
+                      "public/pwa-192.png": (192, 192),
+                      "public/favicon-192.png": (192, 192),
+                      "favicon-192.png": (192, 192),
+                      "public/apple-touch-icon.png": (180, 180),
+                      "apple-touch-icon.png": (180, 180),
+                      "public/favicon-48.png": (48, 48),
+                      "favicon-48.png": (48, 48),
+                  }.items():
+                      im.resize(sz, Image.Resampling.LANCZOS).save(dest, format="PNG")
+          except Exception as e:
+              print("Icon sync skipped:", e)
+          PYEOF
       - run: npm run build
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}

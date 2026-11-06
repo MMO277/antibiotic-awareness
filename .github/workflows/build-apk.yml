@@ -9,6 +9,13 @@ on:
       - 'nativeAlarmService.ts'
       - 'authContext.tsx'
       - 'AuthModal.tsx'
+      - 'Layout.tsx'
+      - 'Home.tsx'
+      - 'i18n.tsx'
+      - 'index.html'
+      - 'public/**'
+      - '*.png'
+      - '*.svg'
       - 'package.json'
 
 permissions:
@@ -61,6 +68,78 @@ jobs:
           npm install --legacy-peer-deps
           npm install --legacy-peer-deps @capacitor/core@^6.1.2 @capacitor/cli@^6.1.2 @capacitor/android@^6.1.2 @capacitor/local-notifications@^6.0.2
 
+      - name: Sync Website Icon & App Name Automatically Before Web Build
+        run: |
+          pip install --quiet Pillow || true
+          python3 - << 'PYEOF'
+          import os, re, json
+          from PIL import Image
+
+          app_name_ar = "الوعي بالمضادات الحيوية"
+          if os.path.exists("i18n.tsx"):
+              with open("i18n.tsx", "r", encoding="utf-8") as f:
+                  txt = f.read()
+              m = re.search(r"appName:\s*['\"]([^'\"]+)['\"]", txt)
+              if m:
+                  app_name_ar = m.group(1).strip()
+
+          print("Synced App Name:", app_name_ar)
+
+          manifest_path = "public/manifest.webmanifest"
+          if os.path.exists(manifest_path):
+              try:
+                  with open(manifest_path, "r", encoding="utf-8") as f:
+                      manifest = json.load(f)
+                  manifest["name"] = app_name_ar
+                  manifest["short_name"] = app_name_ar
+                  with open(manifest_path, "w", encoding="utf-8") as f:
+                      json.dump(manifest, f, ensure_ascii=False, indent=2)
+              except Exception as e:
+                  print("Manifest sync warning:", e)
+
+          if os.path.exists("capacitor.config.ts"):
+              with open("capacitor.config.ts", "r", encoding="utf-8") as f:
+                  cap_cfg = f.read()
+              cap_cfg = re.sub(
+                  r"appName:\s*['\"][^'\"]*['\"]",
+                  f"appName: {json.dumps(app_name_ar, ensure_ascii=False)}",
+                  cap_cfg,
+              )
+              with open("capacitor.config.ts", "w", encoding="utf-8") as f:
+                  f.write(cap_cfg)
+
+          candidates = [
+              "icon.png",
+              "logo.png",
+              "favicon-192.png",
+              "apple-touch-icon.png",
+              "public/pwa-512.png",
+              "public/favicon-192.png",
+              "public/apple-touch-icon.png",
+              "public/pwa-192.png",
+          ]
+          existing = [p for p in candidates if os.path.exists(p)]
+          if existing:
+              existing.sort(key=lambda p: (os.path.getmtime(p), "512" in p), reverse=True)
+              src_icon = existing[0]
+              print("Using source icon:", src_icon)
+              im = Image.open(src_icon).convert("RGBA")
+              os.makedirs("public", exist_ok=True)
+              targets = {
+                  "public/pwa-512.png": (512, 512),
+                  "public/pwa-maskable-512.png": (512, 512),
+                  "public/pwa-192.png": (192, 192),
+                  "public/favicon-192.png": (192, 192),
+                  "favicon-192.png": (192, 192),
+                  "public/apple-touch-icon.png": (180, 180),
+                  "apple-touch-icon.png": (180, 180),
+                  "public/favicon-48.png": (48, 48),
+                  "favicon-48.png": (48, 48),
+              }
+              for dest, sz in targets.items():
+                  im.resize(sz, Image.Resampling.LANCZOS).save(dest, format="PNG")
+          PYEOF
+
       - name: Build Web Application
         run: npm run build
         env:
@@ -76,6 +155,86 @@ jobs:
           rm -rf android
           npx cap add android
           npx cap sync android
+
+      - name: Apply Website Icon & Website Name to Android APK Launcher
+        run: |
+          python3 - << 'PYEOF'
+          import os, re, glob
+          from PIL import Image, ImageDraw
+
+          app_name_ar = "الوعي بالمضادات الحيوية"
+          if os.path.exists("i18n.tsx"):
+              with open("i18n.tsx", "r", encoding="utf-8") as f:
+                  txt = f.read()
+              m = re.search(r"appName:\s*['\"]([^'\"]+)['\"]", txt)
+              if m:
+                  app_name_ar = m.group(1).strip()
+
+          strings_path = "android/app/src/main/res/values/strings.xml"
+          if os.path.exists(strings_path):
+              with open(strings_path, "r", encoding="utf-8") as f:
+                  s_xml = f.read()
+              s_xml = re.sub(r"<string name=\"app_name\">.*?</string>", f"<string name=\"app_name\">{app_name_ar}</string>", s_xml)
+              s_xml = re.sub(r"<string name=\"title_activity_main\">.*?</string>", f"<string name=\"title_activity_main\">{app_name_ar}</string>", s_xml)
+              with open(strings_path, "w", encoding="utf-8") as f:
+                  f.write(s_xml)
+              print("Updated strings.xml with app_name:", app_name_ar)
+
+          icon_src = "public/pwa-512.png" if os.path.exists("public/pwa-512.png") else "favicon-192.png"
+          if os.path.exists(icon_src):
+              base_im = Image.open(icon_src).convert("RGBA")
+              w, h = base_im.size
+              sample_px = base_im.getpixel((w // 2, max(2, int(h * 0.04))))
+              if sample_px[3] < 128:
+                  bg_rgb = (11, 60, 93)
+              else:
+                  bg_rgb = (sample_px[0], sample_px[1], sample_px[2])
+              bg_hex = "#{:02X}{:02X}{:02X}".format(*bg_rgb)
+
+              bg_xml_path = "android/app/src/main/res/values/ic_launcher_background.xml"
+              os.makedirs(os.path.dirname(bg_xml_path), exist_ok=True)
+              with open(bg_xml_path, "w", encoding="utf-8") as f:
+                  f.write(f"<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<resources>\n    <color name=\"ic_launcher_background\">{bg_hex}</color>\n</resources>\n")
+
+              for webp_file in glob.glob("android/app/src/main/res/mipmap-*/ic_launcher*.webp"):
+                  try:
+                      os.remove(webp_file)
+                  except Exception:
+                      pass
+
+              densities = {
+                  "mipmap-mdpi": (48, 108),
+                  "mipmap-hdpi": (72, 162),
+                  "mipmap-xhdpi": (96, 216),
+                  "mipmap-xxhdpi": (144, 324),
+                  "mipmap-xxxhdpi": (192, 432),
+              }
+
+              for folder, (legacy_px, fg_px) in densities.items():
+                  out_dir = os.path.join("android/app/src/main/res", folder)
+                  os.makedirs(out_dir, exist_ok=True)
+
+                  sq = base_im.resize((legacy_px, legacy_px), Image.Resampling.LANCZOS)
+                  sq.save(os.path.join(out_dir, "ic_launcher.png"), format="PNG")
+
+                  circle_canvas = Image.new("RGBA", (legacy_px, legacy_px), (*bg_rgb, 255))
+                  circle_canvas.paste(sq, (0, 0), sq)
+                  mask = Image.new("L", (legacy_px, legacy_px), 0)
+                  draw = ImageDraw.Draw(mask)
+                  draw.ellipse((0, 0, legacy_px - 1, legacy_px - 1), fill=255)
+                  round_im = Image.new("RGBA", (legacy_px, legacy_px), (0, 0, 0, 0))
+                  round_im.paste(circle_canvas, (0, 0), mask)
+                  round_im.save(os.path.join(out_dir, "ic_launcher_round.png"), format="PNG")
+
+                  fg_canvas = Image.new("RGBA", (fg_px, fg_px), (0, 0, 0, 0))
+                  inner_px = int(round(fg_px * 0.66))
+                  inner_im = base_im.resize((inner_px, inner_px), Image.Resampling.LANCZOS)
+                  offset = (fg_px - inner_px) // 2
+                  fg_canvas.paste(inner_im, (offset, offset), inner_im)
+                  fg_canvas.save(os.path.join(out_dir, "ic_launcher_foreground.png"), format="PNG")
+
+              print("Successfully generated all Android mipmap launcher icons from website icon!")
+          PYEOF
 
       - name: Configure Hybrid Smart Boot, Native Google Account Picker & Alarm Receiver
         run: |
