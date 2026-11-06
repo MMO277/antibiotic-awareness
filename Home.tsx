@@ -773,7 +773,7 @@ export default function Home() {
                             ) : null}
                           </div>
                           <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                            {pkg.scientificComposition} • {isAr ? pkg.dosageFormAr : pkg.dosageFormEn}
+                            {pkg.scientificComposition} • {pick(pkg.dosageFormLabel, lang)}
                           </div>
                         </div>
                         <span
