@@ -404,7 +404,8 @@ export default function Assistant() {
 
     // If our contextual engine matched a medical condition, medicine, or follow-up question from site data,
     // reply IMMEDIATELY (<10ms) unless the user configured a custom Gemini API key!
-    if (contextualResult.handledFast && !isCustomApiKey()) {
+    const isAnalyticalOrOpenQuestion = /(ليه |لماذا |ازاي بيشتغل|إزاي بيشتغل|اشرحلي |فسرلي |هل لو |ايه علاقه |إيه علاقة |تاريخ |معلومات عن |كلمني عن |من هو |مين هو |ما هو |ما هي |عاصمه |عاصمة |طريقه عمل |طريقة عمل |سعر الدولار|الطقس|مواعيد الصلاه|مواعيد الصلاة)/.test(text);
+    if (contextualResult.handledFast && !isCustomApiKey() && !isAnalyticalOrOpenQuestion) {
       const fastMsg: EnhancedChatUiMessage = {
         id: `msg-${Date.now()}-fast`,
         who: 'bot',
@@ -435,7 +436,7 @@ export default function Assistant() {
       });
       const enrichedQuestion = patientContext ? `${text}\n\n${patientContext}` : text;
 
-      const rawAiResponse = await askGemini(enrichedQuestion, history);
+      const rawAiResponse = await askGemini(enrichedQuestion, history, text);
       const { cleanReplyText, detectedIntent } = extractAiToolCallFromResponse(rawAiResponse);
 
       if (

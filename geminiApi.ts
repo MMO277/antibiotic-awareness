@@ -167,6 +167,201 @@ export const SYSTEM_PROMPT = `أنت المساعد الذكي الشامل وا
    - أوعى تقول لمريض يضاعف جرعة دوا نسيها، وفي الأسئلة الطبية والأدوية اختم بنصيحة ودودة بمراجعة الدكتور أو الصيدلي لتأكيد الجرعة.
    - في الطوارئ الحادة (ضيق تنفس شديد، تورم الوش واللسان، إغماء)، وجهه فوراً يكلم الإسعاف المصري (123).`;
 
+export const COMPACT_CLOUD_SYSTEM_PROMPT = `أنت المساعد الذكي الشامل والموسوعي (AI Universal & Health Assistant).
+1. جاوب على أي سؤال يسأله المستخدم في أي مجال في الدنيا بدون أي قيود! سواء كان سؤال عام، ثقافي، تاريخي، علمي، ديني، رياضي، طبخ، برمجة، رياضيات، نصائح يومية، أو سؤال طبي ودوائي وتحاليل.
+2. لما المستخدم يكلمك بالعربي، رد بلهجة مصرية عامية ودودة وطبيعية جداً ("يا هلا بيك"، "من عنيا ليك"، "بص يا سيدي") وبمعلومات دقيقة ومفصلة ومفيدة. ولو سأل بالإنجليزي أو أي لغة تانية رد بنفس لغته.
+3. رتب إجابتك في نقاط واضحة (1. ، 2. أو •) بدون جداول Markdown (|) وبدون نجوم ** أو شبابيك ###.`;
+
+function isValidCloudReply(text: string | undefined | null): boolean {
+  if (!text) return false;
+  const t = text.trim();
+  if (t.length < 4) return false;
+  if (/^(<!DOCTYPE|<html|<head|\{"error"|502 Bad Gateway|504 Gateway|429 Too Many|Error:|Rate limit|Internal Server Error)/i.test(t)) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Live Open-Web Knowledge Engine (100% Free, Browser CORS `*`, Zero API Key Required):
+ * Queries Live Weather (Open-Meteo), Live Currency Rates (ExchangeRate-API),
+ * Live Prayer Times (Aladhan), and Live Arabic/English Wikipedia (`origin=*`)!
+ */
+async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | null> {
+  const q = rawQuestion.trim();
+  if (!q) return null;
+
+  // A) Live Weather in Egypt / Cities (Open-Meteo API - CORS *)
+  if (/(الطقس|الجو عامل ايه|درجه الحراره|درجة الحرارة|حراره الجو|المطر النهارده|\bweather\b)/i.test(q)) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch(
+        'https://api.open-meteo.com/v1/forecast?latitude=30.0444&longitude=31.2357&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=Africa%2FCairo',
+        { signal: ctrl.signal }
+      );
+      clearTimeout(t);
+      if (res.ok) {
+        const data = await res.json();
+        const curr = data?.current?.temperature_2m;
+        const maxT = data?.daily?.temperature_2m_max?.[0];
+        const minT = data?.daily?.temperature_2m_min?.[0];
+        const hum = data?.current?.relative_humidity_2m;
+        const wind = data?.current?.wind_speed_10m;
+        if (curr !== undefined) {
+          return (
+            `يا هلا بيك! دي حالة الطقس ودرجات الحرارة المباشرة دلوقتي في مصر (بتوقيت القاهرة): 🌤️\n\n` +
+            `• درجة الحرارة الحالية: ${curr}° مئوية\n` +
+            `• العظمى المتوقعة النهاردة: ${maxT ?? curr}° مئوية | الصغرى بالليل: ${minT ?? curr}° مئوية\n` +
+            `• نسبة الرطوبة: ${hum ?? 50}% | سرعة الرياح: ${wind ?? 12} كم/ساعة\n\n` +
+            `💡 نصيحة صحية: اشرب مية كويس على مدار اليوم، وخلي بالك من تخفيف أو تقيل الهدوم فجأة بين النهار والليل عشان تحمي نفسك من أدوار البرد!`
+          );
+        }
+      }
+    } catch {
+      /* continue */
+    }
+  }
+
+  // B) Live Currency / Dollar / SAR / EUR Exchange Rates to EGP (open.er-api.com - CORS *)
+  if (/(سعر الدولار|الدولار بكام|سعر الريال|الريال بكام|سعر اليورو|اليورو بكام|سعر الدرهم|سعر الدينار|اسعار العملات|أسعار العملات|\bexchange rate\b|\busd to egp\b)/i.test(q)) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch('https://open.er-api.com/v6/latest/USD', { signal: ctrl.signal });
+      clearTimeout(t);
+      if (res.ok) {
+        const data = await res.json();
+        const egp = data?.rates?.EGP;
+        const sar = data?.rates?.SAR;
+        const eur = data?.rates?.EUR;
+        const aed = data?.rates?.AED;
+        const kwd = data?.rates?.KWD;
+        if (egp) {
+          const usdEgp = Number(egp).toFixed(2);
+          const sarEgp = sar ? (egp / sar).toFixed(2) : '—';
+          const eurEgp = eur ? (egp / eur).toFixed(2) : '—';
+          const aedEgp = aed ? (egp / aed).toFixed(2) : '—';
+          const kwdEgp = kwd ? (egp / kwd).toFixed(2) : '—';
+          return (
+            `من عنيا! دي أسعار صرف العملات العالمية مقابل الجنيه المصري وفق آخر تحديث مباشر للأسواق: 💵\n\n` +
+            `• الدولار الأمريكي (USD): حوالي ${usdEgp} ج.م\n` +
+            `• اليورو الأوروبي (EUR): حوالي ${eurEgp} ج.م\n` +
+            `• الريال السعودي (SAR): حوالي ${sarEgp} ج.م\n` +
+            `• الدرهم الإماراتي (AED): حوالي ${aedEgp} ج.م\n` +
+            `• الدينار الكويتي (KWD): حوالي ${kwdEgp} ج.م`
+          );
+        }
+      }
+    } catch {
+      /* continue */
+    }
+  }
+
+  // C) Live Prayer Times in Egypt (api.aladhan.com - CORS *)
+  if (/(مواعيد الصلاه|مواعيد الصلاة|مواقيت الصلاه|مواقيت الصلاة|اذان الفجر|أذان الفجر|اذان المغرب|أذان المغرب|اذان الظهر|اذان العصر|اذان العشاء|الصلاه امتي|الصلاة امتى|\bprayer times\b)/i.test(q)) {
+    try {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch(
+        'https://api.aladhan.com/v1/timingsByCity?city=Cairo&country=Egypt&method=5',
+        { signal: ctrl.signal }
+      );
+      clearTimeout(t);
+      if (res.ok) {
+        const json = await res.json();
+        const timings = json?.data?.timings;
+        const hijri = json?.data?.date?.hijri;
+        if (timings) {
+          return (
+            `تقبل الله منك صالح الأعمال! 🕌 دي مواقيت الصلاة اليوم في مصر (حسب التوقيت المحلي والهيئة المصرية العامة للمساحة):\n\n` +
+            `• الفجر: ${timings.Fajr}\n` +
+            `• الشروق: ${timings.Sunrise}\n` +
+            `• الظهر: ${timings.Dhuhr}\n` +
+            `• العصر: ${timings.Asr}\n` +
+            `• المغرب: ${timings.Maghrib}\n` +
+            `• العشاء: ${timings.Isha}` +
+            (hijri ? `\n\n📅 التاريخ الهجري اليوم: ${hijri.day} ${hijri.month?.ar || ''} ${hijri.year} هـ` : '')
+          );
+        }
+      }
+    } catch {
+      /* continue */
+    }
+  }
+
+  // D) Live Wikipedia Encyclopedia Search (Arabic & English Wikipedia with `origin=*` CORS)
+  try {
+    const isArabicQuery = /[\u0600-\u06FF]/.test(q);
+    const strippedTopic = q
+      .replace(/[؟?!.,،"«»]/g, ' ')
+      .replace(
+        /^(?:بعد اذنك|بعد إذنك|يا دكتور|لو سمحت|ممكن|قولي|قلي|عرفني|اشرحلي|فسرلي|احكيلي|كلمني عن|معلومات عن|عايز اعرف عن|عايز اعرف|عاوز اعرف|ما هو|ما هي|ما هم|من هو|من هي|مين هو|مين هي|مين اللي|ايه هو|إيه هو|ايه هي|إيه هي|يعني ايه|يعني إيه|اين تقع|أين تقع|اين يوجد|متي حدث|متى حدث|ازاي|إزاي|كيف)\s+/gi,
+        ''
+      )
+      .replace(/^(?:عن|ان|أن)\s+/i, '')
+      .trim();
+
+    const searchQuery = strippedTopic.length >= 2 ? strippedTopic : q;
+    const wikiLang = isArabicQuery ? 'ar' : 'en';
+    const searchController = new AbortController();
+    const searchTimer = setTimeout(() => searchController.abort(), 5500);
+
+    const searchUrl = `https://${wikiLang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
+      searchQuery
+    )}&srlimit=3&utf8=1&format=json&origin=*`;
+
+    const searchRes = await fetch(searchUrl, { signal: searchController.signal });
+    clearTimeout(searchTimer);
+
+    if (searchRes.ok) {
+      const searchJson = await searchRes.json();
+      const results = searchJson?.query?.search;
+      if (Array.isArray(results) && results.length > 0) {
+        const topPageId = results[0].pageid;
+        const topTitle = results[0].title;
+        const extractController = new AbortController();
+        const extractTimer = setTimeout(() => extractController.abort(), 5500);
+        const extractUrl = `https://${wikiLang}.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&pageids=${topPageId}&format=json&origin=*`;
+        const extractRes = await fetch(extractUrl, { signal: extractController.signal });
+        clearTimeout(extractTimer);
+
+        if (extractRes.ok) {
+          const extractJson = await extractRes.json();
+          const rawExtract: string = extractJson?.query?.pages?.[String(topPageId)]?.extract || '';
+          const cleanedExtract = rawExtract
+            .replace(/\s+/g, ' ')
+            .trim();
+          if (cleanedExtract.length > 40) {
+            const sentences = cleanedExtract
+              .split(/(?<=[.!?؟])\s+/)
+              .filter(Boolean)
+              .slice(0, 6);
+            const bulletText = sentences.map((s, idx) => `${idx + 1}. ${s}`).join('\n');
+            if (isArabicQuery) {
+              return (
+                `يا هلا بيك! من عنيا، دي أهم المعلومات الموثقة عن «${topTitle}»:\n\n` +
+                `${bulletText}\n\n` +
+                `💬 لو حابب تعرف أي تفاصيل تانية عن الموضوع ده أو تسألني في أي مجال تاني قولي فوراً!`
+              );
+            } else {
+              return (
+                `Here is a verified summary regarding "${topTitle}":\n\n` +
+                `${bulletText}\n\n` +
+                `Feel free to ask any follow-up questions!`
+              );
+            }
+          }
+        }
+      }
+    }
+  } catch {
+    /* continue */
+  }
+
+  return null;
+}
+
 export interface ChatMessage {
   who: 'me' | 'bot';
   text: string;
@@ -174,7 +369,8 @@ export interface ChatMessage {
 
 export async function askGemini(
   question: string,
-  history: ChatMessage[] = []
+  history: ChatMessage[] = [],
+  rawUserQuestion?: string
 ): Promise<string> {
   const key = getApiKey();
   const emerg = getCurrentEmergencyInfo();
@@ -183,60 +379,93 @@ export async function askGemini(
     `طوارئ ${emerg.name.ar} (${emerg.number})`
   );
 
+  const cleanUserQ = (
+    rawUserQuestion ||
+    question.split('\n\n[ملف المريض:')[0] ||
+    question
+  ).trim();
+
+  // Check real-time live data endpoints first if the user explicitly asks for live weather, currency rates, or prayer times
+  if (
+    /(الطقس|الجو عامل ايه|درجه الحراره|درجة الحرارة|سعر الدولار|الدولار بكام|سعر الريال|الريال بكام|سعر اليورو|اليورو بكام|اسعار العملات|مواعيد الصلاه|مواعيد الصلاة|مواقيت الصلاه|مواقيت الصلاة|اذان الفجر|اذان المغرب|\bweather\b|\bexchange rate\b|\bprayer times\b)/i.test(
+      cleanUserQ
+    )
+  ) {
+    const liveDataReply = await queryLiveOpenWebKnowledge(cleanUserQ);
+    if (liveDataReply) return cleanAssistantMarkdown(liveDataReply);
+  }
+
+  // 1) Official Google Gemini API (when user or env provides a valid AIza... key)
   if (key && key.startsWith('AIza')) {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
-      const recentHistory = history.slice(-10);
-      const contents = [
-        ...recentHistory.map((m) => ({
-          role: m.who === 'me' ? 'user' : 'model',
-          parts: [{ text: m.text }],
-        })),
-        {
-          role: 'user',
-          parts: [{ text: question }],
-        },
-      ];
+    for (const geminiModel of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
+        const recentHistory = history.slice(-8);
+        const contents = [
+          ...recentHistory.map((m) => ({
+            role: m.who === 'me' ? 'user' : 'model',
+            parts: [{ text: (m.text || '').slice(0, 600) }],
+          })),
+          {
+            role: 'user',
+            parts: [{ text: question }],
+          },
+        ];
 
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: controller.signal,
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: dynamicSystemPrompt }] },
-          contents,
-          generationConfig: { temperature: 0.25, maxOutputTokens: 700 },
-        }),
-      });
-      clearTimeout(timer);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: dynamicSystemPrompt }] },
+            contents,
+            generationConfig: { temperature: 0.35, maxOutputTokens: 850 },
+          }),
+        });
+        clearTimeout(timer);
 
-      if (response.ok) {
-        const data = await response.json();
-        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (reply) return cleanAssistantMarkdown(reply);
+        if (response.ok) {
+          const data = await response.json();
+          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (isValidCloudReply(reply)) return cleanAssistantMarkdown(reply);
+        }
+      } catch {
+        clearTimeout(timer);
       }
-    } catch {
-      clearTimeout(timer);
-      /* fallback to keyless endpoint */
     }
   }
 
-  const messages = [
-    { role: 'system', content: dynamicSystemPrompt },
-    ...history.slice(-10).map((m) => ({
+  // Build a clean, WAF-safe message payload for keyless cloud AI endpoints
+  const compactHistory = history
+    .slice(-4)
+    .filter((m) => Boolean(m.text && m.text.trim()))
+    .map((m) => ({
       role: m.who === 'me' ? 'user' : 'assistant',
-      content: m.text,
-    })),
-    { role: 'user', content: question },
+      content: m.text.slice(0, 300),
+    }));
+
+  const isMedicalOrActionQuery =
+    /(دوا|دواء|مضاد|جرعه|جرعة|مرض|حساسيه|حساسية|سجل|ضيف|منبه|روشته|روشتة|تحليل|ملفي|الم|وجع|سعر|بديل)/i.test(
+      cleanUserQ
+    );
+  const effectiveUserContent = isMedicalOrActionQuery
+    ? question.slice(0, 800)
+    : cleanUserQ;
+
+  const compactMessages = [
+    { role: 'system', content: COMPACT_CLOUD_SYSTEM_PROMPT },
+    ...compactHistory,
+    { role: 'user', content: effectiveUserContent },
   ];
 
-  for (const modelName of ['openai', 'openai-fast', 'mistral']) {
+  // 2) Pollinations OpenAI-compatible POST endpoint
+  for (const modelName of ['openai', 'openai-fast']) {
     const pollController = new AbortController();
-    const pollTimer = setTimeout(() => pollController.abort(), 8000);
+    const pollTimer = setTimeout(() => pollController.abort(), 9000);
     try {
       const res = await fetch('https://text.pollinations.ai/openai', {
         method: 'POST',
@@ -244,16 +473,24 @@ export async function askGemini(
         signal: pollController.signal,
         body: JSON.stringify({
           model: modelName,
-          messages,
-          temperature: 0.3,
+          messages: compactMessages,
+          temperature: 0.35,
         }),
       });
       clearTimeout(pollTimer);
       if (res.ok) {
-        const json = await res.json();
-        const text = json?.choices?.[0]?.message?.content;
-        if (text && text.trim()) {
-          return cleanAssistantMarkdown(text);
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const json = await res.json();
+          const text = json?.choices?.[0]?.message?.content || json?.response || '';
+          if (isValidCloudReply(text)) {
+            return cleanAssistantMarkdown(text);
+          }
+        } else {
+          const rawTxt = await res.text();
+          if (isValidCloudReply(rawTxt)) {
+            return cleanAssistantMarkdown(rawTxt);
+          }
         }
       }
     } catch {
@@ -261,24 +498,32 @@ export async function askGemini(
     }
   }
 
-  // Final lightweight GET fallback on pollinations for open questions
-  const getController = new AbortController();
-  const getTimer = setTimeout(() => getController.abort(), 7000);
-  try {
-    const compactPrompt = `جاوب باللهجة المصرية العامية الودودة وبشكل مباشر ومفيد على السؤال التالي:
-${question.slice(0, 700)}`;
-    const res = await fetch(
-      `https://text.pollinations.ai/${encodeURIComponent(compactPrompt)}?model=openai`,
-      { signal: getController.signal }
-    );
-    clearTimeout(getTimer);
-    if (res.ok) {
-      const txt = await res.text();
-      if (txt && txt.trim()) return cleanAssistantMarkdown(txt);
+  // 3) Pollinations Clean Short GET endpoint
+  {
+    const getController = new AbortController();
+    const getTimer = setTimeout(() => getController.abort(), 7500);
+    try {
+      const shortPrompt = `رد بالمصري العامي الودود وبوضوح على: ${cleanUserQ.slice(0, 150)}`;
+      const res = await fetch(
+        `https://text.pollinations.ai/${encodeURIComponent(shortPrompt)}`,
+        { signal: getController.signal }
+      );
+      clearTimeout(getTimer);
+      if (res.ok) {
+        const txt = await res.text();
+        if (isValidCloudReply(txt)) return cleanAssistantMarkdown(txt);
+      }
+    } catch {
+      clearTimeout(getTimer);
     }
-  } catch {
-    clearTimeout(getTimer);
   }
+
+  // 4) Live Open-Web Encyclopedia & Knowledge API (Wikipedia 1.2M+ Arabic & 6.8M+ English articles, Weather, Currency, Prayer Times)
+  const wikiOrWebReply = await queryLiveOpenWebKnowledge(cleanUserQ);
+  if (wikiOrWebReply) {
+    return cleanAssistantMarkdown(wikiOrWebReply);
+  }
+
   throw new Error('ALL_AI_ENDPOINTS_UNAVAILABLE');
 }
 

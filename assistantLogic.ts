@@ -22,7 +22,7 @@ export interface Passage {
 export type Verdict = 'injection' | 'emergency' | 'personal' | 'ok';
 
 const INJECTION =
-  /ignore (all|any|previous|above|your|the) |system prompt|developer message|api[ -]?key|secret key|jailbreak|reveal (your|the) (prompt|instructions|key)|you are now|act as |تجاهل|التعليمات السابقه|مفتاح|برومبت/;
+  /ignore (all|any|previous|above|your|the) (instructions|prompts|rules)|system prompt|developer message|reveal (your|the) (prompt|instructions|key)|jailbreak|تجاهل (كل |جميع )?التعليمات السابقه|اكشف البرومبت/;
 const EMERGENCY =
   /can.?t breathe|difficulty breathing|trouble breathing|short(ness)? of breath|swelling of (the )?(face|lips|tongue|throat)|face swell|lips swell|throat swell|anaphyla|faint|passed out|unconscious|seizure|chest pain|bloody diarrh|blood in (my )?stool|can.?t swallow|severe rash|ضيق (في )?(ال)?(تنفس|نفس)|صعوبه (في )?(ال)?(تنفس|بلع)|تورم (ال)?(وجه|شفا|لسان|حلق)|اغماء|اغمي|تشنج|الم (في )?(ال)?صدر|اسهال دموي|دم في (ال)?(براز|اسهال)|طفح شديد|حساسيه شديده/;
 
@@ -78,14 +78,16 @@ const SYN: Record<string, string[]> = {
 
 /** Match common conditions when user asks for the best antibiotic for a specific body part / disease */
 export function matchCondition(x: string): ConditionKind | null {
-  if (/اسنان|ضرس|لثه|خراج|وجع السنان|الم الاسنان|خراج الاسنان|عصب|خلع|dental|tooth|teeth|toothache|dentaire|dents|muelas|zahn|zahnschmerzen|zahnfleischentzundung/.test(x)) return 'dental';
-  if (/مسالك|بول|بوليه|حرقان البول|التهاب البول|المثانه|حرقان في البول|uti|urine|urinary|urinaire|urinaria|harnwegsinfekt|blasenentzundung|urin/.test(x)) return 'uti';
-  if (/لوز|حلق|احتقان الحلق|صديد اللوز|التهاب الحلق|زور|وجع الحلق|throat|tonsil|angine|garganta|halsschmerzen|mandelentzundung|rachen/.test(x)) return 'throat';
-  if (/جلد|حب شباب|دمامل|خراج جلدي|حب الشباب|التهاب جلدي|جرح|جروح|acne|skin|peau|piel|haut|akne|wunde/.test(x)) return 'skin';
-  if (/جيوب|انفيه|الجيوب الانفيه|صداع الجيوب|sinus|nebenhohlen|sinusitis/.test(x)) return 'sinus';
-  if (/صدر|شعبي|شعب هوائيه|كحه ببلغم|التهاب رئوي|cough|chest|bronchitis|toux|tos|husten|bronchien|lunge/.test(x)) return 'chest';
-  if (/جرثومه|معده|جرثومه المعده|حلزونيه|pylori|stomach|estomac|estomago|magen|helicobacter/.test(x)) return 'stomach';
-  if (/اذن|الاذن|ودن|التهاب الاذن|وجع الودن|ear|otitis|oreille|oido|ohr|ohrenschmerzen|mittelohrentzundung/.test(x)) return 'ear';
+  // Exclude polite phrases like "بعد اذنك" / "باذن الله" so they never trigger ear infection!
+  const cleaned = x.replace(/بعد اذنك|بعد إذنك|باذن الله|بإذن الله|اذن ماذا|اذن كيف/g, ' ');
+  if (/(?:^|\s)(?:ال)?(اسنان|سنان|ضرس|ضروسي|ضرسى|لثه|اللثه|وجع السنان|الم الاسنان|خراج الاسنان|خراج ضرس|حشو عصب|خلع ضرس)(?=$|\s)|dental|tooth|teeth|toothache|dentaire|dents|muelas|zahn|zahnschmerzen/.test(cleaned)) return 'dental';
+  if (/(?:^|\s)(?:ال)?(مسالك|بوليه|حرقان البول|التهاب البول|المثانه|حرقان في البول|عدوي بوليه)(?=$|\s)|\b(uti|urinary|urine infection|cystitis)\b|urinaire|urinaria|harnwegsinfekt|blasenentzundung/.test(cleaned)) return 'uti';
+  if (/(?:^|\s)(?:ال)?(اللوز|لوزتين|احتقان الحلق|صديد اللوز|التهاب الحلق|زوري|وجع الزور|وجع الحلق|الم الحلق)(?=$|\s)|\b(throat|tonsil|tonsillitis|pharyngitis)\b|angine|garganta|halsschmerzen|mandelentzundung/.test(cleaned)) return 'throat';
+  if (/(?:^|\s)(?:ال)?(حب شباب|حب الشباب|دمامل|دمل|خراج جلدي|التهاب جلدي|عدوي جلديه)(?=$|\s)|\b(acne|cellulitis|furuncle)\b|akne/.test(cleaned)) return 'skin';
+  if (/(?:^|\s)(?:ال)?(جيوب انفيه|الجيوب الانفيه|صداع الجيوب|التهاب الجيوب)(?=$|\s)|\b(sinus|sinusitis)\b|nebenhohlen/.test(cleaned)) return 'sinus';
+  if (/(?:^|\s)(?:ال)?(شعب هوائيه|التهاب شعبي|كحه ببلغم|التهاب رئوي|عدوي الصدر)(?=$|\s)|\b(bronchitis|pneumonia)\b|bronchien|lunge/.test(cleaned)) return 'chest';
+  if (/(?:^|\s)(?:ال)?(جرثومه المعده|الجرثومه الحلزونيه|ميكروب المعده|جرثومه)(?=$|\s)|\b(pylori|helicobacter)\b/.test(cleaned)) return 'stomach';
+  if (/(?:^|\s)(?:ال)?(ودن|ودني|وداني|التهاب الاذن|وجع الودن|وجع الاذن|الم الاذن|الاذن الوسطي|طبله الاذن)(?=$|\s)|\b(ear infection|earache|otitis)\b|oreille|oido|ohrenschmerzen|mittelohrentzundung/.test(cleaned)) return 'ear';
   return null;
 }
 
