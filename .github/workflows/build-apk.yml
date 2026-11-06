@@ -88,6 +88,7 @@ jobs:
               "android.permission.POST_NOTIFICATIONS",
               "android.permission.SCHEDULE_EXACT_ALARM",
               "android.permission.USE_EXACT_ALARM",
+              "com.android.alarm.permission.SET_ALARM",
               "android.permission.USE_FULL_SCREEN_INTENT",
               "android.permission.VIBRATE",
               "android.permission.WAKE_LOCK",
@@ -470,6 +471,32 @@ jobs:
                   }
 
                   @JavascriptInterface
+                  public boolean openSystemClockAlarm(final int hour, final int minute, final String label) {
+                      try {
+                          runOnUiThread(() -> {
+                              try {
+                                  Intent intent = new Intent(android.provider.AlarmClock.ACTION_SET_ALARM);
+                                  intent.putExtra(android.provider.AlarmClock.EXTRA_HOUR, hour);
+                                  intent.putExtra(android.provider.AlarmClock.EXTRA_MINUTES, minute);
+                                  intent.putExtra(android.provider.AlarmClock.EXTRA_MESSAGE, label != null ? label : "جرعة الدواء");
+                                  intent.putExtra(android.provider.AlarmClock.EXTRA_SKIP_UI, false);
+                                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                  startActivity(intent);
+                              } catch (Throwable inner) {
+                                  try {
+                                      Intent fallback = new Intent(android.provider.AlarmClock.ACTION_SHOW_ALARMS);
+                                      fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                      startActivity(fallback);
+                                  } catch (Throwable ignored) {}
+                              }
+                          });
+                          return true;
+                      } catch (Throwable t) {
+                          return false;
+                      }
+                  }
+
+                  @JavascriptInterface
                   public boolean cancelAlarm(int id) {
                       try {
                           Context ctx = getApplicationContext();
@@ -524,22 +551,53 @@ jobs:
                               return super.shouldInterceptRequest(view, request);
                           }
 
+                          private boolean handleCustomSchemeUrl(String url) {
+                              if (url == null) return false;
+                              if (url.startsWith("http://") || url.startsWith("https://")) {
+                                  return false;
+                              }
+                              try {
+                                  Intent intent;
+                                  if (url.startsWith("intent:")) {
+                                      intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+                                  } else {
+                                      intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                                  }
+                                  intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                  startActivity(intent);
+                                  return true;
+                              } catch (Throwable ignored) {
+                                  return true; // Consume custom scheme so WebView never triggers onReceivedError
+                              }
+                          }
+
                           @Override
                           public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                              if (request != null && request.getUrl() != null) {
+                                  if (handleCustomSchemeUrl(request.getUrl().toString())) {
+                                      return true;
+                                  }
+                              }
                               return false;
                           }
 
                           @Override
                           public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                              if (handleCustomSchemeUrl(url)) {
+                                  return true;
+                              }
                               return false;
                           }
 
                           @Override
                           public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                               try {
-                                  if (request != null && request.isForMainFrame()) {
-                                      view.loadUrl(LOCAL_OFFLINE_URL);
-                                      return;
+                                  if (request != null && request.isForMainFrame() && request.getUrl() != null) {
+                                      String failedUrl = request.getUrl().toString();
+                                      if ((failedUrl.startsWith("http://") || failedUrl.startsWith("https://")) && !isDeviceOnline()) {
+                                          view.loadUrl(LOCAL_OFFLINE_URL);
+                                          return;
+                                      }
                                   }
                               } catch (Throwable ignored) {}
                               super.onReceivedError(view, request, error);
