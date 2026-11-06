@@ -105,15 +105,10 @@ export default function AppUpdateManager() {
           return;
         }
 
-        // If server buildId differs from installedBuildId -> A NEW UPDATE IS AVAILABLE!
-        if (installedBuildId !== data.buildId) {
-          setRemoteManifest(data);
-          if (data.mandatory || dismissedBuildId !== data.buildId) {
-            setUpdateModalOpen(true);
-          }
-        } else {
-          setRemoteManifest(data);
-        }
+        // Silently sync buildId so old update modals never interrupt the user automatically
+        localStorage.setItem(INSTALLED_BUILD_KEY, data.buildId);
+        localStorage.setItem(INSTALLED_VERSION_KEY, data.version || DEFAULT_CURRENT_VERSION);
+        setRemoteManifest(data);
       } catch {
         /* Offline — skip remote check silently */
       }
@@ -134,7 +129,7 @@ export default function AppUpdateManager() {
     if (!configured || !db) return;
     try {
       const unsub = onSnapshot(
-        doc(db, 'settings', 'app_update'),
+        doc(db, 'system_config', 'app_update'),
         (snap) => {
           if (!snap.exists()) return;
           const d = snap.data() as Partial<AppVersionManifest>;
@@ -148,10 +143,10 @@ export default function AppUpdateManager() {
           setRemoteManifest(merged);
           const installedBuildId = localStorage.getItem(INSTALLED_BUILD_KEY);
           const dismissedBuildId = sessionStorage.getItem(DISMISSED_BUILD_KEY);
-          if (installedBuildId && installedBuildId !== merged.buildId) {
-            if (merged.mandatory || dismissedBuildId !== merged.buildId) {
-              setUpdateModalOpen(true);
-            }
+          if (merged.buildId) {
+            try {
+              localStorage.setItem(INSTALLED_BUILD_KEY, merged.buildId);
+            } catch {}
           }
         },
         () => {
@@ -238,7 +233,7 @@ export default function AppUpdateManager() {
       if (manifestRes.ok) {
         const m = await manifestRes.json();
         const core: string[] = Array.isArray(m.coreAssets) ? m.coreAssets : [];
-        const cache = await caches.open('aa-speed-cache-static-v4');
+        const cache = await caches.open('aa-speed-cache-static-v3');
         await Promise.allSettled(
           core.slice(0, 18).map((u) => fetch(u, { cache: 'reload' }).then((res) => cache.put(u, res)))
         );
@@ -303,7 +298,7 @@ export default function AppUpdateManager() {
       publishedAt: new Date().toISOString().slice(0, 10),
     };
     try {
-      await setDoc(doc(db, 'settings', 'app_update'), {
+      await setDoc(doc(db, 'system_config', 'app_update'), {
         ...nextManifest,
         updatedAt: serverTimestamp(),
       });

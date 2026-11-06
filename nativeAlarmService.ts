@@ -710,7 +710,12 @@ export function openNativeSystemClockAlarm(
     ? `💊 جرعة ${medicineName} (${doseInstruction})`
     : `💊 Dose: ${medicineName} (${doseInstruction})`;
 
+  // Always arm the continuous full-screen alarm & native hardware AlarmManager.setAlarmClock first
+  void scheduleSingleNativeDoseAlarm(medicineName, doseInstruction, timeHHMM, isAr);
+
   const bridge = getAndroidAlarmBridge();
+
+  // 1. If the APK has the native openSystemClockAlarm bridge method, call it directly
   if (bridge && typeof bridge.openSystemClockAlarm === 'function') {
     try {
       const ok = bridge.openSystemClockAlarm(hh, mm, label);
@@ -718,8 +723,8 @@ export function openNativeSystemClockAlarm(
         return {
           launched: true,
           message: isAr
-            ? `⏰ تم ضبط المنبه مباشرة في تطبيق الساعة الأصلي لهاتفك على ${timeHHMM}!`
-            : `⏰ Alarm set directly in your phone's native Clock app for ${timeHHMM}!`,
+            ? `⏰ تم فتح تطبيق الساعة الأصلي في هاتفك وضبط المنبه على ${timeHHMM}!`
+            : `⏰ Opened your phone's native Clock app and set the alarm for ${timeHHMM}!`,
         };
       }
     } catch {
@@ -727,32 +732,44 @@ export function openNativeSystemClockAlarm(
     }
   }
 
-  // Also schedule exact hardware alarm via bridge if available
-  if (bridge && typeof bridge.scheduleExactAlarm === 'function') {
-    try {
-      const target = new Date();
-      target.setHours(hh, mm, 0, 0);
-      if (target.getTime() <= Date.now()) {
-        target.setDate(target.getDate() + 1);
+  // 2. If running inside the Android APK WebView without openSystemClockAlarm on the older APK binary:
+  //    CRITICAL: Do NOT click an `intent:#Intent...` link on the main frame because older WebViewClient
+  //    treats unknown schemes as a main-frame error and redirects to the old bundled `https://localhost`!
+  //    Instead, `bridge.scheduleExactAlarm` above ALREADY registered the alarm in Android's hardware
+  //    `AlarmManager.setAlarmClock` (which shows the ⏰ clock icon in the Android status bar and wakes the phone).
+  if (bridge || isNativePlatform()) {
+    if (bridge && typeof bridge.scheduleExactAlarm === 'function') {
+      try {
+        const target = new Date();
+        target.setHours(hh, mm, 0, 0);
+        if (target.getTime() <= Date.now()) {
+          target.setDate(target.getDate() + 1);
+        }
+        bridge.scheduleExactAlarm(
+          hashNotificationId(`${medicineName}_${timeHHMM}`),
+          target.getTime(),
+          isAr ? `⏰ منبه الدواء: ${medicineName}` : `⏰ Med Alarm: ${medicineName}`,
+          label
+        );
+      } catch {
+        /* ignore */
       }
-      bridge.scheduleExactAlarm(
-        hashNotificationId(`${medicineName}_${timeHHMM}`),
-        target.getTime(),
-        isAr ? `⏰ منبه الدواء: ${medicineName}` : `⏰ Med Alarm: ${medicineName}`,
-        label
-      );
-    } catch {
-      /* ignore */
     }
+    return {
+      launched: true,
+      message: isAr
+        ? `⏰ تم ربط وضبط المنبه في نظام أندرويد على الساعة ${timeHHMM} (ستجد علامة المنبه ⏰ في شريط الهاتف العلوي وسيرن حتى والشاشة مغلقة)!`
+        : `⏰ Hardware system alarm set for ${timeHHMM} via Android AlarmClock (works even when screen is locked)!`,
+    };
   }
 
-  // On Android devices (WebView or Chrome), launch Android's native Clock SET_ALARM intent URI
+  // 3. In external Android Chrome browser (outside WebView), launch Android's native Clock SET_ALARM intent
   if (typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)) {
     try {
-      const encodedMsg = encodeURIComponent(label);
-      const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hh};i.android.intent.extra.alarm.MINUTES=${mm};S.android.intent.extra.alarm.MESSAGE=${encodedMsg};B.android.intent.extra.alarm.SKIP_UI=false;B.android.intent.extra.alarm.VIBRATE=true;end`;
+      const intentUrl = `intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=${hh};i.android.intent.extra.alarm.MINUTES=${mm};B.android.intent.extra.alarm.SKIP_UI=false;B.android.intent.extra.alarm.VIBRATE=true;end`;
       const a = document.createElement('a');
       a.href = intentUrl;
+      a.rel = 'noopener noreferrer';
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
@@ -760,8 +777,8 @@ export function openNativeSystemClockAlarm(
       return {
         launched: true,
         message: isAr
-          ? `⏰ تم توجيه المنبه إلى تطبيق الساعة/المنبه الأصلي في هاتفك على الساعة ${timeHHMM} — اضغط حفظ في تطبيق الساعة إذا ظهر لك.`
-          : `⏰ Sent alarm (${timeHHMM}) to your Android Clock app — confirm save if prompted.`,
+          ? `⏰ تم فتح تطبيق الساعة/المنبه الأصلي في هاتفك على الساعة ${timeHHMM} — اضغط حفظ في تطبيق الساعة.`
+          : `⏰ Opened your Android Clock app for ${timeHHMM} — tap Save in the Clock app.`,
       };
     } catch {
       /* ignore */
@@ -771,7 +788,7 @@ export function openNativeSystemClockAlarm(
   return {
     launched: false,
     message: isAr
-      ? `✅ تم تفعيل منبه التطبيق الذكي على الساعة ${timeHHMM} بنغمة مستمرة وشاشة كاملة!`
+      ? `✅ تم تفعيل منبه الموبايل الذكي على الساعة ${timeHHMM} بنغمة مستمرة وشاشة كاملة!`
       : `✅ Activated full-screen continuous phone alarm for ${timeHHMM}!`,
   };
 }
@@ -1157,10 +1174,8 @@ export async function triggerTestAlarm(
  * - Any scheduled dose in `TreatmentSchedule` (`antibiotic_treatment_tracker_schedules*`) arrives.
  */
 let globalWatcherStarted = false;
-let latestGetIsAr: () => boolean = () => true;
 
 export function startGlobalPhoneAlarmWatcher(getIsAr: () => boolean): void {
-  latestGetIsAr = getIsAr;
   if (typeof window === 'undefined' || globalWatcherStarted) return;
   globalWatcherStarted = true;
 
@@ -1183,7 +1198,7 @@ export function startGlobalPhoneAlarmWatcher(getIsAr: () => boolean): void {
   // Listen for native Android hardware alarm wake-up event from MainActivity.java
   window.addEventListener('native-hardware-alarm-fired', (ev: Event) => {
     const detail = (ev as CustomEvent)?.detail || {};
-    const isAr = latestGetIsAr();
+    const isAr = getIsAr();
     const title = detail.title || (isAr ? '⏰ موعد جرعة المضاد الحيوي' : '⏰ Medication Dose Alarm');
     const body = detail.body || (isAr ? 'حان الآن موعد أخذ الجرعة الموصوفة' : 'It is time for your scheduled dose');
     fireLoudBackgroundAlarmNow(title, body, isAr);
@@ -1213,14 +1228,14 @@ export function startGlobalPhoneAlarmWatcher(getIsAr: () => boolean): void {
     }
     if (lastFired === minuteStamp) return;
 
-    const isAr = latestGetIsAr();
+    const isAr = getIsAr();
 
     // 1. Check SmartDoseAlarmCard saved alarm
     try {
       const smartRaw = localStorage.getItem('aa_smart_dose_alarm_v1');
       if (smartRaw) {
         const smart = JSON.parse(smartRaw);
-        if (smart && smart.notificationsEnabled && smart.nextDoseTime === currentHHMM) {
+        if (smart && smart.nextDoseTime === currentHHMM) {
           localStorage.setItem(ALARM_LAST_FIRED_MINUTE_KEY, minuteStamp);
           const medName = smart.medicineName || (isAr ? 'جرعة المضاد الحيوي' : 'Antibiotic Dose');
           const instr = smart.doseInstruction || '';
