@@ -1,7 +1,7 @@
 import { pick, tr } from './types';
 import { useEmergencyLocation, pickCountryName } from './emergencyLocation';
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useLang } from './i18n';
 import { useAuth } from './authContext';
 import { useApproved } from './medicinesApi';
@@ -88,6 +88,8 @@ const WIDGET_CHIPS: Record<string, string[]> = {
 
 export default function ChatWidget() {
   const { lang } = useLang();
+  const location = useLocation();
+  const isOnAssistantPage = location.pathname.startsWith('/assistant');
   const isAr = lang === 'ar';
   const { user } = useAuth();
   const { profile, setProfile } = useSyncedHealthProfile();
@@ -601,7 +603,7 @@ export default function ChatWidget() {
 
   return (
     <aside className="chat-widget-root" aria-label="Smart Assistant & Emergency Widget">
-      {!isOpen && !sosOpen && (
+      {!isOpen && !sosOpen && !isOnAssistantPage && (
         <div className="floating-fab-stack">
           <button
             type="button"

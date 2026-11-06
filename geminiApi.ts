@@ -8,14 +8,55 @@ import {
   EgyptianCommercialProduct,
 } from './egyptianDrugDatabase';
 
+import { db, configured as firebaseConfigured } from './firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+
 const ENV_GEMINI_KEY =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || '';
+  (typeof import.meta !== 'undefined' &&
+    (import.meta.env?.VITE_GEMINI_API_KEY || import.meta.env?.VITE_FIREBASE_API_KEY)) ||
+  '';
+
+let cachedCloudAiKey = '';
+let cloudKeyLoaded = false;
+
+export async function loadSharedCloudAiKey(): Promise<string> {
+  if (cloudKeyLoaded && cachedCloudAiKey) return cachedCloudAiKey;
+  if (!firebaseConfigured || !db) return '';
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'ai_config'));
+    if (snap.exists()) {
+      const data = snap.data();
+      const k = typeof data?.apiKey === 'string' ? data.apiKey.trim() : '';
+      if (k) {
+        cachedCloudAiKey = k;
+        cloudKeyLoaded = true;
+        if (typeof window !== 'undefined' && !localStorage.getItem('gemini_api_key')) {
+          localStorage.setItem('gemini_api_key', k);
+        }
+        return k;
+      }
+    }
+    cloudKeyLoaded = true;
+  } catch {
+    /* ignore */
+  }
+  return '';
+}
+
+// Kick off background load on module init
+if (typeof window !== 'undefined') {
+  loadSharedCloudAiKey().catch(() => {});
+}
 
 export function getApiKey(): string {
   if (typeof window !== 'undefined') {
-    return (localStorage.getItem('gemini_api_key') || ENV_GEMINI_KEY).trim();
+    return (
+      localStorage.getItem('gemini_api_key') ||
+      cachedCloudAiKey ||
+      ENV_GEMINI_KEY
+    ).trim();
   }
-  return ENV_GEMINI_KEY.trim();
+  return (cachedCloudAiKey || ENV_GEMINI_KEY).trim();
 }
 
 export function hasApiKey(): boolean {
@@ -23,16 +64,26 @@ export function hasApiKey(): boolean {
 }
 
 export function setApiKey(key: string): void {
+  const trimmed = key.trim();
+  cachedCloudAiKey = trimmed;
   if (typeof window !== 'undefined') {
-    if (key.trim()) {
-      localStorage.setItem('gemini_api_key', key.trim());
+    if (trimmed) {
+      localStorage.setItem('gemini_api_key', trimmed);
     } else {
       localStorage.removeItem('gemini_api_key');
     }
   }
+  if (firebaseConfigured && db) {
+    setDoc(
+      doc(db, 'settings', 'ai_config'),
+      { apiKey: trimmed, updatedAt: new Date().toISOString() },
+      { merge: true }
+    ).catch(() => {});
+  }
 }
 
 export function clearApiKey(): void {
+  cachedCloudAiKey = '';
   if (typeof window !== 'undefined') {
     localStorage.removeItem('gemini_api_key');
   }
@@ -40,7 +91,13 @@ export function clearApiKey(): void {
 
 export function isCustomApiKey(): boolean {
   const k = getApiKey();
-  return Boolean(k && k.startsWith('AIza'));
+  return Boolean(
+    k &&
+      (k.startsWith('AIza') ||
+        k.startsWith('gsk_') ||
+        k.startsWith('sk-or-') ||
+        k.startsWith('sk-'))
+  );
 }
 
 /**
@@ -168,7 +225,7 @@ export const SYSTEM_PROMPT = `أنت المساعد الذكي الشامل وا
    - في الطوارئ الحادة (ضيق تنفس شديد، تورم الوش واللسان، إغماء)، وجهه فوراً يكلم الإسعاف المصري (123).`;
 
 export const COMPACT_CLOUD_SYSTEM_PROMPT = `أنت المساعد الذكي الشامل والموسوعي (AI Universal & Health Assistant).
-1. جاوب على أي سؤال يسأله المستخدم في أي مجال في الدنيا بدون أي قيود! سواء كان سؤال عام، ثقافي، تاريخي، علمي، ديني، رياضي، طبخ، برمجة، رياضيات، نصائح يومية، أو سؤال طبي ودوائي وتحاليل.
+1. جاوب على أي سؤال يسأله المستخدم في أي مجال في الدنيا بدون أي قيود! سواء كان سؤال عام، ثقافي، تاريخي، علمي، ديني، رياضي ومباريات، طبخ، برمجة، رياضيات، نصائح يومية، أو سؤال طبي ودوائي وتحاليل.
 2. لما المستخدم يكلمك بالعربي، رد بلهجة مصرية عامية ودودة وطبيعية جداً ("يا هلا بيك"، "من عنيا ليك"، "بص يا سيدي") وبمعلومات دقيقة ومفصلة ومفيدة. ولو سأل بالإنجليزي أو أي لغة تانية رد بنفس لغته.
 3. رتب إجابتك في نقاط واضحة (1. ، 2. أو •) بدون جداول Markdown (|) وبدون نجوم ** أو شبابيك ###.`;
 
@@ -176,20 +233,490 @@ function isValidCloudReply(text: string | undefined | null): boolean {
   if (!text) return false;
   const t = text.trim();
   if (t.length < 4) return false;
-  if (/^(<!DOCTYPE|<html|<head|\{"error"|502 Bad Gateway|504 Gateway|429 Too Many|Error:|Rate limit|Internal Server Error)/i.test(t)) {
+  if (
+    /^(<!DOCTYPE|<html|<head|\{"error"|502 Bad Gateway|504 Gateway|429 Too Many|Error:|Rate limit|Internal Server Error|Notice:|IMPORTANT NOTICE|pollinations\.ai)/i.test(
+      t
+    )
+  ) {
     return false;
   }
   return true;
 }
 
 /**
+ * Fast, zero-key Google Translate GTX helper (`*.googleapis.com`)
+ * Translates colloquial Arabic -> English for global search, or English results -> Arabic!
+ */
+async function gtxTranslate(text: string, sl: string, tl: string): Promise<string> {
+  if (!text || !text.trim()) return '';
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sl}&tl=${tl}&dt=t&q=${encodeURIComponent(
+      text.slice(0, 1200)
+    )}`;
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return text;
+    const data = await res.json();
+    if (Array.isArray(data?.[0])) {
+      return data[0].map((seg: unknown[]) => (typeof seg?.[0] === 'string' ? seg[0] : '')).join('');
+    }
+  } catch {
+    clearTimeout(timer);
+  }
+  return text;
+}
+
+interface FootballTeamMapping {
+  nameAr: string;
+  nameEn: string;
+  espnId?: string;
+  espnLeague?: string;
+  sportsDbSearch: string;
+  sportsDbId?: string;
+  patterns: RegExp;
+}
+
+const FOOTBALL_TEAMS: FootballTeamMapping[] = [
+  {
+    nameAr: 'ريال مدريد',
+    nameEn: 'Real Madrid',
+    espnId: '86',
+    espnLeague: 'esp.1',
+    sportsDbSearch: 'Real_Madrid',
+    sportsDbId: '133738',
+    patterns: /(ريال مدريد|الريال|ملكي|ميرينجي|real madrid)/i,
+  },
+  {
+    nameAr: 'برشلونة',
+    nameEn: 'Barcelona',
+    espnId: '83',
+    espnLeague: 'esp.1',
+    sportsDbSearch: 'Barcelona',
+    sportsDbId: '133739',
+    patterns: /(برشلونه|برشلونة|البارسا|البرسا|كتالوني|barcelona|barca)/i,
+  },
+  {
+    nameAr: 'الأهلي المصري',
+    nameEn: 'Al Ahly',
+    sportsDbSearch: 'Al_Ahly',
+    sportsDbId: '134609',
+    patterns: /(الاهلي|الأهلي|اهلي|أهلي|al ahly)/i,
+  },
+  {
+    nameAr: 'الزمالك',
+    nameEn: 'Zamalek',
+    sportsDbSearch: 'Zamalek',
+    sportsDbId: '134615',
+    patterns: /(الزمالك|زمالك|zamalek)/i,
+  },
+  {
+    nameAr: 'ليفربول (محمد صلاح)',
+    nameEn: 'Liverpool',
+    espnId: '364',
+    espnLeague: 'eng.1',
+    sportsDbSearch: 'Liverpool',
+    sportsDbId: '133602',
+    patterns: /(ليفربول|ليفر|الريدز|ماتش صلاح|ماتش محمد صلاح|liverpool)/i,
+  },
+  {
+    nameAr: 'مانشستر سيتي (عمر مرموش)',
+    nameEn: 'Manchester City',
+    espnId: '382',
+    espnLeague: 'eng.1',
+    sportsDbSearch: 'Manchester_City',
+    sportsDbId: '133613',
+    patterns: /(مانشستر سيتي|السيتي|مان سيتي|ماتش مرموش|manchester city|man city)/i,
+  },
+  {
+    nameAr: 'أرسنال',
+    nameEn: 'Arsenal',
+    espnId: '359',
+    espnLeague: 'eng.1',
+    sportsDbSearch: 'Arsenal',
+    sportsDbId: '133604',
+    patterns: /(ارسنال|أرسنال|الجانرز|arsenal)/i,
+  },
+  {
+    nameAr: 'تشيلسي',
+    nameEn: 'Chelsea',
+    espnId: '363',
+    espnLeague: 'eng.1',
+    sportsDbSearch: 'Chelsea',
+    sportsDbId: '133610',
+    patterns: /(تشيلسي|البلوز|chelsea)/i,
+  },
+  {
+    nameAr: 'مانشستر يونايتد',
+    nameEn: 'Manchester United',
+    espnId: '360',
+    espnLeague: 'eng.1',
+    sportsDbSearch: 'Manchester_United',
+    sportsDbId: '133612',
+    patterns: /(مانشستر يونايتد|اليونايتد|مان يونايتد|manchester united|man utd)/i,
+  },
+  {
+    nameAr: 'بايرن ميونخ',
+    nameEn: 'Bayern Munich',
+    espnId: '132',
+    espnLeague: 'ger.1',
+    sportsDbSearch: 'Bayern_Munich',
+    sportsDbId: '133664',
+    patterns: /(بايرن|بايرن ميونخ|البافاري|bayern)/i,
+  },
+  {
+    nameAr: 'باريس سان جيرمان',
+    nameEn: 'Paris Saint-Germain',
+    espnId: '160',
+    espnLeague: 'fra.1',
+    sportsDbSearch: 'Paris_SG',
+    sportsDbId: '133714',
+    patterns: /(باريس سان جيرمان|باريس|بي اس جي|\bpsg\b)/i,
+  },
+  {
+    nameAr: 'إنتر ميلان',
+    nameEn: 'Inter Milan',
+    espnId: '110',
+    espnLeague: 'ita.1',
+    sportsDbSearch: 'Inter',
+    sportsDbId: '133681',
+    patterns: /(انتر ميلان|إنتر ميلان|الانتر|الإنتر|\binter milan\b)/i,
+  },
+  {
+    nameAr: 'إي سي ميلان',
+    nameEn: 'AC Milan',
+    espnId: '103',
+    espnLeague: 'ita.1',
+    sportsDbSearch: 'AC_Milan',
+    sportsDbId: '133667',
+    patterns: /(اي سي ميلان|ميلان|\bac milan\b)/i,
+  },
+  {
+    nameAr: 'يوفنتوس',
+    nameEn: 'Juventus',
+    espnId: '111',
+    espnLeague: 'ita.1',
+    sportsDbSearch: 'Juventus',
+    sportsDbId: '133676',
+    patterns: /(يوفنتوس|اليوفي|juventus)/i,
+  },
+  {
+    nameAr: 'أتلتيكو مدريد',
+    nameEn: 'Atletico Madrid',
+    espnId: '1068',
+    espnLeague: 'esp.1',
+    sportsDbSearch: 'Atletico_Madrid',
+    sportsDbId: '133729',
+    patterns: /(اتلتيكو|أتلتيكو|atletico)/i,
+  },
+  {
+    nameAr: 'منتخب مصر',
+    nameEn: 'Egypt',
+    espnId: '656',
+    sportsDbSearch: 'Egypt',
+    sportsDbId: '133936',
+    patterns: /(منتخب مصر|المنتخب المصري|ماتش مصر|مباراه مصر|مباراة مصر)/i,
+  },
+  {
+    nameAr: 'الهلال السعودي',
+    nameEn: 'Al Hilal',
+    sportsDbSearch: 'Al-Hilal',
+    sportsDbId: '135913',
+    patterns: /(الهلال|الهلال السعودي|al hilal)/i,
+  },
+  {
+    nameAr: 'النصر السعودي (كريستيانو رونالدو)',
+    nameEn: 'Al Nassr',
+    sportsDbSearch: 'Al-Nassr',
+    sportsDbId: '135916',
+    patterns: /(النصر السعودي|ماتش النصر|ماتش رونالدو|ماتش كريستيانو|al nassr)/i,
+  },
+  {
+    nameAr: 'بيراميدز',
+    nameEn: 'Pyramids',
+    sportsDbSearch: 'Pyramids',
+    patterns: /(بيراميدز|pyramids)/i,
+  },
+];
+
+function formatCairoDateTime(isoDateStr: string): { dateAr: string; timeAr: string; relativeAr: string } {
+  const dt = new Date(isoDateStr);
+  if (Number.isNaN(dt.getTime())) {
+    return { dateAr: isoDateStr, timeAr: '', relativeAr: '' };
+  }
+  const dateAr = dt.toLocaleDateString('ar-EG', {
+    timeZone: 'Africa/Cairo',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const timeAr = dt.toLocaleTimeString('ar-EG', {
+    timeZone: 'Africa/Cairo',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+  const now = new Date();
+  const diffMs = dt.getTime() - now.getTime();
+  const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  let relativeAr = '';
+  if (diffMs > 0) {
+    if (diffHours < 24) relativeAr = `(خلال ${diffHours} ساعة من الآن 🔥)`;
+    else if (diffDays === 1) relativeAr = '(بكرة إن شاء الله 🔥)';
+    else if (diffDays > 1 && diffDays <= 14) relativeAr = `(بعد ${diffDays} أيام)`;
+  } else if (diffMs > -3 * 60 * 60 * 1000) {
+    relativeAr = '(جارية الآن / اليوم 🔴)';
+  }
+  return { dateAr, timeAr, relativeAr };
+}
+
+/**
+ * Live Football Match & Scoreboard Engine (ESPN Public API + TheSportsDB API - 100% Free, CORS `*`, Zero Key!)
+ * Answers "ماتش الريال الجاي امتي", "ماتش الأهلي الجاي", "ماتشات النهاردة", "نتيجة ماتش برشلونة", etc.
+ */
+async function queryLiveFootballMatches(rawQuestion: string): Promise<string | null> {
+  const q = rawQuestion.trim();
+  const isMatchQuery =
+    /(ماتش|ماتشات|مباراه|مباراة|مباريات|يلعب امتي|هيلعب امتي|الجاي امتي|القادمه|القادمة|نتيجه ماتش|نتيجة ماتش|جدول مباريات|\bnext match\b|\bmatch schedule\b|\bscoreboard\b)/i.test(
+      q
+    );
+  const matchedTeam = FOOTBALL_TEAMS.find((t) => t.patterns.test(q));
+
+  if (!isMatchQuery && !matchedTeam) return null;
+  // If user only mentioned a team name without "ماتش", check if they are asking about matches/times/scores
+  if (
+    matchedTeam &&
+    !isMatchQuery &&
+    !/(امتي|إمتى|الجاي|القادم|موعد|ميعاد|الساعه كام|الساعة كام|ضد مين|مع مين|نتيجه|نتيجة|اخبار|أخبار)/i.test(q)
+  ) {
+    return null;
+  }
+
+  // Case 1: Specific Team Match Query (e.g., "ماتش الريال الجاي امتي", "ماتش الأهلي الجاي")
+  if (matchedTeam) {
+    // 1A) Try ESPN Public Team API first (Real Madrid, Barcelona, Liverpool, Man City, Arsenal, Bayern, PSG, etc.)
+    if (matchedTeam.espnId) {
+      const leaguesToTry = [
+        matchedTeam.espnLeague || 'esp.1',
+        'uefa.champions',
+        'all',
+      ];
+      for (const lg of leaguesToTry) {
+        try {
+          const ctrl = new AbortController();
+          const timer = setTimeout(() => ctrl.abort(), 5000);
+          const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/teams/${matchedTeam.espnId}`;
+          const res = await fetch(url, { signal: ctrl.signal });
+          clearTimeout(timer);
+          if (res.ok) {
+            const data = await res.json();
+            const nextEvents = data?.team?.nextEvent;
+            const recordSummary = data?.team?.record?.items?.[0]?.summary || '';
+            const standingSummary = data?.team?.standingSummary || '';
+            if (Array.isArray(nextEvents) && nextEvents.length > 0) {
+              const ev = nextEvents[0];
+              const evDate = ev.date;
+              const evNameEn = ev.name || ev.shortName || '';
+              const leagueNameEn = ev.league?.name || ev.season?.displayName || '';
+              const { dateAr, timeAr, relativeAr } = formatCairoDateTime(evDate);
+              const evNameAr = await gtxTranslate(evNameEn.replace(' at ', ' ضد '), 'en', 'ar');
+              const leagueAr = leagueNameEn ? await gtxTranslate(leagueNameEn, 'en', 'ar') : '';
+              const standingAr = standingSummary ? await gtxTranslate(standingSummary, 'en', 'ar') : '';
+
+              return (
+                `يا هلا بيك يا كابتن! ⚽🔥 ده موعد ماتش «${matchedTeam.nameAr}» الجاي بالتفصيل (تحديث مباشر):\n\n` +
+                `• المباراة القادمة: ${evNameAr} (${evNameEn})\n` +
+                `• التاريخ واليوم: ${dateAr} ${relativeAr}\n` +
+                `• الساعة: **${timeAr}** بتوقيت مصر (القاهرة) 🇪🇬\n` +
+                (leagueAr ? `• البطولة: ${leagueAr}\n` : '') +
+                (standingAr ? `• موقف الفريق في الجدول: ${standingAr}${recordSummary ? ` (${recordSummary})` : ''}\n` : '') +
+                `\n💬 تحب تعرف جدول باقي ماتشات الأسبوع أو نتيجة آخر ماتش؟`
+              );
+            }
+          }
+        } catch {
+          /* continue to schedule endpoint or TheSportsDB */
+        }
+      }
+
+      // Also check ESPN Schedule endpoint for upcoming/recent matches
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${matchedTeam.espnLeague || 'esp.1'}/teams/${matchedTeam.espnId}/schedule`;
+        const res = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (res.ok) {
+          const data = await res.json();
+          const events: Array<Record<string, any>> = Array.isArray(data?.events) ? data.events : [];
+          const nowMs = Date.now();
+          const upcoming = events
+            .filter((e) => new Date(e.date).getTime() >= nowMs - 2 * 60 * 60 * 1000)
+            .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+          const past = events
+            .filter((e) => new Date(e.date).getTime() < nowMs - 2 * 60 * 60 * 1000)
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+          if (upcoming.length > 0 || past.length > 0) {
+            const lines: string[] = [
+              `يا هلا بيك يا كابتن! ⚽🔥 دي مواعيد ونتائج «${matchedTeam.nameAr}» المباشرة بتوقيت مصر:`,
+            ];
+            if (upcoming.length > 0) {
+              const nxt = upcoming[0];
+              const { dateAr, timeAr, relativeAr } = formatCairoDateTime(nxt.date);
+              const matchTitleAr = await gtxTranslate((nxt.name || '').replace(' at ', ' ضد '), 'en', 'ar');
+              lines.push(
+                `1. المباراة القادمة: ${matchTitleAr}\n• الموعد: ${dateAr} ${relativeAr}\n• التوقيت: الساعة **${timeAr}** بتوقيت مصر 🇪🇬`
+              );
+            }
+            if (past.length > 0) {
+              const lst = past[0];
+              const comp = lst.competitions?.[0];
+              const c1 = comp?.competitors?.[0];
+              const c2 = comp?.competitors?.[1];
+              const scoreStr =
+                c1 && c2
+                  ? `${c1.team?.displayName || ''} (${c1.score?.displayValue ?? ''}) - (${c2.score?.displayValue ?? ''}) ${c2.team?.displayName || ''}`
+                  : lst.name || '';
+              lines.push(`2. نتيجة آخر مباراة سابقة: ${scoreStr}`);
+            }
+            return lines.join('\n\n');
+          }
+        }
+      } catch {
+        /* continue to TheSportsDB */
+      }
+    }
+
+    // 1B) Try TheSportsDB Public API (covers Al Ahly, Zamalek, Egypt, Saudi League, + European clubs)
+    try {
+      let teamId = matchedTeam.sportsDbId;
+      if (!teamId) {
+        const searchCtrl = new AbortController();
+        const searchTimer = setTimeout(() => searchCtrl.abort(), 4500);
+        const sRes = await fetch(
+          `https://www.thesportsdb.com/api/v1/json/3/searchteams.php?t=${encodeURIComponent(
+            matchedTeam.sportsDbSearch
+          )}`,
+          { signal: searchCtrl.signal }
+        );
+        clearTimeout(searchTimer);
+        if (sRes.ok) {
+          const sJson = await sRes.json();
+          teamId = sJson?.teams?.[0]?.idTeam;
+        }
+      }
+
+      if (teamId) {
+        const [nextRes, lastRes] = await Promise.allSettled([
+          fetch(`https://www.thesportsdb.com/api/v1/json/3/eventsnext.php?id=${teamId}`),
+          fetch(`https://www.thesportsdb.com/api/v1/json/3/eventslast.php?id=${teamId}`),
+        ]);
+
+        let nextEvents: any[] = [];
+        let lastEvents: any[] = [];
+        if (nextRes.status === 'fulfilled' && nextRes.value.ok) {
+          const nj = await nextRes.value.json();
+          nextEvents = Array.isArray(nj?.events) ? nj.events : [];
+        }
+        if (lastRes.status === 'fulfilled' && lastRes.value.ok) {
+          const lj = await lastRes.value.json();
+          lastEvents = Array.isArray(lj?.results) ? lj.results : [];
+        }
+
+        if (nextEvents.length > 0 || lastEvents.length > 0) {
+          const lines: string[] = [
+            `يا هلا بيك يا كابتن! ⚽🔥 دي مواعيد ونتائج «${matchedTeam.nameAr}» المحدثة:`,
+          ];
+          if (nextEvents.length > 0) {
+            const ev = nextEvents[0];
+            const isoStr = ev.strTimestamp || `${ev.dateEvent}T${ev.strTime || '18:00:00'}Z`;
+            const { dateAr, timeAr, relativeAr } = formatCairoDateTime(isoStr);
+            const evNameAr = await gtxTranslate(
+              `${ev.strHomeTeam || ''} ضد ${ev.strAwayTeam || ''}`,
+              'en',
+              'ar'
+            );
+            const leagueAr = ev.strLeague ? await gtxTranslate(ev.strLeague, 'en', 'ar') : '';
+            lines.push(
+              `1. المباراة القادمة: ${evNameAr}\n` +
+                `• البطولة: ${leagueAr || ev.strLeague || ''}\n` +
+                `• التاريخ: ${dateAr} ${relativeAr}\n` +
+                `• التوقيت: الساعة **${timeAr}** بتوقيت مصر 🇪🇬`
+            );
+          }
+          if (lastEvents.length > 0) {
+            const lv = lastEvents[0];
+            lines.push(
+              `2. آخر مباراة سابقة: ${lv.strHomeTeam} (${lv.intHomeScore ?? 0}) - (${lv.intAwayScore ?? 0}) ${lv.strAwayTeam} (${lv.strLeague || ''})`
+            );
+          }
+          return lines.join('\n\n');
+        }
+      }
+    } catch {
+      /* continue */
+    }
+  }
+
+  // Case 2: General "ماتشات النهاردة إيه؟" / Today's Live Scoreboard across Top Leagues
+  if (/(ماتشات النهارده|ماتشات اليوم|مباريات اليوم|مباريات النهارده|جدول ماتشات)/i.test(q)) {
+    try {
+      const leagues = ['eng.1', 'esp.1', 'uefa.champions', 'ita.1', 'ger.1'];
+      const matchesList: string[] = [];
+      for (const lg of leagues) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 4000);
+        const res = await fetch(
+          `https://site.api.espn.com/apis/site/v2/sports/soccer/${lg}/scoreboard`,
+          { signal: ctrl.signal }
+        );
+        clearTimeout(timer);
+        if (res.ok) {
+          const data = await res.json();
+          const events: any[] = Array.isArray(data?.events) ? data.events : [];
+          for (const ev of events.slice(0, 4)) {
+            const { timeAr } = formatCairoDateTime(ev.date);
+            const status = ev.status?.type?.shortDetail || timeAr;
+            matchesList.push(`• ${ev.name} — (${status})`);
+          }
+        }
+        if (matchesList.length >= 8) break;
+      }
+      if (matchesList.length > 0) {
+        const translatedList = await gtxTranslate(matchesList.join('\n'), 'en', 'ar');
+        return (
+          `يا هلا بيك يا كابتن! ⚽🔥 دي أبرز مباريات اليوم في الملاعب العالمية بتوقيت مصر:\n\n` +
+          `${translatedList}\n\n` +
+          `💬 قولي اسم أي فريق معين (زي الريال، برشلونة، الأهلي، الزمالك، ليفربول، السيتي) وأجيبلك ميعاد ماتشه الجاي بالثانية!`
+        );
+      }
+    } catch {
+      /* continue */
+    }
+  }
+
+  return null;
+}
+
+/**
  * Live Open-Web Knowledge Engine (100% Free, Browser CORS `*`, Zero API Key Required):
- * Queries Live Weather (Open-Meteo), Live Currency Rates (ExchangeRate-API),
- * Live Prayer Times (Aladhan), and Live Arabic/English Wikipedia (`origin=*`)!
+ * 1) Live Football Matches & Scoreboards (ESPN + TheSportsDB)
+ * 2) Live Weather (Open-Meteo)
+ * 3) Live Currency Rates (ExchangeRate-API)
+ * 4) Live Prayer Times (Aladhan)
+ * 5) Multi-Pass Arabic & English Wikipedia + Google Translate GTX (`*.googleapis.com`)
  */
 async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | null> {
   const q = rawQuestion.trim();
   if (!q) return null;
+
+  // 0) Live Football Matches & Scoreboard
+  const footballReply = await queryLiveFootballMatches(q);
+  if (footballReply) return footballReply;
 
   // A) Live Weather in Egypt / Cities (Open-Meteo API - CORS *)
   if (/(الطقس|الجو عامل ايه|درجه الحراره|درجة الحرارة|حراره الجو|المطر النهارده|\bweather\b)/i.test(q)) {
@@ -214,7 +741,7 @@ async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | 
             `• درجة الحرارة الحالية: ${curr}° مئوية\n` +
             `• العظمى المتوقعة النهاردة: ${maxT ?? curr}° مئوية | الصغرى بالليل: ${minT ?? curr}° مئوية\n` +
             `• نسبة الرطوبة: ${hum ?? 50}% | سرعة الرياح: ${wind ?? 12} كم/ساعة\n\n` +
-            `💡 نصيحة صحية: اشرب مية كويس على مدار اليوم، وخلي بالك من تخفيف أو تقيل الهدوم فجأة بين النهار والليل عشان تحمي نفسك من أدوار البرد!`
+            `💡 نصيحة صحية: اشرب مية كويس على مدار اليوم، وخلي بالك من تخفيف أو تقيل الهدوم فجأة بين النهار والليل!`
           );
         }
       }
@@ -290,73 +817,90 @@ async function queryLiveOpenWebKnowledge(rawQuestion: string): Promise<string | 
     }
   }
 
-  // D) Live Wikipedia Encyclopedia Search (Arabic & English Wikipedia with `origin=*` CORS)
-  try {
-    const isArabicQuery = /[\u0600-\u06FF]/.test(q);
-    const strippedTopic = q
-      .replace(/[؟?!.,،"«»]/g, ' ')
-      .replace(
-        /^(?:بعد اذنك|بعد إذنك|يا دكتور|لو سمحت|ممكن|قولي|قلي|عرفني|اشرحلي|فسرلي|احكيلي|كلمني عن|معلومات عن|عايز اعرف عن|عايز اعرف|عاوز اعرف|ما هو|ما هي|ما هم|من هو|من هي|مين هو|مين هي|مين اللي|ايه هو|إيه هو|ايه هي|إيه هي|يعني ايه|يعني إيه|اين تقع|أين تقع|اين يوجد|متي حدث|متى حدث|ازاي|إزاي|كيف)\s+/gi,
-        ''
-      )
-      .replace(/^(?:عن|ان|أن)\s+/i, '')
+  // D) Multi-Pass Wikipedia + DuckDuckGo + Google Translate GTX Knowledge Engine
+  const isArabicQuery = /[\u0600-\u06FF]/.test(q);
+  const strippedTopic = q
+    .replace(/[؟?!.,،"«»]/g, ' ')
+    .replace(
+      /^(?:بعد اذنك|بعد إذنك|يا دكتور|يا كابتن|يا غالي|لو سمحت|ممكن|قولي|قلي|عرفني|اشرحلي|فسرلي|احكيلي|كلمني عن|معلومات عن|عايز اعرف عن|عايز اعرف|عاوز اعرف|ما هو|ما هي|ما هم|من هو|من هي|مين هو|مين هي|مين اللي|ايه هو|إيه هو|ايه هي|إيه هي|يعني ايه|يعني إيه|اين تقع|أين تقع|اين يوجد|متي حدث|متى حدث|ازاي|إزاي|كيف|ليه|لماذا)\s+/gi,
+      ''
+    )
+    .replace(/\b(?:الجاي|الجايه|القادم|القادمه|امتي|إمتى|بكام|دلوقتي|النهارده|النهاردة|بالتفصيل|باختصار)\b/gi, ' ')
+    .replace(/^(?:عن|ان|أن|اللي)\s+/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const searchQueryAr = strippedTopic.length >= 2 ? strippedTopic : q;
+
+  async function fetchWikiSummary(langCode: 'ar' | 'en', queryStr: string): Promise<{ title: string; extract: string } | null> {
+    if (!queryStr || queryStr.length < 2) return null;
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
+      const searchUrl = `https://${langCode}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
+        queryStr
+      )}&srlimit=3&utf8=1&format=json&origin=*`;
+      const sRes = await fetch(searchUrl, { signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!sRes.ok) return null;
+      const sJson = await sRes.json();
+      const results = sJson?.query?.search;
+      if (!Array.isArray(results) || results.length === 0) return null;
+
+      const topPageId = results[0].pageid;
+      const topTitle = results[0].title;
+      const extCtrl = new AbortController();
+      const extTimer = setTimeout(() => extCtrl.abort(), 5000);
+      const extUrl = `https://${langCode}.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&pageids=${topPageId}&format=json&origin=*`;
+      const extRes = await fetch(extUrl, { signal: extCtrl.signal });
+      clearTimeout(extTimer);
+      if (!extRes.ok) return null;
+      const extJson = await extRes.json();
+      const rawExtract: string = extJson?.query?.pages?.[String(topPageId)]?.extract || '';
+      const cleaned = rawExtract.replace(/\s+/g, ' ').trim();
+      if (cleaned.length > 40) {
+        return { title: topTitle, extract: cleaned };
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }
+
+  // Pass 1: Direct Arabic Wikipedia search
+  let wikiHit = await fetchWikiSummary(isArabicQuery ? 'ar' : 'en', searchQueryAr);
+
+  // Pass 2: If colloquial Egyptian phrasing missed Arabic Wikipedia, translate query to English via GTX and search both Arabic & English Wikipedia!
+  if (!wikiHit && isArabicQuery) {
+    const enTranslatedQuery = await gtxTranslate(searchQueryAr, 'ar', 'en');
+    const cleanEnQuery = enTranslatedQuery
+      .replace(/^(what is|who is|where is|when is|how to|why does|why is|tell me about)\s+/i, '')
+      .replace(/[?!.]/g, '')
       .trim();
-
-    const searchQuery = strippedTopic.length >= 2 ? strippedTopic : q;
-    const wikiLang = isArabicQuery ? 'ar' : 'en';
-    const searchController = new AbortController();
-    const searchTimer = setTimeout(() => searchController.abort(), 5500);
-
-    const searchUrl = `https://${wikiLang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(
-      searchQuery
-    )}&srlimit=3&utf8=1&format=json&origin=*`;
-
-    const searchRes = await fetch(searchUrl, { signal: searchController.signal });
-    clearTimeout(searchTimer);
-
-    if (searchRes.ok) {
-      const searchJson = await searchRes.json();
-      const results = searchJson?.query?.search;
-      if (Array.isArray(results) && results.length > 0) {
-        const topPageId = results[0].pageid;
-        const topTitle = results[0].title;
-        const extractController = new AbortController();
-        const extractTimer = setTimeout(() => extractController.abort(), 5500);
-        const extractUrl = `https://${wikiLang}.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&pageids=${topPageId}&format=json&origin=*`;
-        const extractRes = await fetch(extractUrl, { signal: extractController.signal });
-        clearTimeout(extractTimer);
-
-        if (extractRes.ok) {
-          const extractJson = await extractRes.json();
-          const rawExtract: string = extractJson?.query?.pages?.[String(topPageId)]?.extract || '';
-          const cleanedExtract = rawExtract
-            .replace(/\s+/g, ' ')
-            .trim();
-          if (cleanedExtract.length > 40) {
-            const sentences = cleanedExtract
-              .split(/(?<=[.!?؟])\s+/)
-              .filter(Boolean)
-              .slice(0, 6);
-            const bulletText = sentences.map((s, idx) => `${idx + 1}. ${s}`).join('\n');
-            if (isArabicQuery) {
-              return (
-                `يا هلا بيك! من عنيا، دي أهم المعلومات الموثقة عن «${topTitle}»:\n\n` +
-                `${bulletText}\n\n` +
-                `💬 لو حابب تعرف أي تفاصيل تانية عن الموضوع ده أو تسألني في أي مجال تاني قولي فوراً!`
-              );
-            } else {
-              return (
-                `Here is a verified summary regarding "${topTitle}":\n\n` +
-                `${bulletText}\n\n` +
-                `Feel free to ask any follow-up questions!`
-              );
-            }
-          }
-        }
+    if (cleanEnQuery.length >= 2) {
+      const enHit = await fetchWikiSummary('en', cleanEnQuery);
+      if (enHit) {
+        const arTitle = await gtxTranslate(enHit.title, 'en', 'ar');
+        const arExtract = await gtxTranslate(enHit.extract.slice(0, 950), 'en', 'ar');
+        wikiHit = { title: arTitle || enHit.title, extract: arExtract || enHit.extract };
       }
     }
-  } catch {
-    /* continue */
+  }
+
+  if (wikiHit) {
+    const sentences = wikiHit.extract
+      .split(/(?<=[.!?؟])\s+/)
+      .filter(Boolean)
+      .slice(0, 6);
+    const bulletText = sentences.map((s, idx) => `${idx + 1}. ${s}`).join('\n');
+    if (isArabicQuery) {
+      return (
+        `يا هلا بيك! من عنيا، دي كل المعلومات الموثقة عن «${wikiHit.title}»:\n\n` +
+        `${bulletText}\n\n` +
+        `💬 لو حابب تعرف أي تفاصيل تانية عن الموضوع ده أو تسألني في أي مجال تاني قولي فوراً!`
+      );
+    }
+    return `Here is a verified summary regarding "${wikiHit.title}":\n\n${bulletText}`;
   }
 
   return null;
@@ -372,7 +916,10 @@ export async function askGemini(
   history: ChatMessage[] = [],
   rawUserQuestion?: string
 ): Promise<string> {
-  const key = getApiKey();
+  let key = getApiKey();
+  if (!key) {
+    key = await loadSharedCloudAiKey();
+  }
   const emerg = getCurrentEmergencyInfo();
   const dynamicSystemPrompt = SYSTEM_PROMPT.replace(
     'الإسعاف المصري (123)',
@@ -385,9 +932,9 @@ export async function askGemini(
     question
   ).trim();
 
-  // Check real-time live data endpoints first if the user explicitly asks for live weather, currency rates, or prayer times
+  // 0) Real-Time Live Data First! (Football Matches & Scoreboards, Weather, Currency Exchange Rates, Prayer Times)
   if (
-    /(الطقس|الجو عامل ايه|درجه الحراره|درجة الحرارة|سعر الدولار|الدولار بكام|سعر الريال|الريال بكام|سعر اليورو|اليورو بكام|اسعار العملات|مواعيد الصلاه|مواعيد الصلاة|مواقيت الصلاه|مواقيت الصلاة|اذان الفجر|اذان المغرب|\bweather\b|\bexchange rate\b|\bprayer times\b)/i.test(
+    /(ماتش|ماتشات|مباراه|مباراة|مباريات|الريال|ريال مدريد|برشلونه|برشلونة|الاهلي|الأهلي|الزمالك|ليفربول|صلاح|مانشستر|سيتي|مرموش|ارسنال|أرسنال|تشيلسي|بايرن|باريس|انتر|إنتر|ميلان|يوفنتوس|اتلتيكو|منتخب مصر|الهلال|النصر|بيراميدز|الطقس|الجو عامل ايه|درجه الحراره|درجة الحرارة|سعر الدولار|الدولار بكام|سعر الريال|الريال بكام|سعر اليورو|اليورو بكام|اسعار العملات|مواعيد الصلاه|مواعيد الصلاة|مواقيت الصلاه|مواقيت الصلاة|اذان الفجر|اذان المغرب|\bweather\b|\bexchange rate\b|\bprayer times\b|\bnext match\b)/i.test(
       cleanUserQ
     )
   ) {
@@ -395,11 +942,11 @@ export async function askGemini(
     if (liveDataReply) return cleanAssistantMarkdown(liveDataReply);
   }
 
-  // 1) Official Google Gemini API (when user or env provides a valid AIza... key)
+  // 1) Official Google Gemini API (when a valid AIza... key is present via UI, Firestore settings/ai_config, or env)
   if (key && key.startsWith('AIza')) {
     for (const geminiModel of ['gemini-2.0-flash', 'gemini-1.5-flash']) {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 12000);
+      const timer = setTimeout(() => controller.abort(), 11000);
       try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
         const recentHistory = history.slice(-8);
@@ -416,9 +963,7 @@ export async function askGemini(
 
         const response = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           signal: controller.signal,
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: dynamicSystemPrompt }] },
@@ -439,7 +984,82 @@ export async function askGemini(
     }
   }
 
-  // Build a clean, WAF-safe message payload for keyless cloud AI endpoints
+  // 1B) Groq Cloud API (when user configures a free `gsk_...` key — 500 tokens/sec Llama 3.3 70B!)
+  if (key && key.startsWith('gsk_')) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    try {
+      const groqMessages = [
+        { role: 'system', content: dynamicSystemPrompt },
+        ...history.slice(-6).map((m) => ({
+          role: m.who === 'me' ? 'user' : 'assistant',
+          content: (m.text || '').slice(0, 500),
+        })),
+        { role: 'user', content: question },
+      ];
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: groqMessages,
+          temperature: 0.35,
+          max_tokens: 850,
+        }),
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content;
+        if (isValidCloudReply(reply)) return cleanAssistantMarkdown(reply);
+      }
+    } catch {
+      clearTimeout(timer);
+    }
+  }
+
+  // 1C) OpenRouter API (when user configures a free `sk-or-...` key)
+  if (key && (key.startsWith('sk-or-') || key.startsWith('sk-'))) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 11000);
+    try {
+      const orMessages = [
+        { role: 'system', content: dynamicSystemPrompt },
+        ...history.slice(-6).map((m) => ({
+          role: m.who === 'me' ? 'user' : 'assistant',
+          content: (m.text || '').slice(0, 500),
+        })),
+        { role: 'user', content: question },
+      ];
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: 'meta-llama/llama-3.3-70b-instruct:free',
+          messages: orMessages,
+          temperature: 0.35,
+        }),
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        const data = await res.json();
+        const reply = data?.choices?.[0]?.message?.content;
+        if (isValidCloudReply(reply)) return cleanAssistantMarkdown(reply);
+      }
+    } catch {
+      clearTimeout(timer);
+    }
+  }
+
+  // 2) Keyless Cloud AI Endpoints (Pollinations OpenAI POST & Short GET)
   const compactHistory = history
     .slice(-4)
     .filter((m) => Boolean(m.text && m.text.trim()))
@@ -462,10 +1082,9 @@ export async function askGemini(
     { role: 'user', content: effectiveUserContent },
   ];
 
-  // 2) Pollinations OpenAI-compatible POST endpoint
   for (const modelName of ['openai', 'openai-fast']) {
     const pollController = new AbortController();
-    const pollTimer = setTimeout(() => pollController.abort(), 9000);
+    const pollTimer = setTimeout(() => pollController.abort(), 7000);
     try {
       const res = await fetch('https://text.pollinations.ai/openai', {
         method: 'POST',
@@ -498,10 +1117,9 @@ export async function askGemini(
     }
   }
 
-  // 3) Pollinations Clean Short GET endpoint
   {
     const getController = new AbortController();
-    const getTimer = setTimeout(() => getController.abort(), 7500);
+    const getTimer = setTimeout(() => getController.abort(), 6500);
     try {
       const shortPrompt = `رد بالمصري العامي الودود وبوضوح على: ${cleanUserQ.slice(0, 150)}`;
       const res = await fetch(
@@ -518,7 +1136,7 @@ export async function askGemini(
     }
   }
 
-  // 4) Live Open-Web Encyclopedia & Knowledge API (Wikipedia 1.2M+ Arabic & 6.8M+ English articles, Weather, Currency, Prayer Times)
+  // 3) Live Open-Web Encyclopedia & Knowledge API (Sports, Weather, Currency, Prayer Times, Multi-Pass Wikipedia + Google Translate GTX)
   const wikiOrWebReply = await queryLiveOpenWebKnowledge(cleanUserQ);
   if (wikiOrWebReply) {
     return cleanAssistantMarkdown(wikiOrWebReply);
