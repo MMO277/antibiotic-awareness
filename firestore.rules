@@ -8,6 +8,12 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid && uid.size() > 0;
     }
 
+    function isPassportActivelyShared(uid) {
+      return exists(/databases/$(database)/documents/passportShares/$(uid))
+          && get(/databases/$(database)/documents/passportShares/$(uid)).data.expiresAt is number
+          && get(/databases/$(database)/documents/passportShares/$(uid)).data.expiresAt > 0;
+    }
+
     function validUserDocWrite() {
       let d = request.resource.data;
       return (!('schedules' in d) || d.schedules is list)
@@ -43,7 +49,7 @@ service cloud.firestore {
 
     // ── Existing Collections (Preserved 100%) ──
     match /users/{uid} {
-      allow read: if isOwner(uid) || isAdmin();
+      allow read: if isOwner(uid) || isAdmin() || isPassportActivelyShared(uid);
       allow create, update: if isOwner(uid) && validUserDocWrite();
       allow delete: if isAdmin();
 

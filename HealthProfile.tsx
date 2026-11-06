@@ -20,6 +20,7 @@ import {
   uploadPassportPhoto,
   savePassportPhotoUrl,
   getPassportPhotoUrl,
+  syncProfileToPassportShare,
   PassportShare,
 } from './passportService';
 import {
@@ -64,7 +65,7 @@ export default function HealthProfile() {
   const [chronicInput, setChronicInput] = useState('');
   const photoFileRef = useRef<HTMLInputElement>(null);
 
-  // تحميل بيانات البطاقة
+  // تحميل بيانات البطاقة ومزامنة الملف الصحي والجداول تلقائياً
   useEffect(() => {
     if (!user) { setPassportLoading(false); return; }
     Promise.all([
@@ -73,10 +74,20 @@ export default function HealthProfile() {
     ]).then(([s, photo]) => {
       setPassportShare(s);
       if (s?.pin) setSavedPin(s.pin);
-      setPassportPhoto(photo);
+      setPassportPhoto(photo || s?.photoUrl || '');
       setPassportLoading(false);
     });
   }, [user]);
+
+  useEffect(() => {
+    if (!user || syncing) return;
+    void syncProfileToPassportShare(user.uid, profile, {
+      schedules,
+      prescriptions,
+      authDisplayName: user.displayName || '',
+      authEmail: user.email || '',
+    });
+  }, [user, syncing, profile, schedules, prescriptions]);
 
   const handlePassportPhoto = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -146,22 +157,40 @@ export default function HealthProfile() {
     });
   };
 
-  // حفظ PIN جديد
+  // حفظ PIN جديد وتفعيل البطاقة فوراً بكامل البيانات
   const handleSavePin = async () => {
     if (!user || pinInput.length < 4) return;
     setPinSaving(true);
-    await sharePassport(user.uid, pinInput, 0, profile);
+    await sharePassport(user.uid, pinInput, passportHours || 24, profile, {
+      schedules,
+      prescriptions,
+      authDisplayName: user.displayName || '',
+      authEmail: user.email || '',
+    });
+    const s = await getPassportShare(user.uid);
+    setPassportShare(s);
     setSavedPin(pinInput);
     setPinInput('');
     setShowPinSetup(false);
     setPinSaving(false);
+    setShareSuccess(
+      isAr
+        ? '✅ تم حفظ الـ PIN وتفعيل البطاقة ومزامنة جميع بياناتك الصحية للـ QR!'
+        : '✅ PIN saved, passport activated, and all health records synced to QR!'
+    );
+    setTimeout(() => setShareSuccess(''), 4000);
   };
 
-  // تفعيل المشاركة بالـ PIN المحفوظ
+  // تفعيل المشاركة بالـ PIN المحفوظ وتحديث البيانات
   const handlePassportShare = async () => {
     if (!user || !savedPin) return;
     setPassportSharing(true);
-    await sharePassport(user.uid, savedPin, passportHours, profile);
+    await sharePassport(user.uid, savedPin, passportHours || 24, profile, {
+      schedules,
+      prescriptions,
+      authDisplayName: user.displayName || '',
+      authEmail: user.email || '',
+    });
     const s = await getPassportShare(user.uid);
     setPassportShare(s);
     setPassportSharing(false);
@@ -576,13 +605,45 @@ export default function HealthProfile() {
                   <option value="female">{isAr ? 'أنثى' : 'Female'}</option>
                 </select>
               </div>
+              <div className="form-group">
+                <label><b>{isAr ? 'وظائف الكلى:' : 'Renal Function:'}</b></label>
+                <select
+                  value={profile.renalStatus || 'unknown'}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      renalStatus: e.target.value as 'normal' | 'impaired' | 'unknown',
+                    }))
+                  }
+                >
+                  <option value="unknown">{isAr ? 'غير محدد' : 'Unknown'}</option>
+                  <option value="normal">{isAr ? 'طبيعية (Normal)' : 'Normal'}</option>
+                  <option value="impaired">{isAr ? 'قصور كلوي يحتاج تعديل جرعة' : 'Impaired (Renal Adjustment)'}</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label><b>{isAr ? 'وظائف الكبد:' : 'Hepatic Function:'}</b></label>
+                <select
+                  value={profile.hepaticStatus || 'unknown'}
+                  onChange={(e) =>
+                    setProfile((prev) => ({
+                      ...prev,
+                      hepaticStatus: e.target.value as 'normal' | 'impaired' | 'unknown',
+                    }))
+                  }
+                >
+                  <option value="unknown">{isAr ? 'غير محدد' : 'Unknown'}</option>
+                  <option value="normal">{isAr ? 'طبيعية (Normal)' : 'Normal'}</option>
+                  <option value="impaired">{isAr ? 'قصور كبدي' : 'Impaired'}</option>
+                </select>
+              </div>
               <div className="form-group form-group-full">
                 <label><b>{isAr ? 'رقم هاتف الطوارئ:' : 'Emergency Contact:'}</b></label>
                 <input value={contactInput} onChange={(e) => setContactInput(e.target.value)} placeholder="01xxxxxxxxx" />
               </div>
             </div>
             <button type="submit" className="btn" style={{ alignSelf: 'flex-start' }}>
-              💾 {isAr ? 'حفظ البيانات' : 'Save'}
+              💾 {isAr ? 'حفظ البيانات ومزامنة الـ QR' : 'Save & Sync QR'}
             </button>
           </form>
         ) : (
@@ -1032,8 +1093,27 @@ export default function HealthProfile() {
       {/* ══════════════ البطاقة الصحية الذكية ══════════════ */}
       {user && (
         <section className="card stack" style={{ borderTop: '4px solid #0b3c5d', marginTop: 8 }}>
-          <div className="card-head-row">
-            <h2 className="section-title">🪪 {isAr ? 'البطاقة الصحية الذكية' : 'Smart Patient Passport'}</h2>
+          <div className="card-head-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
+            <h2 className="section-title">🪪 {isAr ? 'البطاقة الصحية الذكية (QR الطوارئ للمستشفى والطبيب)' : 'Smart Patient Passport'}</h2>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn small"
+                onClick={() => {
+                  setEditingPersonal(true);
+                  window.scrollTo({ top: 220, behavior: 'smooth' });
+                }}
+              >
+                ✏️ {isAr ? 'إدخال العمر وفصيلة الدم والوزن' : 'Edit Age & Blood Type'}
+              </button>
+              <button
+                type="button"
+                className="btn-secondary small"
+                onClick={() => setShowAllergyModal(true)}
+              >
+                ➕ {isAr ? 'إضافة حساسية' : 'Add Allergy'}
+              </button>
+            </div>
           </div>
 
           {/* البطاقة المرئية */}
@@ -1218,7 +1298,27 @@ export default function HealthProfile() {
               )}
 
               {savedPin && (
-                <div style={{ display:'flex', gap:8 }}>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  <button
+                    className="btn"
+                    style={{ flex: '1 1 100%', background:'#059669', color:'#fff', fontSize:'0.86rem' }}
+                    disabled={passportSharing}
+                    onClick={async () => {
+                      await handlePassportShare();
+                      setShareSuccess(
+                        isAr
+                          ? '✅ تم تفعيل الـ QR وتحديث جميع بياناتك الصحية للطبيب والممرض!'
+                          : '✅ QR activated and all health records synced for clinicians!'
+                      );
+                      setTimeout(() => setShareSuccess(''), 4000);
+                    }}
+                  >
+                    {passportSharing
+                      ? '⏳'
+                      : passportIsActive
+                        ? (isAr ? '🔄 تحديث بيانات الـ QR وتمديد الصلاحية' : '🔄 Refresh QR Data & Extend')
+                        : (isAr ? '🔓 تفعيل مشاركة البطاقة والـ QR الآن' : '🔓 Activate Passport QR Now')}
+                  </button>
                   <button
                     className="btn"
                     style={{ flex:1, background:'#0b3c5d', color:'#fff', fontSize:'0.82rem' }}

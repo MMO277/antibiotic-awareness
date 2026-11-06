@@ -5,6 +5,7 @@ import { useAuth } from './authContext';
 import { Bi } from './types';
 import { ACTIVE_INGREDIENTS, EGYPTIAN_COMMERCIAL_PRODUCTS } from './egyptianDrugDatabase';
 import { norm } from './search';
+import { syncProfileToPassportShare } from './passportService';
 
 export type AllergySeverity = 'mild' | 'moderate' | 'severe' | 'life_threatening';
 export type EvidenceStatus = 'patient_reported' | 'suspected' | 'clinically_verified';
@@ -644,6 +645,7 @@ export function saveProfile(profile: UserHealthProfile, uid?: string | null): vo
     ).catch((err) => {
       console.error('Failed to sync health profile to Cloud Firestore:', err);
     });
+    void syncProfileToPassportShare(effectiveUid, clean);
   }
 }
 
@@ -720,7 +722,7 @@ export function useSyncedHealthProfile() {
         let shouldWriteToCloud = false;
 
         if (hasCloudProfile) {
-          if (!alreadyMigrated && isProfileNonEmpty(localCandidate)) {
+          if (isProfileNonEmpty(localCandidate)) {
             resolved = mergeProfiles(cloudProfile, localCandidate);
             if (JSON.stringify(resolved) !== JSON.stringify(cloudProfile)) {
               shouldWriteToCloud = true;
@@ -765,6 +767,10 @@ export function useSyncedHealthProfile() {
             { merge: true }
           );
         }
+        void syncProfileToPassportShare(uid, resolved, {
+          authDisplayName: user?.displayName || '',
+          authEmail: user?.email || '',
+        });
       })
       .catch((err) => {
         console.error('Error hydrating health profile from Firestore:', err);
@@ -837,6 +843,10 @@ export function useSyncedHealthProfile() {
           { merge: true }
         ).catch((err) => {
           console.error('Failed to save health profile to Firestore:', err);
+        });
+        void syncProfileToPassportShare(uid, next, {
+          authDisplayName: user?.displayName || '',
+          authEmail: user?.email || '',
         });
       }
     },
